@@ -29,13 +29,25 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun addEvent(activity: String, date: String, time: String) = viewModelScope.launch {
+    fun addEvent(
+        activity: String,
+        allDay: Boolean,
+        dateFrom: String,
+        dateTo: String,
+        timeFrom: String,
+        timeTo: String
+    ) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
+        val resolvedDateTo = if (dateTo.isBlank()) dateFrom else dateTo
         dao.insert(
             CalendarEventEntity(
-                dateFrom = date, dateTo = date,
-                timeFrom = time, timeTo = time,
-                userId = userId, activity = activity
+                activity = activity,
+                allDay = allDay,
+                dateFrom = dateFrom,
+                dateTo = resolvedDateTo,
+                timeFrom = if (allDay) "" else timeFrom,
+                timeTo = if (allDay) "" else timeTo,
+                userId = userId
             )
         )
     }
