@@ -1,8 +1,5 @@
 package com.example.mainactivity.ui.navigation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -103,20 +100,19 @@ private fun MainFlow() {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            AnimatedVisibility(
-                visible = showBottomBar,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it }
-            ) {
+            if (showBottomBar) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                     bottomDestinations.forEach { dest ->
+                        val isHome = dest.route == Routes.HOME
                         NavigationBarItem(
                             selected = currentRoute == dest.route,
                             onClick = {
                                 navController.navigate(dest.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = !isHome
+                                    }
                                     launchSingleTop = true
-                                    restoreState = true
+                                    restoreState = !isHome
                                 }
                             },
                             icon = { Icon(dest.icon, contentDescription = dest.label) },
