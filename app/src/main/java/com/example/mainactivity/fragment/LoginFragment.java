@@ -27,7 +27,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.example.mainactivity.Database;
-import com.example.mainactivity.MainActivity;
+import com.example.mainactivity.ModernMainActivity;
 import com.example.mainactivity.R;
 import com.example.mainactivity.model.User;
 import com.google.android.material.snackbar.Snackbar;
@@ -60,7 +60,7 @@ public class LoginFragment extends Fragment {
 
         // Default is 0 so autologin is disabled
         if(j > 0) {
-            Intent activity = new Intent(getContext(), MainActivity.class);
+            Intent activity = new Intent(getContext(), ModernMainActivity.class);
             startActivity(activity);
         }
 
@@ -111,7 +111,7 @@ public class LoginFragment extends Fragment {
                                 autoSave = 1;
                                 editor.putInt("key", autoSave);
                                 editor.apply();
-                                Intent intent = new Intent(getContext(), MainActivity.class);
+                                Intent intent = new Intent(getContext(), ModernMainActivity.class);
                                 startActivity(intent);
                             }
                         }

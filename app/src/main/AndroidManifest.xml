@@ -32,6 +32,12 @@
             android:configChanges="orientation"
             android:noHistory="true"
             android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".ModernMainActivity"
+            android:noHistory="true"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.example.MAINACTIVITY" />
 
