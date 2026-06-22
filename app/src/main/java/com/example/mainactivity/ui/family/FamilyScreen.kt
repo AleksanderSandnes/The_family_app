@@ -105,7 +105,7 @@ fun FamilyScreen(
                 items(members, key = { it.id }) { member ->
                     Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            InitialAvatar(member.name, Color(if (member.avatarColor != 0) member.avatarColor else 0xFF6366F1.toInt()))
+                            InitialAvatar(member.name, Color(if (member.avatarColor != 0) member.avatarColor else 0xFF6366F1.toInt()), avatarUri = member.avatarUri)
                             Spacer(Modifier.size(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(member.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)

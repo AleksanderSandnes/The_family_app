@@ -100,6 +100,7 @@ fun HomeScreen(
                     memberCount = state.memberCount,
                     avatarColor = Color(if (state.user?.avatarColor != 0) state.user?.avatarColor ?: 0xFF6366F1.toInt() else 0xFF6366F1.toInt()),
                     userName = state.user?.name ?: "",
+                    avatarUri = state.user?.avatarUri,
                     dark = dark,
                     onClick = onOpenFamily
                 )
@@ -118,6 +119,7 @@ private fun FamilyCard(
     memberCount: Int,
     avatarColor: Color,
     userName: String,
+    avatarUri: String?,
     dark: Boolean,
     onClick: () -> Unit
 ) {
@@ -150,7 +152,7 @@ private fun FamilyCard(
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            InitialAvatar(userName.ifBlank { "?" }, avatarColor, size = 40)
+            InitialAvatar(userName.ifBlank { "?" }, avatarColor, size = 40, avatarUri = avatarUri)
         }
     }
 }

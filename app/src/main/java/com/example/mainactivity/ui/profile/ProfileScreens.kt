@@ -1,6 +1,11 @@
 package com.example.mainactivity.ui.profile
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,17 +22,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,15 +46,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.mainactivity.ui.components.FamilyTextField
 import com.example.mainactivity.ui.components.FeatureTopBar
-import com.example.mainactivity.ui.components.InitialAvatar
 import com.example.mainactivity.ui.components.PrimaryButton
 import com.example.mainactivity.ui.theme.heroGradient
+import java.io.File
 
 @Composable
 fun ProfileScreen(
@@ -57,6 +68,23 @@ fun ProfileScreen(
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
     val dark = androidx.compose.foundation.isSystemInDarkTheme()
+    val context = LocalContext.current
+
+    var showAvatarPicker by remember { mutableStateOf(false) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri -> uri?.let { viewModel.saveAvatarFromUri(context, it) } }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success -> viewModel.onCameraResult(context, success) }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) viewModel.prepareCameraCapture(context)?.let { cameraLauncher.launch(it) }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -70,13 +98,42 @@ fun ProfileScreen(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(heroGradient(dark)).padding(24.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(72.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                        Text(
-                            user?.name?.trim()?.firstOrNull()?.uppercase() ?: "?",
-                            color = Color.White,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                    // Avatar circle — clickable to change photo
+                    Box(
+                        Modifier.size(72.dp).clickable { showAvatarPicker = true }
+                    ) {
+                        val avatarUri = user?.avatarUri
+                        var imgFailed by remember(avatarUri) { mutableStateOf(false) }
+                        if (avatarUri != null && !imgFailed) {
+                            AsyncImage(
+                                model = File(avatarUri),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                onError = { imgFailed = true }
+                            )
+                        } else {
+                            Box(
+                                Modifier.fillMaxSize().clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    user?.name?.trim()?.firstOrNull()?.uppercase() ?: "?",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        // Camera indicator strip at bottom of circle
+                        Box(
+                            Modifier.fillMaxWidth().align(Alignment.BottomCenter)
+                                .height(20.dp).clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
+                                .background(Color.Black.copy(alpha = 0.38f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.CameraAlt, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                        }
                     }
                     Spacer(Modifier.size(16.dp))
                     Column {
@@ -105,6 +162,57 @@ fun ProfileScreen(
             )
         }
     }
+
+    if (showAvatarPicker) {
+        AvatarPickerDialog(
+            hasAvatar = user?.avatarUri != null,
+            onDismiss = { showAvatarPicker = false },
+            onCamera = {
+                showAvatarPicker = false
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            },
+            onGallery = {
+                showAvatarPicker = false
+                galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            onRemove = {
+                showAvatarPicker = false
+                viewModel.removeAvatar()
+            }
+        )
+    }
+}
+
+@Composable
+private fun AvatarPickerDialog(
+    hasAvatar: Boolean,
+    onDismiss: () -> Unit,
+    onCamera: () -> Unit,
+    onGallery: () -> Unit,
+    onRemove: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        title = { Text("Profile photo", style = MaterialTheme.typography.titleLarge) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                TextButton(onClick = onCamera, modifier = Modifier.fillMaxWidth()) {
+                    Text("Take photo", style = MaterialTheme.typography.bodyLarge)
+                }
+                TextButton(onClick = onGallery, modifier = Modifier.fillMaxWidth()) {
+                    Text("Choose from gallery", style = MaterialTheme.typography.bodyLarge)
+                }
+                if (hasAvatar) {
+                    TextButton(onClick = onRemove, modifier = Modifier.fillMaxWidth()) {
+                        Text("Remove photo", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
 
 @Composable

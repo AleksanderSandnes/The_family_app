@@ -12,7 +12,8 @@ data class UserEntity(
     val birthday: String = "",
     val mobile: String = "",
     val familyId: Long? = null,
-    val avatarColor: Int = 0
+    val avatarColor: Int = 0,
+    val avatarUri: String? = null
 )
 
 @Entity(tableName = "families")

@@ -52,6 +52,9 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.scale
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import java.io.File
 import com.example.mainactivity.ui.theme.BrandGradient
 
 /** Primary gradient call-to-action button with built-in loading state. */
@@ -178,22 +181,39 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier, action: (@Compos
     }
 }
 
-/** Rounded gradient avatar showing the first letter of a name. */
+/** Rounded gradient avatar showing the first letter of a name, or a photo when avatarUri is set. */
 @Composable
-fun InitialAvatar(name: String, color: Color, modifier: Modifier = Modifier, size: Int = 44) {
-    Box(
-        modifier = modifier
-            .size(size.dp)
-            .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f)))),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = name.trim().firstOrNull()?.uppercase() ?: "?",
-            color = Color.White,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+fun InitialAvatar(
+    name: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    size: Int = 44,
+    avatarUri: String? = null
+) {
+    var imageFailed by remember(avatarUri) { mutableStateOf(false) }
+    if (avatarUri != null && !imageFailed) {
+        AsyncImage(
+            model = File(avatarUri),
+            contentDescription = name,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.size(size.dp).clip(CircleShape),
+            onError = { imageFailed = true }
         )
+    } else {
+        Box(
+            modifier = modifier
+                .size(size.dp)
+                .clip(CircleShape)
+                .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f)))),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = name.trim().firstOrNull()?.uppercase() ?: "?",
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
