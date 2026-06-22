@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <group>
+        <item
+            android:id="@+id/kalenderFragment"
+            android:icon="@drawable/ic_action_calendar"
+            android:title="@string/kalender" />
+        <item
+            android:id="@+id/bursdagFragment"
+            android:icon="@drawable/ic_action_birthday"
+            android:title="@string/birthdays" />
+        <item
+            android:id="@+id/matplanFragment"
+            android:icon="@drawable/ic_action_food"
+            android:title="@string/matplan" />
+        <item
+            android:id="@+id/handlelisteFragment"
+            android:icon="@drawable/ic_action_shopping"
+            android:title="@string/Handleliste" />
+        <item
+            android:id="@+id/onskelisteFragment"
+            android:icon="@drawable/ic_action_list"
+            android:title="@string/oenskeliste" />
+        <item
+            android:id="@+id/familieboblaFragment"
+            android:icon="@drawable/ic_action_chat"
+            android:title="@string/familiebobla" />
+    </group>
+
+    <item
+        android:title="" >
+        <menu>
+            <item
+                android:id="@+id/profilFragment"
+                android:icon="@drawable/ic_action_profile"
+                android:title="@string/profileNav" />
+            <item
+                android:id="@+id/gruppeinformasjonFragment"
+                android:icon="@drawable/ic_action_group"
+                android:title="@string/groupInfo" />
+            <item
+                android:id="@+id/settingsFragment"
+                android:icon="@drawable/ic_action_settings"
+                android:title="@string/SettingsNav" />
+        </menu>
+    </item>
+</menu>
