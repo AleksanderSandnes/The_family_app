@@ -1,11 +1,9 @@
 package com.example.mainactivity.fragment;
 
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -43,7 +41,6 @@ public class BirthdayEditFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_birthday_edit, container, false);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onViewCreated(@NonNull final View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -71,7 +68,6 @@ public class BirthdayEditFragment extends Fragment {
         // Oppdaterer kolonnene i BIRTHDAY-tabellen i databasen med verdiene som er fylt ut.
         // Går tilbake til birthdayfragmentet
         lagre.setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View v) {
                 // Henter inputen

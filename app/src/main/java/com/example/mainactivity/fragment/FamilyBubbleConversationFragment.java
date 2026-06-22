@@ -94,10 +94,10 @@ public class FamilyBubbleConversationFragment extends Fragment {
         ArrayList<FamilyBubbleConversationModel> allMessages = new ArrayList<>();
 
         while(messages.moveToNext()) {
-            int messageID = Integer.parseInt(messages.getString(messages.getColumnIndex(Database.COLUMN_ID)));
-            int conversationID = Integer.parseInt(messages.getString(messages.getColumnIndex(Database.COLUMN__MESSAGE_PART_OF_CONVERSATIONID)));
-            int fromID = Integer.parseInt(messages.getString(messages.getColumnIndex(Database.COLUMN__MESSAGE_USER_FROM)));
-            String message = messages.getString(messages.getColumnIndex(Database.COLUMN__MESSAGE_TEXT));
+            int messageID = Integer.parseInt(messages.getString(messages.getColumnIndexOrThrow(Database.COLUMN_ID)));
+            int conversationID = Integer.parseInt(messages.getString(messages.getColumnIndexOrThrow(Database.COLUMN__MESSAGE_PART_OF_CONVERSATIONID)));
+            int fromID = Integer.parseInt(messages.getString(messages.getColumnIndexOrThrow(Database.COLUMN__MESSAGE_USER_FROM)));
+            String message = messages.getString(messages.getColumnIndexOrThrow(Database.COLUMN__MESSAGE_TEXT));
 
             // Dersom samtaleID fra database og lokalt er like vil den bli lagt til i array
             if (samtaleId == conversationID) {
@@ -122,7 +122,7 @@ public class FamilyBubbleConversationFragment extends Fragment {
             setUpRecyclerView();
         } else {
             Toast.makeText(getContext(),"Det oppstod en feil!", Toast.LENGTH_SHORT).show();
-            Log.e("FamilyBubbleConversation", "Kunne ikke sende meldingen: " + messageToSend.getText().toString());
+            Log.e("FamilyBubbleConv", "Kunne ikke sende meldingen: " + messageToSend.getText().toString());
         }
     }
 

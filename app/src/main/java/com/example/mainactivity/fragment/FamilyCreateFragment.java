@@ -103,9 +103,10 @@ public class FamilyCreateFragment extends Fragment {
 
                     Intent intent = new Intent(getContext(), MainActivity.class);
                     startActivity(intent);
-                } else
+                } else {
                     Toast.makeText(getActivity(), "Passordene må være like", Toast.LENGTH_SHORT).show();
                     Log.e("FamilyCreateFragment", "Passordene er ikke like");
+                }
             }
         });
     }

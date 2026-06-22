@@ -81,9 +81,9 @@ public class ShoppingListFragment extends Fragment {
         ArrayList<ShoppingListModel> shopping_listr = new ArrayList<>();
 
         while(data.moveToNext()) {
-            String id = data.getString(data.getColumnIndex(Database.COLUMN_ID));
-            String tittel = data.getString(data.getColumnIndex(Database.COLUMN_HANDLELISTE_TITTEL));
-            int userID = data.getInt(data.getColumnIndex(Database.COLUMN_HANDLELISTE_USERID));
+            String id = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_ID));
+            String tittel = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_HANDLELISTE_TITTEL));
+            int userID = data.getInt(data.getColumnIndexOrThrow(Database.COLUMN_HANDLELISTE_USERID));
 
             Cursor userName = database.getData(Database.TABLE_USER, userID);
             userName.moveToFirst();

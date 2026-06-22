@@ -73,11 +73,11 @@ public class MealPlanFragment extends Fragment {
         String familieID = sharedPreferences.getString(User.FAMILIE, null);
 
         while(foodplansFromDB.moveToNext()) {
-            int meal_planID = foodplansFromDB.getInt(foodplansFromDB.getColumnIndex(Database.COLUMN_ID));
-            String fromDate = foodplansFromDB.getString(foodplansFromDB.getColumnIndex(Database.COLUMN_MATPLAN_FROM_DATE));
-            String toDate = foodplansFromDB.getString(foodplansFromDB.getColumnIndex(Database.COLUMN_MATPLAN_TO_DATE));
-            int familyID = foodplansFromDB.getInt(foodplansFromDB.getColumnIndex(Database.COLUMN_MATPLAN_FAMILY_ID));
-            int week = foodplansFromDB.getInt(foodplansFromDB.getColumnIndex(Database.COLUMN_MATPLAN_UKE));
+            int meal_planID = foodplansFromDB.getInt(foodplansFromDB.getColumnIndexOrThrow(Database.COLUMN_ID));
+            String fromDate = foodplansFromDB.getString(foodplansFromDB.getColumnIndexOrThrow(Database.COLUMN_MATPLAN_FROM_DATE));
+            String toDate = foodplansFromDB.getString(foodplansFromDB.getColumnIndexOrThrow(Database.COLUMN_MATPLAN_TO_DATE));
+            int familyID = foodplansFromDB.getInt(foodplansFromDB.getColumnIndexOrThrow(Database.COLUMN_MATPLAN_FAMILY_ID));
+            int week = foodplansFromDB.getInt(foodplansFromDB.getColumnIndexOrThrow(Database.COLUMN_MATPLAN_UKE));
 
             if (familieID.equals(String.valueOf(familyID))) {
                 MealPlanModel meal_plan = new MealPlanModel(meal_planID, week, fromDate, toDate);

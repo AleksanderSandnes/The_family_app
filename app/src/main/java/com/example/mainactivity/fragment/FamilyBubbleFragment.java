@@ -71,10 +71,10 @@ public class FamilyBubbleFragment extends Fragment {
         int meID = Integer.parseInt(sharedPreferences.getString(User.ID, null));
 
         while(data.moveToNext()) {
-            int conversationID = Integer.parseInt(data.getString(data.getColumnIndex(Database.COLUMN_ID)));
-            int fromID = Integer.parseInt(data.getString(data.getColumnIndex(Database.COLUMN__USER_FROM)));
-            int toID = Integer.parseInt(data.getString(data.getColumnIndex(Database.COLUMN__USER_TO)));
-            String samtaleName = data.getString(data.getColumnIndex(Database.COLUMN__CONVERSATION_NAME));
+            int conversationID = Integer.parseInt(data.getString(data.getColumnIndexOrThrow(Database.COLUMN_ID)));
+            int fromID = Integer.parseInt(data.getString(data.getColumnIndexOrThrow(Database.COLUMN__USER_FROM)));
+            int toID = Integer.parseInt(data.getString(data.getColumnIndexOrThrow(Database.COLUMN__USER_TO)));
+            String samtaleName = data.getString(data.getColumnIndexOrThrow(Database.COLUMN__CONVERSATION_NAME));
 
             if (fromID == meID || toID == meID) {
                 // If I am person from set button name = person from

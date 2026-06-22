@@ -62,9 +62,10 @@ public class WishlistAddFragment extends Fragment {
 
         if (!wishlistName.getText().toString().isEmpty())
             addToDatabase = database.makeNewWishlist(meID, wishlistName.getText().toString());
-        else
+        else {
             Toast.makeText(getActivity(), "Du må sette et navn på ønskelist", Toast.LENGTH_SHORT).show();
             Log.e("WishlistAdd", "Brukeren satte ikke navn på ønskelist");
+        }
 
         if (addToDatabase >= 0) {
             Log.i("WishlistAdd", "Made wishlist for: " + sharedPreferences.getString(User.NAME, null) + ", named: " + wishlistName.getText());

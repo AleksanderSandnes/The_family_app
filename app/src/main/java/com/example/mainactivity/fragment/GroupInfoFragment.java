@@ -118,9 +118,10 @@ public class GroupInfoFragment extends Fragment {
                 Toast.makeText(getContext(),"Kunne ikke kaste ut " + selectedUser.getName(), Toast.LENGTH_SHORT).show();
                 Log.e("GroupInfo", "Kunne ikke kaste ut " + selectedUser.getName());
             }
-        } else
+        } else {
             Toast.makeText(getContext(),"Bare admin kan kaste ut andre brukere", Toast.LENGTH_SHORT).show();
             Log.w("GroupInfo", "Bare admin kan kaste ut andre brukere");
+        }
     }
 
     //Bare en admin kan bytte familienavn
@@ -133,12 +134,14 @@ public class GroupInfoFragment extends Fragment {
                 Log.i("GroupInfo", "Familynavnet ble endret til " + newFamilyName);
                 familieNavnInput.setText("");
                 MainActivity.setText(newFamilyName);
-            } else
+            } else {
                 Toast.makeText(getContext(),"Kunne ikke endre familienavnet", Toast.LENGTH_SHORT).show();
                 Log.e("GroupInfo", "Kunne ikke endre familienavnet");
-        } else
+            }
+        } else {
             Toast.makeText(getContext(),"Bare admin kan endre familienavnet", Toast.LENGTH_SHORT).show();
             Log.w("GroupInfo", "Bare admin kan endre familienavnet");
+        }
     }
 
     private void addUsersToDropdown(ArrayList<User> usersInFamily) {

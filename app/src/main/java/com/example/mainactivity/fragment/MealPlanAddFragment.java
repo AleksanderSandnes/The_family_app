@@ -221,10 +221,10 @@ public class MealPlanAddFragment extends Fragment {
                 Cursor insertData = database.getData(Database.TABLE_MATPLAN);
 
                 while(insertData.moveToNext()) {
-                    String uke = insertData.getString(insertData.getColumnIndex(Database.COLUMN_MATPLAN_UKE));
-                    String fromDate = insertData.getString(insertData.getColumnIndex(Database.COLUMN_MATPLAN_FROM_DATE));
-                    String toDate = insertData.getString(insertData.getColumnIndex(Database.COLUMN_MATPLAN_TO_DATE));
-                    String familieID = insertData.getString(insertData.getColumnIndex(Database.COLUMN_MATPLAN_FAMILY_ID));
+                    String uke = insertData.getString(insertData.getColumnIndexOrThrow(Database.COLUMN_MATPLAN_UKE));
+                    String fromDate = insertData.getString(insertData.getColumnIndexOrThrow(Database.COLUMN_MATPLAN_FROM_DATE));
+                    String toDate = insertData.getString(insertData.getColumnIndexOrThrow(Database.COLUMN_MATPLAN_TO_DATE));
+                    String familieID = insertData.getString(insertData.getColumnIndexOrThrow(Database.COLUMN_MATPLAN_FAMILY_ID));
 
                     if (familieID.equals(String.valueOf(familyID)) && uke.equals(String.valueOf(week)) && fromDate.equals(dateFromString) && toDate.equals(dateToString)) {
                         return false;

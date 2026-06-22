@@ -87,9 +87,9 @@ public class ShoppingListListFragment extends Fragment {
         ArrayList<ShoppingListItemsModel> allevarer = new ArrayList<>();
 
         while(data.moveToNext()) {
-            String ID = data.getString(data.getColumnIndex(Database.COLUMN_ID));
-            String vareTittel = data.getString(data.getColumnIndex(Database.COLUMN_HANDLELISTELISTE_VARE));
-            boolean isChecked = data.getInt(data.getColumnIndex(Database.COLUMN_HANDLELISTELISTE_CHECKED)) == 1;
+            String ID = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_ID));
+            String vareTittel = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_HANDLELISTELISTE_VARE));
+            boolean isChecked = data.getInt(data.getColumnIndexOrThrow(Database.COLUMN_HANDLELISTELISTE_CHECKED)) == 1;
 
             ShoppingListItemsModel envare = new ShoppingListItemsModel(ID, vareTittel, isChecked);
             allevarer.add(envare);

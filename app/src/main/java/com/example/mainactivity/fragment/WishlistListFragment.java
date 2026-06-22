@@ -99,11 +99,11 @@ public class WishlistListFragment extends Fragment {
         ArrayList<WishlistListModel> allWishes = new ArrayList<>();
 
         while(wishes.moveToNext()) {
-            int wishID = Integer.parseInt(wishes.getString(wishes.getColumnIndex(Database.COLUMN_ID)));
-            int wishlistID = wishes.getInt(wishes.getColumnIndex(Database.COLUMN__WISHLIST_ID));
-            String wish = wishes.getString(wishes.getColumnIndex(Database.COLUMN__NAME_WISH));
-            boolean isChecked = wishes.getInt(wishes.getColumnIndex(Database.COLUMN__WISH_CHECKED)) == 1;
-            int userID = wishes.getInt(wishes.getColumnIndex(Database.COLUMN__WISH_USER_ID));
+            int wishID = Integer.parseInt(wishes.getString(wishes.getColumnIndexOrThrow(Database.COLUMN_ID)));
+            int wishlistID = wishes.getInt(wishes.getColumnIndexOrThrow(Database.COLUMN__WISHLIST_ID));
+            String wish = wishes.getString(wishes.getColumnIndexOrThrow(Database.COLUMN__NAME_WISH));
+            boolean isChecked = wishes.getInt(wishes.getColumnIndexOrThrow(Database.COLUMN__WISH_CHECKED)) == 1;
+            int userID = wishes.getInt(wishes.getColumnIndexOrThrow(Database.COLUMN__WISH_USER_ID));
 
             if (wishlistID == this.wishlistID) {
                 WishlistListModel wish1 = new WishlistListModel(wishID, userID, wish, isChecked);
@@ -120,9 +120,10 @@ public class WishlistListFragment extends Fragment {
 
         if (!onskeToAdd.getText().toString().isEmpty())
             addToDatabase = database.addWishToWishlist(wishlistID, onskeToAdd.getText().toString(), meID);
-        else
+        else {
             Toast.makeText(getContext(),"Du må skrive inn et ønske først", Toast.LENGTH_SHORT).show();
             Log.e("WishlistList", "Brukeren skrev ikke inn et ønske");
+        }
 
         if (addToDatabase >= 0) {
             Log.i("WishlistList", "Added wish: " + onskeToAdd.getText().toString());

@@ -1,6 +1,5 @@
 package com.example.mainactivity;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -14,9 +13,7 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
 import android.net.NetworkRequest;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -51,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
 
     ConnectivityManager.NetworkCallback connectivityCallback;
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -102,7 +98,6 @@ public class MainActivity extends AppCompatActivity {
         id.setText("Family-ID: " + sharedPreferences.getString(User.FAMILIE, null));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onResume() {
         super.onResume();
@@ -146,30 +141,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+        return NetworkUtils.isNetworkAvailable(this);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void checkConnectivity() {
-        // here we are getting the connectivity service from connectivity manager
         final ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(
                 Context.CONNECTIVITY_SERVICE);
+        isConnected = NetworkUtils.isNetworkAvailable(this);
 
-        // Getting network Info
-        // give Network Access Permission in Manifest
-        final NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-
-        // isConnected is a boolean variable
-        // here we check if network is connected or is getting connected
-        isConnected = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
-
-        if (!isConnected) {
-            // SHOW ANY ACTION YOU WANT TO SHOW
-            // WHEN WE ARE NOT CONNECTED TO INTERNET/NETWORK
+        if (!isConnected && connectivityManager != null) {
             Log.e("MainActivity", " NO NETWORK!");
-            // if Network is not connected we will register a network callback to  monitor network
             connectivityManager.registerNetworkCallback(
                     new NetworkRequest.Builder()
                             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

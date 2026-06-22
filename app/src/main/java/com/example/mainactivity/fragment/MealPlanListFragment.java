@@ -74,10 +74,10 @@ public class MealPlanListFragment extends Fragment {
         ArrayList<MealPlanListModel> allFoodplans = new ArrayList<>();
 
         while(foodplans.moveToNext()) {
-            int subMealPlanID = foodplans.getInt(foodplans.getColumnIndex(Database.COLUMN_ID));
-            int meal_planID = foodplans.getInt(foodplans.getColumnIndex(Database.COLUMN__SUBMATPLAN_MATPLANID));
-            String day = foodplans.getString(foodplans.getColumnIndex(Database.COLUMN__SUBMATPLAN_DAY));
-            String food = foodplans.getString(foodplans.getColumnIndex(Database.COLUMN__SUBMATPLAN_FOOD));
+            int subMealPlanID = foodplans.getInt(foodplans.getColumnIndexOrThrow(Database.COLUMN_ID));
+            int meal_planID = foodplans.getInt(foodplans.getColumnIndexOrThrow(Database.COLUMN__SUBMATPLAN_MATPLANID));
+            String day = foodplans.getString(foodplans.getColumnIndexOrThrow(Database.COLUMN__SUBMATPLAN_DAY));
+            String food = foodplans.getString(foodplans.getColumnIndexOrThrow(Database.COLUMN__SUBMATPLAN_FOOD));
 
             // Dersom samtaleID fra database og lokalt er like vil den bli lagt til i array
             if (meal_planID == this.meal_planID) {

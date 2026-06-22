@@ -71,9 +71,9 @@ public class WishlistFragment extends Fragment {
         String familieID = sharedPreferences.getString(User.FAMILIE, null);
 
         while(wishlistsFromDB.moveToNext()) {
-            int wishlistID = Integer.parseInt(wishlistsFromDB.getString(wishlistsFromDB.getColumnIndex(Database.COLUMN_ID)));
-            int wishlistUserID = Integer.parseInt(wishlistsFromDB.getString(wishlistsFromDB.getColumnIndex(Database.COLUMN__USER_ID_WISHLIST)));
-            String wishlistName = wishlistsFromDB.getString(wishlistsFromDB.getColumnIndex(Database.COLUMN__NAME_WISHLIST));
+            int wishlistID = Integer.parseInt(wishlistsFromDB.getString(wishlistsFromDB.getColumnIndexOrThrow(Database.COLUMN_ID)));
+            int wishlistUserID = Integer.parseInt(wishlistsFromDB.getString(wishlistsFromDB.getColumnIndexOrThrow(Database.COLUMN__USER_ID_WISHLIST)));
+            String wishlistName = wishlistsFromDB.getString(wishlistsFromDB.getColumnIndexOrThrow(Database.COLUMN__NAME_WISHLIST));
 
             Cursor wishlistUser = database.getData(Database.TABLE_USER, wishlistUserID);
             wishlistUser.moveToFirst();

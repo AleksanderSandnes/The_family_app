@@ -72,11 +72,12 @@ public class FamilyBubbleNewConversationFragment extends Fragment {
         addConversation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (selectedUser != null)
+                if (selectedUser != null) {
                     makeNewConversation();
-                else
+                } else {
                     Toast.makeText(getActivity(), "Du må velge en person å starte samtale med", Toast.LENGTH_SHORT).show();
-                    Log.e("FamilyBubbleNewConversation", "Bruker valgte ikke en person å starte samtale med");
+                    Log.e("FamilyBubbleNewConv", "Bruker valgte ikke en person å starte samtale med");
+                }
             }
         });
     }
@@ -90,13 +91,13 @@ public class FamilyBubbleNewConversationFragment extends Fragment {
         if (!conversationName.getText().toString().isEmpty())
             addToDatabase = database.makeNewConversation(meID, selectedUser, conversationName.getText().toString());
         else
-            Log.e("FamilyBubbleNewConversation", "Bruker satte ikke ett navn til samtalen");
+            Log.e("FamilyBubbleNewConv", "Bruker satte ikke ett navn til samtalen");
 
         if (addToDatabase >= 0) {
-            Log.i("FamilyBubbleNewConversation", "Made conversation with: " + selectedUser.getName() + ", named: " + conversationName.getText());
+            Log.i("FamilyBubbleNewConv", "Made conversation with: " + selectedUser.getName() + ", named: " + conversationName.getText());
             navController.navigateUp();
         }
-        Log.i("FamilyBubbleNewConversation", "New conversation with: " + selectedUser);
+        Log.i("FamilyBubbleNewConv", "New conversation with: " + selectedUser);
     }
 
     private void addUsersToDropdown() {

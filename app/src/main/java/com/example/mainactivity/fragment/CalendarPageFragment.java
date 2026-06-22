@@ -110,10 +110,10 @@ public class CalendarPageFragment extends Fragment {
         Cursor data = database.getData(Database.TABLE_BIRTHDAY);
 
         while (data.moveToNext()) {
-            int birthdayID = data.getInt(data.getColumnIndex(Database.COLUMN_ID));
-            String name = data.getString(data.getColumnIndex(Database.COLUMN_NAME_BIRTHDAY));
-            String dato = data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY_DATE));
-            String familieID = data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY_FAMILYID));
+            int birthdayID = data.getInt(data.getColumnIndexOrThrow(Database.COLUMN_ID));
+            String name = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_NAME_BIRTHDAY));
+            String dato = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY_DATE));
+            String familieID = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY_FAMILYID));
 
             String[] dateFromSplitted = dato.split("\\.");
             Date fullDateFrom = new Date(Integer.parseInt(dateFromSplitted[2]) - 1900, Integer.parseInt(dateFromSplitted[1]) - 1, Integer.parseInt(dateFromSplitted[0]));
@@ -132,13 +132,13 @@ public class CalendarPageFragment extends Fragment {
         data = database.getData(Database.TABLE_CALENDAR_ACTIVITY);
 
         while (data.moveToNext()) {
-            int activityID = data.getInt(data.getColumnIndex(Database.COLUMN_ID));
-            String dateFrom = data.getString(data.getColumnIndex(Database.COLUMN__CALENDAR_ACTIVITY_DATE_FROM));
-            String dateTo = data.getString(data.getColumnIndex(Database.COLUMN__CALENDAR_ACTIVITY_DATE_TO));
-            String timeFrom = data.getString(data.getColumnIndex(Database.COLUMN__CALENDAR_ACTIVITY_TIME_FROM));
-            String timeTo = data.getString(data.getColumnIndex(Database.COLUMN__CALENDAR_ACTIVITY_TIME_TO));
-            int userID = data.getInt(data.getColumnIndex(Database.COLUMN__CALENDAR_ACTIVITY_USER_ID));
-            String theActivity = data.getString(data.getColumnIndex(Database.COLUMN__CALENDAR_ACTIVITY_ACTIVITY));
+            int activityID = data.getInt(data.getColumnIndexOrThrow(Database.COLUMN_ID));
+            String dateFrom = data.getString(data.getColumnIndexOrThrow(Database.COLUMN__CALENDAR_ACTIVITY_DATE_FROM));
+            String dateTo = data.getString(data.getColumnIndexOrThrow(Database.COLUMN__CALENDAR_ACTIVITY_DATE_TO));
+            String timeFrom = data.getString(data.getColumnIndexOrThrow(Database.COLUMN__CALENDAR_ACTIVITY_TIME_FROM));
+            String timeTo = data.getString(data.getColumnIndexOrThrow(Database.COLUMN__CALENDAR_ACTIVITY_TIME_TO));
+            int userID = data.getInt(data.getColumnIndexOrThrow(Database.COLUMN__CALENDAR_ACTIVITY_USER_ID));
+            String theActivity = data.getString(data.getColumnIndexOrThrow(Database.COLUMN__CALENDAR_ACTIVITY_ACTIVITY));
 
             // Lager gjør de om fra String til Date for å kunne bruke innebygde metoder
             String[] dateFromSplitted = dateFrom.split("\\.");

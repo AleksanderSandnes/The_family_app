@@ -2,11 +2,9 @@ package com.example.mainactivity.fragment;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -25,7 +23,6 @@ import com.example.mainactivity.Database;
 import com.example.mainactivity.R;
 import com.example.mainactivity.model.User;
 
-@RequiresApi(api = Build.VERSION_CODES.O)
 public class BirthdayAddFragment extends Fragment {
 
     public BirthdayAddFragment() {
@@ -65,7 +62,6 @@ public class BirthdayAddFragment extends Fragment {
         meID = sharedPreferences.getString(User.ID, null);
 
         lagre.setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View v) {
                 // Henter inputen

@@ -65,17 +65,16 @@ public class ProfileFragment extends Fragment {
         photo.setImageResource(R.drawable.ic_baseline_account_circle_24);
 
         while (data.moveToNext()) {
-            userID.setText("Bruker id: " + data.getString(data.getColumnIndex(Database.COLUMN_ID)));
-            mobilnr.setText("Mobilnummer: +47 " + data.getString(data.getColumnIndex(Database.COLUMN_MOBILNR)));
-            fodselsdato.setText("Fødselsdato: " + data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY)));
-            email.setText("Email: " + data.getString(data.getColumnIndex(Database.COLUMN_EMAIL)));
-            navn.setText(data.getString(data.getColumnIndex(Database.COLUMN_NAME)));
-
-            id = data.getString(data.getColumnIndex(Database.COLUMN_ID));
-            mobil = data.getString(data.getColumnIndex(Database.COLUMN_MOBILNR));
-            dato = data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY));
-            aemail = data.getString(data.getColumnIndex(Database.COLUMN_EMAIL));
-            anavn = data.getString(data.getColumnIndex(Database.COLUMN_NAME));
+            userID.setText("Bruker id: " + data.getString(data.getColumnIndexOrThrow(Database.COLUMN_ID)));
+            mobilnr.setText("Mobilnummer: +47 " + data.getString(data.getColumnIndexOrThrow(Database.COLUMN_MOBILNR)));
+            fodselsdato.setText("Fødselsdato: " + data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY)));
+            email.setText("Email: " + data.getString(data.getColumnIndexOrThrow(Database.COLUMN_EMAIL)));
+            navn.setText(data.getString(data.getColumnIndexOrThrow(Database.COLUMN_NAME)));
+            id = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_ID));
+            mobil = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_MOBILNR));
+            dato = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY));
+            aemail = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_EMAIL));
+            anavn = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_NAME));
         }
         System.out.println(id + ", " + mobil + ", " + dato + ", " + aemail + ", " + anavn);
 

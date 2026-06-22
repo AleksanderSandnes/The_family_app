@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,7 +12,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.cardview.widget.CardView;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
@@ -54,7 +52,6 @@ public class BirthdayAdapter extends RecyclerView.Adapter<BirthdayAdapter.Birthd
         return new BirthdayViewHolder(itemView);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onBindViewHolder(@NonNull BirthdayViewHolder viewHolder, int position) {
         BirthdayModel birthdayToDisplay = BirthdayList.get(position);
@@ -98,7 +95,6 @@ public class BirthdayAdapter extends RecyclerView.Adapter<BirthdayAdapter.Birthd
             super(itemView);
         }
 
-        @RequiresApi(api = Build.VERSION_CODES.O)
         public void setBirthday(BirthdayModel birthdayToDisplay, int position) {
 
             //Kobler variablene med sine respektive elementer i cardviewet
@@ -138,7 +134,6 @@ public class BirthdayAdapter extends RecyclerView.Adapter<BirthdayAdapter.Birthd
                             .setMessage("Er du sikker på at du vil slette denne birthdayen?");
                     builder.setPositiveButton("Ja",
                             new DialogInterface.OnClickListener() {
-                                @RequiresApi(api = Build.VERSION_CODES.KITKAT)
                                 @Override
                                 public void onClick(DialogInterface dialog, int id) {
                                     // Sletter birthdayen

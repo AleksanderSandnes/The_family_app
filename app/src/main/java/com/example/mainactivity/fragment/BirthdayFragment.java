@@ -3,11 +3,9 @@ package com.example.mainactivity.fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -56,7 +54,6 @@ public class BirthdayFragment extends Fragment{
         return inflater.inflate(R.layout.fragment_birthday, container, false);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -96,18 +93,18 @@ public class BirthdayFragment extends Fragment{
 
         while(data.moveToNext()) {
 
-            String navnet = data.getString(data.getColumnIndex(Database.COLUMN_NAME_BIRTHDAY));
-            String datoen = data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY_DATE));
-            String id = data.getString(data.getColumnIndex(Database.COLUMN_ID));
-            String familieId = data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY_FAMILYID));
+            String navnet = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_NAME_BIRTHDAY));
+            String datoen = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY_DATE));
+            String id = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_ID));
+            String familieId = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY_FAMILYID));
             String userID = null;
             String madeByUserID = null;
 
-            if (data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY_USERID)) != null)
-                userID = data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY_USERID));
+            if (data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY_USERID)) != null)
+                userID = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY_USERID));
 
-            if (data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY_MADEBY_USERID)) != null)
-                madeByUserID = data.getString(data.getColumnIndex(Database.COLUMN_BIRTHDAY_MADEBY_USERID));
+            if (data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY_MADEBY_USERID)) != null)
+                madeByUserID = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_BIRTHDAY_MADEBY_USERID));
 
             if (familieId != null) {
                 if (familieId.equals(sharedPreferences.getString(User.FAMILIE, null))) {
@@ -125,7 +122,6 @@ public class BirthdayFragment extends Fragment{
 
 
         Comparator<BirthdayModel> Day = new Comparator<BirthdayModel>() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
             public int compare(BirthdayModel c1, BirthdayModel c2) {
                 DateTimeFormatter format = DateTimeFormatter.ofPattern("d.M.uuuu");
                 LocalDate today = LocalDate.now();
@@ -137,7 +133,6 @@ public class BirthdayFragment extends Fragment{
         Collections.sort(birthdayer, Day);
 
         Comparator<BirthdayModel> byMonth = new Comparator<BirthdayModel>() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
             public int compare(BirthdayModel c1, BirthdayModel c2) {
                 DateTimeFormatter format = DateTimeFormatter.ofPattern("d.M.uuuu");
                 LocalDate d1 = LocalDate.parse(c1.getDato(), format);

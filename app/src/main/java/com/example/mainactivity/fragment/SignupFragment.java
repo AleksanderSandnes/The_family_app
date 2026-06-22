@@ -98,8 +98,8 @@ public class SignupFragment extends Fragment {
                         String idTilBruker = "1";
 
                         while(data.moveToNext()) {
-                            Log.i("SignupFragment", "ID of user: " + data.getString(data.getColumnIndex(Database.COLUMN_ID)));
-                            idTilBruker = data.getString(data.getColumnIndex(Database.COLUMN_ID));
+                            Log.i("SignupFragment", "ID of user: " + data.getString(data.getColumnIndexOrThrow(Database.COLUMN_ID)));
+                            idTilBruker = data.getString(data.getColumnIndexOrThrow(Database.COLUMN_ID));
                         }
 
                         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -130,7 +130,7 @@ public class SignupFragment extends Fragment {
         Cursor insertData = database.getData(Database.TABLE_USER);
 
         while(insertData.moveToNext()) {
-            String mailen = insertData.getString(insertData.getColumnIndex(Database.COLUMN_EMAIL));
+            String mailen = insertData.getString(insertData.getColumnIndexOrThrow(Database.COLUMN_EMAIL));
             if (mailen.equals(email))
                 return false;
         }

@@ -4,13 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -28,6 +24,7 @@ import android.widget.Toast;
 
 import com.example.mainactivity.Database;
 import com.example.mainactivity.ModernMainActivity;
+import com.example.mainactivity.NetworkUtils;
 import com.example.mainactivity.R;
 import com.example.mainactivity.model.User;
 import com.google.android.material.snackbar.Snackbar;
@@ -47,7 +44,6 @@ public class LoginFragment extends Fragment {
        return inflater.inflate(R.layout.fragment_login, container, false);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onViewCreated(@NonNull final View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -116,9 +112,10 @@ public class LoginFragment extends Fragment {
                             }
                         }
                     }
-                } else
+                } else {
                     Toast.makeText(getActivity(), "Du må fylle ut alle feltene", Toast.LENGTH_SHORT).show();
                     Log.e("LoginFragment", "Brukeren fylte ikke ut alle feltene");
+                }
             }
         });
     }
@@ -153,8 +150,6 @@ public class LoginFragment extends Fragment {
     }
 
     public boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+        return NetworkUtils.isNetworkAvailable(requireContext());
     }
 }
