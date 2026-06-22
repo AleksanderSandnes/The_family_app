@@ -9,36 +9,15 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme.Light">
-
-        <activity
-            android:name=".LoginActivity"
-            android:windowSoftInputMode="adjustPan"
-            android:noHistory="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        android:theme="@style/Theme.TheFamilyApp">
 
         <activity
             android:name=".MainActivity"
-            android:windowSoftInputMode="adjustPan"
-            android:configChanges="orientation"
-            android:noHistory="true"
-            android:exported="false">
-        </activity>
-
-        <activity
-            android:name=".ModernMainActivity"
-            android:noHistory="true"
-            android:exported="false">
+            android:windowSoftInputMode="adjustResize"
+            android:exported="true">
             <intent-filter>
-                <action android:name="com.example.MAINACTIVITY" />
-
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>
