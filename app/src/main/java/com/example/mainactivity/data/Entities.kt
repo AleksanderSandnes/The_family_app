@@ -64,7 +64,8 @@ data class CalendarEventEntity(
     val timeFrom: String,
     val timeTo: String,
     val userId: Long,
-    val activity: String
+    val activity: String,
+    val allDay: Boolean = false
 )
 
 @Entity(tableName = "birthdays")

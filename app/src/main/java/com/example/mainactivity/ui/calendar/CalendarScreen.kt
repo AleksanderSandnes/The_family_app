@@ -1,5 +1,6 @@
 package com.example.mainactivity.ui.calendar
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -27,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mainactivity.data.CalendarEventEntity
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 
@@ -72,30 +76,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(events, key = { it.id }) { event ->
-                    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier.size(46.dp).let { it },
-                                contentAlignment = Alignment.Center
-                            ) { Icon(Icons.Filled.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary) }
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(event.activity, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.Schedule, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        listOf(event.dateFrom, event.timeFrom).filter { it.isNotBlank() }.joinToString(" · "),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            IconButton(onClick = { viewModel.delete(event) }) {
-                                Icon(Icons.Filled.Delete, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
+                    EventCard(event = event, onDelete = { viewModel.delete(event) })
                 }
             }
         }
@@ -104,28 +85,157 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
     if (showAdd) {
         AddEventDialog(
             onDismiss = { showAdd = false },
-            onConfirm = { activity, date, time -> viewModel.addEvent(activity, date, time); showAdd = false }
+            onConfirm = { activity, allDay, dateFrom, dateTo, timeFrom, timeTo ->
+                viewModel.addEvent(activity, allDay, dateFrom, dateTo, timeFrom, timeTo)
+                showAdd = false
+            }
         )
     }
 }
 
 @Composable
-private fun AddEventDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> Unit) {
+private fun EventCard(event: CalendarEventEntity, onDelete: () -> Unit) {
+    val subtitle = eventSubtitle(event)
+    val icon = if (event.allDay) Icons.Filled.WbSunny else Icons.Filled.Schedule
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    event.activity,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (subtitle.isNotBlank()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(icon, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(4.dp))
+                        Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Filled.Delete, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+private fun eventSubtitle(event: CalendarEventEntity): String {
+    val dateRange = when {
+        event.dateTo.isBlank() || event.dateFrom == event.dateTo -> event.dateFrom
+        else -> "${event.dateFrom} – ${event.dateTo}"
+    }
+    return if (event.allDay) {
+        listOf("All day", dateRange).filter { it.isNotBlank() }.joinToString(" · ")
+    } else {
+        val timeRange = listOf(event.timeFrom, event.timeTo)
+            .filter { it.isNotBlank() }
+            .joinToString(" – ")
+        listOf(dateRange, timeRange).filter { it.isNotBlank() }.joinToString(" · ")
+    }
+}
+
+@Composable
+private fun AddEventDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (activity: String, allDay: Boolean, dateFrom: String, dateTo: String, timeFrom: String, timeTo: String) -> Unit
+) {
     var activity by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("") }
+    var dateFrom by remember { mutableStateOf("") }
+    var dateTo by remember { mutableStateOf("") }
+    var allDay by remember { mutableStateOf(false) }
+    var timeFrom by remember { mutableStateOf("") }
+    var timeTo by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+
+    val isValid = activity.isNotBlank() && dateFrom.isNotBlank() && (allDay || timeFrom.isNotBlank())
+
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
         title = { Text("New event", style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(activity, { activity = it }, label = { Text("What's happening?") }, singleLine = true, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(date, { date = it }, label = { Text("Date (e.g. 24 Jun)") }, singleLine = true, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(time, { time = it }, label = { Text("Time (e.g. 18:00)") }, singleLine = true, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    activity, { activity = it },
+                    label = { Text("What's happening?") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    dateFrom, { dateFrom = it },
+                    label = { Text("Start date (e.g. 24 Jun)") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    dateTo, { dateTo = it },
+                    label = { Text("End date (optional, leave blank if same day)") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("All day", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                    Switch(checked = allDay, onCheckedChange = { allDay = it })
+                }
+                AnimatedVisibility(visible = !allDay) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            timeFrom, { timeFrom = it },
+                            label = { Text("Start time (e.g. 09:00)") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            timeTo, { timeTo = it },
+                            label = { Text("End time (optional, e.g. 10:00)") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                if (showError && !isValid) {
+                    Text(
+                        when {
+                            activity.isBlank() -> "Event name is required."
+                            dateFrom.isBlank() -> "Start date is required."
+                            else -> "Start time is required for timed events."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         },
-        confirmButton = { TextButton(onClick = { if (activity.isNotBlank()) onConfirm(activity.trim(), date.trim(), time.trim()) }, enabled = activity.isNotBlank()) { Text("Save") } },
+        confirmButton = {
+            TextButton(onClick = {
+                if (isValid) {
+                    onConfirm(activity.trim(), allDay, dateFrom.trim(), dateTo.trim(), timeFrom.trim(), timeTo.trim())
+                } else {
+                    showError = true
+                }
+            }) { Text("Save") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
