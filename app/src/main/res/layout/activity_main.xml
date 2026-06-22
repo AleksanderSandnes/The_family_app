@@ -17,10 +17,9 @@
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
+            style="@style/Widget.TheFamilyApp.Toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/textColorPrimary"
-            android:background="@color/colorPrimary"
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
             app:layout_collapseMode="pin"
             app:layout_constraintEnd_toEndOf="parent"
@@ -42,6 +41,7 @@
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavigation"
+            style="@style/Widget.TheFamilyApp.BottomNavigation"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -49,13 +49,14 @@
             app:layout_constraintStart_toStartOf="parent"
             app:menu="@menu/bottom_navigation"
             app:labelVisibilityMode="labeled"
-            app:itemBackground="@color/backgroundListItem"
+            app:itemBackground="@color/surface"
             app:itemTextColor="@drawable/selector"
             app:itemIconTint="@drawable/selector"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navDrawer"
+        style="@style/Widget.TheFamilyApp.NavigationView"
         android:background="@color/backgroundColor"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"

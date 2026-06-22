@@ -2,45 +2,45 @@
 
 <resources>
     <!-- For Normal/Light Mode -->
-    <color name="colorPrimary">#11999e</color>
-    <color name="colorPrimaryDark">#118D91</color>
-    <color name="colorAccent">#03A9F4</color>
-    <color name="textColorPrimary">#000000</color>
-    <color name="backgroundColor">#FCFCFC</color>
-    <color name="textColor">#000000</color>
+    <color name="colorPrimary">#1C3FAA</color>
+    <color name="colorPrimaryDark">#132A73</color>
+    <color name="colorAccent">#6C8CFF</color>
+    <color name="textColorPrimary">#0F172A</color>
+    <color name="backgroundColor">#F5F7FB</color>
+    <color name="textColor">#0F172A</color>
     <color name="calenderBackgroundColor">#FFFFFF</color>
-    <color name="backgroundListItem">#FCFCFC</color>
-    <color name="headlineCardView">#000000</color>
+    <color name="backgroundListItem">#FFFFFF</color>
+    <color name="headlineCardView">#0F172A</color>
 
-    <color name="Grey">#888888</color>
+    <color name="Grey">#64748B</color>
     <color name="ic_launcher_background">#FFFFFF</color>
-    <color name="tint">#888888</color>
-    <color name="background">#FCFCFC</color>
-    <color name="surface">#FCFCFC</color>
-    <color name="primary">#03A9F4</color>
-    <color name="button">#11999e</color>
-    <color name="secondary">#03A9F4</color>
-    <color name="onBackground">#000000</color>
-    <color name="onSurface">#FFFFFF</color>
-    <color name="onPrimary">#121212</color>
+    <color name="tint">#64748B</color>
+    <color name="background">#F5F7FB</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="primary">#1C3FAA</color>
+    <color name="button">#1C3FAA</color>
+    <color name="secondary">#6C8CFF</color>
+    <color name="onBackground">#0F172A</color>
+    <color name="onSurface">#0F172A</color>
+    <color name="onPrimary">#FFFFFF</color>
     <color name="black">#000000</color>
 
     <!-- Datepicker -->
-    <color name="headerBackground">#11999e</color>
-    <color name="calenderBackground">#FCFCFC</color>
-    <color name="selectedDay">#03A9F4</color>
-    <color name="daysOfTheMonth">#000000</color>
-    <color name="daysOfTheWeek">#000000</color>
-    <color name="buttonColor">#11999e</color>
+    <color name="headerBackground">#1C3FAA</color>
+    <color name="calenderBackground">#FFFFFF</color>
+    <color name="selectedDay">#6C8CFF</color>
+    <color name="daysOfTheMonth">#0F172A</color>
+    <color name="daysOfTheWeek">#0F172A</color>
+    <color name="buttonColor">#1C3FAA</color>
     <color name="backgroundTint">#FFFFFF</color>
 
     <!-- AlertDialog -->
     <color name="backgroundColorAlert">#FCFCFC</color>
     <color name="textColorAlert">#000000</color>
-    <color name="buttonColorAlert">#11999e</color>
+    <color name="buttonColorAlert">#1C3FAA</color>
 
     <!-- TimePickerDialog -->
-    <color name="TimePickerAccent">#03A9F4</color>
-    <color name="TimePickerColorControl">#11999e</color>
+    <color name="TimePickerAccent">#6C8CFF</color>
+    <color name="TimePickerColorControl">#1C3FAA</color>
     <color name="backgroundColorTimePicker">#FFFFFF</color>
 </resources>
