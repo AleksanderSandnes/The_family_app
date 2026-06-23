@@ -116,7 +116,10 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
             fusedClient.removeLocationUpdates(it)
             locationCallback = null
         }
-        viewModelScope.launch { clearOwnLocation() }
+    }
+
+    fun clearOwnLocation() {
+        viewModelScope.launch { clearOwnLocationSuspend() }
     }
 
     private suspend fun publishLocation(lat: Double, lng: Double) {
@@ -136,7 +139,7 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private suspend fun clearOwnLocation() {
+    private suspend fun clearOwnLocationSuspend() {
         val userId = currentUserId ?: return
         runCatching {
             db.from("user_locations").update({
@@ -150,5 +153,6 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
         realtimeChannel?.let {
             viewModelScope.launch { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
         }
+        // visibility cleared by screen's DisposableEffect unless service takes over
     }
 }
