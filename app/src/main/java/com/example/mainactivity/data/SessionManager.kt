@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -16,14 +15,13 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 class SessionManager(private val context: Context) {
 
-    private val userIdKey = longPreferencesKey("current_user_id")
+    private val userIdKey = stringPreferencesKey("current_user_id")
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
     private val notifyDaysBeforeKey = intPreferencesKey("notify_days_before")
-    private val supabaseTokenKey = stringPreferencesKey("supabase_token")
 
-    val currentUserId: Flow<Long?> = context.dataStore.data.map { prefs ->
-        prefs[userIdKey].takeIf { it != null && it > 0 }
+    val currentUserId: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[userIdKey]?.takeIf { it.isNotEmpty() }
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
@@ -42,10 +40,6 @@ class SessionManager(private val context: Context) {
         prefs[notifyDaysBeforeKey] ?: 1
     }
 
-    val supabaseToken: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[supabaseTokenKey]
-    }
-
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { it[themeModeKey] = mode.name }
     }
@@ -58,15 +52,7 @@ class SessionManager(private val context: Context) {
         context.dataStore.edit { it[notifyDaysBeforeKey] = days }
     }
 
-    suspend fun setSupabaseToken(token: String) {
-        context.dataStore.edit { it[supabaseTokenKey] = token }
-    }
-
-    suspend fun clearSupabaseToken() {
-        context.dataStore.edit { it.remove(supabaseTokenKey) }
-    }
-
-    suspend fun signIn(userId: Long) {
+    suspend fun signIn(userId: String) {
         context.dataStore.edit { it[userIdKey] = userId }
     }
 

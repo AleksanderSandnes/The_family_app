@@ -4,43 +4,97 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
-import com.example.mainactivity.data.ShoppingItemEntity
-import com.example.mainactivity.data.ShoppingListEntity
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
+import com.example.mainactivity.data.ShoppingItemModel
+import com.example.mainactivity.data.ShoppingListModel
+import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
-    private val dao = repo.shoppingDao
+    private val db get() = SupabaseManager.client.postgrest
 
-    val lists: Flow<List<ShoppingListEntity>> = repo.currentUserId.flatMapLatest { id ->
-        if (id == null) flowOf(emptyList()) else dao.listsForUser(id)
+    private val _lists = MutableStateFlow<List<ShoppingListModel>>(emptyList())
+    val lists: StateFlow<List<ShoppingListModel>> = _lists.asStateFlow()
+
+    private val _selectedList = MutableStateFlow<ShoppingListModel?>(null)
+    val selectedList: StateFlow<ShoppingListModel?> = _selectedList.asStateFlow()
+
+    private val _items = MutableStateFlow<List<ShoppingItemModel>>(emptyList())
+    val items: StateFlow<List<ShoppingItemModel>> = _items.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repo.currentUserId.collect { userId ->
+                if (userId != null) loadLists(userId) else _lists.value = emptyList()
+            }
+        }
+    }
+
+    private suspend fun loadLists(userId: String) {
+        runCatching {
+            _lists.value = db.from("shopping_lists")
+                .select { filter { eq("owner_user_id", userId) } }
+                .decodeList<ShoppingListModel>()
+        }
+    }
+
+    fun loadListDetail(listId: String) = viewModelScope.launch {
+        runCatching {
+            _selectedList.value = db.from("shopping_lists")
+                .select { filter { eq("id", listId) } }
+                .decodeList<ShoppingListModel>()
+                .firstOrNull()
+            _items.value = db.from("shopping_items")
+                .select { filter { eq("list_id", listId) } }
+                .decodeList<ShoppingItemModel>()
+        }
     }
 
     fun addList(title: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
-        dao.insertList(ShoppingListEntity(title = title, ownerUserId = userId))
+        runCatching {
+            db.from("shopping_lists").insert(buildJsonObject {
+                put("title", title)
+                put("owner_user_id", userId)
+            })
+        }
+        loadLists(userId)
     }
 
-    fun deleteList(list: ShoppingListEntity) = viewModelScope.launch { dao.deleteList(list) }
-
-    fun list(id: Long) = dao.observeList(id)
-    fun items(listId: Long) = dao.itemsForList(listId)
-
-    fun addItem(listId: Long, item: String) = viewModelScope.launch {
-        dao.insertItem(ShoppingItemEntity(listId = listId, item = item))
+    fun deleteList(list: ShoppingListModel) = viewModelScope.launch {
+        runCatching { db.from("shopping_lists").delete { filter { eq("id", list.id) } } }
+        val userId = repo.currentUserId.first() ?: return@launch
+        loadLists(userId)
     }
 
-    fun toggle(item: ShoppingItemEntity) = viewModelScope.launch {
-        dao.updateItem(item.copy(checked = !item.checked))
+    fun addItem(listId: String, item: String) = viewModelScope.launch {
+        runCatching {
+            db.from("shopping_items").insert(buildJsonObject {
+                put("list_id", listId)
+                put("item", item)
+            })
+        }
+        loadListDetail(listId).join()
     }
 
-    fun deleteItem(item: ShoppingItemEntity) = viewModelScope.launch { dao.deleteItem(item) }
+    fun toggle(item: ShoppingItemModel) = viewModelScope.launch {
+        runCatching {
+            db.from("shopping_items").update({
+                set("checked", !item.checked)
+            }) { filter { eq("id", item.id) } }
+        }
+        loadListDetail(item.listId).join()
+    }
+
+    fun deleteItem(item: ShoppingItemModel) = viewModelScope.launch {
+        runCatching { db.from("shopping_items").delete { filter { eq("id", item.id) } } }
+        loadListDetail(item.listId).join()
+    }
 }

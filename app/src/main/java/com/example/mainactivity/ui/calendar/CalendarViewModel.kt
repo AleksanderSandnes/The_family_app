@@ -3,27 +3,26 @@ package com.example.mainactivity.ui.calendar
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mainactivity.data.CalendarEventEntity
+import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.data.FamilyRepository
+import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.postgrest.postgrest
 import java.time.LocalDate
 import java.time.YearMonth
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
-    private val dao = repo.calendarDao
+    private val db get() = SupabaseManager.client.postgrest
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
@@ -31,29 +30,41 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     private val _displayedMonth = MutableStateFlow(YearMonth.now())
     val displayedMonth: StateFlow<YearMonth> = _displayedMonth.asStateFlow()
 
-    val events: Flow<List<CalendarEventEntity>> = repo.currentUser.flatMapLatest { user ->
-        if (user == null) flowOf(emptyList())
-        else {
-            val fid = user.familyId
-            if (fid == null) dao.eventsForUsers(listOf(user.id))
-            else repo.userDao.membersOfFamily(fid).flatMapLatest { members ->
-                val ids = (members.map { it.id } + user.id).distinct()
-                dao.eventsForUsers(ids)
-            }
-        }
-    }
+    private val _events = MutableStateFlow<List<CalendarEventModel>>(emptyList())
+    val events: StateFlow<List<CalendarEventModel>> = _events.asStateFlow()
 
-    val eventsForSelectedDate: StateFlow<List<CalendarEventEntity>> = combine(
-        _selectedDate,
-        events
+    val eventsForSelectedDate: StateFlow<List<CalendarEventModel>> = combine(
+        _selectedDate, _events
     ) { date, all ->
         all.filter { event ->
-            val from = runCatching { LocalDate.parse(event.dateFrom) }.getOrNull()
-                ?: return@filter false
+            val from = runCatching { LocalDate.parse(event.dateFrom) }.getOrNull() ?: return@filter false
             val to = runCatching { LocalDate.parse(event.dateTo) }.getOrElse { from }
             !date.isBefore(from) && !date.isAfter(to)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    init {
+        viewModelScope.launch {
+            repo.currentUserId.collect { userId ->
+                if (userId != null) loadEvents(userId) else _events.value = emptyList()
+            }
+        }
+    }
+
+    private suspend fun loadEvents(userId: String) {
+        runCatching {
+            val user = repo.getUser(userId) ?: return
+            _events.value = if (user.familyId != null) {
+                db.from("calendar_events").select {
+                    filter { or { eq("user_id", userId); eq("family_id", user.familyId) } }
+                }.decodeList<CalendarEventModel>()
+            } else {
+                db.from("calendar_events").select {
+                    filter { eq("user_id", userId) }
+                }.decodeList<CalendarEventModel>()
+            }
+        }
+    }
 
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
@@ -73,22 +84,43 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
         icon: String = "schedule"
     ) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
+        val user = repo.getUser(userId) ?: return@launch
         val resolvedDateTo = if (dateTo.isBlank()) dateFrom else dateTo
-        dao.insert(
-            CalendarEventEntity(
-                activity = activity,
-                allDay = allDay,
-                dateFrom = dateFrom,
-                dateTo = resolvedDateTo,
-                timeFrom = if (allDay) "" else timeFrom,
-                timeTo = if (allDay) "" else timeTo,
-                userId = userId,
-                icon = icon
-            )
-        )
+        runCatching {
+            db.from("calendar_events").insert(buildJsonObject {
+                put("user_id", userId)
+                if (user.familyId != null) put("family_id", user.familyId)
+                put("activity", activity)
+                put("all_day", allDay)
+                put("date_from", dateFrom)
+                put("date_to", resolvedDateTo)
+                put("time_from", if (allDay) "" else timeFrom)
+                put("time_to", if (allDay) "" else timeTo)
+                put("icon", icon)
+            })
+        }
+        loadEvents(userId)
     }
 
-    fun updateEvent(event: CalendarEventEntity) = viewModelScope.launch { dao.update(event) }
+    fun updateEvent(event: CalendarEventModel) = viewModelScope.launch {
+        runCatching {
+            db.from("calendar_events").update({
+                set("activity", event.activity)
+                set("all_day", event.allDay)
+                set("date_from", event.dateFrom)
+                set("date_to", event.dateTo)
+                set("time_from", event.timeFrom)
+                set("time_to", event.timeTo)
+                set("icon", event.icon)
+            }) { filter { eq("id", event.id) } }
+        }
+        val userId = repo.currentUserId.first() ?: return@launch
+        loadEvents(userId)
+    }
 
-    fun delete(event: CalendarEventEntity) = viewModelScope.launch { dao.delete(event) }
+    fun delete(event: CalendarEventModel) = viewModelScope.launch {
+        runCatching { db.from("calendar_events").delete { filter { eq("id", event.id) } } }
+        val userId = repo.currentUserId.first() ?: return@launch
+        loadEvents(userId)
+    }
 }

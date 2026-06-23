@@ -36,7 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mainactivity.data.MealPlanDayEntity
+import com.example.mainactivity.data.MealPlanDayModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
@@ -44,7 +44,7 @@ import com.example.mainactivity.ui.components.InputDialog
 @Composable
 fun MealScreen(
     onBack: () -> Unit,
-    onOpen: (Long) -> Unit,
+    onOpen: (String) -> Unit,
     viewModel: MealViewModel = viewModel()
 ) {
     val plans by viewModel.plans.collectAsStateWithLifecycle(emptyList())
@@ -101,13 +101,14 @@ fun MealScreen(
 
 @Composable
 fun MealDetailScreen(
-    planId: Long,
+    planId: String,
     onBack: () -> Unit,
     viewModel: MealViewModel = viewModel()
 ) {
-    val plan by viewModel.plan(planId).collectAsStateWithLifecycle(null)
-    val days by viewModel.days(planId).collectAsStateWithLifecycle(emptyList())
-    var editing by remember { mutableStateOf<MealPlanDayEntity?>(null) }
+    androidx.compose.runtime.LaunchedEffect(planId) { viewModel.loadPlanDetail(planId) }
+    val plan by viewModel.selectedPlan.collectAsStateWithLifecycle()
+    val days by viewModel.days.collectAsStateWithLifecycle()
+    var editing by remember { mutableStateOf<MealPlanDayModel?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

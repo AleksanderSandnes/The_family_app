@@ -21,8 +21,8 @@ object Routes {
     const val PROFILE_EDIT = "profile/edit"
     const val SETTINGS = "settings"
 
-    fun shoppingDetail(id: Long) = "shopping/$id"
-    fun mealDetail(id: Long) = "meal/$id"
-    fun wishlistDetail(id: Long) = "wishlist/$id"
-    fun chatDetail(id: Long) = "chat/$id"
+    fun shoppingDetail(id: String) = "shopping/$id"
+    fun mealDetail(id: String) = "meal/$id"
+    fun wishlistDetail(id: String) = "wishlist/$id"
+    fun chatDetail(id: String) = "chat/$id"
 }

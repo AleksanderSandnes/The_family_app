@@ -40,7 +40,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mainactivity.data.ShoppingItemEntity
+import com.example.mainactivity.data.ShoppingItemModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
@@ -49,7 +49,7 @@ import com.example.mainactivity.ui.components.PillTag
 @Composable
 fun ShoppingScreen(
     onBack: () -> Unit,
-    onOpenList: (Long) -> Unit,
+    onOpenList: (String) -> Unit,
     viewModel: ShoppingViewModel = viewModel()
 ) {
     val lists by viewModel.lists.collectAsStateWithLifecycle(emptyList())
@@ -118,12 +118,13 @@ fun ShoppingScreen(
 
 @Composable
 fun ShoppingDetailScreen(
-    listId: Long,
+    listId: String,
     onBack: () -> Unit,
     viewModel: ShoppingViewModel = viewModel()
 ) {
-    val list by viewModel.list(listId).collectAsStateWithLifecycle(null)
-    val items by viewModel.items(listId).collectAsStateWithLifecycle(emptyList())
+    androidx.compose.runtime.LaunchedEffect(listId) { viewModel.loadListDetail(listId) }
+    val list by viewModel.selectedList.collectAsStateWithLifecycle()
+    val items by viewModel.items.collectAsStateWithLifecycle()
     var showAdd by remember { mutableStateOf(false) }
     val remaining = items.count { !it.checked }
 
@@ -176,7 +177,7 @@ fun ShoppingDetailScreen(
 }
 
 @Composable
-private fun ShoppingItemRow(item: ShoppingItemEntity, viewModel: ShoppingViewModel) {
+private fun ShoppingItemRow(item: ShoppingItemModel, viewModel: ShoppingViewModel) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,

@@ -6,95 +6,193 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mainactivity.data.ConversationEntity
+import com.example.mainactivity.data.ConversationModel
 import com.example.mainactivity.data.FamilyRepository
-import com.example.mainactivity.data.MessageEntity
+import com.example.mainactivity.data.MessageModel
+import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.decodeRecord
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.io.File
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
-    private val dao = repo.chatDao
+    private val db get() = SupabaseManager.client.postgrest
 
-    val conversations: Flow<List<ConversationEntity>> = repo.currentUserId.flatMapLatest { id ->
-        if (id == null) flowOf(emptyList()) else dao.conversationsForUser(id)
-    }
+    private val _conversations = MutableStateFlow<List<ConversationModel>>(emptyList())
+    val conversations: StateFlow<List<ConversationModel>> = _conversations.asStateFlow()
 
-    val currentUserId: Flow<Long?> = repo.currentUserId
+    val currentUserId: Flow<String?> = repo.currentUserId
 
-    private var pendingCameraConversationId: Long = -1L
+    private val _conversation = MutableStateFlow<ConversationModel?>(null)
+    val conversation: StateFlow<ConversationModel?> = _conversation.asStateFlow()
+
+    private val _messages = MutableStateFlow<List<MessageModel>>(emptyList())
+    val messages: StateFlow<List<MessageModel>> = _messages.asStateFlow()
+
+    private var realtimeChannel: RealtimeChannel? = null
+    private var pendingCameraConversationId: String = ""
     private var pendingCameraFile: File? = null
 
-    fun conversation(id: Long) = dao.observeConversation(id)
-    fun messages(conversationId: Long) = dao.messagesForConversation(conversationId)
-
-    fun createConversation(name: String) = viewModelScope.launch {
-        val userId = repo.currentUserId.first() ?: return@launch
-        dao.insertConversation(ConversationEntity(userFrom = userId, userTo = 0, name = name))
-    }
-
-    fun send(conversationId: Long, text: String) = viewModelScope.launch {
-        val userId = repo.currentUserId.first() ?: return@launch
-        dao.insertMessage(MessageEntity(conversationId = conversationId, userFrom = userId, text = text))
-    }
-
-    fun renameConversation(id: Long, name: String) = viewModelScope.launch {
-        val conv = dao.observeConversation(id).first() ?: return@launch
-        dao.updateConversation(conv.copy(name = name.trim()))
-    }
-
-    fun prepareCameraCapture(context: Context, conversationId: Long): Uri? {
-        return try {
-            val captureDir = File(context.cacheDir, "camera_captures").also { it.mkdirs() }
-            val file = File(captureDir, "group_pending_$conversationId.jpg")
-            pendingCameraFile = file
-            pendingCameraConversationId = conversationId
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        } catch (e: Exception) {
-            null
+    init {
+        viewModelScope.launch {
+            repo.currentUserId.collect { userId ->
+                if (userId != null) loadConversations(userId) else _conversations.value = emptyList()
+            }
         }
     }
 
-    fun onCameraResult(context: Context, success: Boolean) = viewModelScope.launch {
-        if (!success) { pendingCameraFile = null; pendingCameraConversationId = -1L; return@launch }
-        val file = pendingCameraFile ?: return@launch
-        val convId = pendingCameraConversationId.takeIf { it != -1L } ?: return@launch
-        pendingCameraFile = null
-        pendingCameraConversationId = -1L
-        persistImage(context, convId) { file.inputStream() }
+    private suspend fun loadConversations(userId: String) {
+        runCatching {
+            _conversations.value = db.from("conversations")
+                .select { filter { eq("user_from", userId) } }
+                .decodeList<ConversationModel>()
+        }
     }
 
-    fun saveImageFromUri(context: Context, uri: Uri, conversationId: Long) = viewModelScope.launch {
-        persistImage(context, conversationId) { context.contentResolver.openInputStream(uri) }
+    fun loadConversation(conversationId: String) = viewModelScope.launch {
+        runCatching {
+            _conversation.value = db.from("conversations")
+                .select { filter { eq("id", conversationId) } }
+                .decodeList<ConversationModel>()
+                .firstOrNull()
+            _messages.value = db.from("messages")
+                .select { filter { eq("conversation_id", conversationId) } }
+                .decodeList<MessageModel>()
+            subscribeToMessages(conversationId)
+        }
     }
 
-    fun removeImage(conversationId: Long) = viewModelScope.launch {
-        val conv = dao.observeConversation(conversationId).first() ?: return@launch
-        conv.imageUri?.let { File(it).takeIf { f -> f.exists() }?.delete() }
-        dao.updateConversation(conv.copy(imageUri = null))
-    }
-
-    private fun persistImage(context: Context, conversationId: Long, openStream: () -> java.io.InputStream?) =
+    private suspend fun subscribeToMessages(conversationId: String) {
+        realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        val channel = SupabaseManager.client.channel("messages-$conversationId")
+        realtimeChannel = channel
+        val insertFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+            table = "messages"
+            filter("conversation_id", FilterOperator.EQ, conversationId)
+        }
+        channel.subscribe()
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val conv = dao.observeConversation(conversationId).first() ?: return@withContext
-                val dir = File(context.filesDir, "group_images").also { it.mkdirs() }
-                val dest = File(dir, "group_${conversationId}_${System.currentTimeMillis()}.jpg")
-                openStream()?.use { src -> dest.outputStream().use { src.copyTo(it) } }
-                    ?: return@withContext
-                dao.updateConversation(conv.copy(imageUri = dest.absolutePath))
-                conv.imageUri?.let { oldPath ->
-                    val old = File(oldPath)
-                    if (old.exists() && old.absolutePath != dest.absolutePath) old.delete()
+            val myId = repo.currentUserId.first()
+            insertFlow.collect { change ->
+                val msg = change.decodeRecord<MessageModel>()
+                if (msg.userFrom != myId) {
+                    _messages.update { it + msg }
                 }
             }
         }
+    }
+
+    fun createConversation(name: String) = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        val user = repo.getUser(userId) ?: return@launch
+        runCatching {
+            db.from("conversations").insert(buildJsonObject {
+                put("user_from", userId)
+                put("name", name.trim())
+                if (user.familyId != null) put("family_id", user.familyId)
+            })
+        }
+        loadConversations(userId)
+    }
+
+    fun send(conversationId: String, text: String) = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        runCatching {
+            db.from("messages").insert(buildJsonObject {
+                put("conversation_id", conversationId)
+                put("user_from", userId)
+                put("text", text)
+            })
+            _messages.value = db.from("messages")
+                .select { filter { eq("conversation_id", conversationId) } }
+                .decodeList<MessageModel>()
+        }
+    }
+
+    fun renameConversation(id: String, name: String) = viewModelScope.launch {
+        runCatching {
+            db.from("conversations").update({
+                set("name", name.trim())
+            }) { filter { eq("id", id) } }
+        }
+        _conversation.update { it?.copy(name = name.trim()) }
+        val userId = repo.currentUserId.first() ?: return@launch
+        loadConversations(userId)
+    }
+
+    fun prepareCameraCapture(context: Context, conversationId: String): Uri? = try {
+        val captureDir = File(context.cacheDir, "camera_captures").also { it.mkdirs() }
+        val file = File(captureDir, "group_pending.jpg")
+        pendingCameraFile = file
+        pendingCameraConversationId = conversationId
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    } catch (e: Exception) { null }
+
+    fun onCameraResult(context: Context, success: Boolean) = viewModelScope.launch {
+        if (!success) { pendingCameraFile = null; pendingCameraConversationId = ""; return@launch }
+        val file = pendingCameraFile ?: return@launch
+        val convId = pendingCameraConversationId.ifEmpty { return@launch }
+        pendingCameraFile = null
+        pendingCameraConversationId = ""
+        val bytes = withContext(Dispatchers.IO) { file.readBytes().also { file.delete() } }
+        uploadGroupImage(convId, bytes)
+    }
+
+    fun saveImageFromUri(context: Context, uri: Uri, conversationId: String) = viewModelScope.launch {
+        val bytes = withContext(Dispatchers.IO) {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        } ?: return@launch
+        uploadGroupImage(conversationId, bytes)
+    }
+
+    fun removeImage(conversationId: String) = viewModelScope.launch {
+        runCatching {
+            SupabaseManager.client.storage.from("group-images").delete("$conversationId/image.jpg")
+            db.from("conversations").update({
+                set("image_uri", null as String?)
+            }) { filter { eq("id", conversationId) } }
+        }
+        _conversation.update { it?.copy(imageUri = null) }
+        val userId = repo.currentUserId.first() ?: return@launch
+        loadConversations(userId)
+    }
+
+    private fun uploadGroupImage(conversationId: String, bytes: ByteArray) = viewModelScope.launch {
+        runCatching {
+            val bucket = SupabaseManager.client.storage.from("group-images")
+            bucket.upload("$conversationId/image.jpg", bytes) { upsert = true }
+            val url = bucket.publicUrl("$conversationId/image.jpg")
+            db.from("conversations").update({
+                set("image_uri", url)
+            }) { filter { eq("id", conversationId) } }
+            _conversation.update { it?.copy(imageUri = url) }
+            val userId = repo.currentUserId.first() ?: return@runCatching
+            loadConversations(userId)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        }
+    }
 }

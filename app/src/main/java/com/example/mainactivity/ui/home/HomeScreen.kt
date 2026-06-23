@@ -101,7 +101,7 @@ fun HomeScreen(
                     memberCount = state.memberCount,
                     avatarColor = Color(if (state.user?.avatarColor != 0) state.user?.avatarColor ?: 0xFF6366F1.toInt() else 0xFF6366F1.toInt()),
                     userName = state.user?.name ?: "",
-                    avatarUri = state.user?.avatarUri,
+                    avatarUri = state.user?.avatarUrl,
                     dark = dark,
                     onClick = onOpenFamily
                 )

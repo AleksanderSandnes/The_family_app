@@ -103,8 +103,6 @@ private fun MainFlow() {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        // Only consume bottom + horizontal insets here; inner screens' TopAppBars handle the
-        // status-bar inset themselves, so the outer scaffold must not also pad for it.
         contentWindowInsets = WindowInsets.systemBars.only(
             WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
         ),
@@ -166,9 +164,9 @@ private fun MainFlow() {
             }
             composable(
                 Routes.SHOPPING_DETAIL,
-                arguments = listOf(navArgument("listId") { type = NavType.LongType })
+                arguments = listOf(navArgument("listId") { type = NavType.StringType })
             ) { entry ->
-                ShoppingDetailScreen(entry.arguments!!.getLong("listId"), onBack = { navController.popBackStack() })
+                ShoppingDetailScreen(entry.arguments!!.getString("listId")!!, onBack = { navController.popBackStack() })
             }
 
             composable(Routes.MEAL) {
@@ -176,9 +174,9 @@ private fun MainFlow() {
             }
             composable(
                 Routes.MEAL_DETAIL,
-                arguments = listOf(navArgument("planId") { type = NavType.LongType })
+                arguments = listOf(navArgument("planId") { type = NavType.StringType })
             ) { entry ->
-                MealDetailScreen(entry.arguments!!.getLong("planId"), onBack = { navController.popBackStack() })
+                MealDetailScreen(entry.arguments!!.getString("planId")!!, onBack = { navController.popBackStack() })
             }
 
             composable(Routes.BIRTHDAY) { BirthdayScreen(onBack = { navController.popBackStack() }) }
@@ -188,16 +186,16 @@ private fun MainFlow() {
             }
             composable(
                 Routes.WISHLIST_DETAIL,
-                arguments = listOf(navArgument("wishlistId") { type = NavType.LongType })
+                arguments = listOf(navArgument("wishlistId") { type = NavType.StringType })
             ) { entry ->
-                WishlistDetailScreen(entry.arguments!!.getLong("wishlistId"), onBack = { navController.popBackStack() })
+                WishlistDetailScreen(entry.arguments!!.getString("wishlistId")!!, onBack = { navController.popBackStack() })
             }
 
             composable(
                 Routes.CHAT_DETAIL,
-                arguments = listOf(navArgument("conversationId") { type = NavType.LongType })
+                arguments = listOf(navArgument("conversationId") { type = NavType.StringType })
             ) { entry ->
-                ConversationScreen(entry.arguments!!.getLong("conversationId"), onBack = { navController.popBackStack() })
+                ConversationScreen(entry.arguments!!.getString("conversationId")!!, onBack = { navController.popBackStack() })
             }
 
             composable(Routes.PROFILE_EDIT) { ProfileEditScreen(onBack = { navController.popBackStack() }) }

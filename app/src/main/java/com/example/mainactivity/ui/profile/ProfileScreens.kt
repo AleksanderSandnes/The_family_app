@@ -102,11 +102,11 @@ fun ProfileScreen(
                     Box(
                         Modifier.size(72.dp).clickable { showAvatarPicker = true }
                     ) {
-                        val avatarUri = user?.avatarUri
+                        val avatarUri = user?.avatarUrl
                         var imgFailed by remember(avatarUri) { mutableStateOf(false) }
                         if (avatarUri != null && !imgFailed) {
                             AsyncImage(
-                                model = File(avatarUri),
+                                model = avatarUri,
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize().clip(CircleShape),
@@ -165,7 +165,7 @@ fun ProfileScreen(
 
     if (showAvatarPicker) {
         AvatarPickerDialog(
-            hasAvatar = user?.avatarUri != null,
+            hasAvatar = user?.avatarUrl != null,
             onDismiss = { showAvatarPicker = false },
             onCamera = {
                 showAvatarPicker = false

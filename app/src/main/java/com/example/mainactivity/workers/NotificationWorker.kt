@@ -13,9 +13,12 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.example.mainactivity.MainActivity
-import com.example.mainactivity.data.BirthdayEntity
-import com.example.mainactivity.data.CalendarEventEntity
+import com.example.mainactivity.data.BirthdayModel
+import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.data.FamilyRepository
+import com.example.mainactivity.data.UserModel
+import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.first
 import java.time.Duration
 import java.time.LocalDate
@@ -42,24 +45,47 @@ class NotificationWorker(
         val userId = repo.currentUserId.first() ?: return Result.success()
         val daysBefore = repo.notifyDaysBefore.first()
         val today = LocalDate.now()
+        val db = SupabaseManager.client.postgrest
 
         createChannels()
 
-        val user = repo.userDao.findById(userId) ?: return Result.success()
-        val memberIds: List<Long> = if (user.familyId != null) {
-            repo.userDao.membersOfFamily(user.familyId).first().map { it.id }
-        } else {
-            listOf(userId)
-        }
+        val user = runCatching {
+            db.from("users").select { filter { eq("id", userId) } }
+                .decodeList<UserModel>().firstOrNull()
+        }.getOrNull() ?: return Result.success()
 
-        repo.birthdayDao.birthdaysFor(user.familyId, userId).first().forEach { b ->
+        val birthdays = runCatching {
+            if (user.familyId != null) {
+                db.from("birthdays").select {
+                    filter { or { eq("made_by_user_id", userId); eq("family_id", user.familyId) } }
+                }.decodeList<BirthdayModel>()
+            } else {
+                db.from("birthdays").select {
+                    filter { eq("made_by_user_id", userId) }
+                }.decodeList<BirthdayModel>()
+            }
+        }.getOrDefault(emptyList())
+
+        birthdays.forEach { b ->
             val daysUntil = daysUntilRecurring(b.date, today) ?: return@forEach
             if (daysUntil == 0 || (daysBefore > 0 && daysUntil == daysBefore)) {
                 postBirthdayNotification(b, daysUntil)
             }
         }
 
-        repo.calendarDao.eventsForUsers(memberIds).first().forEach { e ->
+        val events = runCatching {
+            if (user.familyId != null) {
+                db.from("calendar_events").select {
+                    filter { or { eq("user_id", userId); eq("family_id", user.familyId) } }
+                }.decodeList<CalendarEventModel>()
+            } else {
+                db.from("calendar_events").select {
+                    filter { eq("user_id", userId) }
+                }.decodeList<CalendarEventModel>()
+            }
+        }.getOrDefault(emptyList())
+
+        events.forEach { e ->
             val daysUntil = daysUntilOneTime(e.dateFrom, today) ?: return@forEach
             if (daysUntil == 0 || (daysBefore > 0 && daysUntil == daysBefore)) {
                 postEventNotification(e, daysUntil)
@@ -89,12 +115,12 @@ class NotificationWorker(
         return PendingIntent.getActivity(applicationContext, 0, intent, PendingIntent.FLAG_IMMUTABLE)
     }
 
-    private fun postBirthdayNotification(b: BirthdayEntity, daysUntil: Int) {
+    private fun postBirthdayNotification(b: BirthdayModel, daysUntil: Int) {
         val title = if (daysUntil == 0) "${b.name}'s birthday is today!"
         else "${b.name}'s birthday is in $daysUntil day${if (daysUntil == 1) "" else "s"}"
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(
-            (b.id.toInt() * 2),
+            b.id.hashCode() * 2,
             NotificationCompat.Builder(applicationContext, CHANNEL_BIRTHDAYS)
                 .setSmallIcon(android.R.drawable.ic_popup_reminder)
                 .setContentTitle(title)
@@ -104,12 +130,12 @@ class NotificationWorker(
         )
     }
 
-    private fun postEventNotification(e: CalendarEventEntity, daysUntil: Int) {
+    private fun postEventNotification(e: CalendarEventModel, daysUntil: Int) {
         val title = if (daysUntil == 0) "${e.activity} is today!"
         else "${e.activity} is in $daysUntil day${if (daysUntil == 1) "" else "s"}"
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(
-            (e.id.toInt() * 2 + 1),
+            e.id.hashCode() * 2 + 1,
             NotificationCompat.Builder(applicationContext, CHANNEL_CALENDAR)
                 .setSmallIcon(android.R.drawable.ic_menu_today)
                 .setContentTitle(title)

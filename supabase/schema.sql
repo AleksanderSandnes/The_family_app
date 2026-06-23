@@ -99,6 +99,7 @@ create table if not exists public.calendar_events (
     time_to     text not null default '',
     activity    text not null,
     all_day     boolean not null default false,
+    icon        text not null default 'schedule',
     created_at  timestamptz not null default now(),
     updated_at  timestamptz not null default now(),
     deleted_at  timestamptz
@@ -148,9 +149,10 @@ create table if not exists public.wishes (
 create table if not exists public.conversations (
     id          uuid primary key default gen_random_uuid(),
     user_from   uuid not null references public.users(id) on delete cascade,
-    user_to     uuid not null references public.users(id) on delete cascade,
+    user_to     uuid references public.users(id) on delete cascade,   -- nullable for group chats
     name        text not null default '',
     family_id   uuid references public.families(id) on delete cascade,
+    image_uri   text,
     created_at  timestamptz not null default now(),
     updated_at  timestamptz not null default now(),
     deleted_at  timestamptz
@@ -178,13 +180,19 @@ create index if not exists idx_meal_plans_family         on public.meal_plans(fa
 create index if not exists idx_calendar_events_user      on public.calendar_events(user_id);
 create index if not exists idx_birthdays_family          on public.birthdays(family_id);
 create index if not exists idx_wishlists_owner           on public.wishlists(owner_user_id);
-create index if not exists idx_conversations_users       on public.conversations(user_from, user_to);
+create index if not exists idx_conversations_users       on public.conversations(user_from);
 create index if not exists idx_messages_conversation     on public.messages(conversation_id);
 
 -- ────────────────────────────────────────────────────────────
+-- Realtime
+-- ────────────────────────────────────────────────────────────
+alter publication supabase_realtime add table public.messages;
+alter publication supabase_realtime add table public.conversations;
+alter table public.messages replica identity full;
+alter table public.conversations replica identity full;
+
+-- ────────────────────────────────────────────────────────────
 -- Row Level Security (RLS)
--- Users can only read/write data belonging to their own family.
--- Enable RLS on every table and add policies as your security model grows.
 -- ────────────────────────────────────────────────────────────
 alter table public.users            enable row level security;
 alter table public.families         enable row level security;
@@ -199,12 +207,103 @@ alter table public.wishes           enable row level security;
 alter table public.conversations    enable row level security;
 alter table public.messages         enable row level security;
 
--- Basic policy: users can only see their own row until family scoping is added
-create policy "users_self" on public.users
-    for all using (auth_id = auth.uid());
+-- Users: own row + family members
+create policy "users_access" on public.users
+    for all using (
+        auth_id = auth.uid()
+        or (
+            family_id is not null
+            and family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+        )
+    ) with check (auth_id = auth.uid());
 
--- Extend with family-scoped policies as you add Realtime sync:
--- create policy "family_members_read" on public.calendar_events
---     for select using (
---         family_id in (select family_id from public.users where auth_id = auth.uid())
---     );
+-- Families: member or admin can read; authenticated user can create; admin can update
+create policy "families_select" on public.families
+    for select using (
+        id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+        or admin_id = (select id from public.users where auth_id = auth.uid() limit 1)
+    );
+create policy "families_insert" on public.families
+    for insert with check (auth.uid() is not null);
+create policy "families_update" on public.families
+    for update using (
+        admin_id = (select id from public.users where auth_id = auth.uid() limit 1)
+    );
+
+-- Shopping lists: owner or family
+create policy "shopping_lists_access" on public.shopping_lists
+    for all using (
+        owner_user_id = (select id from public.users where auth_id = auth.uid() limit 1)
+        or family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+    );
+
+-- Shopping items: via list ownership
+create policy "shopping_items_access" on public.shopping_items
+    for all using (
+        list_id in (
+            select id from public.shopping_lists where
+            owner_user_id = (select id from public.users where auth_id = auth.uid() limit 1)
+            or family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+        )
+    );
+
+-- Meal plans: family only
+create policy "meal_plans_access" on public.meal_plans
+    for all using (
+        family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+    );
+
+-- Meal plan days: via plan
+create policy "meal_plan_days_access" on public.meal_plan_days
+    for all using (
+        meal_plan_id in (
+            select id from public.meal_plans where
+            family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+        )
+    );
+
+-- Calendar events: own or family
+create policy "calendar_events_access" on public.calendar_events
+    for all using (
+        user_id = (select id from public.users where auth_id = auth.uid() limit 1)
+        or family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+    );
+
+-- Birthdays: own or family
+create policy "birthdays_access" on public.birthdays
+    for all using (
+        made_by_user_id = (select id from public.users where auth_id = auth.uid() limit 1)
+        or family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+    );
+
+-- Wishlists: owner only (private wish lists)
+create policy "wishlists_access" on public.wishlists
+    for all using (
+        owner_user_id = (select id from public.users where auth_id = auth.uid() limit 1)
+    );
+
+-- Wishes: via wishlist
+create policy "wishes_access" on public.wishes
+    for all using (
+        wishlist_id in (
+            select id from public.wishlists where
+            owner_user_id = (select id from public.users where auth_id = auth.uid() limit 1)
+        )
+    );
+
+-- Conversations: creator or family
+create policy "conversations_access" on public.conversations
+    for all using (
+        user_from = (select id from public.users where auth_id = auth.uid() limit 1)
+        or family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+    );
+
+-- Messages: via conversation access
+create policy "messages_access" on public.messages
+    for all using (
+        conversation_id in (
+            select id from public.conversations where
+            user_from = (select id from public.users where auth_id = auth.uid() limit 1)
+            or family_id = (select family_id from public.users where auth_id = auth.uid() limit 1)
+        )
+    );

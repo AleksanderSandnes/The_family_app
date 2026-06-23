@@ -4,39 +4,99 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
-import com.example.mainactivity.data.WishEntity
-import com.example.mainactivity.data.WishlistEntity
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
+import com.example.mainactivity.data.WishModel
+import com.example.mainactivity.data.WishlistModel
+import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
-    private val dao = repo.wishlistDao
+    private val db get() = SupabaseManager.client.postgrest
 
-    val wishlists: Flow<List<WishlistEntity>> = repo.currentUserId.flatMapLatest { id ->
-        if (id == null) flowOf(emptyList()) else dao.wishlistsForUser(id)
+    private val _wishlists = MutableStateFlow<List<WishlistModel>>(emptyList())
+    val wishlists: StateFlow<List<WishlistModel>> = _wishlists.asStateFlow()
+
+    private val _selectedWishlist = MutableStateFlow<WishlistModel?>(null)
+    val selectedWishlist: StateFlow<WishlistModel?> = _selectedWishlist.asStateFlow()
+
+    private val _wishes = MutableStateFlow<List<WishModel>>(emptyList())
+    val wishes: StateFlow<List<WishModel>> = _wishes.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repo.currentUserId.collect { userId ->
+                if (userId != null) loadWishlists(userId) else _wishlists.value = emptyList()
+            }
+        }
+    }
+
+    private suspend fun loadWishlists(userId: String) {
+        runCatching {
+            _wishlists.value = db.from("wishlists")
+                .select { filter { eq("owner_user_id", userId) } }
+                .decodeList<WishlistModel>()
+        }
+    }
+
+    fun loadWishlistDetail(wishlistId: String) = viewModelScope.launch {
+        runCatching {
+            _selectedWishlist.value = db.from("wishlists")
+                .select { filter { eq("id", wishlistId) } }
+                .decodeList<WishlistModel>()
+                .firstOrNull()
+            _wishes.value = db.from("wishes")
+                .select { filter { eq("wishlist_id", wishlistId) } }
+                .decodeList<WishModel>()
+        }
     }
 
     fun addWishlist(name: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
-        dao.insertWishlist(WishlistEntity(ownerUserId = userId, name = name))
+        runCatching {
+            db.from("wishlists").insert(buildJsonObject {
+                put("owner_user_id", userId)
+                put("name", name)
+            })
+        }
+        loadWishlists(userId)
     }
 
-    fun deleteWishlist(wishlist: WishlistEntity) = viewModelScope.launch { dao.deleteWishlist(wishlist) }
-
-    fun wishlist(id: Long) = dao.observeWishlist(id)
-    fun wishes(wishlistId: Long) = dao.wishesForList(wishlistId)
-
-    fun addWish(wishlistId: Long, text: String) = viewModelScope.launch {
+    fun deleteWishlist(wishlist: WishlistModel) = viewModelScope.launch {
+        runCatching { db.from("wishlists").delete { filter { eq("id", wishlist.id) } } }
         val userId = repo.currentUserId.first() ?: return@launch
-        dao.insertWish(WishEntity(wishlistId = wishlistId, text = text, userId = userId))
+        loadWishlists(userId)
     }
 
-    fun toggle(wish: WishEntity) = viewModelScope.launch { dao.updateWish(wish.copy(checked = !wish.checked)) }
-    fun deleteWish(wish: WishEntity) = viewModelScope.launch { dao.deleteWish(wish) }
+    fun addWish(wishlistId: String, text: String) = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        runCatching {
+            db.from("wishes").insert(buildJsonObject {
+                put("wishlist_id", wishlistId)
+                put("user_id", userId)
+                put("text", text)
+            })
+        }
+        loadWishlistDetail(wishlistId).join()
+    }
+
+    fun toggle(wish: WishModel) = viewModelScope.launch {
+        runCatching {
+            db.from("wishes").update({
+                set("checked", !wish.checked)
+            }) { filter { eq("id", wish.id) } }
+        }
+        loadWishlistDetail(wish.wishlistId).join()
+    }
+
+    fun deleteWish(wish: WishModel) = viewModelScope.launch {
+        runCatching { db.from("wishes").delete { filter { eq("id", wish.id) } } }
+        loadWishlistDetail(wish.wishlistId).join()
+    }
 }

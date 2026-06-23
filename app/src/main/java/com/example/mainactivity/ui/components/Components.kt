@@ -54,7 +54,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.scale
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
-import java.io.File
 import com.example.mainactivity.ui.theme.BrandGradient
 
 /** Primary gradient call-to-action button with built-in loading state. */
@@ -193,7 +192,7 @@ fun InitialAvatar(
     var imageFailed by remember(avatarUri) { mutableStateOf(false) }
     if (avatarUri != null && !imageFailed) {
         AsyncImage(
-            model = File(avatarUri),
+            model = avatarUri,
             contentDescription = name,
             contentScale = ContentScale.Crop,
             modifier = modifier.size(size.dp).clip(CircleShape),

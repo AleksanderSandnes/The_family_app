@@ -45,7 +45,7 @@ import com.example.mainactivity.ui.components.InputDialog
 @Composable
 fun WishlistScreen(
     onBack: () -> Unit,
-    onOpen: (Long) -> Unit,
+    onOpen: (String) -> Unit,
     viewModel: WishlistViewModel = viewModel()
 ) {
     val wishlists by viewModel.wishlists.collectAsStateWithLifecycle(emptyList())
@@ -106,12 +106,13 @@ fun WishlistScreen(
 
 @Composable
 fun WishlistDetailScreen(
-    wishlistId: Long,
+    wishlistId: String,
     onBack: () -> Unit,
     viewModel: WishlistViewModel = viewModel()
 ) {
-    val wishlist by viewModel.wishlist(wishlistId).collectAsStateWithLifecycle(null)
-    val wishes by viewModel.wishes(wishlistId).collectAsStateWithLifecycle(emptyList())
+    androidx.compose.runtime.LaunchedEffect(wishlistId) { viewModel.loadWishlistDetail(wishlistId) }
+    val wishlist by viewModel.selectedWishlist.collectAsStateWithLifecycle()
+    val wishes by viewModel.wishes.collectAsStateWithLifecycle()
     var showAdd by remember { mutableStateOf(false) }
 
     Scaffold(

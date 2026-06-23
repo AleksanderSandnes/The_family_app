@@ -5,27 +5,13 @@ import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-class FamilyRepository(
-    private val db: AppDatabase,
-    val session: SessionManager
-) {
-    val userDao get() = db.userDao()
-    val familyDao get() = db.familyDao()
-    val shoppingDao get() = db.shoppingDao()
-    val mealPlanDao get() = db.mealPlanDao()
-    val calendarDao get() = db.calendarDao()
-    val birthdayDao get() = db.birthdayDao()
-    val wishlistDao get() = db.wishlistDao()
-    val chatDao get() = db.chatDao()
+class FamilyRepository(val session: SessionManager) {
 
-    val currentUserId: Flow<Long?> = session.currentUserId
+    val currentUserId: Flow<String?> = session.currentUserId
     val themeMode: Flow<ThemeMode> = session.themeMode
     val notificationsEnabled: Flow<Boolean> = session.notificationsEnabled
     val notifyDaysBefore: Flow<Int> = session.notifyDaysBefore
@@ -34,16 +20,19 @@ class FamilyRepository(
     suspend fun setNotificationsEnabled(enabled: Boolean) = session.setNotificationsEnabled(enabled)
     suspend fun setNotifyDaysBefore(days: Int) = session.setNotifyDaysBefore(days)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val currentUser: Flow<UserEntity?> = currentUserId.flatMapLatest { id ->
-        if (id == null) flowOf(null) else userDao.observe(id)
-    }
+    suspend fun getUser(userId: String): UserModel? = runCatching {
+        SupabaseManager.client.postgrest.from("users")
+            .select { filter { eq("id", userId) } }
+            .decodeList<UserModel>()
+            .firstOrNull()
+    }.getOrNull()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val currentFamily: Flow<FamilyEntity?> = currentUser.flatMapLatest { user ->
-        val familyId = user?.familyId
-        if (familyId == null) flowOf(null) else familyDao.observe(familyId)
-    }
+    suspend fun getFamily(familyId: String): FamilyModel? = runCatching {
+        SupabaseManager.client.postgrest.from("families")
+            .select { filter { eq("id", familyId) } }
+            .decodeList<FamilyModel>()
+            .firstOrNull()
+    }.getOrNull()
 
     // ---- Auth ----
 
@@ -53,7 +42,7 @@ class FamilyRepository(
         password: String,
         birthday: String,
         mobile: String
-    ): Result<Long> = runCatching {
+    ): Result<String> = runCatching {
         val client = SupabaseManager.client
         val emailNorm = email.trim().lowercase()
         client.auth.signUpWith(Email) {
@@ -64,85 +53,97 @@ class FamilyRepository(
                 put("phone", mobile)
             }
         }
-        val supabaseSession = client.auth.currentSessionOrNull()
-        val supabaseId = supabaseSession?.user?.id
-        // Insert full profile into public.users so all fields are persisted server-side
-        client.postgrest.from("users").insert(buildJsonObject {
-            if (supabaseId != null) put("auth_id", supabaseId)
+        val authId = client.auth.currentSessionOrNull()?.user?.id
+        val inserted = client.postgrest.from("users").insert(buildJsonObject {
+            if (authId != null) put("auth_id", authId)
             put("name", name.trim())
             put("email", emailNorm)
             put("birthday", birthday)
             put("mobile", mobile)
             put("avatar_color", palette(name))
-        })
-        val localId = if (userDao.countByEmail(emailNorm) > 0) {
-            userDao.findByEmail(emailNorm)!!.id
-        } else {
-            userDao.insert(UserEntity(
-                name = name.trim(),
-                email = emailNorm,
-                password = "",
-                birthday = birthday,
-                mobile = mobile,
-                avatarColor = palette(name),
-                supabaseId = supabaseId
-            ))
-        }
-        supabaseSession?.accessToken?.let { session.setSupabaseToken(it) }
-        session.signIn(localId)
-        localId
+        }) { select() }.decodeList<UserModel>().first()
+        session.signIn(inserted.id)
+        inserted.id
     }
 
-    suspend fun login(email: String, password: String): Result<Long> = runCatching {
+    suspend fun login(email: String, password: String): Result<String> = runCatching {
         val client = SupabaseManager.client
         val emailNorm = email.trim().lowercase()
         client.auth.signInWith(Email) {
             this.email = emailNorm
             this.password = password
         }
-        val supabaseSession = client.auth.currentSessionOrNull()
-        val supabaseId = supabaseSession?.user?.id
-        val localUser = userDao.findByEmail(emailNorm) ?: run {
-            val newId = userDao.insert(UserEntity(
-                name = emailNorm.substringBefore("@"),
-                email = emailNorm,
-                password = "",
-                avatarColor = palette(emailNorm),
-                supabaseId = supabaseId
-            ))
-            userDao.findById(newId)!!
-        }
-        supabaseSession?.accessToken?.let { session.setSupabaseToken(it) }
-        session.signIn(localUser.id)
-        localUser.id
+        val authId = client.auth.currentSessionOrNull()?.user?.id
+            ?: error("No auth session after login")
+        val user = client.postgrest.from("users")
+            .select { filter { eq("auth_id", authId) } }
+            .decodeList<UserModel>()
+            .firstOrNull() ?: error("User profile not found")
+        session.signIn(user.id)
+        user.id
     }
 
     suspend fun signOut() {
         runCatching { SupabaseManager.client.auth.signOut() }
-        session.clearSupabaseToken()
         session.signOut()
     }
 
     // ---- Family ----
 
-    suspend fun createFamily(name: String, password: String, userId: Long): Long {
-        val familyId = familyDao.insert(FamilyEntity(name = name.trim(), password = password, adminId = userId))
-        userDao.findById(userId)?.let { userDao.update(it.copy(familyId = familyId)) }
-        return familyId
+    suspend fun createFamily(name: String, code: String, userId: String): Result<String> =
+        runCatching {
+            val client = SupabaseManager.client
+            val family = client.postgrest.from("families").insert(buildJsonObject {
+                put("name", name.trim())
+                put("join_code", code)
+                put("admin_id", userId)
+            }) { select() }.decodeList<FamilyModel>().first()
+            client.postgrest.from("users").update({
+                set("family_id", family.id)
+            }) { filter { eq("id", userId) } }
+            family.id
+        }
+
+    suspend fun joinFamily(name: String, code: String, userId: String): Result<String> =
+        runCatching {
+            val client = SupabaseManager.client
+            val family = client.postgrest.from("families")
+                .select { filter { eq("name", name.trim()) } }
+                .decodeList<FamilyModel>()
+                .firstOrNull { it.joinCode == code }
+                ?: error("Family name or join code is incorrect.")
+            client.postgrest.from("users").update({
+                set("family_id", family.id)
+            }) { filter { eq("id", userId) } }
+            family.id
+        }
+
+    suspend fun leaveFamily(userId: String) {
+        runCatching {
+            SupabaseManager.client.postgrest.from("users").update({
+                set("family_id", null as String?)
+            }) { filter { eq("id", userId) } }
+        }
     }
 
-    suspend fun joinFamily(name: String, password: String, userId: Long): Result<Long> {
-        val family = familyDao.authenticate(name.trim(), password)
-            ?: return Result.failure(IllegalStateException("Family name or code is incorrect."))
-        userDao.findById(userId)?.let { userDao.update(it.copy(familyId = family.id)) }
-        return Result.success(family.id)
+    suspend fun updateProfile(
+        userId: String,
+        name: String,
+        email: String,
+        birthday: String,
+        mobile: String,
+        avatarUrl: String?
+    ) {
+        runCatching {
+            SupabaseManager.client.postgrest.from("users").update({
+                set("name", name)
+                set("email", email)
+                set("birthday", birthday)
+                set("mobile", mobile)
+                set("avatar_url", avatarUrl)
+            }) { filter { eq("id", userId) } }
+        }
     }
-
-    suspend fun leaveFamily(userId: Long) {
-        userDao.findById(userId)?.let { userDao.update(it.copy(familyId = null)) }
-    }
-
-    suspend fun updateProfile(user: UserEntity) = userDao.update(user)
 
     companion object {
         @Volatile private var INSTANCE: FamilyRepository? = null
@@ -150,7 +151,6 @@ class FamilyRepository(
         fun get(context: Context): FamilyRepository =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: FamilyRepository(
-                    AppDatabase.get(context),
                     SessionManager(context.applicationContext)
                 ).also { INSTANCE = it }
             }

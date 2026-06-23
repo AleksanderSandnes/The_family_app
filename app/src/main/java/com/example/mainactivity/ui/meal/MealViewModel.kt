@@ -4,52 +4,111 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
-import com.example.mainactivity.data.MealPlanDayEntity
-import com.example.mainactivity.data.MealPlanEntity
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
+import com.example.mainactivity.data.MealPlanDayModel
+import com.example.mainactivity.data.MealPlanModel
+import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class MealViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
-    private val dao = repo.mealPlanDao
+    private val db get() = SupabaseManager.client.postgrest
 
-    val plans: Flow<List<MealPlanEntity>> = repo.currentUser.flatMapLatest { user ->
-        val fid = user?.familyId ?: 0L
-        dao.plansForFamily(fid)
+    private val _plans = MutableStateFlow<List<MealPlanModel>>(emptyList())
+    val plans: StateFlow<List<MealPlanModel>> = _plans.asStateFlow()
+
+    private val _selectedPlan = MutableStateFlow<MealPlanModel?>(null)
+    val selectedPlan: StateFlow<MealPlanModel?> = _selectedPlan.asStateFlow()
+
+    private val _days = MutableStateFlow<List<MealPlanDayModel>>(emptyList())
+    val days: StateFlow<List<MealPlanDayModel>> = _days.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repo.currentUserId.collect { userId ->
+                if (userId != null) {
+                    val user = repo.getUser(userId)
+                    if (user?.familyId != null) loadPlans(user.familyId)
+                    else _plans.value = emptyList()
+                } else _plans.value = emptyList()
+            }
+        }
     }
 
-    fun plan(id: Long) = dao.observePlan(id)
-    fun days(planId: Long) = dao.daysForPlan(planId)
+    private suspend fun loadPlans(familyId: String) {
+        runCatching {
+            _plans.value = db.from("meal_plans")
+                .select { filter { eq("family_id", familyId) } }
+                .decodeList<MealPlanModel>()
+        }
+    }
+
+    fun loadPlanDetail(planId: String) = viewModelScope.launch {
+        runCatching {
+            _selectedPlan.value = db.from("meal_plans")
+                .select { filter { eq("id", planId) } }
+                .decodeList<MealPlanModel>()
+                .firstOrNull()
+            _days.value = db.from("meal_plan_days")
+                .select { filter { eq("meal_plan_id", planId) } }
+                .decodeList<MealPlanDayModel>()
+        }
+    }
 
     fun createWeekPlan() = viewModelScope.launch {
-        val user = repo.currentUser.first()
-        val familyId = user?.familyId ?: 0L
-        val cal = Calendar.getInstance()
-        val week = cal.get(Calendar.WEEK_OF_YEAR)
-        val fmt = SimpleDateFormat("dd MMM", Locale.getDefault())
-        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-        val from = fmt.format(cal.time)
-        val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-        val dates = ArrayList<String>()
-        for (i in 0 until 7) {
-            dates.add(fmt.format(cal.time)); cal.add(Calendar.DAY_OF_MONTH, 1)
+        val userId = repo.currentUserId.first() ?: return@launch
+        val user = repo.getUser(userId) ?: return@launch
+        val familyId = user.familyId ?: return@launch
+        runCatching {
+            val cal = Calendar.getInstance()
+            val week = cal.get(Calendar.WEEK_OF_YEAR)
+            val fmt = SimpleDateFormat("dd MMM", Locale.getDefault())
+            cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            val from = fmt.format(cal.time)
+            val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+            val dates = ArrayList<String>()
+            for (i in 0 until 7) { dates.add(fmt.format(cal.time)); cal.add(Calendar.DAY_OF_MONTH, 1) }
+            cal.add(Calendar.DAY_OF_MONTH, -1)
+            val to = fmt.format(cal.time)
+            val plan = db.from("meal_plans").insert(buildJsonObject {
+                put("family_id", familyId)
+                put("from_date", from)
+                put("to_date", to)
+                put("week", week)
+            }) { select() }.decodeList<MealPlanModel>().first()
+            dayNames.forEachIndexed { index, name ->
+                db.from("meal_plan_days").insert(buildJsonObject {
+                    put("meal_plan_id", plan.id)
+                    put("day", name)
+                    put("date", dates[index])
+                })
+            }
         }
-        cal.add(Calendar.DAY_OF_MONTH, -1)
-        val to = fmt.format(cal.time)
-        val planId = dao.insertPlan(MealPlanEntity(fromDate = from, toDate = to, familyId = familyId, week = week))
-        dayNames.forEachIndexed { index, name ->
-            dao.insertDay(MealPlanDayEntity(mealPlanId = planId, day = name, date = dates[index]))
-        }
+        loadPlans(familyId)
     }
 
-    fun deletePlan(plan: MealPlanEntity) = viewModelScope.launch { dao.deletePlan(plan) }
-    fun setFood(day: MealPlanDayEntity, food: String) = viewModelScope.launch { dao.updateDay(day.copy(food = food)) }
+    fun deletePlan(plan: MealPlanModel) = viewModelScope.launch {
+        runCatching { db.from("meal_plans").delete { filter { eq("id", plan.id) } } }
+        val userId = repo.currentUserId.first() ?: return@launch
+        val user = repo.getUser(userId) ?: return@launch
+        user.familyId?.let { loadPlans(it) }
+    }
+
+    fun setFood(day: MealPlanDayModel, food: String) = viewModelScope.launch {
+        runCatching {
+            db.from("meal_plan_days").update({
+                set("food", food)
+            }) { filter { eq("id", day.id) } }
+        }
+        loadPlanDetail(day.mealPlanId).join()
+    }
 }

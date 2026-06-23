@@ -86,7 +86,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mainactivity.data.CalendarEventEntity
+import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import java.time.Instant
@@ -139,7 +139,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
     val dayEvents by viewModel.eventsForSelectedDate.collectAsStateWithLifecycle()
     val allEvents by viewModel.events.collectAsStateWithLifecycle(emptyList())
     var showAdd by remember { mutableStateOf(false) }
-    var eventToEdit by remember { mutableStateOf<CalendarEventEntity?>(null) }
+    var eventToEdit by remember { mutableStateOf<CalendarEventModel?>(null) }
 
     val datesWithEvents = remember(allEvents) {
         buildSet<LocalDate> {
@@ -382,7 +382,7 @@ private fun monthCells(month: YearMonth): List<LocalDate?> {
 
 @Composable
 private fun EventCard(
-    event: CalendarEventEntity,
+    event: CalendarEventModel,
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
@@ -434,7 +434,7 @@ private fun EventCard(
     }
 }
 
-private fun eventSubtitle(event: CalendarEventEntity): String {
+private fun eventSubtitle(event: CalendarEventModel): String {
     fun fmtDate(s: String) = try { LocalDate.parse(s).format(SHORT_DATE) } catch (_: Exception) { s }
     val from = fmtDate(event.dateFrom)
     val to = fmtDate(event.dateTo)
@@ -490,7 +490,7 @@ private fun IconPickerGrid(selected: String, onSelect: (String) -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EventDialog(
-    existingEvent: CalendarEventEntity?,
+    existingEvent: CalendarEventModel?,
     initialDate: LocalDate,
     onDismiss: () -> Unit,
     onSave: (activity: String, allDay: Boolean, dateFrom: String, dateTo: String, timeFrom: String, timeTo: String, icon: String) -> Unit

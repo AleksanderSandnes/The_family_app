@@ -57,7 +57,7 @@ import com.example.mainactivity.ui.theme.BrandGradient
 
 @Composable
 fun ChatScreen(
-    onOpen: (Long) -> Unit,
+    onOpen: (String) -> Unit,
     viewModel: ChatViewModel = viewModel()
 ) {
     val conversations by viewModel.conversations.collectAsStateWithLifecycle(emptyList())
@@ -112,13 +112,14 @@ fun ChatScreen(
 
 @Composable
 fun ConversationScreen(
-    conversationId: Long,
+    conversationId: String,
     onBack: () -> Unit,
     viewModel: ChatViewModel = viewModel()
 ) {
+    androidx.compose.runtime.LaunchedEffect(conversationId) { viewModel.loadConversation(conversationId) }
     val context = LocalContext.current
-    val conversation by viewModel.conversation(conversationId).collectAsStateWithLifecycle(null)
-    val messages by viewModel.messages(conversationId).collectAsStateWithLifecycle(emptyList())
+    val conversation by viewModel.conversation.collectAsStateWithLifecycle()
+    val messages by viewModel.messages.collectAsStateWithLifecycle()
     val myId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     var draft by remember { mutableStateOf("") }
     var showMenu by remember { mutableStateOf(false) }

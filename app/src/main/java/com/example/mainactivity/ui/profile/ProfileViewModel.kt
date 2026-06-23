@@ -7,12 +7,14 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
-import com.example.mainactivity.data.UserEntity
+import com.example.mainactivity.data.UserModel
+import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -20,41 +22,57 @@ import java.io.File
 class ProfileViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
 
-    val user: StateFlow<UserEntity?> =
-        repo.currentUser.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    private val _user = MutableStateFlow<UserModel?>(null)
+    val user: StateFlow<UserModel?> = _user.asStateFlow()
 
     private var pendingCameraFile: File? = null
 
-    fun prepareCameraCapture(context: Context): Uri? {
-        return try {
-            val captureDir = File(context.cacheDir, "camera_captures").also { it.mkdirs() }
-            val file = File(captureDir, "avatar_pending.jpg")
-            pendingCameraFile = file
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        } catch (e: Exception) {
-            null
+    init {
+        viewModelScope.launch {
+            repo.currentUserId.collect { userId ->
+                _user.value = if (userId != null) repo.getUser(userId) else null
+            }
         }
     }
+
+    fun prepareCameraCapture(context: Context): Uri? = try {
+        val captureDir = File(context.cacheDir, "camera_captures").also { it.mkdirs() }
+        val file = File(captureDir, "avatar_pending.jpg")
+        pendingCameraFile = file
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    } catch (e: Exception) { null }
 
     fun onCameraResult(context: Context, success: Boolean) = viewModelScope.launch {
         if (!success) { pendingCameraFile = null; return@launch }
         val file = pendingCameraFile ?: return@launch
         pendingCameraFile = null
-        persistAvatar(context) { file.inputStream() }
+        uploadAvatar(file.readBytes())
+        file.delete()
     }
 
     fun saveAvatarFromUri(context: Context, sourceUri: Uri) = viewModelScope.launch {
-        persistAvatar(context) { context.contentResolver.openInputStream(sourceUri) }
+        val bytes = withContext(Dispatchers.IO) {
+            context.contentResolver.openInputStream(sourceUri)?.use { it.readBytes() }
+        } ?: return@launch
+        uploadAvatar(bytes)
     }
 
     fun removeAvatar() = viewModelScope.launch {
-        val u = user.value ?: return@launch
-        repo.updateProfile(u.copy(avatarUri = null))
+        val userId = repo.currentUserId.first() ?: return@launch
+        val current = _user.value ?: return@launch
+        runCatching { SupabaseManager.client.storage.from("avatars").delete("$userId/avatar.jpg") }
+        repo.updateProfile(userId, current.name, current.email, current.birthday, current.mobile, null)
+        _user.value = current.copy(avatarUrl = null)
     }
 
     fun save(name: String, email: String, birthday: String, mobile: String) = viewModelScope.launch {
-        val current = user.value ?: return@launch
-        repo.updateProfile(current.copy(name = name.trim(), email = email.trim(), birthday = birthday.trim(), mobile = mobile.trim()))
+        val userId = repo.currentUserId.first() ?: return@launch
+        val current = _user.value ?: return@launch
+        repo.updateProfile(userId, name.trim(), email.trim(), birthday.trim(), mobile.trim(), current.avatarUrl)
+        _user.value = current.copy(
+            name = name.trim(), email = email.trim(),
+            birthday = birthday.trim(), mobile = mobile.trim()
+        )
     }
 
     fun signOut(onDone: () -> Unit) = viewModelScope.launch {
@@ -62,20 +80,15 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
         onDone()
     }
 
-    private fun persistAvatar(context: Context, openStream: () -> java.io.InputStream?) =
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val userId = repo.currentUserId.first() ?: return@withContext
-                val currentUser = repo.userDao.findById(userId) ?: return@withContext
-                val avatarDir = File(context.filesDir, "avatars").also { it.mkdirs() }
-                val dest = File(avatarDir, "avatar_${System.currentTimeMillis()}.jpg")
-                openStream()?.use { src -> dest.outputStream().use { src.copyTo(it) } }
-                    ?: return@withContext
-                repo.updateProfile(currentUser.copy(avatarUri = dest.absolutePath))
-                currentUser.avatarUri?.let { oldPath ->
-                    val old = File(oldPath)
-                    if (old.exists() && old.absolutePath != dest.absolutePath) old.delete()
-                }
-            }
+    private fun uploadAvatar(bytes: ByteArray) = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        val current = _user.value ?: return@launch
+        runCatching {
+            val bucket = SupabaseManager.client.storage.from("avatars")
+            bucket.upload("$userId/avatar.jpg", bytes) { upsert = true }
+            val url = bucket.publicUrl("$userId/avatar.jpg")
+            repo.updateProfile(userId, current.name, current.email, current.birthday, current.mobile, url)
+            _user.value = current.copy(avatarUrl = url)
         }
+    }
 }
