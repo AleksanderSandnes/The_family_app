@@ -7,6 +7,12 @@ import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +42,9 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private var realtimeChannel: RealtimeChannel? = null
+    private var currentUserId: String? = null
+
     val eventsForSelectedDate: StateFlow<List<CalendarEventModel>> = combine(
         _selectedDate, _events
     ) { date, all ->
@@ -49,6 +58,7 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
+                currentUserId = userId
                 if (userId != null) loadEvents(userId) else _events.value = emptyList()
             }
         }
@@ -76,9 +86,29 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
                     }.decodeList<CalendarEventModel>()
                         .filter { it.familyId == null }
                 }
+                if (user.familyId != null) subscribeToEvents(user.familyId, userId)
             }
         }
         _isLoading.value = false
+    }
+
+    private suspend fun subscribeToEvents(familyId: String, userId: String) {
+        realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        val channel = SupabaseManager.client.channel("calendar-$familyId")
+        realtimeChannel = channel
+        val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+            table = "calendar_events"
+            filter("family_id", FilterOperator.EQ, familyId)
+        }
+        channel.subscribe()
+        viewModelScope.launch { flow.collect { loadEvents(userId) } }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        }
     }
 
     fun selectDate(date: LocalDate) {

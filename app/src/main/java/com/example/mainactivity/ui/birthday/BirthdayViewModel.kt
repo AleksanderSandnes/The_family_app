@@ -7,6 +7,12 @@ import com.example.mainactivity.data.BirthdayModel
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,9 +31,13 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private var realtimeChannel: RealtimeChannel? = null
+    private var currentUserId: String? = null
+
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
+                currentUserId = userId
                 if (userId != null) load(userId) else _birthdays.value = emptyList()
             }
         }
@@ -54,9 +64,29 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
                         filter { eq("made_by_user_id", userId) }
                     }.decodeList<BirthdayModel>()
                 }
+                if (user.familyId != null) subscribeToBirthdays(user.familyId, userId)
             }
         }
         _isLoading.value = false
+    }
+
+    private suspend fun subscribeToBirthdays(familyId: String, userId: String) {
+        realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        val channel = SupabaseManager.client.channel("birthdays-$familyId")
+        realtimeChannel = channel
+        val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+            table = "birthdays"
+            filter("family_id", FilterOperator.EQ, familyId)
+        }
+        channel.subscribe()
+        viewModelScope.launch { flow.collect { load(userId) } }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        }
     }
 
     fun add(name: String, date: String) = viewModelScope.launch {
