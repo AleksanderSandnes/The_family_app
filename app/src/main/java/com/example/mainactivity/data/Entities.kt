@@ -102,7 +102,8 @@ data class ConversationEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val userFrom: Long,
     val userTo: Long,
-    val name: String
+    val name: String,
+    val imageUri: String? = null
 )
 
 @Entity(tableName = "messages")
