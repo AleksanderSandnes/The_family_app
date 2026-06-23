@@ -132,6 +132,7 @@ interface WishlistDao {
 interface ChatDao {
     @Insert suspend fun insertConversation(conversation: ConversationEntity): Long
     @Insert suspend fun insertMessage(message: MessageEntity): Long
+    @Update suspend fun updateConversation(conv: ConversationEntity)
 
     @Query(
         "SELECT * FROM conversations WHERE userFrom = :userId OR userTo = :userId ORDER BY id DESC"
