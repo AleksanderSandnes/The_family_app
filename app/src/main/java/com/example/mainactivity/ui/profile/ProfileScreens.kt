@@ -106,7 +106,7 @@ fun ProfileScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Avatar circle — clickable to change photo
                     Box(
-                        Modifier.size(72.dp).clickable { showAvatarPicker = true }
+                        Modifier.size(72.dp).clip(CircleShape).clickable { showAvatarPicker = true }
                     ) {
                         val avatarUri = user?.avatarUrl
                         var imgFailed by remember(avatarUri) { mutableStateOf(false) }
