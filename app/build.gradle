@@ -9,12 +9,12 @@ if (localPropsFile.exists()) localPropsFile.withInputStream { localProps.load(it
 
 android {
     namespace "com.example.mainactivity"
-    compileSdkVersion 34
+    compileSdkVersion 36
 
     defaultConfig {
         applicationId "com.example.mainactivity"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdkVersion 23
+        targetSdkVersion 36
         versionCode 1
         versionName "1.0"
 

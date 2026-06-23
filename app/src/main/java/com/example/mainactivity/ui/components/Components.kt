@@ -188,8 +188,6 @@ fun FamilyTextField(
 }
 
 @Composable
-/** Rounded gradient avatar showing the first letter of a name, or a photo when avatarUri is set. */
-@Composable
 fun InitialAvatar(
     name: String,
     color: Color,
