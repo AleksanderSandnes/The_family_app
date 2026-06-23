@@ -23,10 +23,12 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
+    companion object { private var cache: List<ShoppingListModel> = emptyList() }
+
     private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
-    private val _lists = MutableStateFlow<List<ShoppingListModel>>(emptyList())
+    private val _lists = MutableStateFlow(cache)
     val lists: StateFlow<List<ShoppingListModel>> = _lists.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -58,10 +60,10 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadLists(userId: String) {
-        _isLoading.value = true
+        if (_lists.value.isEmpty()) _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId)
-            _lists.value = if (user?.familyId != null) {
+            val result = if (user?.familyId != null) {
                 db.from("shopping_lists")
                     .select { filter { or { eq("owner_user_id", userId); eq("family_id", user.familyId) } } }
                     .decodeList<ShoppingListModel>()
@@ -72,6 +74,8 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
                     .decodeList<ShoppingListModel>()
                     .filter { it.familyId == null }
             }
+            cache = result
+            _lists.value = result
             if (user?.familyId != null) subscribeToLists(user.familyId, userId)
         }
         _isLoading.value = false

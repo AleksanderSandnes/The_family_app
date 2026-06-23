@@ -27,6 +27,8 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 class CalendarViewModel(app: Application) : AndroidViewModel(app) {
+    companion object { private var cache: List<CalendarEventModel> = emptyList() }
+
     private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
@@ -36,7 +38,7 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     private val _displayedMonth = MutableStateFlow(YearMonth.now())
     val displayedMonth: StateFlow<YearMonth> = _displayedMonth.asStateFlow()
 
-    private val _events = MutableStateFlow<List<CalendarEventModel>>(emptyList())
+    private val _events = MutableStateFlow(cache)
     val events: StateFlow<List<CalendarEventModel>> = _events.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -71,11 +73,11 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadEvents(userId: String) {
-        _isLoading.value = true
+        if (_events.value.isEmpty()) _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId)
             if (user != null) {
-                _events.value = if (user.familyId != null) {
+                val result = if (user.familyId != null) {
                     db.from("calendar_events").select {
                         filter { or { eq("user_id", userId); eq("family_id", user.familyId) } }
                     }.decodeList<CalendarEventModel>()
@@ -86,6 +88,8 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
                     }.decodeList<CalendarEventModel>()
                         .filter { it.familyId == null }
                 }
+                cache = result
+                _events.value = result
                 if (user.familyId != null) subscribeToEvents(user.familyId, userId)
             }
         }

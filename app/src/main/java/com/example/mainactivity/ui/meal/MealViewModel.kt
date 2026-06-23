@@ -26,10 +26,12 @@ import java.util.Calendar
 import java.util.Locale
 
 class MealViewModel(app: Application) : AndroidViewModel(app) {
+    companion object { private var cache: List<MealPlanModel> = emptyList() }
+
     private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
-    private val _plans = MutableStateFlow<List<MealPlanModel>>(emptyList())
+    private val _plans = MutableStateFlow(cache)
     val plans: StateFlow<List<MealPlanModel>> = _plans.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -63,11 +65,13 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadPlans(familyId: String) {
-        _isLoading.value = true
+        if (_plans.value.isEmpty()) _isLoading.value = true
         runCatching {
-            _plans.value = db.from("meal_plans")
+            val result = db.from("meal_plans")
                 .select { filter { eq("family_id", familyId) } }
                 .decodeList<MealPlanModel>()
+            cache = result
+            _plans.value = result
             subscribeToPlans(familyId)
         }
         _isLoading.value = false

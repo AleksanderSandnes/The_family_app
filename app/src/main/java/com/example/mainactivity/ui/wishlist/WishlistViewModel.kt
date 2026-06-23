@@ -17,10 +17,12 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 class WishlistViewModel(app: Application) : AndroidViewModel(app) {
+    companion object { private var cache: List<WishlistModel> = emptyList() }
+
     private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
-    private val _wishlists = MutableStateFlow<List<WishlistModel>>(emptyList())
+    private val _wishlists = MutableStateFlow(cache)
     val wishlists: StateFlow<List<WishlistModel>> = _wishlists.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -41,11 +43,13 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadWishlists(userId: String) {
-        _isLoading.value = true
+        if (_wishlists.value.isEmpty()) _isLoading.value = true
         runCatching {
-            _wishlists.value = db.from("wishlists")
+            val result = db.from("wishlists")
                 .select { filter { eq("owner_user_id", userId) } }
                 .decodeList<WishlistModel>()
+            cache = result
+            _wishlists.value = result
         }
         _isLoading.value = false
     }

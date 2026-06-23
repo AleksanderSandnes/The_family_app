@@ -22,10 +22,12 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
+    companion object { private var cache: List<BirthdayModel> = emptyList() }
+
     private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
-    private val _birthdays = MutableStateFlow<List<BirthdayModel>>(emptyList())
+    private val _birthdays = MutableStateFlow(cache)
     val birthdays: StateFlow<List<BirthdayModel>> = _birthdays.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -50,11 +52,11 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun load(userId: String) {
-        _isLoading.value = true
+        if (_birthdays.value.isEmpty()) _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId)
             if (user != null) {
-                _birthdays.value = if (user.familyId != null) {
+                val result = if (user.familyId != null) {
                     db.from("birthdays").select {
                         filter { or { eq("made_by_user_id", userId); eq("family_id", user.familyId) } }
                     }.decodeList<BirthdayModel>()
@@ -64,6 +66,8 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
                         filter { eq("made_by_user_id", userId) }
                     }.decodeList<BirthdayModel>()
                 }
+                cache = result
+                _birthdays.value = result
                 if (user.familyId != null) subscribeToBirthdays(user.familyId, userId)
             }
         }
