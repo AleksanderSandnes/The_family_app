@@ -22,6 +22,9 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
     private val _birthdays = MutableStateFlow<List<BirthdayModel>>(emptyList())
     val birthdays: StateFlow<List<BirthdayModel>> = _birthdays.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
@@ -37,6 +40,7 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun load(userId: String) {
+        _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId) ?: return
             _birthdays.value = if (user.familyId != null) {
@@ -50,6 +54,7 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
                 }.decodeList<BirthdayModel>()
             }
         }
+        _isLoading.value = false
     }
 
     fun add(name: String, date: String) = viewModelScope.launch {

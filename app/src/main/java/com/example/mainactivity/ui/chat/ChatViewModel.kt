@@ -41,6 +41,9 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val _conversations = MutableStateFlow<List<ConversationModel>>(emptyList())
     val conversations: StateFlow<List<ConversationModel>> = _conversations.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     val currentUserId: Flow<String?> = repo.currentUserId
 
     private val _conversation = MutableStateFlow<ConversationModel?>(null)
@@ -71,6 +74,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadConversations(userId: String) {
+        _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId)
             _conversations.value = if (user?.familyId != null) {
@@ -85,6 +89,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                     .filter { it.familyId == null }
             }
         }
+        _isLoading.value = false
     }
 
     fun loadConversation(conversationId: String) = viewModelScope.launch {

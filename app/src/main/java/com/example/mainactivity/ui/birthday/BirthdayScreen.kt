@@ -42,6 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.BirthdayModel
 import com.example.mainactivity.ui.components.BirthdayPickerField
 import com.example.mainactivity.ui.components.EmptyState
+import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FamilyTextField
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
@@ -54,6 +55,7 @@ fun BirthdayScreen(
     viewModel: BirthdayViewModel = viewModel()
 ) {
     val birthdays by viewModel.birthdays.collectAsStateWithLifecycle(emptyList())
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showAdd by remember { mutableStateOf(false) }
 
     val today = remember { LocalDate.now() }
@@ -78,7 +80,11 @@ fun BirthdayScreen(
             )
         }
     ) { padding ->
-        if (sorted.isEmpty()) {
+        if (isLoading) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                LoadingState()
+            }
+        } else if (sorted.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(Icons.Filled.Cake, "No birthdays", "Add family birthdays so you never miss a celebration.")
             }
