@@ -42,16 +42,18 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun load(userId: String) {
         _isLoading.value = true
         runCatching {
-            val user = repo.getUser(userId) ?: return
-            _birthdays.value = if (user.familyId != null) {
-                db.from("birthdays").select {
-                    filter { or { eq("made_by_user_id", userId); eq("family_id", user.familyId) } }
-                }.decodeList<BirthdayModel>()
-                    .filter { it.familyId == null || it.familyId == user.familyId }
-            } else {
-                db.from("birthdays").select {
-                    filter { eq("made_by_user_id", userId) }
-                }.decodeList<BirthdayModel>()
+            val user = repo.getUser(userId)
+            if (user != null) {
+                _birthdays.value = if (user.familyId != null) {
+                    db.from("birthdays").select {
+                        filter { or { eq("made_by_user_id", userId); eq("family_id", user.familyId) } }
+                    }.decodeList<BirthdayModel>()
+                        .filter { it.familyId == null || it.familyId == user.familyId }
+                } else {
+                    db.from("birthdays").select {
+                        filter { eq("made_by_user_id", userId) }
+                    }.decodeList<BirthdayModel>()
+                }
             }
         }
         _isLoading.value = false

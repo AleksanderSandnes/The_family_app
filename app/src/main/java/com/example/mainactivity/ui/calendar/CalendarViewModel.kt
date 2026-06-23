@@ -63,17 +63,19 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun loadEvents(userId: String) {
         _isLoading.value = true
         runCatching {
-            val user = repo.getUser(userId) ?: return
-            _events.value = if (user.familyId != null) {
-                db.from("calendar_events").select {
-                    filter { or { eq("user_id", userId); eq("family_id", user.familyId) } }
-                }.decodeList<CalendarEventModel>()
-                    .filter { it.familyId == null || it.familyId == user.familyId }
-            } else {
-                db.from("calendar_events").select {
-                    filter { eq("user_id", userId) }
-                }.decodeList<CalendarEventModel>()
-                    .filter { it.familyId == null }
+            val user = repo.getUser(userId)
+            if (user != null) {
+                _events.value = if (user.familyId != null) {
+                    db.from("calendar_events").select {
+                        filter { or { eq("user_id", userId); eq("family_id", user.familyId) } }
+                    }.decodeList<CalendarEventModel>()
+                        .filter { it.familyId == null || it.familyId == user.familyId }
+                } else {
+                    db.from("calendar_events").select {
+                        filter { eq("user_id", userId) }
+                    }.decodeList<CalendarEventModel>()
+                        .filter { it.familyId == null }
+                }
             }
         }
         _isLoading.value = false
