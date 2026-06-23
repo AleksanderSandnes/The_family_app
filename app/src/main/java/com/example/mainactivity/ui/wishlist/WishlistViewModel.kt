@@ -23,6 +23,9 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     private val _wishlists = MutableStateFlow<List<WishlistModel>>(emptyList())
     val wishlists: StateFlow<List<WishlistModel>> = _wishlists.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private val _selectedWishlist = MutableStateFlow<WishlistModel?>(null)
     val selectedWishlist: StateFlow<WishlistModel?> = _selectedWishlist.asStateFlow()
 
@@ -38,11 +41,13 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadWishlists(userId: String) {
+        _isLoading.value = true
         runCatching {
             _wishlists.value = db.from("wishlists")
                 .select { filter { eq("owner_user_id", userId) } }
                 .decodeList<WishlistModel>()
         }
+        _isLoading.value = false
     }
 
     fun loadWishlistDetail(wishlistId: String) = viewModelScope.launch {

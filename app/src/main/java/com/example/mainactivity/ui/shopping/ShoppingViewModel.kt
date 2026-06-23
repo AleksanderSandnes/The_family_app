@@ -23,6 +23,9 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     private val _lists = MutableStateFlow<List<ShoppingListModel>>(emptyList())
     val lists: StateFlow<List<ShoppingListModel>> = _lists.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private val _selectedList = MutableStateFlow<ShoppingListModel?>(null)
     val selectedList: StateFlow<ShoppingListModel?> = _selectedList.asStateFlow()
 
@@ -44,6 +47,7 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadLists(userId: String) {
+        _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId)
             _lists.value = if (user?.familyId != null) {
@@ -58,6 +62,7 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
                     .filter { it.familyId == null }
             }
         }
+        _isLoading.value = false
     }
 
     fun loadListDetail(listId: String) = viewModelScope.launch {

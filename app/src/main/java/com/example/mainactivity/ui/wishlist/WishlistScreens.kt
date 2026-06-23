@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.ui.components.EmptyState
+import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
@@ -49,6 +50,7 @@ fun WishlistScreen(
     viewModel: WishlistViewModel = viewModel()
 ) {
     val wishlists by viewModel.wishlists.collectAsStateWithLifecycle(emptyList())
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showAdd by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -64,7 +66,11 @@ fun WishlistScreen(
             )
         }
     ) { padding ->
-        if (wishlists.isEmpty()) {
+        if (isLoading) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                LoadingState()
+            }
+        } else if (wishlists.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(Icons.Filled.CardGiftcard, "No wishlists", "Create a wishlist and share gift ideas.")
             }
