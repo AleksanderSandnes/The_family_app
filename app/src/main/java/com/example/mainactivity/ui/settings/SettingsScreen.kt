@@ -32,9 +32,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,10 +53,10 @@ private val LEAD_TIME_OPTIONS = listOf(
 @Composable
 fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel()) {
     val context = LocalContext.current
-    var location by remember { mutableStateOf(false) }
     val themeMode by vm.themeMode.collectAsStateWithLifecycle()
     val notificationsEnabled by vm.notificationsEnabled.collectAsStateWithLifecycle()
     val notifyDaysBefore by vm.notifyDaysBefore.collectAsStateWithLifecycle()
+    val locationVisible by vm.locationVisible.collectAsStateWithLifecycle()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -92,7 +89,7 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel()) {
             AnimatedVisibility(visible = notificationsEnabled) {
                 LeadTimeSelector(selected = notifyDaysBefore, onSelect = vm::setNotifyDaysBefore)
             }
-            ToggleRow(Icons.Filled.Palette, "Visible on family map", "Share your location with family", location) { location = it }
+            ToggleRow(Icons.Filled.Palette, "Visible on family map", "Share your location with family", locationVisible) { vm.setLocationVisible(it) }
             InfoCard(Icons.Filled.Lock, "Privacy", "Authentication is handled by Supabase. Family data is stored locally and synced securely.")
             InfoCard(Icons.Filled.Info, "About", "The Family App · v2.0 — one home for everything you share.")
         }

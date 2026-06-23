@@ -24,6 +24,9 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val notifyDaysBefore: StateFlow<Int> =
         repo.notifyDaysBefore.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
+    val locationVisible: StateFlow<Boolean> =
+        repo.locationVisible.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch {
         repo.setThemeMode(mode)
     }
@@ -35,5 +38,9 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setNotifyDaysBefore(days: Int) = viewModelScope.launch {
         repo.setNotifyDaysBefore(days)
+    }
+
+    fun setLocationVisible(enabled: Boolean) = viewModelScope.launch {
+        repo.setLocationVisible(enabled)
     }
 }

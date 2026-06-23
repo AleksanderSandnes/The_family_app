@@ -1,6 +1,5 @@
 package com.example.mainactivity.ui.shopping
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,13 +16,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -45,6 +43,7 @@ import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
 import com.example.mainactivity.ui.components.PillTag
+import com.example.mainactivity.ui.components.SwipeToRevealDelete
 
 @Composable
 fun ShoppingScreen(
@@ -79,26 +78,25 @@ fun ShoppingScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(lists, key = { it.id }) { list ->
-                    Surface(
-                        onClick = { onOpenList(list.id) },
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier.size(44.dp).let { it },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Filled.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary)
+                    SwipeToRevealDelete(onDelete = { viewModel.deleteList(list) }) {
+                        Surface(
+                            onClick = { onOpenList(list.id) },
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    Modifier.size(44.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Filled.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                                Spacer(Modifier.size(8.dp))
+                                Text(list.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Spacer(Modifier.size(8.dp))
-                            Text(list.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                            IconButton(onClick = { viewModel.deleteList(list) }) {
-                                Icon(Icons.Filled.Delete, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -178,22 +176,21 @@ fun ShoppingDetailScreen(
 
 @Composable
 private fun ShoppingItemRow(item: ShoppingItemModel, viewModel: ShoppingViewModel) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = item.checked, onCheckedChange = { viewModel.toggle(item) })
-            Text(
-                item.item,
-                Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None
-            )
-            IconButton(onClick = { viewModel.deleteItem(item) }) {
-                Icon(Icons.Filled.Delete, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    SwipeToRevealDelete(onDelete = { viewModel.deleteItem(item) }) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = item.checked, onCheckedChange = { viewModel.toggle(item) })
+                Text(
+                    item.item,
+                    Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None
+                )
             }
         }
     }
