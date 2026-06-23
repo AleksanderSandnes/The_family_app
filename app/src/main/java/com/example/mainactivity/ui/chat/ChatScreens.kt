@@ -77,6 +77,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.MessageModel
 import com.example.mainactivity.ui.components.EmptyState
+import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InitialAvatar
 import com.example.mainactivity.ui.components.InputDialog
@@ -90,6 +91,7 @@ fun ChatScreen(
     viewModel: ChatViewModel = viewModel()
 ) {
     val conversations by viewModel.conversations.collectAsStateWithLifecycle(emptyList())
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showAdd by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -103,7 +105,11 @@ fun ChatScreen(
             ) { Icon(Icons.Filled.Add, "New conversation") }
         }
     ) { padding ->
-        if (conversations.isEmpty()) {
+        if (isLoading) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                LoadingState()
+            }
+        } else if (conversations.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(Icons.AutoMirrored.Filled.Chat, "No conversations", "Start a chat to keep your family connected.")
             }

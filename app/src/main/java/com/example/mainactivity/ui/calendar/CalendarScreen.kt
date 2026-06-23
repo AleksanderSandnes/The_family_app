@@ -88,6 +88,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.ui.components.EmptyState
+import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import java.time.Instant
 import java.time.LocalDate
@@ -138,6 +139,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
     val displayedMonth by viewModel.displayedMonth.collectAsStateWithLifecycle()
     val dayEvents by viewModel.eventsForSelectedDate.collectAsStateWithLifecycle()
     val allEvents by viewModel.events.collectAsStateWithLifecycle(emptyList())
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showAdd by remember { mutableStateOf(false) }
     var eventToEdit by remember { mutableStateOf<CalendarEventModel?>(null) }
 
@@ -178,7 +180,11 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
             )
-            if (dayEvents.isEmpty()) {
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    LoadingState()
+                }
+            } else if (dayEvents.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(Icons.Filled.CalendarMonth, "No events", "Tap + to add an event.")
                 }

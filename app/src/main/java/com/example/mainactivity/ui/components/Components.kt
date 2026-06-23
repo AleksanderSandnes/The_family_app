@@ -259,6 +259,17 @@ fun EmptyState(icon: ImageVector, title: String, subtitle: String, modifier: Mod
     }
 }
 
+/** Full-width centered loading spinner. */
+@Composable
+fun LoadingState(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxWidth().padding(48.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
 /** Inline error banner that animates in/out. */
 @Composable
 fun ErrorBanner(message: String?, modifier: Modifier = Modifier) {

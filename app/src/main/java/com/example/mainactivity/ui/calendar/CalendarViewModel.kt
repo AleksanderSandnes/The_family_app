@@ -33,6 +33,9 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     private val _events = MutableStateFlow<List<CalendarEventModel>>(emptyList())
     val events: StateFlow<List<CalendarEventModel>> = _events.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     val eventsForSelectedDate: StateFlow<List<CalendarEventModel>> = combine(
         _selectedDate, _events
     ) { date, all ->
@@ -58,6 +61,7 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadEvents(userId: String) {
+        _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId) ?: return
             _events.value = if (user.familyId != null) {
@@ -72,6 +76,7 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
                     .filter { it.familyId == null }
             }
         }
+        _isLoading.value = false
     }
 
     fun selectDate(date: LocalDate) {

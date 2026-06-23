@@ -26,6 +26,9 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
     private val _plans = MutableStateFlow<List<MealPlanModel>>(emptyList())
     val plans: StateFlow<List<MealPlanModel>> = _plans.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private val _selectedPlan = MutableStateFlow<MealPlanModel?>(null)
     val selectedPlan: StateFlow<MealPlanModel?> = _selectedPlan.asStateFlow()
 
@@ -52,11 +55,13 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadPlans(familyId: String) {
+        _isLoading.value = true
         runCatching {
             _plans.value = db.from("meal_plans")
                 .select { filter { eq("family_id", familyId) } }
                 .decodeList<MealPlanModel>()
         }
+        _isLoading.value = false
     }
 
     fun loadPlanDetail(planId: String) = viewModelScope.launch {

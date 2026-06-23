@@ -36,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.MealPlanDayModel
 import com.example.mainactivity.ui.components.EmptyState
+import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
@@ -47,6 +48,7 @@ fun MealScreen(
     viewModel: MealViewModel = viewModel()
 ) {
     val plans by viewModel.plans.collectAsStateWithLifecycle(emptyList())
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -61,7 +63,11 @@ fun MealScreen(
             )
         }
     ) { padding ->
-        if (plans.isEmpty()) {
+        if (isLoading) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                LoadingState()
+            }
+        } else if (plans.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(Icons.Filled.Restaurant, "No meal plans", "Plan a full week of family meals in one tap.")
             }
