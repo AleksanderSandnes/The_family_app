@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CardGiftcard
@@ -86,7 +85,6 @@ fun HomeScreen(
         Feature("Calendar", "Family events", Icons.Filled.CalendarMonth, Color(0xFF14B8A6), "calendar"),
         Feature("Birthdays", "Never miss one", Icons.Filled.Cake, Color(0xFFEC4899), "birthday"),
         Feature("Wishlists", "Gift ideas", Icons.Filled.CardGiftcard, Color(0xFF8B5CF6), "wishlist"),
-        Feature("Family chat", "Stay close", Icons.AutoMirrored.Filled.Chat, Color(0xFF06B6D4), "chat"),
         Feature("Family Map", "See where everyone is", Icons.Filled.Map, Color(0xFF10B981), "family_map")
     )
 
