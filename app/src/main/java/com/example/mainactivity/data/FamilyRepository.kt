@@ -2,6 +2,7 @@ package com.example.mainactivity.data
 
 import android.content.Context
 import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
