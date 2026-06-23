@@ -1,6 +1,7 @@
 package com.example.mainactivity.ui.auth
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
@@ -32,7 +33,10 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             _state.update {
                 result.fold(
                     onSuccess = { AuthUiState(success = true) },
-                    onFailure = { e -> AuthUiState(error = friendlyAuthError(e)) }
+                    onFailure = { e ->
+                        Log.e("Auth", "Login failed", e)
+                        AuthUiState(error = friendlyAuthError(e, isLogin = true))
+                    }
                 )
             }
         }
@@ -50,7 +54,10 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             _state.update {
                 result.fold(
                     onSuccess = { AuthUiState(success = true) },
-                    onFailure = { e -> AuthUiState(error = friendlyAuthError(e)) }
+                    onFailure = { e ->
+                        Log.e("Auth", "Register failed", e)
+                        AuthUiState(error = friendlyAuthError(e, isLogin = false))
+                    }
                 )
             }
         }
@@ -69,7 +76,7 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
     private fun fail(message: String) = _state.update { it.copy(loading = false, error = message) }
 }
 
-private fun friendlyAuthError(e: Throwable): String {
+private fun friendlyAuthError(e: Throwable, isLogin: Boolean): String {
     val raw = e.message?.lowercase() ?: return "Something went wrong. Please try again."
     return when {
         "email not confirmed" in raw -> "Please confirm your email before signing in. Check your inbox (and spam folder)."
@@ -77,8 +84,9 @@ private fun friendlyAuthError(e: Throwable): String {
         "user already registered" in raw || "already been registered" in raw -> "An account with this email already exists."
         "email address is invalid" in raw -> "Please enter a valid email address."
         "password should be at least" in raw || "weak_password" in raw -> "Password must be at least 6 characters."
+        "redirect" in raw && "not allowed" in raw -> "Something went wrong. Please try again."
         "rate limit" in raw || "too many requests" in raw -> "Too many attempts. Please wait a moment and try again."
         "network" in raw || "unable to resolve" in raw || "connect" in raw -> "Network error. Please check your connection."
-        else -> "Sign in failed. Please try again."
+        else -> if (isLogin) "Sign in failed. Please try again." else "Registration failed. Please try again."
     }
 }
