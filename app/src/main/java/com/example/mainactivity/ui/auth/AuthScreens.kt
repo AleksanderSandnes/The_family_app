@@ -21,22 +21,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Diversity3
-import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,14 +47,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mainactivity.ui.components.BirthdayPickerField
 import com.example.mainactivity.ui.components.ErrorBanner
 import com.example.mainactivity.ui.components.FamilyTextField
 import com.example.mainactivity.ui.components.PrimaryButton
 import com.example.mainactivity.ui.components.SecondaryButton
 import com.example.mainactivity.ui.theme.heroGradient
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun LoginScreen(
@@ -229,7 +220,6 @@ private fun RegistrationStep1(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RegistrationStep2(
     birthday: String, onBirthdayChange: (String) -> Unit,
@@ -311,60 +301,6 @@ private fun RegistrationStep3(
             loading = loading,
             modifier = Modifier.fillMaxWidth()
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun BirthdayPickerField(value: String, onChange: (String) -> Unit) {
-    var showPicker by remember { mutableStateOf(false) }
-    val thirtyYearsAgo = System.currentTimeMillis() - 30L * 365 * 24 * 60 * 60 * 1000
-    val pickerState = rememberDatePickerState(initialSelectedDateMillis = thirtyYearsAgo)
-
-    val displayText = if (value.isNotEmpty()) {
-        runCatching {
-            java.time.LocalDate.parse(value)
-                .format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))
-        }.getOrDefault(value)
-    } else ""
-
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = displayText,
-            onValueChange = {},
-            label = { Text("Birthday (optional)") },
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Outlined.Cake, contentDescription = null) },
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-            )
-        )
-        Box(modifier = Modifier.matchParentSize().clickable { showPicker = true })
-    }
-
-    if (showPicker) {
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { millis ->
-                        val date = Instant.ofEpochMilli(millis)
-                            .atZone(ZoneOffset.UTC)
-                            .toLocalDate()
-                        onChange(date.toString())
-                    }
-                    showPicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
-            }
-        ) {
-            DatePicker(state = pickerState)
-        }
     }
 }
 

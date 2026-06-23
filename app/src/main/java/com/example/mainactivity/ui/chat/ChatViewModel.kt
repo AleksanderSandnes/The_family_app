@@ -3,6 +3,7 @@ package com.example.mainactivity.ui.chat
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -186,7 +187,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
             _conversation.update { it?.copy(imageUri = url) }
             val userId = repo.currentUserId.first() ?: return@runCatching
             loadConversations(userId)
-        }
+        }.onFailure { e -> Log.e("ChatVM", "Group image upload failed", e) }
     }
 
     override fun onCleared() {

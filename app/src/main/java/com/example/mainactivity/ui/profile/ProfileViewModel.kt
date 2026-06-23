@@ -3,12 +3,15 @@ package com.example.mainactivity.ui.profile
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.currentSessionOrNull
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +27,10 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _user = MutableStateFlow<UserModel?>(null)
     val user: StateFlow<UserModel?> = _user.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+    fun clearError() { _error.value = null }
 
     private var pendingCameraFile: File? = null
 
@@ -60,9 +67,13 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
     fun removeAvatar() = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
         val current = _user.value ?: return@launch
-        runCatching { SupabaseManager.client.storage.from("avatars").delete("$userId/avatar.jpg") }
-        repo.updateProfile(userId, current.name, current.email, current.birthday, current.mobile, null)
-        _user.value = current.copy(avatarUrl = null)
+        runCatching {
+            val authId = SupabaseManager.client.auth.currentSessionOrNull()?.user?.id
+                ?: error("No auth session")
+            SupabaseManager.client.storage.from("avatars").delete("$authId/avatar.jpg")
+            repo.updateProfile(userId, current.name, current.email, current.birthday, current.mobile, null)
+            _user.value = current.copy(avatarUrl = null)
+        }.onFailure { e -> Log.e("ProfileVM", "Avatar remove failed", e) }
     }
 
     fun save(name: String, email: String, birthday: String, mobile: String) = viewModelScope.launch {
@@ -84,11 +95,16 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
         val userId = repo.currentUserId.first() ?: return@launch
         val current = _user.value ?: return@launch
         runCatching {
+            val authId = SupabaseManager.client.auth.currentSessionOrNull()?.user?.id
+                ?: error("No auth session")
             val bucket = SupabaseManager.client.storage.from("avatars")
-            bucket.upload("$userId/avatar.jpg", bytes) { upsert = true }
-            val url = bucket.publicUrl("$userId/avatar.jpg")
+            bucket.upload("$authId/avatar.jpg", bytes) { upsert = true }
+            val url = bucket.publicUrl("$authId/avatar.jpg")
             repo.updateProfile(userId, current.name, current.email, current.birthday, current.mobile, url)
             _user.value = current.copy(avatarUrl = url)
+        }.onFailure { e ->
+            Log.e("ProfileVM", "Avatar upload failed", e)
+            _error.value = "Failed to update photo. Please try again."
         }
     }
 }

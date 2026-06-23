@@ -115,6 +115,7 @@ class FamilyRepository(val session: SessionManager) {
             client.postgrest.from("users").update({
                 set("family_id", family.id)
             }) { filter { eq("id", userId) } }
+            syncUserBirthday(userId, family.id)
             family.id
         }
 
@@ -129,8 +130,30 @@ class FamilyRepository(val session: SessionManager) {
             client.postgrest.from("users").update({
                 set("family_id", family.id)
             }) { filter { eq("id", userId) } }
+            syncUserBirthday(userId, family.id)
             family.id
         }
+
+    private suspend fun syncUserBirthday(userId: String, familyId: String) {
+        runCatching {
+            val user = getUser(userId) ?: return@runCatching
+            if (user.birthday.isBlank()) return@runCatching
+            val client = SupabaseManager.client
+            val exists = client.postgrest.from("birthdays")
+                .select { filter { eq("user_id", userId); eq("family_id", familyId) } }
+                .decodeList<BirthdayModel>()
+                .isNotEmpty()
+            if (!exists) {
+                client.postgrest.from("birthdays").insert(buildJsonObject {
+                    put("name", "${user.name} birthday")
+                    put("date", user.birthday)
+                    put("family_id", familyId)
+                    put("user_id", userId)
+                    put("made_by_user_id", userId)
+                })
+            }
+        }
+    }
 
     suspend fun leaveFamily(userId: String) {
         runCatching {

@@ -46,6 +46,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Cake
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -273,3 +280,79 @@ fun PillTag(text: String, container: Color, content: Color, modifier: Modifier =
 /** Local content color helper for icon rows. */
 @Composable
 fun rowContentColor(): Color = LocalContentColor.current
+
+/** Birthday date picker field — read-only OutlinedTextField that opens a DatePickerDialog on tap.
+ *  Stores/returns ISO-8601 (yyyy-MM-dd). Initialises to [value] when already set. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BirthdayPickerField(value: String, onChange: (String) -> Unit) {
+    var showPicker by remember { mutableStateOf(false) }
+    val fallbackMillis = System.currentTimeMillis() - 30L * 365 * 24 * 60 * 60 * 1000
+    val pickerState = rememberDatePickerState(
+        initialSelectedDateMillis = if (value.isNotEmpty()) {
+            runCatching {
+                java.time.LocalDate.parse(value)
+                    .atStartOfDay(java.time.ZoneOffset.UTC)
+                    .toInstant()
+                    .toEpochMilli()
+            }.getOrDefault(fallbackMillis)
+        } else fallbackMillis
+    )
+    // Re-sync picker to confirmed value whenever dialog re-opens (handles cancel→reopen case)
+    LaunchedEffect(showPicker) {
+        if (showPicker && value.isNotEmpty()) {
+            pickerState.selectedDateMillis = runCatching {
+                java.time.LocalDate.parse(value)
+                    .atStartOfDay(java.time.ZoneOffset.UTC)
+                    .toInstant()
+                    .toEpochMilli()
+            }.getOrNull() ?: pickerState.selectedDateMillis
+        }
+    }
+
+    val displayText = if (value.isNotEmpty()) {
+        runCatching {
+            java.time.LocalDate.parse(value)
+                .format(java.time.format.DateTimeFormatter.ofPattern("MMMM d, yyyy"))
+        }.getOrDefault(value)
+    } else ""
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = displayText,
+            onValueChange = {},
+            label = { Text("Birthday (optional)") },
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = { Icon(Icons.Outlined.Cake, contentDescription = null) },
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            )
+        )
+        Box(modifier = Modifier.matchParentSize().clickable { showPicker = true })
+    }
+
+    if (showPicker) {
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { millis ->
+                        val date = java.time.Instant.ofEpochMilli(millis)
+                            .atZone(java.time.ZoneOffset.UTC)
+                            .toLocalDate()
+                        onChange(date.toString())
+                    }
+                    showPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
+}

@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -118,6 +119,7 @@ fun ConversationScreen(
 ) {
     androidx.compose.runtime.LaunchedEffect(conversationId) { viewModel.loadConversation(conversationId) }
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val conversation by viewModel.conversation.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val myId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
@@ -187,7 +189,13 @@ fun ConversationScreen(
                         maxLines = 4
                     )
                     FloatingActionButton(
-                        onClick = { if (draft.isNotBlank()) { viewModel.send(conversationId, draft.trim()); draft = "" } },
+                        onClick = {
+                            if (draft.isNotBlank()) {
+                                viewModel.send(conversationId, draft.trim())
+                                draft = ""
+                                keyboardController?.hide()
+                            }
+                        },
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(52.dp)
