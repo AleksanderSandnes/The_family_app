@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.UserLocationModel
+import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -40,6 +41,9 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
     private val _locations = MutableStateFlow<List<UserLocationModel>>(emptyList())
     val locations: StateFlow<List<UserLocationModel>> = _locations.asStateFlow()
 
+    private val _userProfiles = MutableStateFlow<Map<String, UserModel>>(emptyMap())
+    val userProfiles: StateFlow<Map<String, UserModel>> = _userProfiles.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -58,10 +62,18 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
                     val user = repo.getUser(userId)
                     currentFamilyId = user?.familyId
                     loadLocations()
-                    if (user?.familyId != null) subscribeToLocations(user.familyId)
+                    if (user?.familyId != null) {
+                        loadUserProfiles(user.familyId)
+                        subscribeToLocations(user.familyId)
+                    }
                 }
             }
         }
+    }
+
+    private suspend fun loadUserProfiles(familyId: String) {
+        val members = repo.getFamilyMembers(familyId)
+        _userProfiles.value = members.associateBy { it.id }
     }
 
     private suspend fun loadLocations() {

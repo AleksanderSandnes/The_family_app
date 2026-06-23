@@ -40,6 +40,12 @@ class FamilyRepository(val session: SessionManager) {
             .firstOrNull()
     }.getOrNull()
 
+    suspend fun getFamilyMembers(familyId: String): List<UserModel> = runCatching {
+        SupabaseManager.client.postgrest.from("users")
+            .select { filter { eq("family_id", familyId) } }
+            .decodeList<UserModel>()
+    }.getOrDefault(emptyList())
+
     suspend fun getFamily(familyId: String): FamilyModel? = runCatching {
         SupabaseManager.client.postgrest.from("families")
             .select { filter { eq("id", familyId) } }
@@ -164,8 +170,59 @@ class FamilyRepository(val session: SessionManager) {
     }
 
     suspend fun leaveFamily(userId: String) {
-        runCatching {
+        val user = getUser(userId) ?: return
+        val familyId = user.familyId ?: run {
             SupabaseManager.client.postgrest.from("users").update({
+                set("family_id", null as String?)
+            }) { filter { eq("id", userId) } }
+            _familyChanged.emit(Unit)
+            return
+        }
+        val client = SupabaseManager.client
+        runCatching {
+            // Find conversations where this user is the sole participant (should be deleted)
+            val myParticipantRows = client.postgrest.from("conversation_participants")
+                .select { filter { eq("user_id", userId) } }
+                .decodeList<ConversationParticipantModel>()
+
+            val myConversationIds = myParticipantRows.map { it.conversationId }
+            if (myConversationIds.isNotEmpty()) {
+                val allRows = client.postgrest.from("conversation_participants")
+                    .select { filter { isIn("conversation_id", myConversationIds) } }
+                    .decodeList<ConversationParticipantModel>()
+
+                val soloIds = allRows.groupBy { it.conversationId }
+                    .filter { (_, rows) -> rows.size == 1 }
+                    .keys.toList()
+
+                if (soloIds.isNotEmpty()) {
+                    client.postgrest.from("conversations").delete {
+                        filter { isIn("id", soloIds) }
+                    }
+                }
+                // Remove user from all group conversations (participant rows)
+                client.postgrest.from("conversation_participants").delete {
+                    filter { eq("user_id", userId) }
+                }
+            }
+
+            // Delete user's calendar events in this family
+            client.postgrest.from("calendar_events").delete {
+                filter { eq("user_id", userId); eq("family_id", familyId) }
+            }
+
+            // Delete birthdays created by this user in this family
+            client.postgrest.from("birthdays").delete {
+                filter { eq("made_by_user_id", userId); eq("family_id", familyId) }
+            }
+
+            // Delete user's shopping lists in this family (items cascade)
+            client.postgrest.from("shopping_lists").delete {
+                filter { eq("owner_user_id", userId); eq("family_id", familyId) }
+            }
+
+            // Clear family membership
+            client.postgrest.from("users").update({
                 set("family_id", null as String?)
             }) { filter { eq("id", userId) } }
         }.onSuccess { _familyChanged.emit(Unit) }

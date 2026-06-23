@@ -119,6 +119,14 @@ data class UserLocationModel(
 )
 
 @Serializable
+data class ConversationParticipantModel(
+    val id: String = "",
+    @SerialName("conversation_id") val conversationId: String = "",
+    @SerialName("user_id") val userId: String = "",
+    @SerialName("joined_at") val joinedAt: String = ""
+)
+
+@Serializable
 data class MessageModel(
     val id: String = "",
     @SerialName("conversation_id") val conversationId: String = "",

@@ -8,8 +8,10 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.ConversationModel
+import com.example.mainactivity.data.ConversationParticipantModel
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.MessageModel
+import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
@@ -23,8 +25,11 @@ import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -55,6 +60,25 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val _replyTo = MutableStateFlow<MessageModel?>(null)
     val replyTo: StateFlow<MessageModel?> = _replyTo.asStateFlow()
 
+    private val _userProfiles = MutableStateFlow<Map<String, UserModel>>(emptyMap())
+    val userProfiles: StateFlow<Map<String, UserModel>> = _userProfiles.asStateFlow()
+
+    // Participants for the currently-open conversation
+    private val _currentParticipants = MutableStateFlow<List<UserModel>>(emptyList())
+    val currentParticipants: StateFlow<List<UserModel>> = _currentParticipants.asStateFlow()
+
+    // All family members (for the member picker)
+    private val _familyMembers = MutableStateFlow<List<UserModel>>(emptyList())
+    val familyMembers: StateFlow<List<UserModel>> = _familyMembers.asStateFlow()
+
+    // Participants per conversation for the list view
+    private val _conversationParticipants = MutableStateFlow<Map<String, List<UserModel>>>(emptyMap())
+    val conversationParticipants: StateFlow<Map<String, List<UserModel>>> = _conversationParticipants.asStateFlow()
+
+    // Navigation event: open a different conversation (e.g. after upgrading 1:1 → group)
+    private val _navigateToConversation = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val navigateToConversation: SharedFlow<String> = _navigateToConversation.asSharedFlow()
+
     private var realtimeChannel: RealtimeChannel? = null
     private var pendingCameraConversationId: String = ""
     private var pendingCameraFile: File? = null
@@ -77,16 +101,48 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId)
-            _conversations.value = if (user?.familyId != null) {
-                db.from("conversations")
-                    .select { filter { or { eq("user_from", userId); eq("family_id", user.familyId) } } }
-                    .decodeList<ConversationModel>()
-                    .filter { it.familyId == null || it.familyId == user.familyId }
+
+            // Load all family members for the picker
+            if (user?.familyId != null) {
+                val members = repo.getFamilyMembers(user.familyId)
+                _familyMembers.value = members
+                _userProfiles.value = members.associateBy { it.id }
+            }
+
+            // Fetch conversations this user participates in
+            val myRows = db.from("conversation_participants")
+                .select { filter { eq("user_id", userId) } }
+                .decodeList<ConversationParticipantModel>()
+
+            val conversationIds = myRows.map { it.conversationId }
+
+            if (conversationIds.isEmpty()) {
+                _conversations.value = emptyList()
+                _conversationParticipants.value = emptyMap()
             } else {
-                db.from("conversations")
-                    .select { filter { eq("user_from", userId) } }
+                val convs = db.from("conversations")
+                    .select { filter { isIn("id", conversationIds) } }
                     .decodeList<ConversationModel>()
-                    .filter { it.familyId == null }
+
+                // Load all participant rows for list display
+                val allRows = db.from("conversation_participants")
+                    .select { filter { isIn("conversation_id", conversationIds) } }
+                    .decodeList<ConversationParticipantModel>()
+
+                // Ensure profiles for all participants are loaded
+                val knownIds = _userProfiles.value.keys
+                val missingIds = allRows.map { it.userId }.distinct().filter { it !in knownIds }
+                if (missingIds.isNotEmpty()) {
+                    val fresh = db.from("users")
+                        .select { filter { isIn("id", missingIds) } }
+                        .decodeList<UserModel>()
+                    _userProfiles.update { it + fresh.associateBy { u -> u.id } }
+                }
+
+                val participantsMap = allRows.groupBy { it.conversationId }
+                    .mapValues { (_, rows) -> rows.mapNotNull { _userProfiles.value[it.userId] } }
+                _conversationParticipants.value = participantsMap
+                _conversations.value = convs
             }
         }
         _isLoading.value = false
@@ -101,6 +157,32 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
             _messages.value = db.from("messages")
                 .select { filter { eq("conversation_id", conversationId) }; order("sent_at", Order.ASCENDING) }
                 .decodeList<MessageModel>()
+
+            // Load participants for this conversation
+            val participantRows = db.from("conversation_participants")
+                .select { filter { eq("conversation_id", conversationId) } }
+                .decodeList<ConversationParticipantModel>()
+            val participantUserIds = participantRows.map { it.userId }
+
+            val knownIds = _userProfiles.value.keys
+            val missingIds = participantUserIds.filter { it !in knownIds }
+            if (missingIds.isNotEmpty()) {
+                val fresh = db.from("users")
+                    .select { filter { isIn("id", missingIds) } }
+                    .decodeList<UserModel>()
+                _userProfiles.update { it + fresh.associateBy { u -> u.id } }
+            }
+            _currentParticipants.value = participantUserIds.mapNotNull { _userProfiles.value[it] }
+
+            // Ensure family members list is populated for the add-member picker
+            val userId = repo.currentUserId.first()
+            val user = if (userId != null) repo.getUser(userId) else null
+            if (user?.familyId != null && _familyMembers.value.isEmpty()) {
+                val members = repo.getFamilyMembers(user.familyId)
+                _familyMembers.value = members
+                _userProfiles.update { existing -> existing + members.associateBy { it.id } }
+            }
+
             subscribeToMessages(conversationId)
         }
     }
@@ -125,17 +207,77 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun createConversation(name: String) = viewModelScope.launch {
+    fun createConversation(name: String, memberIds: List<String>) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
         val user = repo.getUser(userId) ?: return@launch
         runCatching {
-            db.from("conversations").insert(buildJsonObject {
+            val conv = db.from("conversations").insert(buildJsonObject {
                 put("user_from", userId)
                 put("name", name.trim())
                 if (user.familyId != null) put("family_id", user.familyId)
-            })
+            }) { select() }.decodeList<ConversationModel>().first()
+
+            val allParticipants = (memberIds + userId).distinct()
+            allParticipants.forEach { participantId ->
+                db.from("conversation_participants").insert(buildJsonObject {
+                    put("conversation_id", conv.id)
+                    put("user_id", participantId)
+                })
+            }
         }
         loadConversations(userId)
+    }
+
+    fun addMember(conversationId: String, newUserId: String) = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        val user = repo.getUser(userId) ?: return@launch
+        val participants = _currentParticipants.value
+
+        runCatching {
+            if (participants.size <= 2) {
+                // 1:1 → create a new group conversation with all three
+                val allIds = (participants.map { it.id } + newUserId).distinct()
+                val conv = db.from("conversations").insert(buildJsonObject {
+                    put("user_from", userId)
+                    put("name", "")
+                    if (user.familyId != null) put("family_id", user.familyId)
+                }) { select() }.decodeList<ConversationModel>().first()
+
+                allIds.forEach { participantId ->
+                    db.from("conversation_participants").insert(buildJsonObject {
+                        put("conversation_id", conv.id)
+                        put("user_id", participantId)
+                    })
+                }
+                _navigateToConversation.emit(conv.id)
+            } else {
+                // Already a group — add directly
+                db.from("conversation_participants").insert(buildJsonObject {
+                    put("conversation_id", conversationId)
+                    put("user_id", newUserId)
+                })
+                loadConversation(conversationId)
+            }
+        }
+        loadConversations(userId)
+    }
+
+    fun removeMember(conversationId: String, targetUserId: String) = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        runCatching {
+            db.from("conversation_participants").delete {
+                filter {
+                    eq("conversation_id", conversationId)
+                    eq("user_id", targetUserId)
+                }
+            }
+        }
+        if (targetUserId == userId) {
+            loadConversations(userId)
+        } else {
+            loadConversation(conversationId)
+            loadConversations(userId)
+        }
     }
 
     fun setReplyTo(msg: MessageModel) { _replyTo.value = msg }
@@ -210,7 +352,6 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         runCatching {
             val bucket = SupabaseManager.client.storage.from("group-images")
             bucket.upload("$conversationId/image.jpg", bytes) { upsert = true }
-            // Append timestamp so Coil treats each upload as a new image and doesn't serve a stale cache
             val url = bucket.publicUrl("$conversationId/image.jpg") + "?t=${System.currentTimeMillis()}"
             db.from("conversations").update({
                 set("image_uri", url)

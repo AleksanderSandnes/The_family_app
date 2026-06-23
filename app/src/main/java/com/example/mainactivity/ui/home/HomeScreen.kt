@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.FamilyRepository
-import com.example.mainactivity.ui.components.InitialAvatar
 import com.example.mainactivity.ui.theme.heroGradient
 
 private data class Feature(
@@ -127,9 +126,6 @@ fun HomeScreen(
                 FamilyCard(
                     familyName = state.family?.name,
                     memberCount = state.memberCount,
-                    avatarColor = Color(if (state.user?.avatarColor != 0) state.user?.avatarColor ?: 0xFF6366F1.toInt() else 0xFF6366F1.toInt()),
-                    userName = state.user?.name ?: "",
-                    avatarUri = state.user?.avatarUrl,
                     dark = dark,
                     onClick = onOpenFamily
                 )
@@ -146,9 +142,6 @@ fun HomeScreen(
 private fun FamilyCard(
     familyName: String?,
     memberCount: Int,
-    avatarColor: Color,
-    userName: String,
-    avatarUri: String?,
     dark: Boolean,
     onClick: () -> Unit
 ) {
@@ -181,7 +174,6 @@ private fun FamilyCard(
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            InitialAvatar(userName.ifBlank { "?" }, avatarColor, size = 40, avatarUri = avatarUri)
         }
     }
 }

@@ -1,8 +1,15 @@
 package com.example.mainactivity.ui.map
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,26 +35,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.imageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
+import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.LoadingState
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun FamilyMapScreen(
@@ -55,10 +72,15 @@ fun FamilyMapScreen(
     viewModel: FamilyMapViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current.density
     val myLocation by viewModel.myLocation.collectAsStateWithLifecycle()
     val locations by viewModel.locations.collectAsStateWithLifecycle()
+    val userProfiles by viewModel.userProfiles.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val cameraPositionState = rememberCameraPositionState()
+
+    val markerBitmaps = remember { mutableStateMapOf<String, BitmapDescriptor>() }
+    val markerSizePx = remember(density) { (72 * density).toInt() }
 
     fun fgGranted() = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -120,6 +142,17 @@ fun FamilyMapScreen(
         myLocation?.let { cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 14f)) }
     }
 
+    // Build marker bitmaps whenever locations or profiles change
+    LaunchedEffect(userProfiles, locations) {
+        locations.forEach { loc ->
+            val profile = userProfiles[loc.userId]
+            val bitmap = withContext(Dispatchers.Default) {
+                buildMarkerBitmap(context, profile, loc.displayName, markerSizePx)
+            }
+            markerBitmaps[loc.userId] = BitmapDescriptorFactory.fromBitmap(bitmap)
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             viewModel.stopLocationUpdates()
@@ -143,7 +176,8 @@ fun FamilyMapScreen(
                     locations.forEach { loc ->
                         Marker(
                             state = MarkerState(LatLng(loc.lat, loc.lng)),
-                            title = loc.displayName
+                            title = loc.displayName,
+                            icon = markerBitmaps[loc.userId]
                         )
                     }
                 }
@@ -189,6 +223,80 @@ fun FamilyMapScreen(
                 }
             }
         }
+    }
+}
+
+private suspend fun buildMarkerBitmap(
+    context: Context,
+    profile: UserModel?,
+    displayName: String,
+    sizePx: Int
+): Bitmap {
+    val name = profile?.name?.ifBlank { displayName } ?: displayName
+    val colorInt = profile?.avatarColor?.takeIf { it != 0 } ?: 0xFF6366F1.toInt()
+    if (profile?.avatarUrl != null) {
+        val photo = loadCircularBitmap(context, profile.avatarUrl, sizePx)
+        if (photo != null) return photo
+    }
+    return createInitialsBitmap(name, colorInt, sizePx)
+}
+
+private fun createInitialsBitmap(name: String, colorInt: Int, sizePx: Int): Bitmap {
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val radius = sizePx / 2f
+
+    val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorInt }
+    canvas.drawCircle(radius, radius, radius, bgPaint)
+
+    val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = sizePx * 0.07f
+    }
+    canvas.drawCircle(radius, radius, radius - sizePx * 0.035f, borderPaint)
+
+    val initial = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        textAlign = Paint.Align.CENTER
+        textSize = sizePx * 0.42f
+        typeface = Typeface.DEFAULT_BOLD
+    }
+    val bounds = Rect()
+    textPaint.getTextBounds(initial, 0, initial.length, bounds)
+    canvas.drawText(initial, radius, radius - bounds.exactCenterY(), textPaint)
+    return bitmap
+}
+
+private suspend fun loadCircularBitmap(context: Context, url: String, sizePx: Int): Bitmap? {
+    return try {
+        val request = ImageRequest.Builder(context)
+            .data(url)
+            .size(sizePx)
+            .allowHardware(false)
+            .build()
+        val result = context.imageLoader.execute(request) as? SuccessResult ?: return null
+        val source = (result.drawable as? BitmapDrawable)?.bitmap ?: return null
+
+        val output = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        val clipPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, clipPaint)
+        val xferPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
+        }
+        canvas.drawBitmap(Bitmap.createScaledBitmap(source, sizePx, sizePx, true), 0f, 0f, xferPaint)
+
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = sizePx * 0.07f
+        }
+        canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f - sizePx * 0.035f, borderPaint)
+        output
+    } catch (e: Exception) {
+        null
     }
 }
 
