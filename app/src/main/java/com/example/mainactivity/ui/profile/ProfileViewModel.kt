@@ -11,7 +11,6 @@ import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.currentSessionOrNull
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
