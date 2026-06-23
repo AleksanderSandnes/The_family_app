@@ -210,7 +210,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         runCatching {
             val bucket = SupabaseManager.client.storage.from("group-images")
             bucket.upload("$conversationId/image.jpg", bytes) { upsert = true }
-            val url = bucket.publicUrl("$conversationId/image.jpg")
+            // Append timestamp so Coil treats each upload as a new image and doesn't serve a stale cache
+            val url = bucket.publicUrl("$conversationId/image.jpg") + "?t=${System.currentTimeMillis()}"
             db.from("conversations").update({
                 set("image_uri", url)
             }) { filter { eq("id", conversationId) } }
