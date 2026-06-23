@@ -1,6 +1,7 @@
 package com.example.mainactivity.ui.calendar
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -24,16 +25,33 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Celebration
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -50,7 +68,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -62,6 +79,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -86,6 +104,33 @@ private val SECTION_DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d MMMM", Local
 private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 private val WEEKDAY_LABELS = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
 
+private data class CalendarIconOption(val key: String, val vector: ImageVector)
+
+private val CALENDAR_ICON_OPTIONS = listOf(
+    CalendarIconOption("schedule", Icons.Filled.Schedule),
+    CalendarIconOption("cake", Icons.Filled.Cake),
+    CalendarIconOption("people", Icons.Filled.People),
+    CalendarIconOption("work", Icons.Filled.Work),
+    CalendarIconOption("school", Icons.Filled.School),
+    CalendarIconOption("restaurant", Icons.Filled.Restaurant),
+    CalendarIconOption("flight", Icons.Filled.Flight),
+    CalendarIconOption("local_hospital", Icons.Filled.LocalHospital),
+    CalendarIconOption("celebration", Icons.Filled.Celebration),
+    CalendarIconOption("shopping_cart", Icons.Filled.ShoppingCart),
+    CalendarIconOption("music_note", Icons.Filled.MusicNote),
+    CalendarIconOption("fitness_center", Icons.Filled.FitnessCenter),
+    CalendarIconOption("wb_sunny", Icons.Filled.WbSunny),
+    CalendarIconOption("favorite", Icons.Filled.Favorite),
+    CalendarIconOption("star", Icons.Filled.Star),
+    CalendarIconOption("emoji_events", Icons.Filled.EmojiEvents),
+)
+
+private fun iconVector(key: String): ImageVector =
+    CALENDAR_ICON_OPTIONS.find { it.key == key }?.vector ?: Icons.Filled.Schedule
+
+private fun parseHh(t: String) = t.substringBefore(":").toIntOrNull()?.coerceIn(0, 23) ?: 9
+private fun parseMm(t: String) = t.substringAfter(":").toIntOrNull()?.coerceIn(0, 59) ?: 0
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
@@ -94,6 +139,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
     val dayEvents by viewModel.eventsForSelectedDate.collectAsStateWithLifecycle()
     val allEvents by viewModel.events.collectAsStateWithLifecycle(emptyList())
     var showAdd by remember { mutableStateOf(false) }
+    var eventToEdit by remember { mutableStateOf<CalendarEventEntity?>(null) }
 
     val datesWithEvents = remember(allEvents) {
         buildSet<LocalDate> {
@@ -142,7 +188,11 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(dayEvents, key = { it.id }) { event ->
-                        EventCard(event = event, onDelete = { viewModel.delete(event) })
+                        EventCard(
+                            event = event,
+                            onDelete = { viewModel.delete(event) },
+                            onEdit = { eventToEdit = event }
+                        )
                     }
                     item { Spacer(Modifier.height(80.dp)) }
                 }
@@ -151,12 +201,35 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
     }
 
     if (showAdd) {
-        AddEventDialog(
+        EventDialog(
+            existingEvent = null,
             initialDate = selectedDate,
             onDismiss = { showAdd = false },
-            onConfirm = { activity, allDay, dateFrom, dateTo, timeFrom, timeTo ->
-                viewModel.addEvent(activity, allDay, dateFrom, dateTo, timeFrom, timeTo)
+            onSave = { activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon ->
+                viewModel.addEvent(activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon)
                 showAdd = false
+            }
+        )
+    }
+
+    eventToEdit?.let { event ->
+        EventDialog(
+            existingEvent = event,
+            initialDate = selectedDate,
+            onDismiss = { eventToEdit = null },
+            onSave = { activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon ->
+                viewModel.updateEvent(
+                    event.copy(
+                        activity = activity,
+                        allDay = allDay,
+                        dateFrom = dateFrom,
+                        dateTo = dateTo,
+                        timeFrom = timeFrom,
+                        timeTo = timeTo,
+                        icon = icon
+                    )
+                )
+                eventToEdit = null
             }
         )
     }
@@ -308,13 +381,17 @@ private fun monthCells(month: YearMonth): List<LocalDate?> {
 }
 
 @Composable
-private fun EventCard(event: CalendarEventEntity, onDelete: () -> Unit) {
+private fun EventCard(
+    event: CalendarEventEntity,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
+) {
     val subtitle = eventSubtitle(event)
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 1.dp,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().clickable { onEdit() }
     ) {
         Row(
             Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -328,7 +405,7 @@ private fun EventCard(event: CalendarEventEntity, onDelete: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    if (event.allDay) Icons.Filled.WbSunny else Icons.Filled.Schedule,
+                    iconVector(event.icon),
                     null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(20.dp)
@@ -372,19 +449,75 @@ private fun eventSubtitle(event: CalendarEventEntity): String {
     }
 }
 
+@Composable
+private fun IconPickerGrid(selected: String, onSelect: (String) -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 4.dp)
+    ) {
+        CALENDAR_ICON_OPTIONS.chunked(4).forEach { row ->
+            Row(Modifier.fillMaxWidth()) {
+                row.forEach { opt ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (selected == opt.key) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            .clickable { onSelect(opt.key) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            opt.vector,
+                            null,
+                            modifier = Modifier.size(22.dp),
+                            tint = if (selected == opt.key) MaterialTheme.colorScheme.onPrimaryContainer
+                                   else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddEventDialog(
+private fun EventDialog(
+    existingEvent: CalendarEventEntity?,
     initialDate: LocalDate,
     onDismiss: () -> Unit,
-    onConfirm: (activity: String, allDay: Boolean, dateFrom: String, dateTo: String, timeFrom: String, timeTo: String) -> Unit
+    onSave: (activity: String, allDay: Boolean, dateFrom: String, dateTo: String, timeFrom: String, timeTo: String, icon: String) -> Unit
 ) {
-    var activity by remember { mutableStateOf("") }
-    var allDay by remember { mutableStateOf(false) }
-    var dateFrom by remember { mutableStateOf(initialDate) }
-    var dateTo by remember { mutableStateOf(initialDate) }
-    val timeFromState = rememberTimePickerState(initialHour = 9, initialMinute = 0)
-    val timeToState = rememberTimePickerState(initialHour = 10, initialMinute = 0)
+    val isEdit = existingEvent != null
+    var activity by remember { mutableStateOf(existingEvent?.activity ?: "") }
+    var allDay by remember { mutableStateOf(existingEvent?.allDay ?: false) }
+    var selectedIcon by remember { mutableStateOf(existingEvent?.icon ?: "schedule") }
+    var showIconPicker by remember { mutableStateOf(false) }
+    var dateFrom by remember {
+        mutableStateOf(
+            existingEvent?.let { runCatching { LocalDate.parse(it.dateFrom) }.getOrNull() } ?: initialDate
+        )
+    }
+    var dateTo by remember {
+        mutableStateOf(
+            existingEvent?.let { runCatching { LocalDate.parse(it.dateTo) }.getOrNull() } ?: initialDate
+        )
+    }
+    val timeFromState = rememberTimePickerState(
+        initialHour = existingEvent?.timeFrom?.let { parseHh(it) } ?: 9,
+        initialMinute = existingEvent?.timeFrom?.let { parseMm(it) } ?: 0
+    )
+    val timeToState = rememberTimePickerState(
+        initialHour = existingEvent?.timeTo?.let { parseHh(it) } ?: 10,
+        initialMinute = existingEvent?.timeTo?.let { parseMm(it) } ?: 0
+    )
     var showDateFromPicker by remember { mutableStateOf(false) }
     var showDateToPicker by remember { mutableStateOf(false) }
     var showTimeFromPicker by remember { mutableStateOf(false) }
@@ -394,17 +527,46 @@ private fun AddEventDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
-        title = { Text("New event", style = MaterialTheme.typography.titleLarge) },
+        title = {
+            Text(
+                if (isEdit) "Edit event" else "New event",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
         text = {
-            Column {
-                OutlinedTextField(
-                    value = activity,
-                    onValueChange = { activity = it },
-                    placeholder = { Text("Event name") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .clickable { showIconPicker = !showIconPicker },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            iconVector(selectedIcon),
+                            "Change icon",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    OutlinedTextField(
+                        value = activity,
+                        onValueChange = { activity = it },
+                        placeholder = { Text("Event name") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                AnimatedVisibility(visible = showIconPicker) {
+                    IconPickerGrid(
+                        selected = selectedIcon,
+                        onSelect = { selectedIcon = it; showIconPicker = false }
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 Row(
@@ -447,11 +609,12 @@ private fun AddEventDialog(
                 if (activity.isNotBlank()) {
                     val tf = "%02d:%02d".format(timeFromState.hour, timeFromState.minute)
                     val tt = "%02d:%02d".format(timeToState.hour, timeToState.minute)
-                    onConfirm(
+                    onSave(
                         activity.trim(), allDay,
                         dateFrom.toString(), dateTo.toString(),
                         if (allDay) "" else tf,
-                        if (allDay) "" else tt
+                        if (allDay) "" else tt,
+                        selectedIcon
                     )
                 } else {
                     showError = true

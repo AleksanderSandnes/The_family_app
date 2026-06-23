@@ -69,7 +69,8 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
         dateFrom: String,
         dateTo: String,
         timeFrom: String,
-        timeTo: String
+        timeTo: String,
+        icon: String = "schedule"
     ) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
         val resolvedDateTo = if (dateTo.isBlank()) dateFrom else dateTo
@@ -81,10 +82,13 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
                 dateTo = resolvedDateTo,
                 timeFrom = if (allDay) "" else timeFrom,
                 timeTo = if (allDay) "" else timeTo,
-                userId = userId
+                userId = userId,
+                icon = icon
             )
         )
     }
+
+    fun updateEvent(event: CalendarEventEntity) = viewModelScope.launch { dao.update(event) }
 
     fun delete(event: CalendarEventEntity) = viewModelScope.launch { dao.delete(event) }
 }
