@@ -1,8 +1,12 @@
 package com.example.mainactivity.ui.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -99,6 +103,11 @@ private fun MainFlow() {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        // Only consume bottom + horizontal insets here; inner screens' TopAppBars handle the
+        // status-bar inset themselves, so the outer scaffold must not also pad for it.
+        contentWindowInsets = WindowInsets.systemBars.only(
+            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
+        ),
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
