@@ -43,6 +43,7 @@ import com.example.mainactivity.ui.chat.ChatScreen
 import com.example.mainactivity.ui.chat.ConversationScreen
 import com.example.mainactivity.ui.family.FamilyScreen
 import com.example.mainactivity.ui.home.HomeScreen
+import com.example.mainactivity.ui.map.FamilyMapScreen
 import com.example.mainactivity.ui.meal.MealDetailScreen
 import com.example.mainactivity.ui.meal.MealScreen
 import com.example.mainactivity.ui.profile.ProfileEditScreen
@@ -200,6 +201,7 @@ private fun MainFlow() {
 
             composable(Routes.PROFILE_EDIT) { ProfileEditScreen(onBack = { navController.popBackStack() }) }
             composable(Routes.SETTINGS) { SettingsScreen(onBack = { navController.popBackStack() }) }
+            composable(Routes.FAMILY_MAP) { FamilyMapScreen(onBack = { navController.popBackStack() }) }
         }
     }
 }

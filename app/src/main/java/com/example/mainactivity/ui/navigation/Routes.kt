@@ -20,6 +20,7 @@ object Routes {
     const val CHAT_DETAIL = "chat/{conversationId}"
     const val PROFILE_EDIT = "profile/edit"
     const val SETTINGS = "settings"
+    const val FAMILY_MAP = "family_map"
 
     fun shoppingDetail(id: String) = "shopping/$id"
     fun mealDetail(id: String) = "meal/$id"
