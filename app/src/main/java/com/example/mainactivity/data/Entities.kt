@@ -109,6 +109,16 @@ data class ConversationModel(
 )
 
 @Serializable
+data class UserLocationModel(
+    @SerialName("user_id") val userId: String = "",
+    @SerialName("family_id") val familyId: String? = null,
+    val lat: Double = 0.0,
+    val lng: Double = 0.0,
+    @SerialName("display_name") val displayName: String = "",
+    val visible: Boolean = false
+)
+
+@Serializable
 data class MessageModel(
     val id: String = "",
     @SerialName("conversation_id") val conversationId: String = "",
