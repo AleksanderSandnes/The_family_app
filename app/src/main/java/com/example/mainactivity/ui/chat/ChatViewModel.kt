@@ -49,6 +49,9 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val _messages = MutableStateFlow<List<MessageModel>>(emptyList())
     val messages: StateFlow<List<MessageModel>> = _messages.asStateFlow()
 
+    private val _replyTo = MutableStateFlow<MessageModel?>(null)
+    val replyTo: StateFlow<MessageModel?> = _replyTo.asStateFlow()
+
     private var realtimeChannel: RealtimeChannel? = null
     private var pendingCameraConversationId: String = ""
     private var pendingCameraFile: File? = null
@@ -122,14 +125,20 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         loadConversations(userId)
     }
 
+    fun setReplyTo(msg: MessageModel) { _replyTo.value = msg }
+    fun clearReplyTo() { _replyTo.value = null }
+
     fun send(conversationId: String, text: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
+        val pendingReplyTo = _replyTo.value
         runCatching {
             db.from("messages").insert(buildJsonObject {
                 put("conversation_id", conversationId)
                 put("user_from", userId)
                 put("text", text)
+                if (pendingReplyTo != null) put("reply_to_id", pendingReplyTo.id)
             })
+            _replyTo.value = null
             _messages.value = db.from("messages")
                 .select { filter { eq("conversation_id", conversationId) }; order("sent_at", Order.ASCENDING) }
                 .decodeList<MessageModel>()

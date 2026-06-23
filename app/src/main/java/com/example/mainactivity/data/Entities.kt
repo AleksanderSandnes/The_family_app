@@ -114,5 +114,6 @@ data class MessageModel(
     @SerialName("conversation_id") val conversationId: String = "",
     @SerialName("user_from") val userFrom: String = "",
     val text: String = "",
-    @SerialName("sent_at") val sentAt: String = ""
+    @SerialName("sent_at") val sentAt: String = "",
+    @SerialName("reply_to_id") val replyToId: String? = null
 )

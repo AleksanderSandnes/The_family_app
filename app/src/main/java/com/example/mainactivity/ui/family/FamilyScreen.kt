@@ -18,10 +18,12 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +57,7 @@ fun FamilyScreen(
 
     var showCreate by remember { mutableStateOf(false) }
     var showJoin by remember { mutableStateOf(false) }
+    var showLeaveConfirm by remember { mutableStateOf(false) }
 
     androidx.compose.material3.Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -119,10 +122,27 @@ fun FamilyScreen(
                 }
                 item {
                     Spacer(Modifier.height(8.dp))
-                    SecondaryButton("Leave family", onClick = { viewModel.leaveFamily() }, modifier = Modifier.fillMaxWidth(), leadingIcon = Icons.AutoMirrored.Filled.Logout)
+                    SecondaryButton("Leave family", onClick = { showLeaveConfirm = true }, modifier = Modifier.fillMaxWidth(), leadingIcon = Icons.AutoMirrored.Filled.Logout)
                 }
             }
         }
+    }
+
+    if (showLeaveConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLeaveConfirm = false },
+            shape = RoundedCornerShape(24.dp),
+            title = { Text("Leave family?") },
+            text = { Text("You will lose access to shared data. You can rejoin later with the invite code.") },
+            confirmButton = {
+                TextButton(onClick = { showLeaveConfirm = false; viewModel.leaveFamily() }) {
+                    Text("Leave", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLeaveConfirm = false }) { Text("Cancel") }
+            }
+        )
     }
 
     if (showCreate) {

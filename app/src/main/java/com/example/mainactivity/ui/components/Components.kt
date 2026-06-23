@@ -1,16 +1,19 @@
 package com.example.mainactivity.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -44,6 +47,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Cake
@@ -58,7 +62,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import com.example.mainactivity.ui.theme.BrandGradient
@@ -353,6 +364,72 @@ fun BirthdayPickerField(value: String, onChange: (String) -> Unit) {
             }
         ) {
             DatePicker(state = pickerState)
+        }
+    }
+}
+
+/** Apple Mail-style swipe-left-to-reveal-delete. Wraps any content; swiping left past the halfway
+ *  point reveals a red Delete button anchored to the trailing edge. */
+@Composable
+fun SwipeToRevealDelete(
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val offsetX = remember { Animatable(0f) }
+    var revealed by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
+    val revealWidthDp = 80.dp
+    val revealPx = remember(density) { with(density) { revealWidthDp.toPx() } }
+
+    Box(modifier.fillMaxWidth().clipToBounds()) {
+        // Red delete panel — behind the sliding content
+        Row(Modifier.matchParentSize(), horizontalArrangement = Arrangement.End) {
+            Box(
+                Modifier
+                    .width(revealWidthDp)
+                    .fillMaxHeight()
+                    .background(Color(0xFFE53935)),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(onClick = {
+                    scope.launch { offsetX.animateTo(0f) }
+                    revealed = false
+                    onDelete()
+                }) {
+                    Icon(Icons.Filled.Delete, "Delete", tint = Color.White)
+                }
+            }
+        }
+
+        // Foreground content — slides left on drag
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            scope.launch {
+                                if (offsetX.value < -(revealPx / 2)) {
+                                    offsetX.animateTo(-revealPx)
+                                    revealed = true
+                                } else {
+                                    offsetX.animateTo(0f)
+                                    revealed = false
+                                }
+                            }
+                        },
+                        onHorizontalDrag = { _, delta ->
+                            scope.launch {
+                                offsetX.snapTo((offsetX.value + delta).coerceIn(-revealPx, 0f))
+                            }
+                        }
+                    )
+                }
+        ) {
+            content()
         }
     }
 }

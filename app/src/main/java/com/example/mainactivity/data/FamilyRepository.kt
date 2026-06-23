@@ -19,11 +19,13 @@ class FamilyRepository(val session: SessionManager) {
     val themeMode: Flow<ThemeMode> = session.themeMode
     val notificationsEnabled: Flow<Boolean> = session.notificationsEnabled
     val notifyDaysBefore: Flow<Int> = session.notifyDaysBefore
+    val locationVisible: Flow<Boolean> = session.locationVisible
     val sessionStatusFlow: StateFlow<SessionStatus> get() = SupabaseManager.client.auth.sessionStatus
 
     suspend fun setThemeMode(mode: ThemeMode) = session.setThemeMode(mode)
     suspend fun setNotificationsEnabled(enabled: Boolean) = session.setNotificationsEnabled(enabled)
     suspend fun setNotifyDaysBefore(days: Int) = session.setNotifyDaysBefore(days)
+    suspend fun setLocationVisible(enabled: Boolean) = session.setLocationVisible(enabled)
 
     suspend fun getUser(userId: String): UserModel? = runCatching {
         SupabaseManager.client.postgrest.from("users")

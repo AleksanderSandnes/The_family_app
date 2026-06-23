@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
@@ -41,6 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
+import com.example.mainactivity.ui.components.SwipeToRevealDelete
 
 @Composable
 fun WishlistScreen(
@@ -75,21 +75,20 @@ fun WishlistScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(wishlists, key = { it.id }) { wl ->
-                    Surface(
-                        onClick = { onOpen(wl.id) },
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.CardGiftcard, null, tint = MaterialTheme.colorScheme.secondary)
-                            Spacer(Modifier.size(12.dp))
-                            Text(wl.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                            IconButton(onClick = { viewModel.deleteWishlist(wl) }) {
-                                Icon(Icons.Filled.Delete, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    SwipeToRevealDelete(onDelete = { viewModel.deleteWishlist(wl) }) {
+                        Surface(
+                            onClick = { onOpen(wl.id) },
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.CardGiftcard, null, tint = MaterialTheme.colorScheme.secondary)
+                                Spacer(Modifier.size(12.dp))
+                                Text(wl.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -137,24 +136,23 @@ fun WishlistDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(wishes, key = { it.id }) { wish ->
-                    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { viewModel.toggle(wish) }) {
-                                Icon(
-                                    if (wish.checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
-                                    null,
-                                    tint = if (wish.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    SwipeToRevealDelete(onDelete = { viewModel.deleteWish(wish) }) {
+                        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { viewModel.toggle(wish) }) {
+                                    Icon(
+                                        if (wish.checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
+                                        null,
+                                        tint = if (wish.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    wish.text,
+                                    Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = if (wish.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                    textDecoration = if (wish.checked) TextDecoration.LineThrough else TextDecoration.None
                                 )
-                            }
-                            Text(
-                                wish.text,
-                                Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (wish.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                                textDecoration = if (wish.checked) TextDecoration.LineThrough else TextDecoration.None
-                            )
-                            IconButton(onClick = { viewModel.deleteWish(wish) }) {
-                                Icon(Icons.Filled.Delete, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
