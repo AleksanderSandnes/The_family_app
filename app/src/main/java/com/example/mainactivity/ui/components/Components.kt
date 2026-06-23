@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -189,17 +188,6 @@ fun FamilyTextField(
 }
 
 @Composable
-fun SectionHeader(title: String, modifier: Modifier = Modifier, action: (@Composable () -> Unit)? = null) {
-    Row(
-        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
-        action?.invoke()
-    }
-}
-
 /** Rounded gradient avatar showing the first letter of a name, or a photo when avatarUri is set. */
 @Composable
 fun InitialAvatar(
@@ -300,10 +288,6 @@ fun PillTag(text: String, container: Color, content: Color, modifier: Modifier =
         Text(text, color = content, style = MaterialTheme.typography.labelMedium)
     }
 }
-
-/** Local content color helper for icon rows. */
-@Composable
-fun rowContentColor(): Color = LocalContentColor.current
 
 /** Birthday date picker field — read-only OutlinedTextField that opens a DatePickerDialog on tap.
  *  Stores/returns ISO-8601 (yyyy-MM-dd). Initialises to [value] when already set. */
