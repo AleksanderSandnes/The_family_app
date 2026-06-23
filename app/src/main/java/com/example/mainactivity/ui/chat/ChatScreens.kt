@@ -281,16 +281,17 @@ fun ConversationScreen(
                             shape = RoundedCornerShape(24.dp),
                             maxLines = 4
                         )
+                        val canSend = draft.isNotBlank()
                         FloatingActionButton(
                             onClick = {
-                                if (draft.isNotBlank()) {
+                                if (canSend) {
                                     viewModel.send(conversationId, draft.trim())
                                     draft = ""
                                     keyboardController?.hide()
                                 }
                             },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (canSend) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(52.dp)
                         ) { Icon(Icons.AutoMirrored.Filled.Send, "Send") }
                     }

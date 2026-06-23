@@ -77,6 +77,7 @@ fun LoginScreen(
         PrimaryButton(
             text = "Sign in",
             onClick = { viewModel.login(email, password) },
+            enabled = email.isNotBlank() && password.isNotBlank(),
             loading = state.loading,
             modifier = Modifier.fillMaxWidth()
         )
@@ -216,6 +217,7 @@ private fun RegistrationStep1(
     PrimaryButton(
         text = "Continue",
         onClick = onNext,
+        enabled = name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirm.isNotBlank(),
         modifier = Modifier.fillMaxWidth()
     )
 }

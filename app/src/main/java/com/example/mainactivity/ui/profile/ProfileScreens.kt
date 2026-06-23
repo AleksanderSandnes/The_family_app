@@ -274,7 +274,7 @@ fun ProfileEditScreen(
             FamilyTextField(mobile, { mobile = it }, "Mobile", keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
             BirthdayPickerField(value = birthday, onChange = { birthday = it })
             Spacer(Modifier.height(6.dp))
-            PrimaryButton("Save changes", onClick = { viewModel.save(name, email, birthday, mobile); onBack() }, modifier = Modifier.fillMaxWidth())
+            PrimaryButton("Save changes", onClick = { viewModel.save(name, email, birthday, mobile); onBack() }, enabled = name.isNotBlank() && email.isNotBlank(), modifier = Modifier.fillMaxWidth())
         }
     }
 }

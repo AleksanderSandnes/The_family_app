@@ -528,7 +528,6 @@ private fun EventDialog(
     var showDateToPicker by remember { mutableStateOf(false) }
     var showTimeFromPicker by remember { mutableStateOf(false) }
     var showTimeToPicker by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -600,19 +599,12 @@ private fun EventDialog(
                     onTimeClick = { showTimeToPicker = true }
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                if (showError) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Event name is required.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                if (activity.isNotBlank()) {
+            TextButton(
+                enabled = activity.isNotBlank(),
+                onClick = {
                     val tf = "%02d:%02d".format(timeFromState.hour, timeFromState.minute)
                     val tt = "%02d:%02d".format(timeToState.hour, timeToState.minute)
                     onSave(
@@ -622,10 +614,8 @@ private fun EventDialog(
                         if (allDay) "" else tt,
                         selectedIcon
                     )
-                } else {
-                    showError = true
                 }
-            }) { Text("Save") }
+            ) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
