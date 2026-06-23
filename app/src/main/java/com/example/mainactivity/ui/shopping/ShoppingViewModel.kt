@@ -8,6 +8,12 @@ import com.example.mainactivity.data.ShoppingItemModel
 import com.example.mainactivity.data.ShoppingListModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,9 +38,14 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     private val _items = MutableStateFlow<List<ShoppingItemModel>>(emptyList())
     val items: StateFlow<List<ShoppingItemModel>> = _items.asStateFlow()
 
+    private var realtimeListsChannel: RealtimeChannel? = null
+    private var realtimeItemsChannel: RealtimeChannel? = null
+    private var currentUserId: String? = null
+
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
+                currentUserId = userId
                 if (userId != null) loadLists(userId) else _lists.value = emptyList()
             }
         }
@@ -61,8 +72,21 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
                     .decodeList<ShoppingListModel>()
                     .filter { it.familyId == null }
             }
+            if (user?.familyId != null) subscribeToLists(user.familyId, userId)
         }
         _isLoading.value = false
+    }
+
+    private suspend fun subscribeToLists(familyId: String, userId: String) {
+        realtimeListsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        val channel = SupabaseManager.client.channel("shopping-lists-$familyId")
+        realtimeListsChannel = channel
+        val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+            table = "shopping_lists"
+            filter("family_id", FilterOperator.EQ, familyId)
+        }
+        channel.subscribe()
+        viewModelScope.launch { flow.collect { loadLists(userId) } }
     }
 
     fun loadListDetail(listId: String) = viewModelScope.launch {
@@ -75,6 +99,19 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
                 .select { filter { eq("list_id", listId) } }
                 .decodeList<ShoppingItemModel>()
         }
+        subscribeToItems(listId)
+    }
+
+    private suspend fun subscribeToItems(listId: String) {
+        realtimeItemsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        val channel = SupabaseManager.client.channel("shopping-items-$listId")
+        realtimeItemsChannel = channel
+        val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+            table = "shopping_items"
+            filter("list_id", FilterOperator.EQ, listId)
+        }
+        channel.subscribe()
+        viewModelScope.launch { flow.collect { loadListDetail(listId) } }
     }
 
     fun addList(title: String) = viewModelScope.launch {
@@ -118,5 +155,13 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteItem(item: ShoppingItemModel) = viewModelScope.launch {
         runCatching { db.from("shopping_items").delete { filter { eq("id", item.id) } } }
         loadListDetail(item.listId).join()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            realtimeListsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+            realtimeItemsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        }
     }
 }

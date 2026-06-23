@@ -8,6 +8,12 @@ import com.example.mainactivity.data.MealPlanDayModel
 import com.example.mainactivity.data.MealPlanModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +41,8 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
     private val _days = MutableStateFlow<List<MealPlanDayModel>>(emptyList())
     val days: StateFlow<List<MealPlanDayModel>> = _days.asStateFlow()
 
+    private var realtimeChannel: RealtimeChannel? = null
+
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
@@ -60,8 +68,28 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
             _plans.value = db.from("meal_plans")
                 .select { filter { eq("family_id", familyId) } }
                 .decodeList<MealPlanModel>()
+            subscribeToPlans(familyId)
         }
         _isLoading.value = false
+    }
+
+    private suspend fun subscribeToPlans(familyId: String) {
+        realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        val channel = SupabaseManager.client.channel("meal-plans-$familyId")
+        realtimeChannel = channel
+        val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+            table = "meal_plans"
+            filter("family_id", FilterOperator.EQ, familyId)
+        }
+        channel.subscribe()
+        viewModelScope.launch { flow.collect { loadPlans(familyId) } }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        }
     }
 
     fun loadPlanDetail(planId: String) = viewModelScope.launch {
