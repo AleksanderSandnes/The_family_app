@@ -4,10 +4,13 @@ import android.content.Context
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class FamilyRepository(
     private val db: AppDatabase,
@@ -56,9 +59,22 @@ class FamilyRepository(
         client.auth.signUpWith(Email) {
             this.email = emailNorm
             this.password = password
+            this.data = buildJsonObject {
+                put("full_name", name.trim())
+                put("phone", mobile)
+            }
         }
         val supabaseSession = client.auth.currentSessionOrNull()
         val supabaseId = supabaseSession?.user?.id
+        // Insert full profile into public.users so all fields are persisted server-side
+        client.postgrest.from("users").insert(buildJsonObject {
+            if (supabaseId != null) put("auth_id", supabaseId)
+            put("name", name.trim())
+            put("email", emailNorm)
+            put("birthday", birthday)
+            put("mobile", mobile)
+            put("avatar_color", palette(name))
+        })
         val localId = if (userDao.countByEmail(emailNorm) > 0) {
             userDao.findByEmail(emailNorm)!!.id
         } else {
