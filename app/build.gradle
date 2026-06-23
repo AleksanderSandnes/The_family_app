@@ -22,6 +22,8 @@ android {
 
         buildConfigField "String", "SUPABASE_URL", "\"${localProps.getProperty('SUPABASE_URL', 'https://placeholder.supabase.co')}\""
         buildConfigField "String", "SUPABASE_ANON_KEY", "\"${localProps.getProperty('SUPABASE_ANON_KEY', 'placeholder-anon-key')}\""
+
+        manifestPlaceholders = [mapsApiKey: localProps.getProperty('MAPS_API_KEY', '')]
     }
 
     buildTypes {
@@ -92,6 +94,10 @@ dependencies {
     implementation 'io.github.jan-tennert.supabase:realtime-kt'
     implementation 'io.github.jan-tennert.supabase:storage-kt'
     implementation 'io.ktor:ktor-client-android:3.1.2'
+
+    // Google Maps
+    implementation 'com.google.maps.android:maps-compose:8.3.0'
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
