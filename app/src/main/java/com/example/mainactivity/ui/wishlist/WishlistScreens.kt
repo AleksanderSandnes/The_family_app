@@ -90,7 +90,12 @@ fun WishlistScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.CardGiftcard, null, tint = MaterialTheme.colorScheme.secondary)
+                                Box(
+                                    Modifier.size(44.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Filled.CardGiftcard, null, tint = MaterialTheme.colorScheme.secondary)
+                                }
                                 Spacer(Modifier.size(12.dp))
                                 Text(wl.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                                 Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)

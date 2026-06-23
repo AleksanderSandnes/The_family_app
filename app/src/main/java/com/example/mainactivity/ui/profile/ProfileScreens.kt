@@ -149,7 +149,7 @@ fun ProfileScreen(
                 }
             }
 
-            Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(6.dp)) {
                     InfoRow(Icons.Filled.Mail, "Email", user?.email.orEmpty().ifBlank { "—" })
                     InfoRow(Icons.Filled.Phone, "Mobile", user?.mobile.orEmpty().ifBlank { "—" })

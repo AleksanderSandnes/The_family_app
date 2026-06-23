@@ -87,7 +87,12 @@ fun MealScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Restaurant, null, tint = MaterialTheme.colorScheme.tertiary)
+                                Box(
+                                    Modifier.size(44.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Filled.Restaurant, null, tint = MaterialTheme.colorScheme.tertiary)
+                                }
                                 Spacer(Modifier.size(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text("Week ${plan.week}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)

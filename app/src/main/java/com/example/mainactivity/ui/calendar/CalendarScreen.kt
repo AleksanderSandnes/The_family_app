@@ -190,7 +190,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(dayEvents, key = { it.id }) { event ->
@@ -394,9 +394,9 @@ private fun EventCard(
 ) {
     val subtitle = eventSubtitle(event)
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 1.dp,
+        shadowElevation = 2.dp,
         modifier = Modifier.fillMaxWidth().clickable { onEdit() }
     ) {
         Row(

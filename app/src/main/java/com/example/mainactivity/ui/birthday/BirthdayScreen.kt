@@ -125,7 +125,7 @@ private fun BirthdayCard(b: BirthdayModel, today: LocalDate) {
         shadowElevation = 2.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
@@ -165,9 +165,10 @@ private fun AddBirthdayDialog(onDismiss: () -> Unit, onConfirm: (String, String)
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (name.isNotBlank() && date.isNotBlank()) onConfirm(name.trim(), date) }) {
-                Text("Add")
-            }
+            TextButton(
+                onClick = { onConfirm(name.trim(), date) },
+                enabled = name.isNotBlank() && date.isNotBlank()
+            ) { Text("Add") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }

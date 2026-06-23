@@ -127,7 +127,7 @@ fun ChatScreen(
                         shadowElevation = 2.dp,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                             InitialAvatar(c.name, MaterialTheme.colorScheme.primary, avatarUri = c.imageUri)
                             Spacer(Modifier.size(14.dp))
                             Text(c.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
