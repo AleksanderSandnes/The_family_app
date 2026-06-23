@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.offset
@@ -44,21 +46,29 @@ import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -92,21 +102,25 @@ import com.example.mainactivity.ui.theme.BrandGradient
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     onOpen: (String) -> Unit,
     viewModel: ChatViewModel = viewModel()
 ) {
     val conversations by viewModel.conversations.collectAsStateWithLifecycle(emptyList())
+    val conversationParticipants by viewModel.conversationParticipants.collectAsStateWithLifecycle()
+    val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle()
+    val myId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
-    var showAdd by remember { mutableStateOf(false) }
+    var showMemberPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { FeatureTopBar("Family chat") },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAdd = true },
+                onClick = { showMemberPicker = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) { Icon(Icons.Filled.Add, "New conversation") }
@@ -127,6 +141,27 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(conversations, key = { it.id }) { c ->
+                    val participants = conversationParticipants[c.id] ?: emptyList()
+                    val other = participants.firstOrNull { it.id != myId }
+                    val isOneOnOne = participants.size == 2
+
+                    val displayName = remember(c, participants, myId) {
+                        when {
+                            c.name.isNotBlank() -> c.name
+                            isOneOnOne -> other?.name ?: "Chat"
+                            else -> participants.filter { it.id != myId }
+                                .take(3).joinToString(", ") { it.name.split(" ").first() }
+                                .ifBlank { "Group chat" }
+                        }
+                    }
+                    val avatarUri = if (c.imageUri != null) c.imageUri
+                        else if (isOneOnOne) other?.avatarUrl
+                        else null
+                    val avatarColor = Color(
+                        (if (isOneOnOne) other?.avatarColor else null)
+                            ?.takeIf { it != 0 } ?: 0xFF6366F1.toInt()
+                    )
+
                     Surface(
                         onClick = { onOpen(c.id) },
                         shape = RoundedCornerShape(20.dp),
@@ -135,9 +170,24 @@ fun ChatScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                            InitialAvatar(c.name, MaterialTheme.colorScheme.primary, avatarUri = c.imageUri)
+                            InitialAvatar(displayName, avatarColor, size = 44, avatarUri = avatarUri)
                             Spacer(Modifier.size(14.dp))
-                            Text(c.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    displayName,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (!isOneOnOne && participants.isNotEmpty()) {
+                                    Text(
+                                        "${participants.size} members",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -145,21 +195,37 @@ fun ChatScreen(
         }
     }
 
-    if (showAdd) {
-        InputDialog("New conversation", "Conversation name", confirmText = "Create", onDismiss = { showAdd = false }) { v, _ ->
-            viewModel.createConversation(v); showAdd = false
-        }
+    if (showMemberPicker) {
+        NewConversationSheet(
+            familyMembers = familyMembers,
+            myId = myId,
+            onDismiss = { showMemberPicker = false },
+            onCreate = { name, memberIds ->
+                viewModel.createConversation(name, memberIds)
+                showMemberPicker = false
+            }
+        )
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ConversationScreen(
     conversationId: String,
     onBack: () -> Unit,
+    onNavigateTo: (String) -> Unit = {},
     viewModel: ChatViewModel = viewModel()
 ) {
     LaunchedEffect(conversationId) { viewModel.loadConversation(conversationId) }
+
+    // Navigate to a new conversation (e.g. after upgrading 1:1 → group)
+    LaunchedEffect(Unit) {
+        viewModel.navigateToConversation.collect { newId ->
+            onBack()
+            onNavigateTo(newId)
+        }
+    }
+
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
@@ -168,10 +234,34 @@ fun ConversationScreen(
     val myId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     val replyTo by viewModel.replyTo.collectAsStateWithLifecycle()
     val userProfiles by viewModel.userProfiles.collectAsStateWithLifecycle()
+    val currentParticipants by viewModel.currentParticipants.collectAsStateWithLifecycle()
+    val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle()
+
+    // Compute display title: explicit name → other person (1:1) → participants list
+    val title = remember(conversation, currentParticipants, myId) {
+        val conv = conversation ?: return@remember "Chat"
+        if (conv.name.isNotBlank()) return@remember conv.name
+        val others = currentParticipants.filter { it.id != myId }
+        when (others.size) {
+            0 -> "Chat"
+            1 -> others.first().name
+            else -> others.take(3).joinToString(", ") { it.name.split(" ").first() }
+        }
+    }
+
+    // Family members who aren't yet in this conversation
+    val availableToAdd = remember(familyMembers, currentParticipants, myId) {
+        val currentIds = currentParticipants.map { it.id }.toSet()
+        familyMembers.filter { it.id !in currentIds }
+    }
+    val isGroup = currentParticipants.size > 2
+
     var draft by remember { mutableStateOf("") }
     var showMenu by remember { mutableStateOf(false) }
     var showRename by remember { mutableStateOf(false) }
     var showImagePicker by remember { mutableStateOf(false) }
+    var showAddMember by remember { mutableStateOf(false) }
+    var showRemoveMember by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
     var prevMsgCount by remember { mutableStateOf(0) }
@@ -184,7 +274,6 @@ fun ConversationScreen(
         prevMsgCount = messages.size
     }
 
-    // Scroll to bottom when keyboard opens so the latest message stays visible
     val imeVisible = WindowInsets.isImeVisible
     LaunchedEffect(imeVisible) {
         if (imeVisible && messages.isNotEmpty()) listState.scrollToItem(messages.lastIndex)
@@ -216,7 +305,7 @@ fun ConversationScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             FeatureTopBar(
-                title = conversation?.name ?: "Chat",
+                title = title,
                 onBack = onBack,
                 actions = {
                     Box {
@@ -238,6 +327,21 @@ fun ConversationScreen(
                                     onClick = { showMenu = false; viewModel.removeImage(conversationId) }
                                 )
                             }
+                            if (availableToAdd.isNotEmpty()) {
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text(if (isGroup) "Add member" else "Add member (creates group)") },
+                                    leadingIcon = { Icon(Icons.Filled.GroupAdd, null, tint = MaterialTheme.colorScheme.primary) },
+                                    onClick = { showMenu = false; showAddMember = true }
+                                )
+                            }
+                            if (isGroup || currentParticipants.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text(if (isGroup) "Remove member" else "Leave conversation", color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = { Icon(Icons.Filled.PersonRemove, null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = { showMenu = false; showRemoveMember = true }
+                                )
+                            }
                         }
                     }
                 }
@@ -246,7 +350,6 @@ fun ConversationScreen(
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
                 Column {
-                    // Reply strip — shown when replying to a message
                     AnimatedVisibility(visible = replyTo != null) {
                         replyTo?.let { quoted ->
                             Row(
@@ -401,7 +504,272 @@ fun ConversationScreen(
             }
         )
     }
+
+    if (showAddMember) {
+        AddMemberSheet(
+            candidates = availableToAdd,
+            onDismiss = { showAddMember = false },
+            onAdd = { userId ->
+                viewModel.addMember(conversationId, userId)
+                showAddMember = false
+            }
+        )
+    }
+
+    if (showRemoveMember) {
+        RemoveMemberSheet(
+            participants = currentParticipants,
+            myId = myId,
+            onDismiss = { showRemoveMember = false },
+            onRemove = { userId ->
+                viewModel.removeMember(conversationId, userId)
+                showRemoveMember = false
+                if (userId == myId) onBack()
+            }
+        )
+    }
 }
+
+// ─── New conversation member picker ────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NewConversationSheet(
+    familyMembers: List<UserModel>,
+    myId: String?,
+    onDismiss: () -> Unit,
+    onCreate: (name: String, memberIds: List<String>) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+
+    val others = remember(familyMembers, myId) { familyMembers.filter { it.id != myId } }
+    var selectedIds by remember { mutableStateOf(setOf<String>()) }
+    var groupName by remember { mutableStateOf("") }
+
+    val isGroup = selectedIds.size > 1
+    val canCreate = selectedIds.isNotEmpty() && (!isGroup || groupName.isNotBlank())
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp)) {
+            Text(
+                "New conversation",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "Select family members to chat with",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            )
+
+            if (others.isEmpty()) {
+                Box(
+                    Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No other family members yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                    items(others, key = { it.id }) { member ->
+                        MemberSelectRow(
+                            member = member,
+                            selected = member.id in selectedIds,
+                            onToggle = {
+                                selectedIds = if (member.id in selectedIds)
+                                    selectedIds - member.id else selectedIds + member.id
+                            }
+                        )
+                    }
+                }
+            }
+
+            AnimatedVisibility(visible = isGroup) {
+                Column {
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = groupName,
+                        onValueChange = { groupName = it },
+                        label = { Text("Group name") },
+                        placeholder = { Text("e.g. Weekend plans") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    scope.launch {
+                        sheetState.hide()
+                        val name = if (isGroup) groupName else ""
+                        onCreate(name, selectedIds.toList())
+                    }
+                },
+                enabled = canCreate,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text(
+                    if (isGroup) "Create group" else "Start chat",
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+// ─── Add member to existing conversation ───────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddMemberSheet(
+    candidates: List<UserModel>,
+    onDismiss: () -> Unit,
+    onAdd: (userId: String) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp)) {
+            Text(
+                "Add member",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "Tap a member to add them",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            )
+
+            LazyColumn(Modifier.heightIn(max = 400.dp)) {
+                items(candidates, key = { it.id }) { member ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onAdd(member.id) }
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        InitialAvatar(
+                            name = member.name,
+                            color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+                            size = 42,
+                            avatarUri = member.avatarUrl
+                        )
+                        Text(member.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+// ─── Remove member from conversation ───────────────────────────────────────
+
+@Composable
+private fun RemoveMemberSheet(
+    participants: List<UserModel>,
+    myId: String?,
+    onDismiss: () -> Unit,
+    onRemove: (userId: String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        title = { Text("Members", style = MaterialTheme.typography.titleLarge) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                participants.forEach { member ->
+                    val isMe = member.id == myId
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        InitialAvatar(
+                            name = member.name,
+                            color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+                            size = 36,
+                            avatarUri = member.avatarUrl
+                        )
+                        Text(
+                            if (isMe) "${member.name} (You)" else member.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(
+                            onClick = { onRemove(member.id) }
+                        ) {
+                            Text(
+                                if (isMe) "Leave" else "Remove",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+// ─── Member select row (used in NewConversationSheet) ──────────────────────
+
+@Composable
+private fun MemberSelectRow(
+    member: UserModel,
+    selected: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        InitialAvatar(
+            name = member.name,
+            color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+            size = 42,
+            avatarUri = member.avatarUrl
+        )
+        Text(
+            member.name,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        Checkbox(checked = selected, onCheckedChange = { onToggle() })
+    }
+}
+
+// ─── Message rendering (unchanged) ─────────────────────────────────────────
 
 @Composable
 private fun MessageRow(
@@ -456,7 +824,6 @@ private fun MessageRow(
                     .pointerInput(Unit) { detectTapGestures(onTap = { showTime = !showTime }) },
                 verticalAlignment = Alignment.Bottom
             ) {
-                // Avatar slot — always 36dp wide to keep bubbles left-aligned
                 if (isLastInGroup) {
                     val avatarName = senderProfile?.name?.ifBlank { "?" } ?: "?"
                     val avatarColor = Color(

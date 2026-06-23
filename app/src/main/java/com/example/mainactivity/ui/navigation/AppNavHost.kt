@@ -238,7 +238,11 @@ private fun MainFlow() {
                 Routes.CHAT_DETAIL,
                 arguments = listOf(navArgument("conversationId") { type = NavType.StringType })
             ) { entry ->
-                ConversationScreen(entry.arguments!!.getString("conversationId")!!, onBack = { navController.popBackStack() })
+                ConversationScreen(
+                    conversationId = entry.arguments!!.getString("conversationId")!!,
+                    onBack = { navController.popBackStack() },
+                    onNavigateTo = { id -> navController.navigate(Routes.chatDetail(id)) }
+                )
             }
 
             composable(Routes.PROFILE_EDIT) { ProfileEditScreen(onBack = { navController.popBackStack() }) }
