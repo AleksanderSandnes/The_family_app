@@ -4,12 +4,6 @@ The Family App is an Android application that gives families one shared home for
 everyday coordination — shopping, meals, calendar, birthdays, wishlists, chat and
 more — wrapped in a modern, premium interface.
 
-## Team
-
-- Aleksander Ranum (Ranum99)
-- Aleksander Sandnes (AleksanderSandnes)
-- Emilie Nilsen (emilienilsen)
-
 ## Features
 
 - **Authentication** — register and sign in with hashed (SHA-256) credentials
