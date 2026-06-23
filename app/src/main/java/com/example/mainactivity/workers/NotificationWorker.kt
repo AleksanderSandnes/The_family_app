@@ -156,10 +156,9 @@ fun daysUntilRecurring(dateStr: String, today: LocalDate): Int? {
 }
 
 fun daysUntilOneTime(dateStr: String, today: LocalDate): Int? {
-    val monthDay = try {
-        MonthDay.parse(dateStr.trim(), DATE_FORMATTER)
-    } catch (_: Exception) { return null }
-    val target = monthDay.atYear(today.year)
+    val target = runCatching { LocalDate.parse(dateStr.trim()) }.getOrNull()
+        ?: runCatching { MonthDay.parse(dateStr.trim(), DATE_FORMATTER).atYear(today.year) }.getOrNull()
+        ?: return null
     val days = ChronoUnit.DAYS.between(today, target).toInt()
     return if (days < 0) null else days
 }

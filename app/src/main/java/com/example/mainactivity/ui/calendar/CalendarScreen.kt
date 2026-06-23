@@ -1,28 +1,45 @@
 package com.example.mainactivity.ui.calendar
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Card
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +49,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,44 +60,91 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.CalendarEventEntity
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.YearMonth
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
+private val SHORT_DATE = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
+private val SHORT_DATE_DAY = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
+private val MONTH_YEAR_FMT = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
+private val SECTION_DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)
+private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
+private val WEEKDAY_LABELS = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
-    val events by viewModel.events.collectAsStateWithLifecycle(emptyList())
+    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
+    val displayedMonth by viewModel.displayedMonth.collectAsStateWithLifecycle()
+    val dayEvents by viewModel.eventsForSelectedDate.collectAsStateWithLifecycle()
+    val allEvents by viewModel.events.collectAsStateWithLifecycle(emptyList())
     var showAdd by remember { mutableStateOf(false) }
+
+    val datesWithEvents = remember(allEvents) {
+        buildSet<LocalDate> {
+            allEvents.forEach { e ->
+                runCatching { add(LocalDate.parse(e.dateFrom)) }
+                runCatching { add(LocalDate.parse(e.dateTo)) }
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { FeatureTopBar("Calendar") },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            FloatingActionButton(
                 onClick = { showAdd = true },
-                icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text("New event") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Filled.Add, "New event", tint = MaterialTheme.colorScheme.onPrimary)
+            }
         }
     ) { padding ->
-        if (events.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                EmptyState(Icons.Filled.CalendarMonth, "Nothing scheduled", "Add a family event to see it here.")
-            }
-        } else {
-            LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(events, key = { it.id }) { event ->
-                    EventCard(event = event, onDelete = { viewModel.delete(event) })
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            MonthCalendarSection(
+                displayedMonth = displayedMonth,
+                selectedDate = selectedDate,
+                datesWithEvents = datesWithEvents,
+                onPrevMonth = viewModel::prevMonth,
+                onNextMonth = viewModel::nextMonth,
+                onDaySelected = viewModel::selectDate
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            Text(
+                selectedDate.format(SECTION_DATE_FMT),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+            )
+            if (dayEvents.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    EmptyState(Icons.Filled.CalendarMonth, "No events", "Tap + to add an event.")
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(dayEvents, key = { it.id }) { event ->
+                        EventCard(event = event, onDelete = { viewModel.delete(event) })
+                    }
+                    item { Spacer(Modifier.height(80.dp)) }
                 }
             }
         }
@@ -84,6 +152,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
 
     if (showAdd) {
         AddEventDialog(
+            initialDate = selectedDate,
             onDismiss = { showAdd = false },
             onConfirm = { activity, allDay, dateFrom, dateTo, timeFrom, timeTo ->
                 viewModel.addEvent(activity, allDay, dateFrom, dateTo, timeFrom, timeTo)
@@ -94,34 +163,191 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
 }
 
 @Composable
+private fun MonthCalendarSection(
+    displayedMonth: YearMonth,
+    selectedDate: LocalDate,
+    datesWithEvents: Set<LocalDate>,
+    onPrevMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onDaySelected: (LocalDate) -> Unit
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+        MonthHeader(month = displayedMonth, onPrev = onPrevMonth, onNext = onNextMonth)
+        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+            WEEKDAY_LABELS.forEach { label ->
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+        val today = LocalDate.now()
+        AnimatedContent(
+            targetState = displayedMonth,
+            transitionSpec = {
+                val dir = if (targetState > initialState) 1 else -1
+                (slideInHorizontally { dir * it } + fadeIn()) togetherWith
+                    (slideOutHorizontally { -dir * it } + fadeOut())
+            },
+            label = "MonthGrid"
+        ) { month ->
+            Column(Modifier.fillMaxWidth()) {
+                monthCells(month).chunked(7).forEach { week ->
+                    Row(Modifier.fillMaxWidth()) {
+                        week.forEach { date ->
+                            DayCell(
+                                date = date,
+                                isSelected = date == selectedDate,
+                                isToday = date == today,
+                                hasEvents = date != null && date in datesWithEvents,
+                                modifier = Modifier.weight(1f),
+                                onClick = { if (date != null) onDaySelected(date) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthHeader(month: YearMonth, onPrev: () -> Unit, onNext: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        IconButton(onClick = onPrev) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous month", tint = MaterialTheme.colorScheme.onSurface)
+        }
+        Text(
+            month.format(MONTH_YEAR_FMT),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        IconButton(onClick = onNext) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next month", tint = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+}
+
+@Composable
+private fun DayCell(
+    date: LocalDate?,
+    isSelected: Boolean,
+    isToday: Boolean,
+    hasEvents: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .aspectRatio(1f)
+            .then(if (date != null) Modifier.clickable(onClick = onClick) else Modifier),
+        contentAlignment = Alignment.Center
+    ) {
+        if (date == null) return@Box
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            val bgColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+            val textColor = when {
+                isSelected -> MaterialTheme.colorScheme.onPrimary
+                isToday -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onSurface
+            }
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(bgColor)
+                    .then(
+                        if (isToday && !isSelected)
+                            Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                        else Modifier
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "${date.dayOfMonth}",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal
+                    ),
+                    color = textColor
+                )
+            }
+            Spacer(Modifier.height(2.dp))
+            Box(
+                Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (hasEvents && !isSelected) MaterialTheme.colorScheme.primary
+                        else Color.Transparent
+                    )
+            )
+        }
+    }
+}
+
+private fun monthCells(month: YearMonth): List<LocalDate?> {
+    val first = month.atDay(1)
+    val offset = first.dayOfWeek.value - 1 // Monday-first; Monday.value=1 → offset 0
+    val result = mutableListOf<LocalDate?>()
+    repeat(offset) { result.add(null) }
+    for (d in 1..month.lengthOfMonth()) result.add(month.atDay(d))
+    while (result.size % 7 != 0) result.add(null)
+    return result
+}
+
+@Composable
 private fun EventCard(event: CalendarEventEntity, onDelete: () -> Unit) {
     val subtitle = eventSubtitle(event)
-    val icon = if (event.allDay) Icons.Filled.WbSunny else Icons.Filled.Schedule
-
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp,
+        shadowElevation = 1.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary)
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    if (event.allDay) Icons.Filled.WbSunny else Icons.Filled.Schedule,
+                    null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp)
+                )
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     event.activity,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (subtitle.isNotBlank()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(icon, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.width(4.dp))
-                        Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             IconButton(onClick = onDelete) {
@@ -132,10 +358,10 @@ private fun EventCard(event: CalendarEventEntity, onDelete: () -> Unit) {
 }
 
 private fun eventSubtitle(event: CalendarEventEntity): String {
-    val dateRange = when {
-        event.dateTo.isBlank() || event.dateFrom == event.dateTo -> event.dateFrom
-        else -> "${event.dateFrom} – ${event.dateTo}"
-    }
+    fun fmtDate(s: String) = try { LocalDate.parse(s).format(SHORT_DATE) } catch (_: Exception) { s }
+    val from = fmtDate(event.dateFrom)
+    val to = fmtDate(event.dateTo)
+    val dateRange = if (to.isBlank() || from == to) from else "$from – $to"
     return if (event.allDay) {
         listOf("All day", dateRange).filter { it.isNotBlank() }.joinToString(" · ")
     } else {
@@ -146,81 +372,70 @@ private fun eventSubtitle(event: CalendarEventEntity): String {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddEventDialog(
+    initialDate: LocalDate,
     onDismiss: () -> Unit,
     onConfirm: (activity: String, allDay: Boolean, dateFrom: String, dateTo: String, timeFrom: String, timeTo: String) -> Unit
 ) {
     var activity by remember { mutableStateOf("") }
-    var dateFrom by remember { mutableStateOf("") }
-    var dateTo by remember { mutableStateOf("") }
     var allDay by remember { mutableStateOf(false) }
-    var timeFrom by remember { mutableStateOf("") }
-    var timeTo by remember { mutableStateOf("") }
+    var dateFrom by remember { mutableStateOf(initialDate) }
+    var dateTo by remember { mutableStateOf(initialDate) }
+    val timeFromState = rememberTimePickerState(initialHour = 9, initialMinute = 0)
+    val timeToState = rememberTimePickerState(initialHour = 10, initialMinute = 0)
+    var showDateFromPicker by remember { mutableStateOf(false) }
+    var showDateToPicker by remember { mutableStateOf(false) }
+    var showTimeFromPicker by remember { mutableStateOf(false) }
+    var showTimeToPicker by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
-
-    val isValid = activity.isNotBlank() && dateFrom.isNotBlank() && (allDay || timeFrom.isNotBlank())
 
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
         title = { Text("New event", style = MaterialTheme.typography.titleLarge) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column {
                 OutlinedTextField(
-                    activity, { activity = it },
-                    label = { Text("What's happening?") },
+                    value = activity,
+                    onValueChange = { activity = it },
+                    placeholder = { Text("Event name") },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    dateFrom, { dateFrom = it },
-                    label = { Text("Start date (e.g. 24 Jun)") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    dateTo, { dateTo = it },
-                    label = { Text("End date (optional, leave blank if same day)") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("All day", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                    Text("All day", style = MaterialTheme.typography.bodyLarge)
                     Switch(checked = allDay, onCheckedChange = { allDay = it })
                 }
-                AnimatedVisibility(visible = !allDay) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            timeFrom, { timeFrom = it },
-                            label = { Text("Start time (e.g. 09:00)") },
-                            singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            timeTo, { timeTo = it },
-                            label = { Text("End time (optional, e.g. 10:00)") },
-                            singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-                if (showError && !isValid) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                DateTimeRow(
+                    label = "Starts",
+                    date = dateFrom,
+                    time = if (!allDay) LocalTime.of(timeFromState.hour, timeFromState.minute) else null,
+                    onDateClick = { showDateFromPicker = true },
+                    onTimeClick = { showTimeFromPicker = true }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                DateTimeRow(
+                    label = "Ends",
+                    date = dateTo,
+                    time = if (!allDay) LocalTime.of(timeToState.hour, timeToState.minute) else null,
+                    onDateClick = { showDateToPicker = true },
+                    onTimeClick = { showTimeToPicker = true }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                if (showError) {
+                    Spacer(Modifier.height(4.dp))
                     Text(
-                        when {
-                            activity.isBlank() -> "Event name is required."
-                            dateFrom.isBlank() -> "Start date is required."
-                            else -> "Start time is required for timed events."
-                        },
+                        "Event name is required.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -229,8 +444,15 @@ private fun AddEventDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                if (isValid) {
-                    onConfirm(activity.trim(), allDay, dateFrom.trim(), dateTo.trim(), timeFrom.trim(), timeTo.trim())
+                if (activity.isNotBlank()) {
+                    val tf = "%02d:%02d".format(timeFromState.hour, timeFromState.minute)
+                    val tt = "%02d:%02d".format(timeToState.hour, timeToState.minute)
+                    onConfirm(
+                        activity.trim(), allDay,
+                        dateFrom.toString(), dateTo.toString(),
+                        if (allDay) "" else tf,
+                        if (allDay) "" else tt
+                    )
                 } else {
                     showError = true
                 }
@@ -238,4 +460,144 @@ private fun AddEventDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+
+    if (showDateFromPicker) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = dateFrom.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDateFromPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { ms ->
+                        dateFrom = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
+                        if (dateTo.isBefore(dateFrom)) dateTo = dateFrom
+                    }
+                    showDateFromPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showDateFromPicker = false }) { Text("Cancel") } }
+        ) { DatePicker(state = state) }
+    }
+
+    if (showDateToPicker) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = dateTo.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDateToPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { ms ->
+                        val picked = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
+                        dateTo = if (picked.isBefore(dateFrom)) dateFrom else picked
+                    }
+                    showDateToPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showDateToPicker = false }) { Text("Cancel") } }
+        ) { DatePicker(state = state) }
+    }
+
+    if (showTimeFromPicker) {
+        TimePickerDialog(
+            title = "Start time",
+            state = timeFromState,
+            onDismiss = { showTimeFromPicker = false },
+            onConfirm = { showTimeFromPicker = false }
+        )
+    }
+
+    if (showTimeToPicker) {
+        TimePickerDialog(
+            title = "End time",
+            state = timeToState,
+            onDismiss = { showTimeToPicker = false },
+            onConfirm = { showTimeToPicker = false }
+        )
+    }
+}
+
+@Composable
+private fun DateTimeRow(
+    label: String,
+    date: LocalDate,
+    time: LocalTime?,
+    onDateClick: () -> Unit,
+    onTimeClick: () -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(52.dp)
+        )
+        Spacer(Modifier.weight(1f))
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.clickable(onClick = onDateClick)
+        ) {
+            Text(
+                date.format(SHORT_DATE_DAY),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+            )
+        }
+        if (time != null) {
+            Spacer(Modifier.width(8.dp))
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.clickable(onClick = onTimeClick)
+            ) {
+                Text(
+                    time.format(TIME_FMT),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialog(
+    title: String,
+    state: androidx.compose.material3.TimePickerState,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(shape = RoundedCornerShape(28.dp)) {
+            Column(
+                Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(20.dp))
+                TimePicker(state = state)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = onConfirm) { Text("OK") }
+                }
+            }
+        }
+    }
 }
