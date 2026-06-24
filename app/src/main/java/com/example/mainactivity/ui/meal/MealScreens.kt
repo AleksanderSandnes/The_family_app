@@ -2,47 +2,325 @@
 
 package com.example.mainactivity.ui.meal
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BakeryDining
+import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DinnerDining
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Egg
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.LocalBar
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.LocalPizza
+import androidx.compose.material.icons.filled.LunchDining
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.OutdoorGrill
+import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.SetMeal
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mainactivity.data.MealPlanDayModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
 import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+// ── Icon infrastructure ────────────────────────────────────────────────────
+
+private data class MealIconOption(val key: String, val vector: ImageVector)
+
+private val MEAL_ICON_OPTIONS = listOf(
+    MealIconOption("restaurant", Icons.Filled.Restaurant),
+    MealIconOption("restaurant_menu", Icons.Filled.RestaurantMenu),
+    MealIconOption("lunch_dining", Icons.Filled.LunchDining),
+    MealIconOption("dinner_dining", Icons.Filled.DinnerDining),
+    MealIconOption("bakery_dining", Icons.Filled.BakeryDining),
+    MealIconOption("local_pizza", Icons.Filled.LocalPizza),
+    MealIconOption("ramen_dining", Icons.Filled.RamenDining),
+    MealIconOption("set_meal", Icons.Filled.SetMeal),
+    MealIconOption("fastfood", Icons.Filled.Fastfood),
+    MealIconOption("cake", Icons.Filled.Cake),
+    MealIconOption("local_cafe", Icons.Filled.LocalCafe),
+    MealIconOption("outdoor_grill", Icons.Filled.OutdoorGrill),
+    MealIconOption("kitchen", Icons.Filled.Kitchen),
+    MealIconOption("egg", Icons.Filled.Egg),
+    MealIconOption("local_bar", Icons.Filled.LocalBar),
+)
+
+private fun mealIconVector(key: String): ImageVector =
+    MEAL_ICON_OPTIONS.find { it.key == key }?.vector ?: Icons.Filled.Restaurant
+
+// ── Date formatting ────────────────────────────────────────────────────────
+
+private val MEAL_DATE_FMT = DateTimeFormatter.ofPattern("dd MMM", Locale.ENGLISH)
+
+private fun formatMealDate(stored: String): String =
+    runCatching { LocalDate.parse(stored).format(MEAL_DATE_FMT) }.getOrDefault(stored)
+
+// ── Shared icon picker grid ────────────────────────────────────────────────
+
+@Composable
+private fun MealIconPickerGrid(
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 4.dp),
+    ) {
+        MEAL_ICON_OPTIONS.chunked(4).forEach { row ->
+            Row(Modifier.fillMaxWidth()) {
+                row.forEach { opt ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (selected == opt.key) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                            ).clickable { onSelect(opt.key) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            opt.vector,
+                            null,
+                            modifier = Modifier.size(22.dp),
+                            tint =
+                                if (selected == opt.key) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                        )
+                    }
+                }
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+// ── Create plan dialog ─────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CreatePlanDialog(
+    onDismiss: () -> Unit,
+    onCreate: (name: String, fromIso: String, toIso: String, icon: String) -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var fromDate by remember { mutableStateOf<LocalDate?>(null) }
+    var toDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedIcon by remember { mutableStateOf("restaurant") }
+    var showIconPicker by remember { mutableStateOf(false) }
+    var showFromPicker by remember { mutableStateOf(false) }
+    var showToPicker by remember { mutableStateOf(false) }
+
+    val canConfirm = name.isNotBlank() && fromDate != null && toDate != null &&
+        !toDate!!.isBefore(fromDate!!)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        title = { Text("Create a meal plan", style = MaterialTheme.typography.titleLarge) },
+        text = {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Icon toggle + name field
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .clickable { showIconPicker = !showIconPicker },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            mealIconVector(selectedIcon),
+                            "Change icon",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        placeholder = { Text("Plan name") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                AnimatedVisibility(visible = showIconPicker) {
+                    MealIconPickerGrid(selected = selectedIcon) {
+                        selectedIcon = it
+                        showIconPicker = false
+                    }
+                }
+                // Date range buttons
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DatePickerButton(
+                        label = fromDate?.format(MEAL_DATE_FMT) ?: "Start date",
+                        modifier = Modifier.weight(1f),
+                        onClick = { showFromPicker = true },
+                    )
+                    DatePickerButton(
+                        label = toDate?.format(MEAL_DATE_FMT) ?: "End date",
+                        modifier = Modifier.weight(1f),
+                        onClick = { showToPicker = true },
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = canConfirm,
+                onClick = { onCreate(name.trim(), fromDate.toString(), toDate.toString(), selectedIcon) },
+            ) { Text("Create") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+
+    if (showFromPicker) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = (fromDate ?: LocalDate.now())
+                .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showFromPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { ms ->
+                        val picked = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
+                        fromDate = picked
+                        if (toDate != null && toDate!!.isBefore(picked)) toDate = picked
+                    }
+                    showFromPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showFromPicker = false }) { Text("Cancel") } },
+        ) { DatePicker(state = state) }
+    }
+
+    if (showToPicker) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = (toDate ?: fromDate ?: LocalDate.now())
+                .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showToPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { ms ->
+                        val picked = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
+                        toDate = if (fromDate != null && picked.isBefore(fromDate!!)) fromDate else picked
+                    }
+                    showToPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showToPicker = false }) { Text("Cancel") } },
+        ) { DatePicker(state = state) }
+    }
+}
+
+@Composable
+private fun DatePickerButton(
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = modifier.clickable(onClick = onClick),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+        )
+    }
+}
+
+// ── Screens ────────────────────────────────────────────────────────────────
 
 @Composable
 fun MealScreen(
@@ -52,6 +330,7 @@ fun MealScreen(
 ) {
     val plans by viewModel.plans.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
+    var showCreate by remember { mutableStateOf(false) }
 
     RefreshOnResume { viewModel.refresh() }
 
@@ -60,9 +339,9 @@ fun MealScreen(
         topBar = { FeatureTopBar("Meal planner", onBack) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { viewModel.createWeekPlan() },
+                onClick = { showCreate = true },
                 icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text("Plan this week") },
+                text = { Text("Create a meal plan") },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
             )
@@ -93,15 +372,31 @@ fun MealScreen(
                         ) {
                             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(
-                                    Modifier.size(44.dp),
+                                    Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Icon(Icons.Filled.Restaurant, null, tint = MaterialTheme.colorScheme.tertiary)
+                                    Icon(
+                                        mealIconVector(plan.icon),
+                                        null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(22.dp),
+                                    )
                                 }
                                 Spacer(Modifier.size(12.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text("Week ${plan.week}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    Text("${plan.fromDate} – ${plan.toDate}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        plan.name.ifBlank { "Meal plan" },
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        "${formatMealDate(plan.fromDate)} – ${formatMealDate(plan.toDate)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                                 Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -111,6 +406,16 @@ fun MealScreen(
             }
         }
     }
+
+    if (showCreate) {
+        CreatePlanDialog(
+            onDismiss = { showCreate = false },
+            onCreate = { name, from, to, icon ->
+                viewModel.createPlan(name, from, to, icon)
+                showCreate = false
+            },
+        )
+    }
 }
 
 @Composable
@@ -119,14 +424,38 @@ fun MealDetailScreen(
     onBack: () -> Unit,
     viewModel: MealViewModel = viewModel(),
 ) {
-    androidx.compose.runtime.LaunchedEffect(planId) { viewModel.loadPlanDetail(planId) }
+    LaunchedEffect(planId) { viewModel.loadPlanDetail(planId) }
     val plan by viewModel.selectedPlan.collectAsStateWithLifecycle()
     val days by viewModel.days.collectAsStateWithLifecycle()
-    var editing by remember { mutableStateOf<MealPlanDayModel?>(null) }
+
+    var editingDayId by remember { mutableStateOf<String?>(null) }
+    var draft by remember { mutableStateOf("") }
+    var showMenu by remember { mutableStateOf(false) }
+    var showRename by remember { mutableStateOf(false) }
+    var showIconPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar(plan?.let { "Week ${it.week}" } ?: "Meal plan", onBack) },
+        modifier = Modifier.imePadding(),
+        topBar = {
+            FeatureTopBar(plan?.name?.ifBlank { "Meal plan" } ?: "Meal plan", onBack) {
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                    }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Rename") },
+                            onClick = { showMenu = false; showRename = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Change icon") },
+                            onClick = { showMenu = false; showIconPicker = true },
+                        )
+                    }
+                }
+            }
+        },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
@@ -134,40 +463,104 @@ fun MealDetailScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(days, key = { it.id }) { day ->
+                val isEditing = editingDayId == day.id
+                val focusRequester = remember { FocusRequester() }
+
+                LaunchedEffect(isEditing) {
+                    if (isEditing) focusRequester.requestFocus()
+                }
+
                 Surface(
-                    onClick = { editing = day },
                     shape = RoundedCornerShape(18.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = !isEditing) {
+                            editingDayId = day.id
+                            draft = day.food
+                        },
                 ) {
                     Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(day.day, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                             Text(
-                                day.food.ifBlank { "Tap to add a meal" },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (day.food.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                                day.day,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
+                            if (isEditing) {
+                                OutlinedTextField(
+                                    value = draft,
+                                    onValueChange = { draft = it },
+                                    placeholder = { Text("What's for ${day.day}?") },
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(10.dp),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(onDone = {
+                                        viewModel.setFood(day, draft)
+                                        editingDayId = null
+                                    }),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .focusRequester(focusRequester),
+                                )
+                            } else {
+                                Text(
+                                    day.food.ifBlank { "Tap to add a meal" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (day.food.isBlank()) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
+                                )
+                            }
                         }
-                        Text(day.date, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.size(8.dp))
-                        Icon(Icons.Filled.Edit, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (!isEditing) {
+                            Text(
+                                formatMealDate(day.date),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.size(8.dp))
+                            Icon(Icons.Filled.Edit, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
         }
     }
 
-    editing?.let { day ->
-        InputDialog(
-            title = day.day,
-            label = "Meal",
-            initial = day.food,
-            onDismiss = { editing = null },
-            onConfirm = { v, _ ->
-                viewModel.setFood(day, v)
-                editing = null
-            },
-        )
+    if (showRename) {
+        plan?.let { p ->
+            InputDialog(
+                title = "Rename plan",
+                label = "Name",
+                initial = p.name,
+                onDismiss = { showRename = false },
+                onConfirm = { v, _ ->
+                    viewModel.renamePlan(p, v)
+                    showRename = false
+                },
+            )
+        }
+    }
+
+    if (showIconPicker) {
+        plan?.let { p ->
+            AlertDialog(
+                onDismissRequest = { showIconPicker = false },
+                shape = RoundedCornerShape(24.dp),
+                title = { Text("Change icon", style = MaterialTheme.typography.titleLarge) },
+                text = {
+                    MealIconPickerGrid(selected = p.icon) { newIcon ->
+                        viewModel.setPlanIcon(p, newIcon)
+                        showIconPicker = false
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showIconPicker = false }) { Text("Done") }
+                },
+            )
+        }
     }
 }
