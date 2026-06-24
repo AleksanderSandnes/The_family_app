@@ -6,13 +6,14 @@ An Android family coordination app. One shared space for shopping, meals, calend
 
 ## Mandatory workflow rules
 
-**Never build to verify.** Do not run `./gradlew assembleDebug`, `./gradlew build`, or any build/test commands. The user runs builds manually to save tokens. After writing code, report what changed and stop. If compilation correctness is uncertain, say so explicitly.
+Always run `./gradlew assembleDebug`, `./gradlew build`, or any build/test commands to verify that there is no errors.
 
 **Branch workflow — no exceptions:**
 1. Branch from `master` with a descriptive name: `feat/`, `fix/`, `chore/` prefix (e.g. `feat/calendar-recurring-events`).
 2. Merge the task branch into `test`.
 3. Merge `test` into `master`.
 4. Never commit directly to `master` or `test`.
+5. Push all branches
 
 **After plan-related implementation:** Update the Obsidian vault at `/home/aleksander/Obsidian/The_family_app/`. Change milestone status from ⏳ to ✅ in `05_Implementation_Plan/Implementation Plan.md`, update `00 Home.md` current status, and update any relevant architecture notes.
 
