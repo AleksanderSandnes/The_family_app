@@ -65,10 +65,11 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
+import android.content.ClipData
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -325,7 +326,8 @@ fun CopyableCodeField(
     label: String = "Share code",
     modifier: Modifier = Modifier,
 ) {
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     OutlinedTextField(
         value = code,
         onValueChange = {},
@@ -333,7 +335,9 @@ fun CopyableCodeField(
         readOnly = true,
         singleLine = true,
         trailingIcon = {
-            IconButton(onClick = { clipboard.setText(AnnotatedString(code)) }) {
+            IconButton(onClick = {
+                scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("", code))) }
+            }) {
                 Icon(Icons.Filled.ContentCopy, contentDescription = "Copy code")
             }
         },
