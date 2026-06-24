@@ -2,12 +2,16 @@
 
 package com.example.mainactivity.ui.shopping
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -23,11 +27,23 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -38,6 +54,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,10 +63,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -63,6 +82,26 @@ import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.PillTag
 import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
+
+private data class ShoppingIconOption(val key: String, val vector: ImageVector)
+
+private val SHOPPING_ICON_OPTIONS = listOf(
+    ShoppingIconOption("shopping_cart", Icons.Filled.ShoppingCart),
+    ShoppingIconOption("restaurant", Icons.Filled.Restaurant),
+    ShoppingIconOption("cake", Icons.Filled.Cake),
+    ShoppingIconOption("local_hospital", Icons.Filled.LocalHospital),
+    ShoppingIconOption("celebration", Icons.Filled.Celebration),
+    ShoppingIconOption("favorite", Icons.Filled.Favorite),
+    ShoppingIconOption("star", Icons.Filled.Star),
+    ShoppingIconOption("fitness_center", Icons.Filled.FitnessCenter),
+    ShoppingIconOption("home", Icons.Filled.Home),
+    ShoppingIconOption("pets", Icons.Filled.Pets),
+    ShoppingIconOption("flight", Icons.Filled.Flight),
+    ShoppingIconOption("people", Icons.Filled.People),
+)
+
+private fun shoppingIconVector(key: String): ImageVector =
+    SHOPPING_ICON_OPTIONS.firstOrNull { it.key == key }?.vector ?: Icons.Filled.ShoppingCart
 
 @Composable
 fun ShoppingScreen(
@@ -117,7 +156,7 @@ fun ShoppingScreen(
                                     Modifier.size(44.dp),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Icon(Icons.Filled.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary)
+                                    Icon(shoppingIconVector(list.icon), null, tint = MaterialTheme.colorScheme.primary)
                                 }
                                 Spacer(Modifier.size(8.dp))
                                 Text(list.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
@@ -131,12 +170,10 @@ fun ShoppingScreen(
     }
 
     if (showAdd) {
-        InputDialog(
-            title = "New shopping list",
-            label = "List name",
+        NewListDialog(
             onDismiss = { showAdd = false },
-            onConfirm = { value, _ ->
-                viewModel.addList(value)
+            onConfirm = { title, icon ->
+                viewModel.addList(title, icon)
                 showAdd = false
             },
         )
@@ -155,6 +192,7 @@ fun ShoppingDetailScreen(
     var newItemText by remember { mutableStateOf("") }
     var showMenu by remember { mutableStateOf(false) }
     var showRename by remember { mutableStateOf(false) }
+    var showChangeIcon by remember { mutableStateOf(false) }
     val remaining = items.count { !it.checked }
 
     fun addItem() {
@@ -191,6 +229,13 @@ fun ShoppingDetailScreen(
                             onClick = {
                                 showMenu = false
                                 showRename = true
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Change icon") },
+                            onClick = {
+                                showMenu = false
+                                showChangeIcon = true
                             },
                         )
                     }
@@ -256,6 +301,17 @@ fun ShoppingDetailScreen(
             onConfirm = { value, _ ->
                 viewModel.renameList(listId, value)
                 showRename = false
+            },
+        )
+    }
+
+    if (showChangeIcon) {
+        ChangeIconDialog(
+            currentIcon = list?.icon ?: "shopping_cart",
+            onDismiss = { showChangeIcon = false },
+            onConfirm = { icon ->
+                viewModel.changeListIcon(listId, icon)
+                showChangeIcon = false
             },
         )
     }
@@ -326,6 +382,137 @@ private fun ShoppingItemRow(
                         textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NewListDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (title: String, icon: String) -> Unit,
+) {
+    var title by remember { mutableStateOf("") }
+    var selectedIcon by remember { mutableStateOf("shopping_cart") }
+    var showIconPicker by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        title = { Text("New shopping list", style = MaterialTheme.typography.titleLarge) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .clickable { showIconPicker = !showIconPicker },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            shoppingIconVector(selectedIcon),
+                            "Change icon",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        placeholder = { Text("List name") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                AnimatedVisibility(visible = showIconPicker) {
+                    ShoppingIconPickerGrid(
+                        selected = selectedIcon,
+                        onSelect = {
+                            selectedIcon = it
+                            showIconPicker = false
+                        },
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (title.isNotBlank()) onConfirm(title.trim(), selectedIcon) },
+                enabled = title.isNotBlank(),
+            ) { Text("Create") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun ChangeIconDialog(
+    currentIcon: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var selectedIcon by remember { mutableStateOf(currentIcon) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        title = { Text("Change icon", style = MaterialTheme.typography.titleLarge) },
+        text = {
+            ShoppingIconPickerGrid(selected = selectedIcon, onSelect = { selectedIcon = it })
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selectedIcon) }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun ShoppingIconPickerGrid(
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 4.dp),
+    ) {
+        SHOPPING_ICON_OPTIONS.chunked(4).forEach { row ->
+            Row(Modifier.fillMaxWidth()) {
+                row.forEach { opt ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (selected == opt.key) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                            ).clickable { onSelect(opt.key) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            opt.vector,
+                            null,
+                            modifier = Modifier.size(22.dp),
+                            tint =
+                                if (selected == opt.key) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                        )
+                    }
+                }
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

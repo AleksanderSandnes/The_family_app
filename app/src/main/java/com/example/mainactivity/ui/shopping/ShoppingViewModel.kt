@@ -159,23 +159,38 @@ class ShoppingViewModel(
         viewModelScope.launch { flow.collect { loadListDetail(listId) } }
     }
 
-    fun addList(title: String) =
-        viewModelScope.launch {
-            val userId = repo.currentUserId.first() ?: return@launch
-            val user = repo.getUser(userId)
-            val tempId = "temp-${System.currentTimeMillis()}"
-            _lists.value = _lists.value + ShoppingListModel(id = tempId, title = title, ownerUserId = userId, familyId = user?.familyId)
-            runCatching {
-                db.from("shopping_lists").insert(
-                    buildJsonObject {
-                        put("title", title)
-                        put("owner_user_id", userId)
-                        if (user?.familyId != null) put("family_id", user.familyId)
-                    },
-                )
-            }
-            loadLists(userId)
+    fun addList(
+        title: String,
+        icon: String = "shopping_cart",
+    ) = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        val user = repo.getUser(userId)
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _lists.value = _lists.value + ShoppingListModel(id = tempId, title = title, ownerUserId = userId, familyId = user?.familyId, icon = icon)
+        runCatching {
+            db.from("shopping_lists").insert(
+                buildJsonObject {
+                    put("title", title)
+                    put("icon", icon)
+                    put("owner_user_id", userId)
+                    if (user?.familyId != null) put("family_id", user.familyId)
+                },
+            )
         }
+        loadLists(userId)
+    }
+
+    fun changeListIcon(
+        listId: String,
+        icon: String,
+    ) = viewModelScope.launch {
+        _lists.value = _lists.value.map { if (it.id == listId) it.copy(icon = icon) else it }
+        _selectedList.value = _selectedList.value?.copy(icon = icon)
+        runCatching {
+            db.from("shopping_lists").update({ set("icon", icon) }) { filter { eq("id", listId) } }
+        }
+        loadListDetail(listId).join()
+    }
 
     fun deleteList(list: ShoppingListModel) =
         viewModelScope.launch {
