@@ -261,7 +261,6 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 if (user.familyId != null) put("family_id", user.familyId)
             }) { select() }.decodeList<ConversationModel>().first()
 
-            // Insert current user first so is_conversation_member() returns true for subsequent rows
             val allParticipants = (listOf(userId) + memberIds).distinct()
             allParticipants.forEach { participantId ->
                 runCatching {
