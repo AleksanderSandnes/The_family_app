@@ -274,7 +274,7 @@ private suspend fun loadCircularBitmap(context: Context, url: String, sizePx: In
         val request = ImageRequest.Builder(context)
             .data(url)
             .size(sizePx)
-            .allowHardware(false)
+            .bitmapConfig(android.graphics.Bitmap.Config.ARGB_8888)
             .build()
         val result = context.imageLoader.execute(request) as? SuccessResult ?: return null
         val source = result.image?.toBitmap() ?: return null
