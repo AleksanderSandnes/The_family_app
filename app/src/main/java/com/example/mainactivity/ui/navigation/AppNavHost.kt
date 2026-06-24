@@ -47,6 +47,7 @@ import com.example.mainactivity.ui.birthday.BirthdayViewModel
 import com.example.mainactivity.ui.calendar.CalendarScreen
 import com.example.mainactivity.ui.calendar.CalendarViewModel
 import com.example.mainactivity.ui.chat.ChatScreen
+import com.example.mainactivity.ui.chat.ChatViewModel
 import com.example.mainactivity.ui.chat.ConversationScreen
 import com.example.mainactivity.ui.family.FamilyScreen
 import com.example.mainactivity.ui.home.HomeScreen
@@ -114,6 +115,9 @@ private fun MainFlow() {
     val wishlistVm: WishlistViewModel = viewModel()
     val mealVm: MealViewModel = viewModel()
     val calendarVm: CalendarViewModel = viewModel()
+    // Shared so the list (ChatScreen) and detail (ConversationScreen) use the SAME
+    // instance — a delete in the detail screen must reflect in the list on pop-back.
+    val chatVm: ChatViewModel = viewModel()
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -192,7 +196,7 @@ private fun MainFlow() {
                 exitTransition = { fadeOut(tween(200)) },
                 popEnterTransition = { fadeIn(tween(200)) },
                 popExitTransition = { fadeOut(tween(200)) }
-            ) { ChatScreen(onOpen = { id -> navController.navigate(Routes.chatDetail(id)) }) }
+            ) { ChatScreen(onOpen = { id -> navController.navigate(Routes.chatDetail(id)) }, viewModel = chatVm) }
             composable(
                 Routes.FAMILY,
                 enterTransition = { fadeIn(tween(200)) },
@@ -280,7 +284,8 @@ private fun MainFlow() {
                 ConversationScreen(
                     conversationId = entry.arguments!!.getString("conversationId")!!,
                     onBack = { navController.popBackStack() },
-                    onNavigateTo = { id -> navController.navigate(Routes.chatDetail(id)) }
+                    onNavigateTo = { id -> navController.navigate(Routes.chatDetail(id)) },
+                    viewModel = chatVm
                 )
             }
 
