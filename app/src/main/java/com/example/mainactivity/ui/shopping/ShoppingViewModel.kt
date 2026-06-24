@@ -99,7 +99,7 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
             filter("family_id", FilterOperator.EQ, familyId)
         }
         channel.subscribe()
-        viewModelScope.launch { flow.collect { android.util.Log.d("RealtimeProbe", "shopping_lists change event received for family=$familyId"); loadLists(userId) } }
+        viewModelScope.launch { flow.collect { loadLists(userId) } }
     }
 
     fun loadListDetail(listId: String) = viewModelScope.launch {

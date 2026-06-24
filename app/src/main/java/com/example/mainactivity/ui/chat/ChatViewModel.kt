@@ -205,7 +205,6 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val myId = repo.currentUserId.first()
             insertFlow.collect { change ->
-                Log.d("RealtimeProbe", "messages INSERT event received for conv=$conversationId")
                 val msg = change.decodeRecord<MessageModel>()
                 if (msg.userFrom != myId) {
                     _messages.update { it + msg }
