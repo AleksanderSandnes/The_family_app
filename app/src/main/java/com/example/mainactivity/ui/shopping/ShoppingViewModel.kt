@@ -61,6 +61,13 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Re-fetch from the server. Called on screen resume so data stays fresh
+     *  even though the ViewModel is Activity-scoped and init{} only runs once. */
+    fun refresh() = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        loadLists(userId)
+    }
+
     private suspend fun loadLists(userId: String) {
         if (_lists.value.isEmpty()) _isLoading.value = true
         runCatching {
@@ -92,7 +99,7 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
             filter("family_id", FilterOperator.EQ, familyId)
         }
         channel.subscribe()
-        viewModelScope.launch { flow.collect { loadLists(userId) } }
+        viewModelScope.launch { flow.collect { android.util.Log.d("RealtimeProbe", "shopping_lists change event received for family=$familyId"); loadLists(userId) } }
     }
 
     fun loadListDetail(listId: String) = viewModelScope.launch {

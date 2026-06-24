@@ -88,6 +88,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.ui.components.EmptyState
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import java.time.Instant
@@ -142,6 +143,8 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showAdd by remember { mutableStateOf(false) }
     var eventToEdit by remember { mutableStateOf<CalendarEventModel?>(null) }
+
+    RefreshOnResume { viewModel.refresh() }
 
     val datesWithEvents = remember(allEvents) {
         buildSet<LocalDate> {

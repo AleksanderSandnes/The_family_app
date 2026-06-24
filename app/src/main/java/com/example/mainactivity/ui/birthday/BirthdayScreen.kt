@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.BirthdayModel
 import com.example.mainactivity.ui.components.BirthdayPickerField
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FamilyTextField
@@ -57,6 +58,8 @@ fun BirthdayScreen(
     val birthdays by viewModel.birthdays.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showAdd by remember { mutableStateOf(false) }
+
+    RefreshOnResume { viewModel.refresh() }
 
     val today = remember { LocalDate.now() }
     val sorted = remember(birthdays) {

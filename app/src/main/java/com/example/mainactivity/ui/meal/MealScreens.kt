@@ -36,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.MealPlanDayModel
 import com.example.mainactivity.ui.components.EmptyState
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
@@ -49,6 +50,8 @@ fun MealScreen(
 ) {
     val plans by viewModel.plans.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
+
+    RefreshOnResume { viewModel.refresh() }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

@@ -42,16 +42,22 @@ class FamilyRepository(val session: SessionManager) {
     }
 
     suspend fun getUser(userId: String): UserModel? {
-        if (userId == cachedUserId) return cachedUser
-        return runCatching {
+        if (userId == cachedUserId && cachedUser != null) return cachedUser
+        val fetched = runCatching {
             SupabaseManager.client.postgrest.from("users")
                 .select { filter { eq("id", userId) } }
                 .decodeList<UserModel>()
                 .firstOrNull()
-        }.getOrNull().also { user ->
-            cachedUser = user
+        }.getOrNull()
+        // Only cache a successful, non-null fetch. Caching null (e.g. on a
+        // transient network/RLS failure) would poison the cache for the whole
+        // session — every feature would then read the user as "no family" and
+        // both create rows with family_id=null and only read null-family rows.
+        if (fetched != null) {
+            cachedUser = fetched
             cachedUserId = userId
         }
+        return fetched
     }
 
     suspend fun getFamilyMembers(familyId: String): List<UserModel> = runCatching {

@@ -41,6 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.ShoppingItemModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.LoadingState
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
 import com.example.mainactivity.ui.components.PillTag
@@ -55,6 +56,8 @@ fun ShoppingScreen(
     val lists by viewModel.lists.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showAdd by remember { mutableStateOf(false) }
+
+    RefreshOnResume { viewModel.refresh() }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

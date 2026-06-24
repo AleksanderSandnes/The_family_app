@@ -31,10 +31,15 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -427,5 +432,25 @@ fun SwipeToRevealDelete(
         ) {
             content()
         }
+    }
+}
+
+/**
+ * Runs [onResume] every time the host screen's lifecycle hits ON_RESUME — i.e.
+ * each time the user navigates (back) to the screen. Needed because feature
+ * ViewModels are Activity-scoped (hoisted in MainFlow), so their init{} only
+ * runs once and navigating away/back no longer re-fetches. This restores the
+ * refresh-on-reentry behaviour without losing the hoist's no-spinner benefit.
+ */
+@Composable
+fun RefreshOnResume(onResume: () -> Unit) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnResume by rememberUpdatedState(onResume)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) currentOnResume()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 }

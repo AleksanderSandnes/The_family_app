@@ -44,6 +44,13 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Re-fetch from the server. Called on screen resume so data stays fresh
+     *  even though the ViewModel is Activity-scoped and init{} only runs once. */
+    fun refresh() = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        loadWishlists(userId)
+    }
+
     private suspend fun loadWishlists(userId: String) {
         if (_wishlists.value.isEmpty()) _isLoading.value = true
         runCatching {
