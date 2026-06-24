@@ -9,22 +9,30 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -136,10 +145,21 @@ fun ShoppingDetailScreen(
     androidx.compose.runtime.LaunchedEffect(listId) { viewModel.loadListDetail(listId) }
     val list by viewModel.selectedList.collectAsStateWithLifecycle()
     val items by viewModel.items.collectAsStateWithLifecycle()
-    var showAdd by remember { mutableStateOf(false) }
+    var newItemText by remember { mutableStateOf("") }
+    var showMenu by remember { mutableStateOf(false) }
+    var showRename by remember { mutableStateOf(false) }
     val remaining = items.count { !it.checked }
 
+    fun addItem() {
+        val text = newItemText.trim()
+        if (text.isNotBlank()) {
+            viewModel.addItem(listId, text)
+            newItemText = ""
+        }
+    }
+
     Scaffold(
+        modifier = Modifier.imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             FeatureTopBar(list?.title ?: "List", onBack) {
@@ -148,22 +168,66 @@ fun ShoppingDetailScreen(
                         "$remaining left",
                         MaterialTheme.colorScheme.primaryContainer,
                         MaterialTheme.colorScheme.onPrimaryContainer,
-                        Modifier.padding(end = 12.dp),
+                        Modifier.padding(end = 4.dp),
                     )
+                }
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Rename list") },
+                            onClick = {
+                                showMenu = false
+                                showRename = true
+                            },
+                        )
+                    }
                 }
             }
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAdd = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) { Icon(Icons.Filled.Add, "Add item") }
+        bottomBar = {
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = newItemText,
+                        onValueChange = { newItemText = it },
+                        placeholder = { Text("Add item…") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(24.dp),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { addItem() }),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { addItem() },
+                        enabled = newItemText.isNotBlank(),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Add item",
+                            tint = if (newItemText.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
         },
     ) { padding ->
         if (items.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                EmptyState(Icons.Filled.ShoppingCart, "Empty list", "Add the first item to get started.")
+                EmptyState(Icons.Filled.ShoppingCart, "Empty list", "Tap the field below to add your first item.")
             }
         } else {
             LazyColumn(
@@ -176,15 +240,15 @@ fun ShoppingDetailScreen(
         }
     }
 
-    if (showAdd) {
+    if (showRename) {
         InputDialog(
-            title = "Add item",
-            label = "Item",
-            confirmText = "Add",
-            onDismiss = { showAdd = false },
+            title = "Rename list",
+            label = "List name",
+            initial = list?.title ?: "",
+            onDismiss = { showRename = false },
             onConfirm = { value, _ ->
-                viewModel.addItem(listId, value)
-                showAdd = false
+                viewModel.renameList(listId, value)
+                showRename = false
             },
         )
     }

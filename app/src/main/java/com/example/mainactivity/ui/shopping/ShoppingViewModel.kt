@@ -221,6 +221,17 @@ class ShoppingViewModel(
             loadListDetail(item.listId).join()
         }
 
+    fun renameList(
+        listId: String,
+        newTitle: String,
+    ) = viewModelScope.launch {
+        _selectedList.value = _selectedList.value?.copy(title = newTitle)
+        runCatching {
+            db.from("shopping_lists").update({ set("title", newTitle) }) { filter { eq("id", listId) } }
+        }
+        loadListDetail(listId).join()
+    }
+
     override fun onCleared() {
         super.onCleared()
         viewModelScope.launch {
