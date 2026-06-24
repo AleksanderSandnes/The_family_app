@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
@@ -61,8 +63,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberUpdatedMarkerState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -175,7 +177,7 @@ fun FamilyMapScreen(
                 ) {
                     locations.forEach { loc ->
                         Marker(
-                            state = MarkerState(LatLng(loc.lat, loc.lng)),
+                            state = rememberUpdatedMarkerState(position = LatLng(loc.lat, loc.lng)),
                             title = loc.displayName,
                             icon = markerBitmaps[loc.userId]
                         )
@@ -242,7 +244,7 @@ private suspend fun buildMarkerBitmap(
 }
 
 private fun createInitialsBitmap(name: String, colorInt: Int, sizePx: Int): Bitmap {
-    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val radius = sizePx / 2f
 
@@ -274,19 +276,18 @@ private suspend fun loadCircularBitmap(context: Context, url: String, sizePx: In
         val request = ImageRequest.Builder(context)
             .data(url)
             .size(sizePx)
-            .bitmapConfig(android.graphics.Bitmap.Config.ARGB_8888)
             .build()
         val result = context.imageLoader.execute(request) as? SuccessResult ?: return null
-        val source = result.image?.toBitmap() ?: return null
+        val source = result.image.toBitmap()
 
-        val output = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val output = createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val clipPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, clipPaint)
         val xferPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
         }
-        canvas.drawBitmap(Bitmap.createScaledBitmap(source, sizePx, sizePx, true), 0f, 0f, xferPaint)
+        canvas.drawBitmap(source.scale(sizePx, sizePx), 0f, 0f, xferPaint)
 
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.WHITE
@@ -295,7 +296,7 @@ private suspend fun loadCircularBitmap(context: Context, url: String, sizePx: In
         }
         canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f - sizePx * 0.035f, borderPaint)
         output
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     }
 }
