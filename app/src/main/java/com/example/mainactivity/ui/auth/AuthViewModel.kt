@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
-import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,9 +14,7 @@ import kotlinx.coroutines.launch
 data class AuthUiState(
     val loading: Boolean = false,
     val error: String? = null,
-    val success: Boolean = false,
-    val pendingConfirmation: Boolean = false,
-    val pendingEmail: String = ""
+    val success: Boolean = false
 )
 
 class AuthViewModel(app: Application) : AndroidViewModel(app) {
@@ -25,16 +22,6 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            repo.sessionStatusFlow.collect { status ->
-                if (status is SessionStatus.Authenticated && _state.value.pendingConfirmation) {
-                    completeSignInAfterConfirmation()
-                }
-            }
-        }
-    }
 
     fun clearError() = _state.update { it.copy(error = null) }
 
@@ -65,30 +52,21 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
         }
         _state.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            val result = repo.register(name, email, password, birthday, mobile)
-            _state.update {
-                result.fold(
-                    onSuccess = {
-                        AuthUiState(pendingConfirmation = true, pendingEmail = email.trim().lowercase())
-                    },
-                    onFailure = { e ->
-                        Log.e("Auth", "Register failed", e)
-                        AuthUiState(error = friendlyAuthError(e, isLogin = false))
-                    }
-                )
+            val registerResult = repo.register(name, email, password, birthday, mobile)
+            if (registerResult.isFailure) {
+                val e = registerResult.exceptionOrNull()!!
+                Log.e("Auth", "Register failed", e)
+                _state.update { AuthUiState(error = friendlyAuthError(e, isLogin = false)) }
+                return@launch
             }
-        }
-    }
-
-    private fun completeSignInAfterConfirmation() {
-        viewModelScope.launch {
-            val result = repo.completeSignInAfterConfirmation()
+            // Email confirmation is disabled — session is active immediately after signUpWith.
+            val signInResult = repo.completeSignInAfterConfirmation()
             _state.update {
-                result.fold(
+                signInResult.fold(
                     onSuccess = { AuthUiState(success = true) },
                     onFailure = { e ->
-                        Log.e("Auth", "Post-confirmation sign-in failed", e)
-                        it.copy(loading = false)
+                        Log.e("Auth", "Post-register sign-in failed", e)
+                        AuthUiState(error = friendlyAuthError(e, isLogin = false))
                     }
                 )
             }
@@ -109,7 +87,6 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
 private fun friendlyAuthError(e: Throwable, isLogin: Boolean): String {
     val raw = e.message?.lowercase() ?: return "Something went wrong. Please try again."
     return when {
-        "email not confirmed" in raw -> "Please confirm your email before signing in. Check your inbox (and spam folder)."
         "invalid login credentials" in raw || "invalid_credentials" in raw -> "Incorrect email or password."
         "user already registered" in raw || "already been registered" in raw -> "An account with this email already exists."
         "email address is invalid" in raw -> "Please enter a valid email address."

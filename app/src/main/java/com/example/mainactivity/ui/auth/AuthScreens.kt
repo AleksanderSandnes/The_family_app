@@ -104,18 +104,16 @@ fun RegisterScreen(
     var birthday by rememberSaveable { mutableStateOf("") }
     var mobile by rememberSaveable { mutableStateOf("") }
 
-    LaunchedEffect(state.pendingConfirmation) { if (state.pendingConfirmation) step = 3 }
     LaunchedEffect(state.success) { if (state.success) onAuthenticated() }
     BackHandler(enabled = step == 2) { step = 1; viewModel.clearError() }
 
     val (title, subtitle) = when (step) {
         1 -> "Create your account" to "Start with your login details."
-        2 -> "About you" to "Optional details to help your family recognize you."
-        else -> "Check your inbox" to "One last step — confirm your email."
+        else -> "About you" to "Optional details to help your family recognize you."
     }
 
     AuthScaffold(title = title, subtitle = subtitle) {
-        StepIndicator(currentStep = step)
+        StepIndicator(currentStep = step, totalSteps = 2)
         Spacer(Modifier.height(4.dp))
         ErrorBanner(state.error)
         when (step) {
@@ -134,17 +132,12 @@ fun RegisterScreen(
                     }
                 }
             )
-            2 -> RegistrationStep2(
+            else -> RegistrationStep2(
                 birthday = birthday, onBirthdayChange = { birthday = it },
                 mobile = mobile, onMobileChange = { mobile = it },
                 loading = state.loading,
                 onBack = { step = 1; viewModel.clearError() },
                 onSubmit = { viewModel.register(name, email, password, confirm, birthday, mobile) }
-            )
-            3 -> RegistrationStep3(
-                email = state.pendingEmail,
-                loading = state.loading,
-                onConfirm = { viewModel.login(email, password) }
             )
         }
         if (step == 1) {
@@ -245,65 +238,6 @@ private fun RegistrationStep2(
     )
 }
 
-@Composable
-private fun RegistrationStep3(
-    email: String,
-    loading: Boolean,
-    onConfirm: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Spacer(Modifier.height(4.dp))
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Outlined.Mail,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(32.dp)
-            )
-        }
-        if (email.isNotEmpty()) {
-            Text(
-                "We sent a link to",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                email,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        Text(
-            "Click the link to confirm your account. Check your spam folder if you don't see it.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(Modifier.height(4.dp))
-        PrimaryButton(
-            text = "I've confirmed my email",
-            onClick = onConfirm,
-            loading = loading,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
 
 @Composable
 private fun AuthScaffold(
