@@ -43,7 +43,9 @@ import androidx.navigation.navArgument
 import com.example.mainactivity.ui.auth.LoginScreen
 import com.example.mainactivity.ui.auth.RegisterScreen
 import com.example.mainactivity.ui.birthday.BirthdayScreen
+import com.example.mainactivity.ui.birthday.BirthdayViewModel
 import com.example.mainactivity.ui.calendar.CalendarScreen
+import com.example.mainactivity.ui.calendar.CalendarViewModel
 import com.example.mainactivity.ui.chat.ChatScreen
 import com.example.mainactivity.ui.chat.ConversationScreen
 import com.example.mainactivity.ui.family.FamilyScreen
@@ -51,13 +53,16 @@ import com.example.mainactivity.ui.home.HomeScreen
 import com.example.mainactivity.ui.map.FamilyMapScreen
 import com.example.mainactivity.ui.meal.MealDetailScreen
 import com.example.mainactivity.ui.meal.MealScreen
+import com.example.mainactivity.ui.meal.MealViewModel
 import com.example.mainactivity.ui.profile.ProfileEditScreen
 import com.example.mainactivity.ui.profile.ProfileScreen
 import com.example.mainactivity.ui.settings.SettingsScreen
 import com.example.mainactivity.ui.shopping.ShoppingDetailScreen
 import com.example.mainactivity.ui.shopping.ShoppingScreen
+import com.example.mainactivity.ui.shopping.ShoppingViewModel
 import com.example.mainactivity.ui.wishlist.WishlistDetailScreen
 import com.example.mainactivity.ui.wishlist.WishlistScreen
+import com.example.mainactivity.ui.wishlist.WishlistViewModel
 
 private data class BottomDest(val route: String, val label: String, val icon: ImageVector)
 
@@ -102,6 +107,14 @@ private fun AuthFlow() {
 
 @Composable
 private fun MainFlow() {
+    // Hoist feature ViewModels to MainFlow scope (Activity-scoped).
+    // init{} fires immediately on login — data loads in the background before user taps any screen.
+    val shoppingVm: ShoppingViewModel = viewModel()
+    val birthdayVm: BirthdayViewModel = viewModel()
+    val wishlistVm: WishlistViewModel = viewModel()
+    val mealVm: MealViewModel = viewModel()
+    val calendarVm: CalendarViewModel = viewModel()
+
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -172,7 +185,7 @@ private fun MainFlow() {
                 exitTransition = { fadeOut(tween(200)) },
                 popEnterTransition = { fadeIn(tween(200)) },
                 popExitTransition = { fadeOut(tween(200)) }
-            ) { CalendarScreen() }
+            ) { CalendarScreen(viewModel = calendarVm) }
             composable(
                 Routes.CHAT,
                 enterTransition = { fadeIn(tween(200)) },
@@ -203,35 +216,61 @@ private fun MainFlow() {
 
             // Feature/detail screens: inherit NavHost default (slide)
             composable(Routes.SHOPPING) {
-                ShoppingScreen(onBack = { navController.popBackStack() }, onOpenList = { id -> navController.navigate(Routes.shoppingDetail(id)) })
+                ShoppingScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenList = { id -> navController.navigate(Routes.shoppingDetail(id)) },
+                    viewModel = shoppingVm
+                )
             }
             composable(
                 Routes.SHOPPING_DETAIL,
                 arguments = listOf(navArgument("listId") { type = NavType.StringType })
             ) { entry ->
-                ShoppingDetailScreen(entry.arguments!!.getString("listId")!!, onBack = { navController.popBackStack() })
+                ShoppingDetailScreen(
+                    entry.arguments!!.getString("listId")!!,
+                    onBack = { navController.popBackStack() },
+                    viewModel = shoppingVm
+                )
             }
 
             composable(Routes.MEAL) {
-                MealScreen(onBack = { navController.popBackStack() }, onOpen = { id -> navController.navigate(Routes.mealDetail(id)) })
+                MealScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpen = { id -> navController.navigate(Routes.mealDetail(id)) },
+                    viewModel = mealVm
+                )
             }
             composable(
                 Routes.MEAL_DETAIL,
                 arguments = listOf(navArgument("planId") { type = NavType.StringType })
             ) { entry ->
-                MealDetailScreen(entry.arguments!!.getString("planId")!!, onBack = { navController.popBackStack() })
+                MealDetailScreen(
+                    entry.arguments!!.getString("planId")!!,
+                    onBack = { navController.popBackStack() },
+                    viewModel = mealVm
+                )
             }
 
-            composable(Routes.BIRTHDAY) { BirthdayScreen(onBack = { navController.popBackStack() }) }
+            composable(Routes.BIRTHDAY) {
+                BirthdayScreen(onBack = { navController.popBackStack() }, viewModel = birthdayVm)
+            }
 
             composable(Routes.WISHLIST) {
-                WishlistScreen(onBack = { navController.popBackStack() }, onOpen = { id -> navController.navigate(Routes.wishlistDetail(id)) })
+                WishlistScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpen = { id -> navController.navigate(Routes.wishlistDetail(id)) },
+                    viewModel = wishlistVm
+                )
             }
             composable(
                 Routes.WISHLIST_DETAIL,
                 arguments = listOf(navArgument("wishlistId") { type = NavType.StringType })
             ) { entry ->
-                WishlistDetailScreen(entry.arguments!!.getString("wishlistId")!!, onBack = { navController.popBackStack() })
+                WishlistDetailScreen(
+                    entry.arguments!!.getString("wishlistId")!!,
+                    onBack = { navController.popBackStack() },
+                    viewModel = wishlistVm
+                )
             }
 
             composable(

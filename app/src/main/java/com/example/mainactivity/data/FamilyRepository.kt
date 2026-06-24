@@ -33,12 +33,26 @@ class FamilyRepository(val session: SessionManager) {
     suspend fun setNotifyDaysBefore(days: Int) = session.setNotifyDaysBefore(days)
     suspend fun setLocationVisible(enabled: Boolean) = session.setLocationVisible(enabled)
 
-    suspend fun getUser(userId: String): UserModel? = runCatching {
-        SupabaseManager.client.postgrest.from("users")
-            .select { filter { eq("id", userId) } }
-            .decodeList<UserModel>()
-            .firstOrNull()
-    }.getOrNull()
+    @Volatile private var cachedUser: UserModel? = null
+    @Volatile private var cachedUserId: String? = null
+
+    fun invalidateUserCache() {
+        cachedUser = null
+        cachedUserId = null
+    }
+
+    suspend fun getUser(userId: String): UserModel? {
+        if (userId == cachedUserId) return cachedUser
+        return runCatching {
+            SupabaseManager.client.postgrest.from("users")
+                .select { filter { eq("id", userId) } }
+                .decodeList<UserModel>()
+                .firstOrNull()
+        }.getOrNull().also { user ->
+            cachedUser = user
+            cachedUserId = userId
+        }
+    }
 
     suspend fun getFamilyMembers(familyId: String): List<UserModel> = runCatching {
         SupabaseManager.client.postgrest.from("users")
@@ -113,6 +127,7 @@ class FamilyRepository(val session: SessionManager) {
 
     suspend fun signOut() {
         runCatching { SupabaseManager.client.auth.signOut() }
+        invalidateUserCache()
         session.signOut()
     }
 
@@ -244,6 +259,7 @@ class FamilyRepository(val session: SessionManager) {
                 set("mobile", mobile)
                 set("avatar_url", avatarUrl)
             }) { filter { eq("id", userId) } }
+            invalidateUserCache()
         }
     }
 

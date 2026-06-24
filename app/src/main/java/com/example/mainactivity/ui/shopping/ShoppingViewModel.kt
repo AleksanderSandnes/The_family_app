@@ -14,6 +14,8 @@ import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -95,13 +97,21 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
 
     fun loadListDetail(listId: String) = viewModelScope.launch {
         runCatching {
-            _selectedList.value = db.from("shopping_lists")
-                .select { filter { eq("id", listId) } }
-                .decodeList<ShoppingListModel>()
-                .firstOrNull()
-            _items.value = db.from("shopping_items")
-                .select { filter { eq("list_id", listId) } }
-                .decodeList<ShoppingItemModel>()
+            coroutineScope {
+                val listDeferred = async {
+                    db.from("shopping_lists")
+                        .select { filter { eq("id", listId) } }
+                        .decodeList<ShoppingListModel>()
+                        .firstOrNull()
+                }
+                val itemsDeferred = async {
+                    db.from("shopping_items")
+                        .select { filter { eq("list_id", listId) } }
+                        .decodeList<ShoppingItemModel>()
+                }
+                _selectedList.value = listDeferred.await()
+                _items.value = itemsDeferred.await()
+            }
         }
         subscribeToItems(listId)
     }
@@ -121,6 +131,8 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     fun addList(title: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
         val user = repo.getUser(userId)
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _lists.value = _lists.value + ShoppingListModel(id = tempId, title = title, ownerUserId = userId, familyId = user?.familyId)
         runCatching {
             db.from("shopping_lists").insert(buildJsonObject {
                 put("title", title)
@@ -132,12 +144,15 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteList(list: ShoppingListModel) = viewModelScope.launch {
+        _lists.value = _lists.value.filter { it.id != list.id }
         runCatching { db.from("shopping_lists").delete { filter { eq("id", list.id) } } }
         val userId = repo.currentUserId.first() ?: return@launch
         loadLists(userId)
     }
 
     fun addItem(listId: String, item: String) = viewModelScope.launch {
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _items.value = _items.value + ShoppingItemModel(id = tempId, listId = listId, item = item, checked = false)
         runCatching {
             db.from("shopping_items").insert(buildJsonObject {
                 put("list_id", listId)
@@ -148,6 +163,7 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun toggle(item: ShoppingItemModel) = viewModelScope.launch {
+        _items.value = _items.value.map { if (it.id == item.id) it.copy(checked = !item.checked) else it }
         runCatching {
             db.from("shopping_items").update({
                 set("checked", !item.checked)
@@ -157,6 +173,7 @@ class ShoppingViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteItem(item: ShoppingItemModel) = viewModelScope.launch {
+        _items.value = _items.value.filter { it.id != item.id }
         runCatching { db.from("shopping_items").delete { filter { eq("id", item.id) } } }
         loadListDetail(item.listId).join()
     }
