@@ -135,6 +135,12 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
         val userId = repo.currentUserId.first() ?: return@launch
         val user = repo.getUser(userId) ?: return@launch
         val resolvedDateTo = if (dateTo.isBlank()) dateFrom else dateTo
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _events.value = _events.value + CalendarEventModel(
+            id = tempId, userId = userId, familyId = user.familyId,
+            activity = activity, allDay = allDay, dateFrom = dateFrom, dateTo = resolvedDateTo,
+            timeFrom = if (allDay) "" else timeFrom, timeTo = if (allDay) "" else timeTo, icon = icon
+        )
         runCatching {
             db.from("calendar_events").insert(buildJsonObject {
                 put("user_id", userId)
@@ -152,6 +158,7 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun updateEvent(event: CalendarEventModel) = viewModelScope.launch {
+        _events.value = _events.value.map { if (it.id == event.id) event else it }
         runCatching {
             db.from("calendar_events").update({
                 set("activity", event.activity)
@@ -168,6 +175,7 @@ class CalendarViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun delete(event: CalendarEventModel) = viewModelScope.launch {
+        _events.value = _events.value.filter { it.id != event.id }
         runCatching { db.from("calendar_events").delete { filter { eq("id", event.id) } } }
         val userId = repo.currentUserId.first() ?: return@launch
         loadEvents(userId)

@@ -8,6 +8,8 @@ import com.example.mainactivity.data.WishModel
 import com.example.mainactivity.data.WishlistModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -56,18 +58,28 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
 
     fun loadWishlistDetail(wishlistId: String) = viewModelScope.launch {
         runCatching {
-            _selectedWishlist.value = db.from("wishlists")
-                .select { filter { eq("id", wishlistId) } }
-                .decodeList<WishlistModel>()
-                .firstOrNull()
-            _wishes.value = db.from("wishes")
-                .select { filter { eq("wishlist_id", wishlistId) } }
-                .decodeList<WishModel>()
+            coroutineScope {
+                val wishlistDeferred = async {
+                    db.from("wishlists")
+                        .select { filter { eq("id", wishlistId) } }
+                        .decodeList<WishlistModel>()
+                        .firstOrNull()
+                }
+                val wishesDeferred = async {
+                    db.from("wishes")
+                        .select { filter { eq("wishlist_id", wishlistId) } }
+                        .decodeList<WishModel>()
+                }
+                _selectedWishlist.value = wishlistDeferred.await()
+                _wishes.value = wishesDeferred.await()
+            }
         }
     }
 
     fun addWishlist(name: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _wishlists.value = _wishlists.value + WishlistModel(id = tempId, ownerUserId = userId, name = name)
         runCatching {
             db.from("wishlists").insert(buildJsonObject {
                 put("owner_user_id", userId)
@@ -78,6 +90,7 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteWishlist(wishlist: WishlistModel) = viewModelScope.launch {
+        _wishlists.value = _wishlists.value.filter { it.id != wishlist.id }
         runCatching { db.from("wishlists").delete { filter { eq("id", wishlist.id) } } }
         val userId = repo.currentUserId.first() ?: return@launch
         loadWishlists(userId)
@@ -85,6 +98,8 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
 
     fun addWish(wishlistId: String, text: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _wishes.value = _wishes.value + WishModel(id = tempId, wishlistId = wishlistId, userId = userId, text = text, checked = false)
         runCatching {
             db.from("wishes").insert(buildJsonObject {
                 put("wishlist_id", wishlistId)
@@ -96,6 +111,7 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun toggle(wish: WishModel) = viewModelScope.launch {
+        _wishes.value = _wishes.value.map { if (it.id == wish.id) it.copy(checked = !wish.checked) else it }
         runCatching {
             db.from("wishes").update({
                 set("checked", !wish.checked)
@@ -105,6 +121,7 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteWish(wish: WishModel) = viewModelScope.launch {
+        _wishes.value = _wishes.value.filter { it.id != wish.id }
         runCatching { db.from("wishes").delete { filter { eq("id", wish.id) } } }
         loadWishlistDetail(wish.wishlistId).join()
     }

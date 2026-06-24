@@ -14,6 +14,8 @@ import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -98,13 +100,21 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
 
     fun loadPlanDetail(planId: String) = viewModelScope.launch {
         runCatching {
-            _selectedPlan.value = db.from("meal_plans")
-                .select { filter { eq("id", planId) } }
-                .decodeList<MealPlanModel>()
-                .firstOrNull()
-            _days.value = db.from("meal_plan_days")
-                .select { filter { eq("meal_plan_id", planId) } }
-                .decodeList<MealPlanDayModel>()
+            coroutineScope {
+                val planDeferred = async {
+                    db.from("meal_plans")
+                        .select { filter { eq("id", planId) } }
+                        .decodeList<MealPlanModel>()
+                        .firstOrNull()
+                }
+                val daysDeferred = async {
+                    db.from("meal_plan_days")
+                        .select { filter { eq("meal_plan_id", planId) } }
+                        .decodeList<MealPlanDayModel>()
+                }
+                _selectedPlan.value = planDeferred.await()
+                _days.value = daysDeferred.await()
+            }
         }
     }
 
@@ -112,17 +122,21 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
         val userId = repo.currentUserId.first() ?: return@launch
         val user = repo.getUser(userId) ?: return@launch
         val familyId = user.familyId ?: return@launch
+        val cal = Calendar.getInstance()
+        val week = cal.get(Calendar.WEEK_OF_YEAR)
+        val fmt = SimpleDateFormat("dd MMM", Locale.getDefault())
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        val from = fmt.format(cal.time)
+        val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+        val dates = ArrayList<String>()
+        for (i in 0 until 7) { dates.add(fmt.format(cal.time)); cal.add(Calendar.DAY_OF_MONTH, 1) }
+        cal.add(Calendar.DAY_OF_MONTH, -1)
+        val to = fmt.format(cal.time)
+
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _plans.value = _plans.value + MealPlanModel(id = tempId, familyId = familyId, fromDate = from, toDate = to, week = week)
+
         runCatching {
-            val cal = Calendar.getInstance()
-            val week = cal.get(Calendar.WEEK_OF_YEAR)
-            val fmt = SimpleDateFormat("dd MMM", Locale.getDefault())
-            cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-            val from = fmt.format(cal.time)
-            val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-            val dates = ArrayList<String>()
-            for (i in 0 until 7) { dates.add(fmt.format(cal.time)); cal.add(Calendar.DAY_OF_MONTH, 1) }
-            cal.add(Calendar.DAY_OF_MONTH, -1)
-            val to = fmt.format(cal.time)
             val plan = db.from("meal_plans").insert(buildJsonObject {
                 put("family_id", familyId)
                 put("from_date", from)
@@ -141,6 +155,7 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deletePlan(plan: MealPlanModel) = viewModelScope.launch {
+        _plans.value = _plans.value.filter { it.id != plan.id }
         runCatching { db.from("meal_plans").delete { filter { eq("id", plan.id) } } }
         val userId = repo.currentUserId.first() ?: return@launch
         val user = repo.getUser(userId) ?: return@launch
@@ -148,6 +163,7 @@ class MealViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setFood(day: MealPlanDayModel, food: String) = viewModelScope.launch {
+        _days.value = _days.value.map { if (it.id == day.id) it.copy(food = food) else it }
         runCatching {
             db.from("meal_plan_days").update({
                 set("food", food)

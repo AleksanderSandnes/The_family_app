@@ -96,6 +96,11 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
     fun add(name: String, date: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
         val user = repo.getUser(userId) ?: return@launch
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _birthdays.value = _birthdays.value + BirthdayModel(
+            id = tempId, name = name, date = date,
+            familyId = user.familyId, madeByUserId = userId
+        )
         runCatching {
             db.from("birthdays").insert(buildJsonObject {
                 put("name", name)
@@ -108,6 +113,7 @@ class BirthdayViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun delete(birthday: BirthdayModel) = viewModelScope.launch {
+        _birthdays.value = _birthdays.value.filter { it.id != birthday.id }
         runCatching { db.from("birthdays").delete { filter { eq("id", birthday.id) } } }
         val userId = repo.currentUserId.first() ?: return@launch
         load(userId)
