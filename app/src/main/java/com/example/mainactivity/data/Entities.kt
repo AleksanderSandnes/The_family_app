@@ -30,6 +30,7 @@ data class ShoppingListModel(
     val title: String = "",
     @SerialName("owner_user_id") val ownerUserId: String = "",
     @SerialName("family_id") val familyId: String? = null,
+    val icon: String = "shopping_cart",
 )
 
 @Serializable
