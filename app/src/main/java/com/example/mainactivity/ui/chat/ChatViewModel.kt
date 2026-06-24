@@ -109,41 +109,41 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 _userProfiles.value = members.associateBy { it.id }
             }
 
-            // Fetch conversations this user participates in
-            val myRows = db.from("conversation_participants")
-                .select { filter { eq("user_id", userId) } }
-                .decodeList<ConversationParticipantModel>()
+            // RLS policy on conversations filters to: user_from=me OR is_conversation_member(id, me)
+            // This works even if participant rows haven't been inserted yet (creator fallback).
+            val convs = db.from("conversations")
+                .select()
+                .decodeList<ConversationModel>()
 
-            val conversationIds = myRows.map { it.conversationId }
-
-            if (conversationIds.isEmpty()) {
+            if (convs.isEmpty()) {
                 _conversations.value = emptyList()
                 _conversationParticipants.value = emptyMap()
-            } else {
-                val convs = db.from("conversations")
-                    .select { filter { isIn("id", conversationIds) } }
-                    .decodeList<ConversationModel>()
+                return@runCatching
+            }
 
-                // Load all participant rows for list display
-                val allRows = db.from("conversation_participants")
+            val conversationIds = convs.map { it.id }
+
+            // Participant rows are supplementary (for display: avatar, name).
+            // Non-fatal if the table doesn't exist or a policy blocks the read.
+            val allRows = runCatching {
+                db.from("conversation_participants")
                     .select { filter { isIn("conversation_id", conversationIds) } }
                     .decodeList<ConversationParticipantModel>()
+            }.getOrDefault(emptyList())
 
-                // Ensure profiles for all participants are loaded
-                val knownIds = _userProfiles.value.keys
-                val missingIds = allRows.map { it.userId }.distinct().filter { it !in knownIds }
-                if (missingIds.isNotEmpty()) {
-                    val fresh = db.from("users")
-                        .select { filter { isIn("id", missingIds) } }
-                        .decodeList<UserModel>()
-                    _userProfiles.update { it + fresh.associateBy { u -> u.id } }
-                }
-
-                val participantsMap = allRows.groupBy { it.conversationId }
-                    .mapValues { (_, rows) -> rows.mapNotNull { _userProfiles.value[it.userId] } }
-                _conversationParticipants.value = participantsMap
-                _conversations.value = convs
+            val knownIds = _userProfiles.value.keys
+            val missingIds = allRows.map { it.userId }.distinct().filter { it !in knownIds }
+            if (missingIds.isNotEmpty()) {
+                val fresh = db.from("users")
+                    .select { filter { isIn("id", missingIds) } }
+                    .decodeList<UserModel>()
+                _userProfiles.update { it + fresh.associateBy { u -> u.id } }
             }
+
+            val participantsMap = allRows.groupBy { it.conversationId }
+                .mapValues { (_, rows) -> rows.mapNotNull { _userProfiles.value[it.userId] } }
+            _conversationParticipants.value = participantsMap
+            _conversations.value = convs
         }
         _isLoading.value = false
     }
@@ -217,14 +217,17 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 if (user.familyId != null) put("family_id", user.familyId)
             }) { select() }.decodeList<ConversationModel>().first()
 
-            val allParticipants = (memberIds + userId).distinct()
+            // Insert current user first so is_conversation_member() returns true for subsequent rows
+            val allParticipants = (listOf(userId) + memberIds).distinct()
             allParticipants.forEach { participantId ->
-                db.from("conversation_participants").insert(buildJsonObject {
-                    put("conversation_id", conv.id)
-                    put("user_id", participantId)
-                })
+                runCatching {
+                    db.from("conversation_participants").insert(buildJsonObject {
+                        put("conversation_id", conv.id)
+                        put("user_id", participantId)
+                    })
+                }.onFailure { e -> Log.w("ChatVM", "Failed to add participant $participantId: ${e.message}") }
             }
-        }
+        }.onFailure { e -> Log.e("ChatVM", "createConversation failed", e) }
         loadConversations(userId)
     }
 
