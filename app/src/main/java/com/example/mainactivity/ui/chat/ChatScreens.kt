@@ -335,10 +335,14 @@ fun ConversationScreen(
                             Icon(Icons.Filled.MoreVert, contentDescription = "Options")
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Rename") },
-                                onClick = { showMenu = false; showRename = true }
-                            )
+                            // Rename is only meaningful for group chats — a 1:1 always
+                            // shows the other person's name, so it can't be renamed.
+                            if (isGroup) {
+                                DropdownMenuItem(
+                                    text = { Text("Rename") },
+                                    onClick = { showMenu = false; showRename = true }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text("Change image") },
                                 onClick = { showMenu = false; showImagePicker = true }
@@ -357,9 +361,11 @@ fun ConversationScreen(
                                     onClick = { showMenu = false; showAddMember = true }
                                 )
                             }
-                            if (isGroup || currentParticipants.isNotEmpty()) {
+                            // "Remove member" is group-only. A 1:1 has no "Leave" —
+                            // the only way out of a 1:1 is to delete the conversation.
+                            if (isGroup) {
                                 DropdownMenuItem(
-                                    text = { Text(if (isGroup) "Remove member" else "Leave conversation", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text("Remove member", color = MaterialTheme.colorScheme.error) },
                                     leadingIcon = { Icon(Icons.Filled.PersonRemove, null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = { showMenu = false; showRemoveMember = true }
                                 )
