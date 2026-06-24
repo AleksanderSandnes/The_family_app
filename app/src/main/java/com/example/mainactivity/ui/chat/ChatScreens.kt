@@ -149,13 +149,17 @@ fun ChatScreen(
             ) {
                 items(conversations, key = { it.id }) { c ->
                     val participants = conversationParticipants[c.id] ?: emptyList()
+                    val isOneOnOne = participants.size == 2 || c.userTo != null
                     val other = participants.firstOrNull { it.id != myId }
-                    val isOneOnOne = participants.size == 2
+                        ?: if (c.userTo != null) {
+                            val otherId = if (c.userTo != myId) c.userTo else c.userFrom
+                            familyMembers.firstOrNull { it.id == otherId }
+                        } else null
 
-                    val displayName = remember(c, participants, myId) {
+                    val displayName = remember(c, participants, myId, other) {
                         when {
+                            isOneOnOne -> other?.name ?: c.name.takeIf { it.isNotBlank() } ?: "Chat"
                             c.name.isNotBlank() -> c.name
-                            isOneOnOne -> other?.name ?: "Chat"
                             else -> participants.filter { it.id != myId }
                                 .take(3).joinToString(", ") { it.name.split(" ").first() }
                                 .ifBlank { "Group chat" }
@@ -253,15 +257,15 @@ fun ConversationScreen(
     val currentParticipants by viewModel.currentParticipants.collectAsStateWithLifecycle()
     val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle()
 
-    // Compute display title: explicit name → other person (1:1) → participants list
+    // Compute display title: 1:1 always shows person's name; groups use stored name or list
     val title = remember(conversation, currentParticipants, myId) {
         val conv = conversation ?: return@remember "Chat"
-        if (conv.name.isNotBlank()) return@remember conv.name
         val others = currentParticipants.filter { it.id != myId }
-        when (others.size) {
-            0 -> "Chat"
-            1 -> others.first().name
-            else -> others.take(3).joinToString(", ") { it.name.split(" ").first() }
+        when {
+            others.size == 1 -> others.first().name
+            conv.name.isNotBlank() -> conv.name
+            others.size > 1 -> others.take(3).joinToString(", ") { it.name.split(" ").first() }
+            else -> "Chat"
         }
     }
 

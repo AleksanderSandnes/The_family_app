@@ -213,16 +213,34 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun findExistingOneOnOne(userId: String, otherId: String): String? =
+    private suspend fun findExistingOneOnOne(userId: String, otherId: String): String? {
+        // Old-style: user_to field (fast, in-memory)
         _conversations.value.firstOrNull { conv ->
-            val oldStyle = conv.userTo != null &&
-                ((conv.userFrom == userId && conv.userTo == otherId) ||
-                 (conv.userFrom == otherId && conv.userTo == userId))
-            val participants = _conversationParticipants.value[conv.id]
-            val newStyle = participants != null && participants.size == 2 &&
-                participants.any { it.id == userId } && participants.any { it.id == otherId }
-            oldStyle || newStyle
-        }?.id
+            conv.userTo != null &&
+            ((conv.userFrom == userId && conv.userTo == otherId) ||
+             (conv.userFrom == otherId && conv.userTo == userId))
+        }?.id?.let { return it }
+
+        // New-style: query participant rows directly (avoids profile-mapping size issues)
+        return runCatching {
+            val myConvIds = _conversations.value.map { it.id }
+            if (myConvIds.isEmpty()) return@runCatching null
+
+            val otherRows = db.from("conversation_participants")
+                .select { filter { eq("user_id", otherId) } }
+                .decodeList<ConversationParticipantModel>()
+            val sharedIds = otherRows.map { it.conversationId }.filter { it in myConvIds.toSet() }
+            if (sharedIds.isEmpty()) return@runCatching null
+
+            val allRows = db.from("conversation_participants")
+                .select { filter { isIn("conversation_id", sharedIds) } }
+                .decodeList<ConversationParticipantModel>()
+
+            allRows.groupBy { it.conversationId }
+                .entries.firstOrNull { (_, rows) -> rows.size == 2 }
+                ?.key
+        }.getOrNull()
+    }
 
     fun createConversation(name: String, memberIds: List<String>) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
