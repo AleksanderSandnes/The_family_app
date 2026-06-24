@@ -46,6 +46,7 @@ import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
@@ -65,6 +66,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -114,6 +117,10 @@ fun ChatScreen(
     val myId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showMemberPicker by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigateToConversation.collect { newId -> onOpen(newId) }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -218,12 +225,21 @@ fun ConversationScreen(
 ) {
     LaunchedEffect(conversationId) { viewModel.loadConversation(conversationId) }
 
-    // Navigate to a new conversation (e.g. after upgrading 1:1 → group)
+    // Navigate to a new conversation (e.g. after upgrading 1:1 → group, or existing 1:1 found)
     LaunchedEffect(Unit) {
         viewModel.navigateToConversation.collect { newId ->
             onBack()
             onNavigateTo(newId)
         }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.conversationDeleted.collect { onBack() }
+    }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.errorEvent.collect { msg -> snackbarHostState.showSnackbar(msg) }
     }
 
     val context = LocalContext.current
@@ -262,6 +278,7 @@ fun ConversationScreen(
     var showImagePicker by remember { mutableStateOf(false) }
     var showAddMember by remember { mutableStateOf(false) }
     var showRemoveMember by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
     var prevMsgCount by remember { mutableStateOf(0) }
@@ -303,6 +320,7 @@ fun ConversationScreen(
     Scaffold(
         modifier = Modifier.imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             FeatureTopBar(
                 title = title,
@@ -342,6 +360,12 @@ fun ConversationScreen(
                                     onClick = { showMenu = false; showRemoveMember = true }
                                 )
                             }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Delete conversation", color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                                onClick = { showMenu = false; showDeleteConfirm = true }
+                            )
                         }
                     }
                 }
@@ -525,6 +549,25 @@ fun ConversationScreen(
                 viewModel.removeMember(conversationId, userId)
                 showRemoveMember = false
                 if (userId == myId) onBack()
+            }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete conversation") },
+            text = { Text("This will permanently delete the conversation and all messages for everyone. This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    viewModel.deleteConversation(conversationId)
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
             }
         )
     }

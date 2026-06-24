@@ -79,6 +79,12 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val _navigateToConversation = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val navigateToConversation: SharedFlow<String> = _navigateToConversation.asSharedFlow()
 
+    private val _conversationDeleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val conversationDeleted: SharedFlow<Unit> = _conversationDeleted.asSharedFlow()
+
+    private val _errorEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val errorEvent: SharedFlow<String> = _errorEvent.asSharedFlow()
+
     private var realtimeChannel: RealtimeChannel? = null
     private var pendingCameraConversationId: String = ""
     private var pendingCameraFile: File? = null
@@ -207,9 +213,29 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private fun findExistingOneOnOne(userId: String, otherId: String): String? =
+        _conversations.value.firstOrNull { conv ->
+            val oldStyle = conv.userTo != null &&
+                ((conv.userFrom == userId && conv.userTo == otherId) ||
+                 (conv.userFrom == otherId && conv.userTo == userId))
+            val participants = _conversationParticipants.value[conv.id]
+            val newStyle = participants != null && participants.size == 2 &&
+                participants.any { it.id == userId } && participants.any { it.id == otherId }
+            oldStyle || newStyle
+        }?.id
+
     fun createConversation(name: String, memberIds: List<String>) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
         val user = repo.getUser(userId) ?: return@launch
+
+        if (memberIds.size == 1) {
+            val existing = findExistingOneOnOne(userId, memberIds[0])
+            if (existing != null) {
+                _navigateToConversation.emit(existing)
+                return@launch
+            }
+        }
+
         runCatching {
             val conv = db.from("conversations").insert(buildJsonObject {
                 put("user_from", userId)
@@ -289,17 +315,37 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     fun send(conversationId: String, text: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
         val pendingReplyTo = _replyTo.value
-        runCatching {
+        _replyTo.value = null
+
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _messages.update {
+            it + MessageModel(
+                id = tempId,
+                conversationId = conversationId,
+                userFrom = userId,
+                text = text,
+                replyToId = pendingReplyTo?.id
+            )
+        }
+
+        val insertOk = runCatching {
             db.from("messages").insert(buildJsonObject {
                 put("conversation_id", conversationId)
                 put("user_from", userId)
                 put("text", text)
                 if (pendingReplyTo != null) put("reply_to_id", pendingReplyTo.id)
             })
-            _replyTo.value = null
+        }.onFailure { e ->
+            Log.e("ChatVM", "send failed", e)
+            _errorEvent.emit("Failed to send message")
+        }.isSuccess
+
+        runCatching {
             _messages.value = db.from("messages")
                 .select { filter { eq("conversation_id", conversationId) }; order("sent_at", Order.ASCENDING) }
                 .decodeList<MessageModel>()
+        }.onFailure {
+            if (!insertOk) _messages.update { it.filter { msg -> msg.id != tempId } }
         }
     }
 
@@ -363,6 +409,21 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
             val userId = repo.currentUserId.first() ?: return@runCatching
             loadConversations(userId)
         }.onFailure { e -> Log.e("ChatVM", "Group image upload failed", e) }
+    }
+
+    fun deleteConversation(conversationId: String) = viewModelScope.launch {
+        runCatching {
+            runCatching {
+                SupabaseManager.client.storage.from("group-images").delete("$conversationId/image.jpg")
+            }
+            // messages and participant rows cascade via ON DELETE CASCADE
+            db.from("conversations").delete { filter { eq("id", conversationId) } }
+        }.onSuccess {
+            _conversationDeleted.emit(Unit)
+        }.onFailure { e ->
+            Log.e("ChatVM", "deleteConversation failed", e)
+            _errorEvent.emit("Failed to delete conversation")
+        }
     }
 
     override fun onCleared() {
