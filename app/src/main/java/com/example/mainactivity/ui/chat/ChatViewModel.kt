@@ -185,7 +185,7 @@ class ChatViewModel(
                         val lastSenderName = when {
                             lastMsg == null -> null
                             lastMsg.userFrom == userId -> "You"
-                            else -> _userProfiles.value[lastMsg.userFrom]?.fullName
+                            else -> _userProfiles.value[lastMsg.userFrom]?.name
                                 ?: lastMsg.userFrom.take(8)
                         }
                         ConversationWithPreview(
@@ -236,7 +236,7 @@ class ChatViewModel(
                             }
                         }
                         // Update last-message preview
-                        val senderName = _userProfiles.value[msg.userFrom]?.fullName ?: "Family member"
+                        val senderName = _userProfiles.value[msg.userFrom]?.name ?: "Family member"
                         _conversations.update { list ->
                             list.map { p ->
                                 if (p.conversation.id == convId)
