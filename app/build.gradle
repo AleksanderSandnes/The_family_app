@@ -99,6 +99,7 @@ dependencies {
     // Google Maps
     implementation 'com.google.maps.android:maps-compose:8.3.0'
     implementation 'com.google.android.gms:play-services-location:21.3.0'
+    implementation "org.jetbrains.kotlin:kotlin-reflect:2.3.0"
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
