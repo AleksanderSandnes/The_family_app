@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.wishlist
 
 import androidx.compose.foundation.layout.Arrangement
@@ -38,17 +40,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.ui.components.EmptyState
-import com.example.mainactivity.ui.components.RefreshOnResume
-import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
+import com.example.mainactivity.ui.components.LoadingState
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
 
 @Composable
 fun WishlistScreen(
     onBack: () -> Unit,
     onOpen: (String) -> Unit,
-    viewModel: WishlistViewModel = viewModel()
+    viewModel: WishlistViewModel = viewModel(),
 ) {
     val wishlists by viewModel.wishlists.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
@@ -65,9 +67,9 @@ fun WishlistScreen(
                 icon = { Icon(Icons.Filled.Add, null) },
                 text = { Text("New wishlist") },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             )
-        }
+        },
     ) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -81,7 +83,7 @@ fun WishlistScreen(
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(wishlists, key = { it.id }) { wl ->
                     SwipeToRevealDelete(onDelete = { viewModel.deleteWishlist(wl) }, shape = RoundedCornerShape(20.dp)) {
@@ -90,12 +92,12 @@ fun WishlistScreen(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.surface,
                             shadowElevation = 2.dp,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     Modifier.size(44.dp),
-                                    contentAlignment = Alignment.Center
+                                    contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(Icons.Filled.CardGiftcard, null, tint = MaterialTheme.colorScheme.secondary)
                                 }
@@ -112,7 +114,8 @@ fun WishlistScreen(
 
     if (showAdd) {
         InputDialog("New wishlist", "Wishlist name", onDismiss = { showAdd = false }) { v, _ ->
-            viewModel.addWishlist(v); showAdd = false
+            viewModel.addWishlist(v)
+            showAdd = false
         }
     }
 }
@@ -121,7 +124,7 @@ fun WishlistScreen(
 fun WishlistDetailScreen(
     wishlistId: String,
     onBack: () -> Unit,
-    viewModel: WishlistViewModel = viewModel()
+    viewModel: WishlistViewModel = viewModel(),
 ) {
     androidx.compose.runtime.LaunchedEffect(wishlistId) { viewModel.loadWishlistDetail(wishlistId) }
     val wishlist by viewModel.selectedWishlist.collectAsStateWithLifecycle()
@@ -135,9 +138,9 @@ fun WishlistDetailScreen(
             FloatingActionButton(
                 onClick = { showAdd = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             ) { Icon(Icons.Filled.Add, "Add wish") }
-        }
+        },
     ) { padding ->
         if (wishes.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -147,7 +150,7 @@ fun WishlistDetailScreen(
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(wishes, key = { it.id }) { wish ->
                     SwipeToRevealDelete(onDelete = { viewModel.deleteWish(wish) }, shape = RoundedCornerShape(16.dp)) {
@@ -157,7 +160,7 @@ fun WishlistDetailScreen(
                                     Icon(
                                         if (wish.checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
                                         null,
-                                        tint = if (wish.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = if (wish.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                                 Text(
@@ -165,7 +168,7 @@ fun WishlistDetailScreen(
                                     Modifier.weight(1f),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = if (wish.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                                    textDecoration = if (wish.checked) TextDecoration.LineThrough else TextDecoration.None
+                                    textDecoration = if (wish.checked) TextDecoration.LineThrough else TextDecoration.None,
                                 )
                             }
                         }
@@ -177,7 +180,8 @@ fun WishlistDetailScreen(
 
     if (showAdd) {
         InputDialog("Add wish", "I would love…", confirmText = "Add", onDismiss = { showAdd = false }) { v, _ ->
-            viewModel.addWish(wishlistId, v); showAdd = false
+            viewModel.addWish(wishlistId, v)
+            showAdd = false
         }
     }
 }

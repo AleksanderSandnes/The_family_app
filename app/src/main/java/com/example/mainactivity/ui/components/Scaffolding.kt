@@ -1,9 +1,10 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,7 +30,11 @@ import androidx.compose.ui.unit.dp
 /** Standard back-navigable top bar used by every detail/feature screen. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FeatureTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable () -> Unit = {}) {
+fun FeatureTopBar(
+    title: String,
+    onBack: (() -> Unit)? = null,
+    actions: @Composable () -> Unit = {},
+) {
     TopAppBar(
         title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         navigationIcon = {
@@ -40,12 +45,13 @@ fun FeatureTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composa
             }
         },
         actions = { actions() },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            titleContentColor = MaterialTheme.colorScheme.onBackground,
-            navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
-            actionIconContentColor = MaterialTheme.colorScheme.primary
-        )
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                titleContentColor = MaterialTheme.colorScheme.onBackground,
+                navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                actionIconContentColor = MaterialTheme.colorScheme.primary,
+            ),
     )
 }
 
@@ -60,7 +66,7 @@ fun InputDialog(
     secondLabel: String? = null,
     secondInitial: String = "",
     onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit
+    onConfirm: (String, String) -> Unit,
 ) {
     var value by remember { mutableStateOf(initial) }
     var second by remember { mutableStateOf(secondInitial) }
@@ -77,7 +83,9 @@ fun InputDialog(
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType)
+                    keyboardOptions =
+                        androidx.compose.foundation.text
+                            .KeyboardOptions(keyboardType = keyboardType),
                 )
                 if (secondLabel != null) {
                     OutlinedTextField(
@@ -86,7 +94,7 @@ fun InputDialog(
                         label = { Text(secondLabel) },
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -94,9 +102,9 @@ fun InputDialog(
         confirmButton = {
             TextButton(
                 onClick = { if (value.isNotBlank()) onConfirm(value.trim(), second.trim()) },
-                enabled = value.isNotBlank()
+                enabled = value.isNotBlank(),
             ) { Text(confirmText) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }

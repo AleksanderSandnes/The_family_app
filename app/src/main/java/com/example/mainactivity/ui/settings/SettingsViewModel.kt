@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class SettingsViewModel(app: Application) : AndroidViewModel(app) {
+class SettingsViewModel(
+    app: Application,
+) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
 
     val themeMode: StateFlow<ThemeMode> =
@@ -27,20 +29,27 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val locationVisible: StateFlow<Boolean> =
         repo.locationVisible.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    fun setThemeMode(mode: ThemeMode) = viewModelScope.launch {
-        repo.setThemeMode(mode)
-    }
+    fun setThemeMode(mode: ThemeMode) =
+        viewModelScope.launch {
+            repo.setThemeMode(mode)
+        }
 
-    fun setNotificationsEnabled(enabled: Boolean, context: Context) = viewModelScope.launch {
-        repo.setNotificationsEnabled(enabled)
-        if (enabled) NotificationWorker.schedule(context) else NotificationWorker.cancel(context)
-    }
+    fun setNotificationsEnabled(
+        enabled: Boolean,
+        context: Context,
+    ) =
+        viewModelScope.launch {
+            repo.setNotificationsEnabled(enabled)
+            if (enabled) NotificationWorker.schedule(context) else NotificationWorker.cancel(context)
+        }
 
-    fun setNotifyDaysBefore(days: Int) = viewModelScope.launch {
-        repo.setNotifyDaysBefore(days)
-    }
+    fun setNotifyDaysBefore(days: Int) =
+        viewModelScope.launch {
+            repo.setNotifyDaysBefore(days)
+        }
 
-    fun setLocationVisible(enabled: Boolean) = viewModelScope.launch {
-        repo.setLocationVisible(enabled)
-    }
+    fun setLocationVisible(enabled: Boolean) =
+        viewModelScope.launch {
+            repo.setLocationVisible(enabled)
+        }
 }

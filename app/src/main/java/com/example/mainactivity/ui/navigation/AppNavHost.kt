@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.navigation
 
 import androidx.compose.animation.core.tween
@@ -19,11 +21,11 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,23 +67,29 @@ import com.example.mainactivity.ui.wishlist.WishlistDetailScreen
 import com.example.mainactivity.ui.wishlist.WishlistScreen
 import com.example.mainactivity.ui.wishlist.WishlistViewModel
 
-private data class BottomDest(val route: String, val label: String, val icon: ImageVector)
-
-private val bottomDestinations = listOf(
-    BottomDest(Routes.HOME, "Home", Icons.Filled.Home),
-    BottomDest(Routes.CALENDAR, "Calendar", Icons.Filled.CalendarMonth),
-    BottomDest(Routes.CHAT, "Chat", Icons.AutoMirrored.Filled.Chat),
-    BottomDest(Routes.FAMILY, "Family", Icons.Filled.Groups),
-    BottomDest(Routes.PROFILE, "Profile", Icons.Filled.Person)
+private data class BottomDest(
+    val route: String,
+    val label: String,
+    val icon: ImageVector,
 )
+
+private val bottomDestinations =
+    listOf(
+        BottomDest(Routes.HOME, "Home", Icons.Filled.Home),
+        BottomDest(Routes.CALENDAR, "Calendar", Icons.Filled.CalendarMonth),
+        BottomDest(Routes.CHAT, "Chat", Icons.AutoMirrored.Filled.Chat),
+        BottomDest(Routes.FAMILY, "Family", Icons.Filled.Groups),
+        BottomDest(Routes.PROFILE, "Profile", Icons.Filled.Person),
+    )
 
 @Composable
 fun FamilyApp(rootViewModel: RootViewModel = viewModel()) {
     val gate by rootViewModel.gate.collectAsStateWithLifecycle()
     when (gate) {
-        AuthGate.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-        }
+        AuthGate.Loading ->
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
         AuthGate.SignedOut -> AuthFlow()
         AuthGate.SignedIn -> MainFlow()
     }
@@ -94,13 +102,13 @@ private fun AuthFlow() {
         composable(Routes.LOGIN) {
             LoginScreen(
                 onAuthenticated = { /* RootViewModel reacts to session change */ },
-                onNavigateToRegister = { navController.navigate(Routes.REGISTER) }
+                onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
             )
         }
         composable(Routes.REGISTER) {
             RegisterScreen(
                 onAuthenticated = { },
-                onNavigateToLogin = { navController.popBackStack() }
+                onNavigateToLogin = { navController.popBackStack() },
             )
         }
     }
@@ -126,9 +134,10 @@ private fun MainFlow() {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets.systemBars.only(
-            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
-        ),
+        contentWindowInsets =
+            WindowInsets.systemBars.only(
+                WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+            ),
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
@@ -147,18 +156,19 @@ private fun MainFlow() {
                             },
                             icon = { Icon(dest.icon, contentDescription = dest.label) },
                             label = { Text(dest.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            colors =
+                                NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
                         )
                     }
                 }
             }
-        }
+        },
     ) { padding ->
         NavHost(
             navController = navController,
@@ -168,7 +178,7 @@ private fun MainFlow() {
             enterTransition = { slideInHorizontally(tween(300)) { it } + fadeIn(tween(300)) },
             exitTransition = { slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(200)) },
             popEnterTransition = { slideInHorizontally(tween(300)) { -it / 3 } + fadeIn(tween(300)) },
-            popExitTransition = { slideOutHorizontally(tween(300)) { it } + fadeOut(tween(200)) }
+            popExitTransition = { slideOutHorizontally(tween(300)) { it } + fadeOut(tween(200)) },
         ) {
             // Bottom-tab destinations: crossfade only (no slide between sibling screens)
             composable(
@@ -176,11 +186,11 @@ private fun MainFlow() {
                 enterTransition = { fadeIn(tween(200)) },
                 exitTransition = { fadeOut(tween(200)) },
                 popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) }
+                popExitTransition = { fadeOut(tween(200)) },
             ) {
                 HomeScreen(
                     onOpen = { route -> navController.navigate(route) },
-                    onOpenFamily = { navController.navigate(Routes.FAMILY) }
+                    onOpenFamily = { navController.navigate(Routes.FAMILY) },
                 )
             }
             composable(
@@ -188,33 +198,33 @@ private fun MainFlow() {
                 enterTransition = { fadeIn(tween(200)) },
                 exitTransition = { fadeOut(tween(200)) },
                 popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) }
+                popExitTransition = { fadeOut(tween(200)) },
             ) { CalendarScreen(viewModel = calendarVm) }
             composable(
                 Routes.CHAT,
                 enterTransition = { fadeIn(tween(200)) },
                 exitTransition = { fadeOut(tween(200)) },
                 popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) }
+                popExitTransition = { fadeOut(tween(200)) },
             ) { ChatScreen(onOpen = { id -> navController.navigate(Routes.chatDetail(id)) }, viewModel = chatVm) }
             composable(
                 Routes.FAMILY,
                 enterTransition = { fadeIn(tween(200)) },
                 exitTransition = { fadeOut(tween(200)) },
                 popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) }
+                popExitTransition = { fadeOut(tween(200)) },
             ) { FamilyScreen() }
             composable(
                 Routes.PROFILE,
                 enterTransition = { fadeIn(tween(200)) },
                 exitTransition = { fadeOut(tween(200)) },
                 popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) }
+                popExitTransition = { fadeOut(tween(200)) },
             ) {
                 ProfileScreen(
                     onEdit = { navController.navigate(Routes.PROFILE_EDIT) },
                     onSettings = { navController.navigate(Routes.SETTINGS) },
-                    onSignedOut = { /* RootViewModel reacts */ }
+                    onSignedOut = { /* RootViewModel reacts */ },
                 )
             }
 
@@ -223,17 +233,17 @@ private fun MainFlow() {
                 ShoppingScreen(
                     onBack = { navController.popBackStack() },
                     onOpenList = { id -> navController.navigate(Routes.shoppingDetail(id)) },
-                    viewModel = shoppingVm
+                    viewModel = shoppingVm,
                 )
             }
             composable(
                 Routes.SHOPPING_DETAIL,
-                arguments = listOf(navArgument("listId") { type = NavType.StringType })
+                arguments = listOf(navArgument("listId") { type = NavType.StringType }),
             ) { entry ->
                 ShoppingDetailScreen(
                     entry.arguments!!.getString("listId")!!,
                     onBack = { navController.popBackStack() },
-                    viewModel = shoppingVm
+                    viewModel = shoppingVm,
                 )
             }
 
@@ -241,17 +251,17 @@ private fun MainFlow() {
                 MealScreen(
                     onBack = { navController.popBackStack() },
                     onOpen = { id -> navController.navigate(Routes.mealDetail(id)) },
-                    viewModel = mealVm
+                    viewModel = mealVm,
                 )
             }
             composable(
                 Routes.MEAL_DETAIL,
-                arguments = listOf(navArgument("planId") { type = NavType.StringType })
+                arguments = listOf(navArgument("planId") { type = NavType.StringType }),
             ) { entry ->
                 MealDetailScreen(
                     entry.arguments!!.getString("planId")!!,
                     onBack = { navController.popBackStack() },
-                    viewModel = mealVm
+                    viewModel = mealVm,
                 )
             }
 
@@ -263,29 +273,29 @@ private fun MainFlow() {
                 WishlistScreen(
                     onBack = { navController.popBackStack() },
                     onOpen = { id -> navController.navigate(Routes.wishlistDetail(id)) },
-                    viewModel = wishlistVm
+                    viewModel = wishlistVm,
                 )
             }
             composable(
                 Routes.WISHLIST_DETAIL,
-                arguments = listOf(navArgument("wishlistId") { type = NavType.StringType })
+                arguments = listOf(navArgument("wishlistId") { type = NavType.StringType }),
             ) { entry ->
                 WishlistDetailScreen(
                     entry.arguments!!.getString("wishlistId")!!,
                     onBack = { navController.popBackStack() },
-                    viewModel = wishlistVm
+                    viewModel = wishlistVm,
                 )
             }
 
             composable(
                 Routes.CHAT_DETAIL,
-                arguments = listOf(navArgument("conversationId") { type = NavType.StringType })
+                arguments = listOf(navArgument("conversationId") { type = NavType.StringType }),
             ) { entry ->
                 ConversationScreen(
                     conversationId = entry.arguments!!.getString("conversationId")!!,
                     onBack = { navController.popBackStack() },
                     onNavigateTo = { id -> navController.navigate(Routes.chatDetail(id)) },
-                    viewModel = chatVm
+                    viewModel = chatVm,
                 )
             }
 

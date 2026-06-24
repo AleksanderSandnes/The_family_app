@@ -23,11 +23,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val repo = FamilyRepository.get(applicationContext)
             val themeMode by repo.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
-            val darkTheme = when (themeMode) {
-                ThemeMode.LIGHT -> false
-                ThemeMode.DARK -> true
-                ThemeMode.SYSTEM -> isSystemInDarkTheme()
-            }
+            val darkTheme =
+                when (themeMode) {
+                    ThemeMode.LIGHT -> false
+                    ThemeMode.DARK -> true
+                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                }
             TheFamilyAppTheme(darkTheme = darkTheme) {
                 FamilyApp()
             }

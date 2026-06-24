@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.profile
 
 import android.Manifest
@@ -22,8 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Mail
@@ -59,7 +61,6 @@ import com.example.mainactivity.ui.components.FamilyTextField
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.PrimaryButton
 import com.example.mainactivity.ui.theme.heroGradient
-import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -68,7 +69,7 @@ fun ProfileScreen(
     onEdit: () -> Unit,
     onSettings: () -> Unit,
     onSignedOut: () -> Unit,
-    viewModel: ProfileViewModel = viewModel()
+    viewModel: ProfileViewModel = viewModel(),
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
@@ -77,36 +78,47 @@ fun ProfileScreen(
 
     var showAvatarPicker by remember { mutableStateOf(false) }
 
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri -> uri?.let { viewModel.saveAvatarFromUri(context, it) } }
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri -> uri?.let { viewModel.saveAvatarFromUri(context, it) } }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success -> viewModel.onCameraResult(context, success) }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicture(),
+        ) { success -> viewModel.onCameraResult(context, success) }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) viewModel.prepareCameraCapture(context)?.let { cameraLauncher.launch(it) }
-    }
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            if (granted) viewModel.prepareCameraCapture(context)?.let { cameraLauncher.launch(it) }
+        }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar("Profile") }
+        topBar = { FeatureTopBar("Profile") },
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             ErrorBanner(error)
             Box(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(heroGradient(dark)).padding(24.dp)
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(heroGradient(dark))
+                    .padding(24.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Avatar circle — clickable to change photo
                     Box(
-                        Modifier.size(72.dp).clip(CircleShape).clickable { showAvatarPicker = true }
+                        Modifier.size(72.dp).clip(CircleShape).clickable { showAvatarPicker = true },
                     ) {
                         val avatarUri = user?.avatarUrl
                         var imgFailed by remember(avatarUri) { mutableStateOf(false) }
@@ -116,27 +128,34 @@ fun ProfileScreen(
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                onError = { imgFailed = true }
+                                onError = { imgFailed = true },
                             )
                         } else {
                             Box(
                                 Modifier.fillMaxSize().clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    user?.name?.trim()?.firstOrNull()?.uppercase() ?: "?",
+                                    user
+                                        ?.name
+                                        ?.trim()
+                                        ?.firstOrNull()
+                                        ?.uppercase() ?: "?",
                                     color = Color.White,
                                     style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
                                 )
                             }
                         }
                         // Camera indicator strip at bottom of circle
                         Box(
-                            Modifier.fillMaxWidth().align(Alignment.BottomCenter)
-                                .height(20.dp).clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
+                            Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
                                 .background(Color.Black.copy(alpha = 0.38f)),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Icon(Icons.Filled.CameraAlt, null, tint = Color.White, modifier = Modifier.size(12.dp))
                         }
@@ -164,7 +183,7 @@ fun ProfileScreen(
                 "Sign out",
                 onClick = { viewModel.signOut(onSignedOut) },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = Icons.AutoMirrored.Filled.Logout
+                leadingIcon = Icons.AutoMirrored.Filled.Logout,
             )
         }
     }
@@ -184,7 +203,7 @@ fun ProfileScreen(
             onRemove = {
                 showAvatarPicker = false
                 viewModel.removeAvatar()
-            }
+            },
         )
     }
 }
@@ -195,7 +214,7 @@ private fun AvatarPickerDialog(
     onDismiss: () -> Unit,
     onCamera: () -> Unit,
     onGallery: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -217,12 +236,16 @@ private fun AvatarPickerDialog(
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
 
 @Composable
-private fun InfoRow(icon: ImageVector, label: String, value: String) {
+private fun InfoRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+) {
     Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.size(14.dp))
@@ -239,7 +262,11 @@ private fun formatBirthday(raw: String?): String {
 }
 
 @Composable
-private fun ActionRow(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun ActionRow(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
     Surface(onClick = onClick, shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
@@ -253,7 +280,7 @@ private fun ActionRow(icon: ImageVector, label: String, onClick: () -> Unit) {
 @Composable
 fun ProfileEditScreen(
     onBack: () -> Unit,
-    viewModel: ProfileViewModel = viewModel()
+    viewModel: ProfileViewModel = viewModel(),
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
     var name by remember(user) { mutableStateOf(user?.name ?: "") }
@@ -263,18 +290,30 @@ fun ProfileEditScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar("Edit profile", onBack) }
+        topBar = { FeatureTopBar("Edit profile", onBack) },
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             FamilyTextField(name, { name = it }, "Full name")
             FamilyTextField(email, { email = it }, "Email", keyboardType = androidx.compose.ui.text.input.KeyboardType.Email)
             FamilyTextField(mobile, { mobile = it }, "Mobile", keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
             BirthdayPickerField(value = birthday, onChange = { birthday = it })
             Spacer(Modifier.height(6.dp))
-            PrimaryButton("Save changes", onClick = { viewModel.save(name, email, birthday, mobile); onBack() }, enabled = name.isNotBlank() && email.isNotBlank(), modifier = Modifier.fillMaxWidth())
+            PrimaryButton(
+                "Save changes",
+                onClick = {
+                    viewModel.save(name, email, birthday, mobile)
+                    onBack()
+                },
+                enabled = name.isNotBlank() && email.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

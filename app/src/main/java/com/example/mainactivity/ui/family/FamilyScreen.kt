@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.family
 
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +37,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.ui.components.ErrorBanner
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InitialAvatar
@@ -48,7 +48,7 @@ import com.example.mainactivity.ui.components.SecondaryButton
 @Composable
 fun FamilyScreen(
     onBack: (() -> Unit)? = null,
-    viewModel: FamilyViewModel = viewModel()
+    viewModel: FamilyViewModel = viewModel(),
 ) {
     val family by viewModel.family.collectAsStateWithLifecycle()
     val members by viewModel.members.collectAsStateWithLifecycle()
@@ -61,13 +61,13 @@ fun FamilyScreen(
 
     androidx.compose.material3.Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar("Family", onBack) }
+        topBar = { FeatureTopBar("Family", onBack) },
     ) { padding ->
         if (family == null) {
             Column(
                 Modifier.fillMaxSize().padding(padding).padding(24.dp),
                 verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(96.dp)) {
                     androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
@@ -80,7 +80,7 @@ fun FamilyScreen(
                     "Create a new family group or join an existing one with a code.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
                 Spacer(Modifier.height(24.dp))
                 ErrorBanner(error)
@@ -92,18 +92,27 @@ fun FamilyScreen(
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {
                     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(20.dp)) {
                             Text(family!!.name, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(4.dp))
-                            Text("${members.size} member${if (members.size == 1) "" else "s"}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "${members.size} member${if (members.size == 1) "" else "s"}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    Text("Members", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp))
+                    Text(
+                        "Members",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+                    )
                 }
                 items(members, key = { it.id }) { member ->
                     Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
@@ -135,13 +144,16 @@ fun FamilyScreen(
             title = { Text("Leave family?") },
             text = { Text("You will lose access to shared data. You can rejoin later with the invite code.") },
             confirmButton = {
-                TextButton(onClick = { showLeaveConfirm = false; viewModel.leaveFamily() }) {
+                TextButton(onClick = {
+                    showLeaveConfirm = false
+                    viewModel.leaveFamily()
+                }) {
                     Text("Leave", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLeaveConfirm = false }) { Text("Cancel") }
-            }
+            },
         )
     }
 
@@ -152,7 +164,10 @@ fun FamilyScreen(
             secondLabel = "Invite code",
             confirmText = "Create",
             onDismiss = { showCreate = false },
-            onConfirm = { name, code -> viewModel.createFamily(name, code); showCreate = false }
+            onConfirm = { name, code ->
+                viewModel.createFamily(name, code)
+                showCreate = false
+            },
         )
     }
     if (showJoin) {
@@ -161,8 +176,14 @@ fun FamilyScreen(
             label = "Family name",
             secondLabel = "Invite code",
             confirmText = "Join",
-            onDismiss = { showJoin = false; viewModel.clearError() },
-            onConfirm = { name, code -> viewModel.joinFamily(name, code); showJoin = false }
+            onDismiss = {
+                showJoin = false
+                viewModel.clearError()
+            },
+            onConfirm = { name, code ->
+                viewModel.joinFamily(name, code)
+                showJoin = false
+            },
         )
     }
 }

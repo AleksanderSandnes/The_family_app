@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.meal
 
 import androidx.compose.foundation.layout.Arrangement
@@ -36,17 +38,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.MealPlanDayModel
 import com.example.mainactivity.ui.components.EmptyState
-import com.example.mainactivity.ui.components.RefreshOnResume
-import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
+import com.example.mainactivity.ui.components.LoadingState
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
 
 @Composable
 fun MealScreen(
     onBack: () -> Unit,
     onOpen: (String) -> Unit,
-    viewModel: MealViewModel = viewModel()
+    viewModel: MealViewModel = viewModel(),
 ) {
     val plans by viewModel.plans.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
@@ -62,9 +64,9 @@ fun MealScreen(
                 icon = { Icon(Icons.Filled.Add, null) },
                 text = { Text("Plan this week") },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             )
-        }
+        },
     ) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -78,7 +80,7 @@ fun MealScreen(
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(plans, key = { it.id }) { plan ->
                     SwipeToRevealDelete(onDelete = { viewModel.deletePlan(plan) }, shape = RoundedCornerShape(20.dp)) {
@@ -87,12 +89,12 @@ fun MealScreen(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.surface,
                             shadowElevation = 2.dp,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     Modifier.size(44.dp),
-                                    contentAlignment = Alignment.Center
+                                    contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(Icons.Filled.Restaurant, null, tint = MaterialTheme.colorScheme.tertiary)
                                 }
@@ -115,7 +117,7 @@ fun MealScreen(
 fun MealDetailScreen(
     planId: String,
     onBack: () -> Unit,
-    viewModel: MealViewModel = viewModel()
+    viewModel: MealViewModel = viewModel(),
 ) {
     androidx.compose.runtime.LaunchedEffect(planId) { viewModel.loadPlanDetail(planId) }
     val plan by viewModel.selectedPlan.collectAsStateWithLifecycle()
@@ -124,19 +126,19 @@ fun MealDetailScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar(plan?.let { "Week ${it.week}" } ?: "Meal plan", onBack) }
+        topBar = { FeatureTopBar(plan?.let { "Week ${it.week}" } ?: "Meal plan", onBack) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(days, key = { it.id }) { day ->
                 Surface(
                     onClick = { editing = day },
                     shape = RoundedCornerShape(18.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -144,7 +146,7 @@ fun MealDetailScreen(
                             Text(
                                 day.food.ifBlank { "Tap to add a meal" },
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (day.food.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
+                                color = if (day.food.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                             )
                         }
                         Text(day.date, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -162,7 +164,10 @@ fun MealDetailScreen(
             label = "Meal",
             initial = day.food,
             onDismiss = { editing = null },
-            onConfirm = { v, _ -> viewModel.setFood(day, v); editing = null }
+            onConfirm = { v, _ ->
+                viewModel.setFood(day, v)
+                editing = null
+            },
         )
     }
 }

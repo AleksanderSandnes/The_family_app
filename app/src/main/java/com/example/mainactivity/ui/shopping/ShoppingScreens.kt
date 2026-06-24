@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.shopping
 
 import androidx.compose.foundation.layout.Arrangement
@@ -33,25 +35,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.ShoppingItemModel
 import com.example.mainactivity.ui.components.EmptyState
-import com.example.mainactivity.ui.components.LoadingState
-import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
+import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.PillTag
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
 
 @Composable
 fun ShoppingScreen(
     onBack: () -> Unit,
     onOpenList: (String) -> Unit,
-    viewModel: ShoppingViewModel = viewModel()
+    viewModel: ShoppingViewModel = viewModel(),
 ) {
     val lists by viewModel.lists.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
@@ -68,9 +69,9 @@ fun ShoppingScreen(
                 icon = { Icon(Icons.Filled.Add, null) },
                 text = { Text("New list") },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             )
-        }
+        },
     ) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -84,7 +85,7 @@ fun ShoppingScreen(
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(lists, key = { it.id }) { list ->
                     SwipeToRevealDelete(onDelete = { viewModel.deleteList(list) }, shape = RoundedCornerShape(20.dp)) {
@@ -93,12 +94,12 @@ fun ShoppingScreen(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.surface,
                             shadowElevation = 2.dp,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     Modifier.size(44.dp),
-                                    contentAlignment = Alignment.Center
+                                    contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(Icons.Filled.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary)
                                 }
@@ -118,7 +119,10 @@ fun ShoppingScreen(
             title = "New shopping list",
             label = "List name",
             onDismiss = { showAdd = false },
-            onConfirm = { value, _ -> viewModel.addList(value); showAdd = false }
+            onConfirm = { value, _ ->
+                viewModel.addList(value)
+                showAdd = false
+            },
         )
     }
 }
@@ -127,7 +131,7 @@ fun ShoppingScreen(
 fun ShoppingDetailScreen(
     listId: String,
     onBack: () -> Unit,
-    viewModel: ShoppingViewModel = viewModel()
+    viewModel: ShoppingViewModel = viewModel(),
 ) {
     androidx.compose.runtime.LaunchedEffect(listId) { viewModel.loadListDetail(listId) }
     val list by viewModel.selectedList.collectAsStateWithLifecycle()
@@ -144,7 +148,7 @@ fun ShoppingDetailScreen(
                         "$remaining left",
                         MaterialTheme.colorScheme.primaryContainer,
                         MaterialTheme.colorScheme.onPrimaryContainer,
-                        Modifier.padding(end = 12.dp)
+                        Modifier.padding(end = 12.dp),
                     )
                 }
             }
@@ -153,9 +157,9 @@ fun ShoppingDetailScreen(
             FloatingActionButton(
                 onClick = { showAdd = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             ) { Icon(Icons.Filled.Add, "Add item") }
-        }
+        },
     ) { padding ->
         if (items.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -165,7 +169,7 @@ fun ShoppingDetailScreen(
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(items, key = { it.id }) { item -> ShoppingItemRow(item, viewModel) }
             }
@@ -178,25 +182,31 @@ fun ShoppingDetailScreen(
             label = "Item",
             confirmText = "Add",
             onDismiss = { showAdd = false },
-            onConfirm = { value, _ -> viewModel.addItem(listId, value); showAdd = false }
+            onConfirm = { value, _ ->
+                viewModel.addItem(listId, value)
+                showAdd = false
+            },
         )
     }
 }
 
 @Composable
-private fun ShoppingItemRow(item: ShoppingItemModel, viewModel: ShoppingViewModel) {
+private fun ShoppingItemRow(
+    item: ShoppingItemModel,
+    viewModel: ShoppingViewModel,
+) {
     SwipeToRevealDelete(onDelete = { viewModel.deleteItem(item) }, shape = RoundedCornerShape(16.dp)) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { viewModel.toggle(item) }) {
                     Icon(
                         if (item.checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
                         null,
-                        tint = if (item.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (item.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Text(
@@ -204,7 +214,7 @@ private fun ShoppingItemRow(item: ShoppingItemModel, viewModel: ShoppingViewMode
                     Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None
+                    textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
                 )
             }
         }
