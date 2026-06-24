@@ -13,7 +13,7 @@ data class UserModel(
     val mobile: String = "",
     @SerialName("family_id") val familyId: String? = null,
     @SerialName("avatar_color") val avatarColor: Int = 0,
-    @SerialName("avatar_url") val avatarUrl: String? = null
+    @SerialName("avatar_url") val avatarUrl: String? = null,
 )
 
 @Serializable
@@ -21,7 +21,7 @@ data class FamilyModel(
     val id: String = "",
     val name: String = "",
     @SerialName("join_code") val joinCode: String = "",
-    @SerialName("admin_id") val adminId: String? = null
+    @SerialName("admin_id") val adminId: String? = null,
 )
 
 @Serializable
@@ -29,7 +29,7 @@ data class ShoppingListModel(
     val id: String = "",
     val title: String = "",
     @SerialName("owner_user_id") val ownerUserId: String = "",
-    @SerialName("family_id") val familyId: String? = null
+    @SerialName("family_id") val familyId: String? = null,
 )
 
 @Serializable
@@ -37,7 +37,7 @@ data class ShoppingItemModel(
     val id: String = "",
     @SerialName("list_id") val listId: String = "",
     val item: String = "",
-    val checked: Boolean = false
+    val checked: Boolean = false,
 )
 
 @Serializable
@@ -46,7 +46,7 @@ data class MealPlanModel(
     @SerialName("family_id") val familyId: String = "",
     @SerialName("from_date") val fromDate: String = "",
     @SerialName("to_date") val toDate: String = "",
-    val week: Int = 0
+    val week: Int = 0,
 )
 
 @Serializable
@@ -55,7 +55,7 @@ data class MealPlanDayModel(
     @SerialName("meal_plan_id") val mealPlanId: String = "",
     val day: String = "",
     val date: String = "",
-    val food: String = ""
+    val food: String = "",
 )
 
 @Serializable
@@ -69,7 +69,7 @@ data class CalendarEventModel(
     @SerialName("time_to") val timeTo: String = "",
     val activity: String = "",
     @SerialName("all_day") val allDay: Boolean = false,
-    val icon: String = "schedule"
+    val icon: String = "schedule",
 )
 
 @Serializable
@@ -79,7 +79,7 @@ data class BirthdayModel(
     val date: String = "",
     @SerialName("family_id") val familyId: String? = null,
     @SerialName("user_id") val userId: String? = null,
-    @SerialName("made_by_user_id") val madeByUserId: String = ""
+    @SerialName("made_by_user_id") val madeByUserId: String = "",
 )
 
 @Serializable
@@ -87,7 +87,7 @@ data class WishlistModel(
     val id: String = "",
     @SerialName("owner_user_id") val ownerUserId: String = "",
     @SerialName("family_id") val familyId: String? = null,
-    val name: String = ""
+    val name: String = "",
 )
 
 @Serializable
@@ -96,7 +96,7 @@ data class WishModel(
     @SerialName("wishlist_id") val wishlistId: String = "",
     @SerialName("user_id") val userId: String = "",
     val text: String = "",
-    val checked: Boolean = false
+    val checked: Boolean = false,
 )
 
 @Serializable
@@ -106,7 +106,7 @@ data class ConversationModel(
     @SerialName("user_to") val userTo: String? = null,
     val name: String = "",
     @SerialName("family_id") val familyId: String? = null,
-    @SerialName("image_uri") val imageUri: String? = null
+    @SerialName("image_uri") val imageUri: String? = null,
 )
 
 @Serializable
@@ -116,7 +116,7 @@ data class UserLocationModel(
     val lat: Double = 0.0,
     val lng: Double = 0.0,
     @SerialName("display_name") val displayName: String = "",
-    val visible: Boolean = false
+    val visible: Boolean = false,
 )
 
 @Serializable
@@ -124,7 +124,7 @@ data class ConversationParticipantModel(
     val id: String = "",
     @SerialName("conversation_id") val conversationId: String = "",
     @SerialName("user_id") val userId: String = "",
-    @SerialName("joined_at") val joinedAt: String = ""
+    @SerialName("joined_at") val joinedAt: String = "",
 )
 
 @Serializable
@@ -134,5 +134,5 @@ data class MessageModel(
     @SerialName("user_from") val userFrom: String = "",
     val text: String = "",
     @SerialName("sent_at") val sentAt: String = "",
-    @SerialName("reply_to_id") val replyToId: String? = null
+    @SerialName("reply_to_id") val replyToId: String? = null,
 )

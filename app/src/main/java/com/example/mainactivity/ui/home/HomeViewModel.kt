@@ -17,10 +17,12 @@ import kotlinx.coroutines.launch
 data class HomeUiState(
     val user: UserModel? = null,
     val family: FamilyModel? = null,
-    val memberCount: Int = 0
+    val memberCount: Int = 0,
 )
 
-class HomeViewModel(app: Application) : AndroidViewModel(app) {
+class HomeViewModel(
+    app: Application,
+) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
 
     private val _state = MutableStateFlow(HomeUiState())
@@ -34,21 +36,26 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun refresh() = viewModelScope.launch {
-        val userId = repo.currentUserId.first() ?: return@launch
-        load(userId)
-    }
+    fun refresh() =
+        viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            load(userId)
+        }
 
     private suspend fun load(userId: String) {
         runCatching {
             val user = repo.getUser(userId) ?: return
             val family = user.familyId?.let { repo.getFamily(it) }
-            val memberCount = if (user.familyId != null) {
-                SupabaseManager.client.postgrest.from("users")
-                    .select { filter { eq("family_id", user.familyId) } }
-                    .decodeList<UserModel>()
-                    .size
-            } else 0
+            val memberCount =
+                if (user.familyId != null) {
+                    SupabaseManager.client.postgrest
+                        .from("users")
+                        .select { filter { eq("family_id", user.familyId) } }
+                        .decodeList<UserModel>()
+                        .size
+                } else {
+                    0
+                }
             _state.value = HomeUiState(user, family, memberCount)
         }
     }

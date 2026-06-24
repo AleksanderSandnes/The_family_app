@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.chat
 
 import android.Manifest
@@ -17,16 +19,16 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
@@ -97,19 +99,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.MessageModel
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.ui.components.EmptyState
-import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InitialAvatar
 import com.example.mainactivity.ui.components.InputDialog
+import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.theme.BrandGradient
-import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     onOpen: (String) -> Unit,
-    viewModel: ChatViewModel = viewModel()
+    viewModel: ChatViewModel = viewModel(),
 ) {
     val conversations by viewModel.conversations.collectAsStateWithLifecycle(emptyList())
     val conversationParticipants by viewModel.conversationParticipants.collectAsStateWithLifecycle()
@@ -129,9 +131,9 @@ fun ChatScreen(
             FloatingActionButton(
                 onClick = { showMemberPicker = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             ) { Icon(Icons.Filled.Add, "New conversation") }
-        }
+        },
     ) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -145,40 +147,53 @@ fun ChatScreen(
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(conversations, key = { it.id }) { c ->
                     val participants = conversationParticipants[c.id] ?: emptyList()
                     val isOneOnOne = participants.size == 2 || c.userTo != null
-                    val other = participants.firstOrNull { it.id != myId }
-                        ?: if (c.userTo != null) {
-                            val otherId = if (c.userTo != myId) c.userTo else c.userFrom
-                            familyMembers.firstOrNull { it.id == otherId }
-                        } else null
+                    val other =
+                        participants.firstOrNull { it.id != myId }
+                            ?: if (c.userTo != null) {
+                                val otherId = if (c.userTo != myId) c.userTo else c.userFrom
+                                familyMembers.firstOrNull { it.id == otherId }
+                            } else {
+                                null
+                            }
 
-                    val displayName = remember(c, participants, myId, other) {
-                        when {
-                            isOneOnOne -> other?.name ?: c.name.takeIf { it.isNotBlank() } ?: "Chat"
-                            c.name.isNotBlank() -> c.name
-                            else -> participants.filter { it.id != myId }
-                                .take(3).joinToString(", ") { it.name.split(" ").first() }
-                                .ifBlank { "Group chat" }
+                    val displayName =
+                        remember(c, participants, myId, other) {
+                            when {
+                                isOneOnOne -> other?.name ?: c.name.takeIf { it.isNotBlank() } ?: "Chat"
+                                c.name.isNotBlank() -> c.name
+                                else ->
+                                    participants
+                                        .filter { it.id != myId }
+                                        .take(3)
+                                        .joinToString(", ") { it.name.split(" ").first() }
+                                        .ifBlank { "Group chat" }
+                            }
                         }
-                    }
-                    val avatarUri = if (c.imageUri != null) c.imageUri
-                        else if (isOneOnOne) other?.avatarUrl
-                        else null
-                    val avatarColor = Color(
-                        (if (isOneOnOne) other?.avatarColor else null)
-                            ?.takeIf { it != 0 } ?: 0xFF6366F1.toInt()
-                    )
+                    val avatarUri =
+                        if (c.imageUri != null) {
+                            c.imageUri
+                        } else if (isOneOnOne) {
+                            other?.avatarUrl
+                        } else {
+                            null
+                        }
+                    val avatarColor =
+                        Color(
+                            (if (isOneOnOne) other?.avatarColor else null)
+                                ?.takeIf { it != 0 } ?: 0xFF6366F1.toInt(),
+                        )
 
                     Surface(
                         onClick = { onOpen(c.id) },
                         shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.surface,
                         shadowElevation = 2.dp,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                             InitialAvatar(displayName, avatarColor, size = 44, avatarUri = avatarUri)
@@ -189,13 +204,13 @@ fun ChatScreen(
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                                 if (!isOneOnOne && participants.isNotEmpty()) {
                                     Text(
                                         "${participants.size} members",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
@@ -214,7 +229,7 @@ fun ChatScreen(
             onCreate = { name, memberIds ->
                 viewModel.createConversation(name, memberIds)
                 showMemberPicker = false
-            }
+            },
         )
     }
 }
@@ -225,7 +240,7 @@ fun ConversationScreen(
     conversationId: String,
     onBack: () -> Unit,
     onNavigateTo: (String) -> Unit = {},
-    viewModel: ChatViewModel = viewModel()
+    viewModel: ChatViewModel = viewModel(),
 ) {
     LaunchedEffect(conversationId) { viewModel.loadConversation(conversationId) }
 
@@ -258,22 +273,24 @@ fun ConversationScreen(
     val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle()
 
     // Compute display title: 1:1 always shows person's name; groups use stored name or list
-    val title = remember(conversation, currentParticipants, myId) {
-        val conv = conversation ?: return@remember "Chat"
-        val others = currentParticipants.filter { it.id != myId }
-        when {
-            others.size == 1 -> others.first().name
-            conv.name.isNotBlank() -> conv.name
-            others.size > 1 -> others.take(3).joinToString(", ") { it.name.split(" ").first() }
-            else -> "Chat"
+    val title =
+        remember(conversation, currentParticipants, myId) {
+            val conv = conversation ?: return@remember "Chat"
+            val others = currentParticipants.filter { it.id != myId }
+            when {
+                others.size == 1 -> others.first().name
+                conv.name.isNotBlank() -> conv.name
+                others.size > 1 -> others.take(3).joinToString(", ") { it.name.split(" ").first() }
+                else -> "Chat"
+            }
         }
-    }
 
     // Family members who aren't yet in this conversation
-    val availableToAdd = remember(familyMembers, currentParticipants, myId) {
-        val currentIds = currentParticipants.map { it.id }.toSet()
-        familyMembers.filter { it.id !in currentIds }
-    }
+    val availableToAdd =
+        remember(familyMembers, currentParticipants, myId) {
+            val currentIds = currentParticipants.map { it.id }.toSet()
+            familyMembers.filter { it.id !in currentIds }
+        }
     val isGroup = currentParticipants.size > 2
 
     var draft by remember { mutableStateOf("") }
@@ -288,8 +305,14 @@ fun ConversationScreen(
     var prevMsgCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(messages.size) {
-        if (messages.isEmpty()) { prevMsgCount = 0; return@LaunchedEffect }
-        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        if (messages.isEmpty()) {
+            prevMsgCount = 0
+            return@LaunchedEffect
+        }
+        val lastVisible =
+            listState.layoutInfo.visibleItemsInfo
+                .lastOrNull()
+                ?.index ?: -1
         val wasAtBottom = prevMsgCount == 0 || lastVisible >= (prevMsgCount - 2).coerceAtLeast(0)
         if (wasAtBottom) listState.scrollToItem(messages.lastIndex)
         prevMsgCount = messages.size
@@ -302,24 +325,30 @@ fun ConversationScreen(
 
     val showScrollToBottom by remember {
         derivedStateOf {
-            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val lastVisible =
+                listState.layoutInfo.visibleItemsInfo
+                    .lastOrNull()
+                    ?.index ?: 0
             messages.isNotEmpty() && lastVisible < messages.lastIndex - 1
         }
     }
 
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri -> uri?.let { viewModel.saveImageFromUri(context, it, conversationId) } }
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri -> uri?.let { viewModel.saveImageFromUri(context, it, conversationId) } }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success -> viewModel.onCameraResult(context, success) }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicture(),
+        ) { success -> viewModel.onCameraResult(context, success) }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) viewModel.prepareCameraCapture(context, conversationId)?.let { cameraLauncher.launch(it) }
-    }
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            if (granted) viewModel.prepareCameraCapture(context, conversationId)?.let { cameraLauncher.launch(it) }
+        }
 
     Scaffold(
         modifier = Modifier.imePadding(),
@@ -340,17 +369,26 @@ fun ConversationScreen(
                             if (isGroup) {
                                 DropdownMenuItem(
                                     text = { Text("Rename") },
-                                    onClick = { showMenu = false; showRename = true }
+                                    onClick = {
+                                        showMenu = false
+                                        showRename = true
+                                    },
                                 )
                             }
                             DropdownMenuItem(
                                 text = { Text("Change image") },
-                                onClick = { showMenu = false; showImagePicker = true }
+                                onClick = {
+                                    showMenu = false
+                                    showImagePicker = true
+                                },
                             )
                             if (conversation?.imageUri != null) {
                                 DropdownMenuItem(
                                     text = { Text("Remove image", color = MaterialTheme.colorScheme.error) },
-                                    onClick = { showMenu = false; viewModel.removeImage(conversationId) }
+                                    onClick = {
+                                        showMenu = false
+                                        viewModel.removeImage(conversationId)
+                                    },
                                 )
                             }
                             if (availableToAdd.isNotEmpty()) {
@@ -358,7 +396,10 @@ fun ConversationScreen(
                                 DropdownMenuItem(
                                     text = { Text(if (isGroup) "Add member" else "Add member (creates group)") },
                                     leadingIcon = { Icon(Icons.Filled.GroupAdd, null, tint = MaterialTheme.colorScheme.primary) },
-                                    onClick = { showMenu = false; showAddMember = true }
+                                    onClick = {
+                                        showMenu = false
+                                        showAddMember = true
+                                    },
                                 )
                             }
                             // "Remove member" is group-only. A 1:1 has no "Leave" —
@@ -367,18 +408,24 @@ fun ConversationScreen(
                                 DropdownMenuItem(
                                     text = { Text("Remove member", color = MaterialTheme.colorScheme.error) },
                                     leadingIcon = { Icon(Icons.Filled.PersonRemove, null, tint = MaterialTheme.colorScheme.error) },
-                                    onClick = { showMenu = false; showRemoveMember = true }
+                                    onClick = {
+                                        showMenu = false
+                                        showRemoveMember = true
+                                    },
                                 )
                             }
                             HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text("Delete conversation", color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = { showMenu = false; showDeleteConfirm = true }
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteConfirm = true
+                                },
                             )
                         }
                     }
-                }
+                },
             )
         },
         bottomBar = {
@@ -391,13 +438,13 @@ fun ConversationScreen(
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Box(
                                     Modifier
                                         .width(3.dp)
                                         .height(36.dp)
-                                        .background(MaterialTheme.colorScheme.primary)
+                                        .background(MaterialTheme.colorScheme.primary),
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
@@ -405,14 +452,14 @@ fun ConversationScreen(
                                         "Replying",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
                                     )
                                     Text(
                                         quoted.text.take(80),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                 }
                                 IconButton(onClick = viewModel::clearReplyTo) {
@@ -424,7 +471,7 @@ fun ConversationScreen(
                     Row(
                         Modifier.fillMaxWidth().padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         OutlinedTextField(
                             value = draft,
@@ -432,7 +479,7 @@ fun ConversationScreen(
                             modifier = Modifier.weight(1f),
                             placeholder = { Text("Message") },
                             shape = RoundedCornerShape(24.dp),
-                            maxLines = 4
+                            maxLines = 4,
                         )
                         val canSend = draft.isNotBlank()
                         FloatingActionButton(
@@ -445,12 +492,12 @@ fun ConversationScreen(
                             },
                             containerColor = if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (canSend) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(52.dp)
+                            modifier = Modifier.size(52.dp),
                         ) { Icon(Icons.AutoMirrored.Filled.Send, "Send") }
                     }
                 }
             }
-        }
+        },
     ) { padding ->
         if (messages.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -462,7 +509,7 @@ fun ConversationScreen(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     itemsIndexed(messages, key = { _, msg -> msg.id }) { index, msg ->
                         val mine = msg.userFrom == myId
@@ -470,12 +517,17 @@ fun ConversationScreen(
                         val nextFrom = if (index < messages.lastIndex) messages[index + 1].userFrom else null
                         val isFirstInGroup = prevFrom != msg.userFrom
                         val isLastInGroup = nextFrom != msg.userFrom
-                        val timeLabel = remember(msg.sentAt) {
-                            runCatching {
-                                java.time.OffsetDateTime.parse(msg.sentAt)
-                                    .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
-                            }.getOrDefault("")
-                        }
+                        val timeLabel =
+                            remember(msg.sentAt) {
+                                runCatching {
+                                    java.time.OffsetDateTime
+                                        .parse(msg.sentAt)
+                                        .format(
+                                            java.time.format.DateTimeFormatter
+                                                .ofPattern("HH:mm"),
+                                        )
+                                }.getOrDefault("")
+                            }
                         MessageRow(
                             msg = msg,
                             mine = mine,
@@ -485,7 +537,7 @@ fun ConversationScreen(
                             isLastInGroup = isLastInGroup,
                             senderProfile = if (!mine) userProfiles[msg.userFrom] else null,
                             messages = messages,
-                            onReply = { viewModel.setReplyTo(msg) }
+                            onReply = { viewModel.setReplyTo(msg) },
                         )
                     }
                 }
@@ -493,12 +545,12 @@ fun ConversationScreen(
                     visible = showScrollToBottom,
                     modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                     enter = fadeIn() + scaleIn(),
-                    exit = fadeOut() + scaleOut()
+                    exit = fadeOut() + scaleOut(),
                 ) {
                     SmallFloatingActionButton(
                         onClick = { scope.launch { listState.animateScrollToItem(messages.lastIndex) } },
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     ) {
                         Icon(Icons.Filled.KeyboardArrowDown, "Scroll to bottom")
                     }
@@ -513,7 +565,7 @@ fun ConversationScreen(
             label = "Name",
             initial = conversation?.name ?: "",
             confirmText = "Rename",
-            onDismiss = { showRename = false }
+            onDismiss = { showRename = false },
         ) { name, _ ->
             viewModel.renameConversation(conversationId, name)
             showRename = false
@@ -535,7 +587,7 @@ fun ConversationScreen(
             onRemove = {
                 showImagePicker = false
                 viewModel.removeImage(conversationId)
-            }
+            },
         )
     }
 
@@ -546,7 +598,7 @@ fun ConversationScreen(
             onAdd = { userId ->
                 viewModel.addMember(conversationId, userId)
                 showAddMember = false
-            }
+            },
         )
     }
 
@@ -559,7 +611,7 @@ fun ConversationScreen(
                 viewModel.removeMember(conversationId, userId)
                 showRemoveMember = false
                 if (userId == myId) onBack()
-            }
+            },
         )
     }
 
@@ -578,7 +630,7 @@ fun ConversationScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
-            }
+            },
         )
     }
 }
@@ -591,7 +643,7 @@ private fun NewConversationSheet(
     familyMembers: List<UserModel>,
     myId: String?,
     onDismiss: () -> Unit,
-    onCreate: (name: String, memberIds: List<String>) -> Unit
+    onCreate: (name: String, memberIds: List<String>) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -605,30 +657,30 @@ private fun NewConversationSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
     ) {
         Column(Modifier.padding(horizontal = 20.dp)) {
             Text(
                 "New conversation",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 "Select family members to chat with",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
             )
 
             if (others.isEmpty()) {
                 Box(
                     Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         "No other family members yet.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
@@ -638,9 +690,13 @@ private fun NewConversationSheet(
                             member = member,
                             selected = member.id in selectedIds,
                             onToggle = {
-                                selectedIds = if (member.id in selectedIds)
-                                    selectedIds - member.id else selectedIds + member.id
-                            }
+                                selectedIds =
+                                    if (member.id in selectedIds) {
+                                        selectedIds - member.id
+                                    } else {
+                                        selectedIds + member.id
+                                    }
+                            },
                         )
                     }
                 }
@@ -656,7 +712,7 @@ private fun NewConversationSheet(
                         placeholder = { Text("e.g. Weekend plans") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
                     )
                 }
             }
@@ -672,11 +728,11 @@ private fun NewConversationSheet(
                 },
                 enabled = canCreate,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp)
+                shape = RoundedCornerShape(14.dp),
             ) {
                 Text(
                     if (isGroup) "Create group" else "Start chat",
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelLarge,
                 )
             }
             Spacer(Modifier.height(24.dp))
@@ -691,25 +747,25 @@ private fun NewConversationSheet(
 private fun AddMemberSheet(
     candidates: List<UserModel>,
     onDismiss: () -> Unit,
-    onAdd: (userId: String) -> Unit
+    onAdd: (userId: String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
     ) {
         Column(Modifier.padding(horizontal = 20.dp)) {
             Text(
                 "Add member",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 "Tap a member to add them",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
             )
 
             LazyColumn(Modifier.heightIn(max = 400.dp)) {
@@ -720,13 +776,13 @@ private fun AddMemberSheet(
                             .clickable { onAdd(member.id) }
                             .padding(vertical = 10.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         InitialAvatar(
                             name = member.name,
                             color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
                             size = 42,
-                            avatarUri = member.avatarUrl
+                            avatarUri = member.avatarUrl,
                         )
                         Text(member.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                     }
@@ -745,7 +801,7 @@ private fun RemoveMemberSheet(
     participants: List<UserModel>,
     myId: String?,
     onDismiss: () -> Unit,
-    onRemove: (userId: String) -> Unit
+    onRemove: (userId: String) -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -760,26 +816,26 @@ private fun RemoveMemberSheet(
                             .fillMaxWidth()
                             .padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         InitialAvatar(
                             name = member.name,
                             color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
                             size = 36,
-                            avatarUri = member.avatarUrl
+                            avatarUri = member.avatarUrl,
                         )
                         Text(
                             if (isMe) "${member.name} (You)" else member.name,
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                         TextButton(
-                            onClick = { onRemove(member.id) }
+                            onClick = { onRemove(member.id) },
                         ) {
                             Text(
                                 if (isMe) "Leave" else "Remove",
                                 color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelMedium
+                                style = MaterialTheme.typography.labelMedium,
                             )
                         }
                     }
@@ -787,7 +843,7 @@ private fun RemoveMemberSheet(
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
 
@@ -797,7 +853,7 @@ private fun RemoveMemberSheet(
 private fun MemberSelectRow(
     member: UserModel,
     selected: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
 ) {
     Row(
         Modifier
@@ -805,18 +861,18 @@ private fun MemberSelectRow(
             .clickable(onClick = onToggle)
             .padding(vertical = 8.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InitialAvatar(
             name = member.name,
             color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
             size = 42,
-            avatarUri = member.avatarUrl
+            avatarUri = member.avatarUrl,
         )
         Text(
             member.name,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         Checkbox(checked = selected, onCheckedChange = { onToggle() })
     }
@@ -834,27 +890,30 @@ private fun MessageRow(
     isLastInGroup: Boolean,
     senderProfile: UserModel?,
     messages: List<MessageModel>,
-    onReply: () -> Unit
+    onReply: () -> Unit,
 ) {
     var showTime by remember { mutableStateOf(false) }
 
     SwipeToReplyWrapper(onReply = onReply) {
         if (mine) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
-                    .pointerInput(Unit) { detectTapGestures(onTap = { showTime = !showTime }) },
-                horizontalAlignment = Alignment.End
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
+                        .pointerInput(Unit) { detectTapGestures(onTap = { showTime = !showTime }) },
+                horizontalAlignment = Alignment.End,
             ) {
                 Surface(
-                    shape = RoundedCornerShape(
-                        topStart = 18.dp, topEnd = 18.dp,
-                        bottomStart = 18.dp,
-                        bottomEnd = if (isLastInGroup) 4.dp else 18.dp
-                    ),
+                    shape =
+                        RoundedCornerShape(
+                            topStart = 18.dp,
+                            topEnd = 18.dp,
+                            bottomStart = 18.dp,
+                            bottomEnd = if (isLastInGroup) 4.dp else 18.dp,
+                        ),
                     color = Color.Transparent,
-                    modifier = Modifier.widthIn(max = 280.dp)
+                    modifier = Modifier.widthIn(max = 280.dp),
                 ) {
                     Box(Modifier.background(BrandGradient)) {
                         MessageContent(msg, mine = true, myId = myId, messages = messages)
@@ -865,28 +924,30 @@ private fun MessageRow(
                         timeLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp, end = 4.dp)
+                        modifier = Modifier.padding(top = 2.dp, end = 4.dp),
                     )
                 }
             }
         } else {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
-                    .pointerInput(Unit) { detectTapGestures(onTap = { showTime = !showTime }) },
-                verticalAlignment = Alignment.Bottom
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
+                        .pointerInput(Unit) { detectTapGestures(onTap = { showTime = !showTime }) },
+                verticalAlignment = Alignment.Bottom,
             ) {
                 if (isLastInGroup) {
                     val avatarName = senderProfile?.name?.ifBlank { "?" } ?: "?"
-                    val avatarColor = Color(
-                        senderProfile?.avatarColor?.takeIf { it != 0 } ?: 0xFF6366F1.toInt()
-                    )
+                    val avatarColor =
+                        Color(
+                            senderProfile?.avatarColor?.takeIf { it != 0 } ?: 0xFF6366F1.toInt(),
+                        )
                     InitialAvatar(
                         name = avatarName,
                         color = avatarColor,
                         size = 36,
-                        avatarUri = senderProfile?.avatarUrl
+                        avatarUri = senderProfile?.avatarUrl,
                     )
                 } else {
                     Spacer(Modifier.size(36.dp))
@@ -899,16 +960,18 @@ private fun MessageRow(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+                            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
                         )
                     }
                     Surface(
-                        shape = RoundedCornerShape(
-                            topStart = 18.dp, topEnd = 18.dp,
-                            bottomStart = if (isLastInGroup) 4.dp else 18.dp,
-                            bottomEnd = 18.dp
-                        ),
-                        color = MaterialTheme.colorScheme.surface
+                        shape =
+                            RoundedCornerShape(
+                                topStart = 18.dp,
+                                topEnd = 18.dp,
+                                bottomStart = if (isLastInGroup) 4.dp else 18.dp,
+                                bottomEnd = 18.dp,
+                            ),
+                        color = MaterialTheme.colorScheme.surface,
                     ) {
                         MessageContent(msg, mine = false, myId = myId, messages = messages)
                     }
@@ -917,7 +980,7 @@ private fun MessageRow(
                             timeLabel,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp, start = 4.dp)
+                            modifier = Modifier.padding(top = 2.dp, start = 4.dp),
                         )
                     }
                 }
@@ -931,7 +994,7 @@ private fun MessageContent(
     msg: MessageModel,
     mine: Boolean,
     myId: String?,
-    messages: List<MessageModel>
+    messages: List<MessageModel>,
 ) {
     Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
         if (msg.replyToId != null) {
@@ -940,7 +1003,7 @@ private fun MessageContent(
                 QuoteBubble(
                     text = quoted.text,
                     isQuotedMine = quoted.userFrom == myId,
-                    isMine = mine
+                    isMine = mine,
                 )
                 Spacer(Modifier.height(6.dp))
             }
@@ -948,13 +1011,17 @@ private fun MessageContent(
         Text(
             msg.text,
             color = if (mine) Color.White else MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
 
 @Composable
-private fun QuoteBubble(text: String, isQuotedMine: Boolean, isMine: Boolean) {
+private fun QuoteBubble(
+    text: String,
+    isQuotedMine: Boolean,
+    isMine: Boolean,
+) {
     val accentColor = if (isMine) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary
     val bgColor = if (isMine) Color.White.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
     val textColor = if (isMine) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
@@ -963,7 +1030,7 @@ private fun QuoteBubble(text: String, isQuotedMine: Boolean, isMine: Boolean) {
         Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .background(bgColor, RoundedCornerShape(6.dp))
+            .background(bgColor, RoundedCornerShape(6.dp)),
     ) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(accentColor, RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)))
         Column(Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
@@ -971,21 +1038,24 @@ private fun QuoteBubble(text: String, isQuotedMine: Boolean, isMine: Boolean) {
                 if (isQuotedMine) "You" else "Reply",
                 style = MaterialTheme.typography.labelSmall,
                 color = accentColor,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text.take(80),
                 style = MaterialTheme.typography.bodySmall,
                 color = textColor,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
 
 @Composable
-private fun SwipeToReplyWrapper(onReply: () -> Unit, content: @Composable () -> Unit) {
+private fun SwipeToReplyWrapper(
+    onReply: () -> Unit,
+    content: @Composable () -> Unit,
+) {
     val scope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
     val density = LocalDensity.current
@@ -997,11 +1067,12 @@ private fun SwipeToReplyWrapper(onReply: () -> Unit, content: @Composable () -> 
         Icon(
             Icons.AutoMirrored.Filled.Reply,
             contentDescription = null,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 8.dp)
-                .alpha(iconAlpha),
-            tint = MaterialTheme.colorScheme.primary
+            modifier =
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 8.dp)
+                    .alpha(iconAlpha),
+            tint = MaterialTheme.colorScheme.primary,
         )
         Box(
             Modifier
@@ -1024,9 +1095,9 @@ private fun SwipeToReplyWrapper(onReply: () -> Unit, content: @Composable () -> 
                                 val next = (offsetX.value + delta).coerceIn(0f, triggerPx * 1.5f)
                                 offsetX.snapTo(next)
                             }
-                        }
+                        },
                     )
-                }
+                },
         ) {
             content()
         }
@@ -1039,7 +1110,7 @@ private fun GroupImagePickerDialog(
     onDismiss: () -> Unit,
     onCamera: () -> Unit,
     onGallery: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1061,6 +1132,6 @@ private fun GroupImagePickerDialog(
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }

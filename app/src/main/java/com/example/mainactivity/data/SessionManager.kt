@@ -13,37 +13,43 @@ private val Context.dataStore by preferencesDataStore(name = "session")
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
-class SessionManager(private val context: Context) {
-
+class SessionManager(
+    private val context: Context,
+) {
     private val userIdKey = stringPreferencesKey("current_user_id_v2")
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
     private val notifyDaysBeforeKey = intPreferencesKey("notify_days_before")
     private val locationVisibleKey = booleanPreferencesKey("location_visible")
 
-    val currentUserId: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[userIdKey]?.takeIf { it.isNotEmpty() }
-    }
-
-    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
-        when (prefs[themeModeKey]) {
-            "LIGHT" -> ThemeMode.LIGHT
-            "DARK" -> ThemeMode.DARK
-            else -> ThemeMode.SYSTEM
+    val currentUserId: Flow<String?> =
+        context.dataStore.data.map { prefs ->
+            prefs[userIdKey]?.takeIf { it.isNotEmpty() }
         }
-    }
 
-    val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[notificationsEnabledKey] ?: true
-    }
+    val themeMode: Flow<ThemeMode> =
+        context.dataStore.data.map { prefs ->
+            when (prefs[themeModeKey]) {
+                "LIGHT" -> ThemeMode.LIGHT
+                "DARK" -> ThemeMode.DARK
+                else -> ThemeMode.SYSTEM
+            }
+        }
 
-    val notifyDaysBefore: Flow<Int> = context.dataStore.data.map { prefs ->
-        prefs[notifyDaysBeforeKey] ?: 1
-    }
+    val notificationsEnabled: Flow<Boolean> =
+        context.dataStore.data.map { prefs ->
+            prefs[notificationsEnabledKey] ?: true
+        }
 
-    val locationVisible: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[locationVisibleKey] ?: false
-    }
+    val notifyDaysBefore: Flow<Int> =
+        context.dataStore.data.map { prefs ->
+            prefs[notifyDaysBeforeKey] ?: 1
+        }
+
+    val locationVisible: Flow<Boolean> =
+        context.dataStore.data.map { prefs ->
+            prefs[locationVisibleKey] ?: false
+        }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { it[themeModeKey] = mode.name }

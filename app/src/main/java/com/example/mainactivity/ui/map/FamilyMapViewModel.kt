@@ -31,7 +31,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
+class FamilyMapViewModel(
+    app: Application,
+) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
@@ -81,12 +83,16 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
         val myId = currentUserId ?: return
         _isLoading.value = true
         runCatching {
-            _locations.value = db.from("user_locations").select {
-                filter {
-                    eq("family_id", familyId)
-                    eq("visible", true)
-                }
-            }.decodeList<UserLocationModel>().filter { it.userId != myId }
+            _locations.value =
+                db
+                    .from("user_locations")
+                    .select {
+                        filter {
+                            eq("family_id", familyId)
+                            eq("visible", true)
+                        }
+                    }.decodeList<UserLocationModel>()
+                    .filter { it.userId != myId }
         }
         _isLoading.value = false
     }
@@ -95,10 +101,11 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
         realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
         val channel = SupabaseManager.client.channel("locations-$familyId")
         realtimeChannel = channel
-        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
-            table = "user_locations"
-            filter("family_id", FilterOperator.EQ, familyId)
-        }
+        val changeFlow =
+            channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                table = "user_locations"
+                filter("family_id", FilterOperator.EQ, familyId)
+            }
         channel.subscribe()
         viewModelScope.launch {
             changeFlow.collect { loadLocations() }
@@ -108,18 +115,22 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
     @SuppressLint("MissingPermission")
     fun startLocationUpdates() {
         if (locationCallback != null) return
-        val request = LocationRequest.Builder(
-            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-            30_000L
-        ).setMinUpdateIntervalMillis(15_000L).build()
+        val request =
+            LocationRequest
+                .Builder(
+                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                    30_000L,
+                ).setMinUpdateIntervalMillis(15_000L)
+                .build()
 
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                val loc = result.lastLocation ?: return
-                _myLocation.value = LatLng(loc.latitude, loc.longitude)
-                viewModelScope.launch { publishLocation(loc.latitude, loc.longitude) }
+        locationCallback =
+            object : LocationCallback() {
+                override fun onLocationResult(result: LocationResult) {
+                    val loc = result.lastLocation ?: return
+                    _myLocation.value = LatLng(loc.latitude, loc.longitude)
+                    viewModelScope.launch { publishLocation(loc.latitude, loc.longitude) }
+                }
             }
-        }
         fusedClient.requestLocationUpdates(request, locationCallback!!, Looper.getMainLooper())
     }
 
@@ -134,20 +145,30 @@ class FamilyMapViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { clearOwnLocationSuspend() }
     }
 
-    private suspend fun publishLocation(lat: Double, lng: Double) {
+    private suspend fun publishLocation(
+        lat: Double,
+        lng: Double,
+    ) {
         val userId = currentUserId ?: return
         val locationVisible = repo.locationVisible.first()
         runCatching {
             val user = repo.getUser(userId) ?: return
-            db.from("user_locations").upsert(buildJsonObject {
-                put("user_id", userId)
-                put("family_id", user.familyId)
-                put("lat", lat)
-                put("lng", lng)
-                put("display_name", user.name)
-                put("visible", locationVisible)
-                put("updated_at", java.time.Instant.now().toString())
-            })
+            db.from("user_locations").upsert(
+                buildJsonObject {
+                    put("user_id", userId)
+                    put("family_id", user.familyId)
+                    put("lat", lat)
+                    put("lng", lng)
+                    put("display_name", user.name)
+                    put("visible", locationVisible)
+                    put(
+                        "updated_at",
+                        java.time.Instant
+                            .now()
+                            .toString(),
+                    )
+                },
+            )
         }
     }
 

@@ -23,7 +23,10 @@ object Routes {
     const val FAMILY_MAP = "family_map"
 
     fun shoppingDetail(id: String) = "shopping/$id"
+
     fun mealDetail(id: String) = "meal/$id"
+
     fun wishlistDetail(id: String) = "wishlist/$id"
+
     fun chatDetail(id: String) = "chat/$id"
 }

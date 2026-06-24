@@ -30,7 +30,6 @@ import kotlinx.serialization.json.put
 import java.time.Instant
 
 class LocationForegroundService : Service() {
-
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var fusedClient: FusedLocationProviderClient
     private var locationCallback: LocationCallback? = null
@@ -42,7 +41,11 @@ class LocationForegroundService : Service() {
         createChannel()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         startForeground(NOTIFICATION_ID, buildNotification())
         startLocationUpdates()
         return START_STICKY
@@ -51,35 +54,44 @@ class LocationForegroundService : Service() {
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
         if (locationCallback != null) return
-        val request = LocationRequest.Builder(
-            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-            5 * 60_000L
-        ).setMinUpdateIntervalMillis(3 * 60_000L).build()
+        val request =
+            LocationRequest
+                .Builder(
+                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                    5 * 60_000L,
+                ).setMinUpdateIntervalMillis(3 * 60_000L)
+                .build()
 
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                val loc = result.lastLocation ?: return
-                scope.launch { publish(loc.latitude, loc.longitude) }
+        locationCallback =
+            object : LocationCallback() {
+                override fun onLocationResult(result: LocationResult) {
+                    val loc = result.lastLocation ?: return
+                    scope.launch { publish(loc.latitude, loc.longitude) }
+                }
             }
-        }
         fusedClient.requestLocationUpdates(request, locationCallback!!, Looper.getMainLooper())
     }
 
-    private suspend fun publish(lat: Double, lng: Double) {
+    private suspend fun publish(
+        lat: Double,
+        lng: Double,
+    ) {
         val repo = FamilyRepository.get(this)
         val userId = repo.currentUserId.first() ?: return
         val locationVisible = repo.locationVisible.first()
         runCatching {
             val user = repo.getUser(userId) ?: return
-            SupabaseManager.client.postgrest.from("user_locations").upsert(buildJsonObject {
-                put("user_id", userId)
-                put("family_id", user.familyId)
-                put("lat", lat)
-                put("lng", lng)
-                put("display_name", user.name)
-                put("visible", locationVisible)
-                put("updated_at", Instant.now().toString())
-            })
+            SupabaseManager.client.postgrest.from("user_locations").upsert(
+                buildJsonObject {
+                    put("user_id", userId)
+                    put("family_id", user.familyId)
+                    put("lat", lat)
+                    put("lng", lng)
+                    put("display_name", user.name)
+                    put("visible", locationVisible)
+                    put("updated_at", Instant.now().toString())
+                },
+            )
         }
     }
 
@@ -101,27 +113,30 @@ class LocationForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Location sharing",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply { description = "Shown while your location is shared with family" }
+        val channel =
+            NotificationChannel(
+                CHANNEL_ID,
+                "Location sharing",
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply { description = "Shown while your location is shared with family" }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    private fun buildNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setContentTitle("Sharing location with family")
-        .setContentText("Your position is visible on the family map")
-        .setSmallIcon(android.R.drawable.ic_menu_compass)
-        .setOngoing(true)
-        .setContentIntent(
-            PendingIntent.getActivity(
-                this, 0,
-                Intent(this, MainActivity::class.java),
-                PendingIntent.FLAG_IMMUTABLE
-            )
-        )
-        .build()
+    private fun buildNotification() =
+        NotificationCompat
+            .Builder(this, CHANNEL_ID)
+            .setContentTitle("Sharing location with family")
+            .setContentText("Your position is visible on the family map")
+            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setOngoing(true)
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java),
+                    PendingIntent.FLAG_IMMUTABLE,
+                ),
+            ).build()
 
     companion object {
         var isRunning = false

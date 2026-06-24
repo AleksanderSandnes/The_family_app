@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.birthday
 
 import androidx.compose.foundation.background
@@ -41,11 +43,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.BirthdayModel
 import com.example.mainactivity.ui.components.BirthdayPickerField
-import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.EmptyState
-import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.FamilyTextField
 import com.example.mainactivity.ui.components.FeatureTopBar
+import com.example.mainactivity.ui.components.LoadingState
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -53,7 +55,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun BirthdayScreen(
     onBack: () -> Unit,
-    viewModel: BirthdayViewModel = viewModel()
+    viewModel: BirthdayViewModel = viewModel(),
 ) {
     val birthdays by viewModel.birthdays.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
@@ -62,13 +64,14 @@ fun BirthdayScreen(
     RefreshOnResume { viewModel.refresh() }
 
     val today = remember { LocalDate.now() }
-    val sorted = remember(birthdays) {
-        birthdays.sortedWith { a, b ->
-            val nextA = nextBirthdayDate(a.date, today) ?: LocalDate.MAX
-            val nextB = nextBirthdayDate(b.date, today) ?: LocalDate.MAX
-            nextA.compareTo(nextB)
+    val sorted =
+        remember(birthdays) {
+            birthdays.sortedWith { a, b ->
+                val nextA = nextBirthdayDate(a.date, today) ?: LocalDate.MAX
+                val nextB = nextBirthdayDate(b.date, today) ?: LocalDate.MAX
+                nextA.compareTo(nextB)
+            }
         }
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -79,9 +82,9 @@ fun BirthdayScreen(
                 icon = { Icon(Icons.Filled.Add, null) },
                 text = { Text("Add birthday") },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             )
-        }
+        },
     ) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -95,7 +98,7 @@ fun BirthdayScreen(
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(sorted, key = { it.id }) { b ->
                     SwipeToRevealDelete(onDelete = { viewModel.delete(b) }, shape = RoundedCornerShape(20.dp)) {
@@ -109,29 +112,38 @@ fun BirthdayScreen(
     if (showAdd) {
         AddBirthdayDialog(
             onDismiss = { showAdd = false },
-            onConfirm = { name, date -> viewModel.add(name, date); showAdd = false }
+            onConfirm = { name, date ->
+                viewModel.add(name, date)
+                showAdd = false
+            },
         )
     }
 }
 
 @Composable
-private fun BirthdayCard(b: BirthdayModel, today: LocalDate) {
+private fun BirthdayCard(
+    b: BirthdayModel,
+    today: LocalDate,
+) {
     val nextDate = nextBirthdayDate(b.date, today)
     val age = turnsAge(b.date, today)
-    val displayDate = if (nextDate != null) {
-        nextDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))
-    } else b.date
+    val displayDate =
+        if (nextDate != null) {
+            nextDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))
+        } else {
+            b.date
+        }
 
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.Cake, null, tint = MaterialTheme.colorScheme.tertiary) }
             Spacer(Modifier.size(14.dp))
             Column(Modifier.weight(1f)) {
@@ -144,7 +156,7 @@ private fun BirthdayCard(b: BirthdayModel, today: LocalDate) {
                             "Turns $age",
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
                         )
                     }
                 }
@@ -154,7 +166,10 @@ private fun BirthdayCard(b: BirthdayModel, today: LocalDate) {
 }
 
 @Composable
-private fun AddBirthdayDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
+private fun AddBirthdayDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+) {
     var name by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     AlertDialog(
@@ -170,23 +185,29 @@ private fun AddBirthdayDialog(onDismiss: () -> Unit, onConfirm: (String, String)
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(name.trim(), date) },
-                enabled = name.isNotBlank() && date.isNotBlank()
+                enabled = name.isNotBlank() && date.isNotBlank(),
             ) { Text("Add") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        },
     )
 }
 
-private fun nextBirthdayDate(isoDate: String, today: LocalDate = LocalDate.now()): LocalDate? =
+private fun nextBirthdayDate(
+    isoDate: String,
+    today: LocalDate = LocalDate.now(),
+): LocalDate? =
     runCatching {
         val bd = LocalDate.parse(isoDate)
         val thisYear = bd.withYear(today.year)
         if (thisYear < today) bd.withYear(today.year + 1) else thisYear
     }.getOrNull()
 
-private fun turnsAge(isoDate: String, today: LocalDate = LocalDate.now()): Int? =
+private fun turnsAge(
+    isoDate: String,
+    today: LocalDate = LocalDate.now(),
+): Int? =
     runCatching {
         val bd = LocalDate.parse(isoDate)
         val next = nextBirthdayDate(isoDate, today) ?: return@runCatching null

@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class FamilyViewModel(app: Application) : AndroidViewModel(app) {
+class FamilyViewModel(
+    app: Application,
+) : AndroidViewModel(app) {
     private val repo = FamilyRepository.get(app)
 
     private val _family = MutableStateFlow<FamilyModel?>(null)
@@ -32,7 +34,9 @@ class FamilyViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
-                if (userId != null) load(userId) else {
+                if (userId != null) {
+                    load(userId)
+                } else {
                     _family.value = null
                     _members.value = emptyList()
                     _currentUser.value = null
@@ -41,10 +45,11 @@ class FamilyViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun refresh() = viewModelScope.launch {
-        val userId = repo.currentUserId.first() ?: return@launch
-        load(userId)
-    }
+    fun refresh() =
+        viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            load(userId)
+        }
 
     private suspend fun load(userId: String) {
         runCatching {
@@ -52,9 +57,11 @@ class FamilyViewModel(app: Application) : AndroidViewModel(app) {
             _currentUser.value = user
             if (user.familyId != null) {
                 _family.value = repo.getFamily(user.familyId)
-                _members.value = SupabaseManager.client.postgrest.from("users")
-                    .select { filter { eq("family_id", user.familyId) } }
-                    .decodeList<UserModel>()
+                _members.value =
+                    SupabaseManager.client.postgrest
+                        .from("users")
+                        .select { filter { eq("family_id", user.familyId) } }
+                        .decodeList<UserModel>()
             } else {
                 _family.value = null
                 _members.value = emptyList()
@@ -62,25 +69,38 @@ class FamilyViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun clearError() { _error.value = null }
-
-    fun createFamily(name: String, code: String) = viewModelScope.launch {
-        val userId = repo.currentUserId.first() ?: return@launch
-        repo.createFamily(name, code, userId)
-            .onSuccess { load(userId) }
-            .onFailure { _error.value = it.message }
+    fun clearError() {
+        _error.value = null
     }
 
-    fun joinFamily(name: String, code: String) = viewModelScope.launch {
-        val userId = repo.currentUserId.first() ?: return@launch
-        repo.joinFamily(name, code, userId)
-            .onSuccess { load(userId) }
-            .onFailure { _error.value = it.message }
-    }
+    fun createFamily(
+        name: String,
+        code: String,
+    ) =
+        viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            repo
+                .createFamily(name, code, userId)
+                .onSuccess { load(userId) }
+                .onFailure { _error.value = it.message }
+        }
 
-    fun leaveFamily() = viewModelScope.launch {
-        val userId = repo.currentUserId.first() ?: return@launch
-        repo.leaveFamily(userId)
-        load(userId)
-    }
+    fun joinFamily(
+        name: String,
+        code: String,
+    ) =
+        viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            repo
+                .joinFamily(name, code, userId)
+                .onSuccess { load(userId) }
+                .onFailure { _error.value = it.message }
+        }
+
+    fun leaveFamily() =
+        viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            repo.leaveFamily(userId)
+            load(userId)
+        }
 }

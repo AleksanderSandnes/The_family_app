@@ -35,9 +35,8 @@ const val NOTIFICATION_WORK_NAME = "family_notifications"
 
 class NotificationWorker(
     context: Context,
-    params: WorkerParameters
+    params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
-
     override suspend fun doWork(): Result {
         val repo = FamilyRepository.get(applicationContext)
         if (!repo.notificationsEnabled.first()) return Result.success()
@@ -49,22 +48,36 @@ class NotificationWorker(
 
         createChannels()
 
-        val user = runCatching {
-            db.from("users").select { filter { eq("id", userId) } }
-                .decodeList<UserModel>().firstOrNull()
-        }.getOrNull() ?: return Result.success()
+        val user =
+            runCatching {
+                db
+                    .from("users")
+                    .select { filter { eq("id", userId) } }
+                    .decodeList<UserModel>()
+                    .firstOrNull()
+            }.getOrNull() ?: return Result.success()
 
-        val birthdays = runCatching {
-            if (user.familyId != null) {
-                db.from("birthdays").select {
-                    filter { or { eq("made_by_user_id", userId); eq("family_id", user.familyId) } }
-                }.decodeList<BirthdayModel>()
-            } else {
-                db.from("birthdays").select {
-                    filter { eq("made_by_user_id", userId) }
-                }.decodeList<BirthdayModel>()
-            }
-        }.getOrDefault(emptyList())
+        val birthdays =
+            runCatching {
+                if (user.familyId != null) {
+                    db
+                        .from("birthdays")
+                        .select {
+                            filter {
+                                or {
+                                    eq("made_by_user_id", userId)
+                                    eq("family_id", user.familyId)
+                                }
+                            }
+                        }.decodeList<BirthdayModel>()
+                } else {
+                    db
+                        .from("birthdays")
+                        .select {
+                            filter { eq("made_by_user_id", userId) }
+                        }.decodeList<BirthdayModel>()
+                }
+            }.getOrDefault(emptyList())
 
         birthdays.forEach { b ->
             val daysUntil = daysUntilRecurring(b.date, today) ?: return@forEach
@@ -73,17 +86,27 @@ class NotificationWorker(
             }
         }
 
-        val events = runCatching {
-            if (user.familyId != null) {
-                db.from("calendar_events").select {
-                    filter { or { eq("user_id", userId); eq("family_id", user.familyId) } }
-                }.decodeList<CalendarEventModel>()
-            } else {
-                db.from("calendar_events").select {
-                    filter { eq("user_id", userId) }
-                }.decodeList<CalendarEventModel>()
-            }
-        }.getOrDefault(emptyList())
+        val events =
+            runCatching {
+                if (user.familyId != null) {
+                    db
+                        .from("calendar_events")
+                        .select {
+                            filter {
+                                or {
+                                    eq("user_id", userId)
+                                    eq("family_id", user.familyId)
+                                }
+                            }
+                        }.decodeList<CalendarEventModel>()
+                } else {
+                    db
+                        .from("calendar_events")
+                        .select {
+                            filter { eq("user_id", userId) }
+                        }.decodeList<CalendarEventModel>()
+                }
+            }.getOrDefault(emptyList())
 
         events.forEach { e ->
             val daysUntil = daysUntilOneTime(e.dateFrom, today) ?: return@forEach
@@ -100,60 +123,78 @@ class NotificationWorker(
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_BIRTHDAYS, "Birthdays", NotificationManager.IMPORTANCE_DEFAULT)
-                .apply { description = "Birthday reminders for family members" }
+                .apply { description = "Birthday reminders for family members" },
         )
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_CALENDAR, "Calendar events", NotificationManager.IMPORTANCE_DEFAULT)
-                .apply { description = "Reminders for upcoming calendar events" }
+                .apply { description = "Reminders for upcoming calendar events" },
         )
     }
 
     private fun tapIntent(): PendingIntent {
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
+        val intent =
+            Intent(applicationContext, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
         return PendingIntent.getActivity(applicationContext, 0, intent, PendingIntent.FLAG_IMMUTABLE)
     }
 
-    private fun postBirthdayNotification(b: BirthdayModel, daysUntil: Int) {
-        val title = if (daysUntil == 0) "${b.name}'s birthday is today!"
-        else "${b.name}'s birthday is in $daysUntil day${if (daysUntil == 1) "" else "s"}"
+    private fun postBirthdayNotification(
+        b: BirthdayModel,
+        daysUntil: Int,
+    ) {
+        val title =
+            if (daysUntil == 0) {
+                "${b.name}'s birthday is today!"
+            } else {
+                "${b.name}'s birthday is in $daysUntil day${if (daysUntil == 1) "" else "s"}"
+            }
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(
             b.id.hashCode() * 2,
-            NotificationCompat.Builder(applicationContext, CHANNEL_BIRTHDAYS)
+            NotificationCompat
+                .Builder(applicationContext, CHANNEL_BIRTHDAYS)
                 .setSmallIcon(android.R.drawable.ic_popup_reminder)
                 .setContentTitle(title)
                 .setAutoCancel(true)
                 .setContentIntent(tapIntent())
-                .build()
+                .build(),
         )
     }
 
-    private fun postEventNotification(e: CalendarEventModel, daysUntil: Int) {
-        val title = if (daysUntil == 0) "${e.activity} is today!"
-        else "${e.activity} is in $daysUntil day${if (daysUntil == 1) "" else "s"}"
+    private fun postEventNotification(
+        e: CalendarEventModel,
+        daysUntil: Int,
+    ) {
+        val title =
+            if (daysUntil == 0) {
+                "${e.activity} is today!"
+            } else {
+                "${e.activity} is in $daysUntil day${if (daysUntil == 1) "" else "s"}"
+            }
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(
             e.id.hashCode() * 2 + 1,
-            NotificationCompat.Builder(applicationContext, CHANNEL_CALENDAR)
+            NotificationCompat
+                .Builder(applicationContext, CHANNEL_CALENDAR)
                 .setSmallIcon(android.R.drawable.ic_menu_today)
                 .setContentTitle(title)
                 .setAutoCancel(true)
                 .setContentIntent(tapIntent())
-                .build()
+                .build(),
         )
     }
 
     companion object {
         fun schedule(context: Context) {
-            val request = PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.DAYS)
-                .setInitialDelay(nextNineAmDelayMillis(), TimeUnit.MILLISECONDS)
-                .build()
+            val request =
+                PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.DAYS)
+                    .setInitialDelay(nextNineAmDelayMillis(), TimeUnit.MILLISECONDS)
+                    .build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 NOTIFICATION_WORK_NAME,
                 ExistingPeriodicWorkPolicy.KEEP,
-                request
+                request,
             )
         }
 
@@ -172,22 +213,30 @@ class NotificationWorker(
 
 private val DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 
-fun daysUntilRecurring(dateStr: String, today: LocalDate): Int? {
-    val monthDay = runCatching {
-        val d = LocalDate.parse(dateStr.trim())
-        MonthDay.of(d.month, d.dayOfMonth)
-    }.getOrNull() ?: runCatching {
-        MonthDay.parse(dateStr.trim(), DATE_FORMATTER)
-    }.getOrNull() ?: return null
+fun daysUntilRecurring(
+    dateStr: String,
+    today: LocalDate,
+): Int? {
+    val monthDay =
+        runCatching {
+            val d = LocalDate.parse(dateStr.trim())
+            MonthDay.of(d.month, d.dayOfMonth)
+        }.getOrNull() ?: runCatching {
+            MonthDay.parse(dateStr.trim(), DATE_FORMATTER)
+        }.getOrNull() ?: return null
     var target = monthDay.atYear(today.year)
     if (target < today) target = monthDay.atYear(today.year + 1)
     return ChronoUnit.DAYS.between(today, target).toInt()
 }
 
-fun daysUntilOneTime(dateStr: String, today: LocalDate): Int? {
-    val target = runCatching { LocalDate.parse(dateStr.trim()) }.getOrNull()
-        ?: runCatching { MonthDay.parse(dateStr.trim(), DATE_FORMATTER).atYear(today.year) }.getOrNull()
-        ?: return null
+fun daysUntilOneTime(
+    dateStr: String,
+    today: LocalDate,
+): Int? {
+    val target =
+        runCatching { LocalDate.parse(dateStr.trim()) }.getOrNull()
+            ?: runCatching { MonthDay.parse(dateStr.trim(), DATE_FORMATTER).atYear(today.year) }.getOrNull()
+            ?: return null
     val days = ChronoUnit.DAYS.between(today, target).toInt()
     return if (days < 0) null else days
 }

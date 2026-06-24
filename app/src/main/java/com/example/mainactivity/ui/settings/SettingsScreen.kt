@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mainactivity.ui.settings
 
 import android.Manifest
@@ -7,8 +9,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
@@ -45,32 +47,41 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.data.ThemeMode
 import com.example.mainactivity.ui.components.FeatureTopBar
 
-private val LEAD_TIME_OPTIONS = listOf(
-    "Same day" to 0,
-    "1 day" to 1,
-    "2 days" to 2,
-    "7 days" to 7
-)
+private val LEAD_TIME_OPTIONS =
+    listOf(
+        "Same day" to 0,
+        "1 day" to 1,
+        "2 days" to 2,
+        "7 days" to 7,
+    )
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel()) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    vm: SettingsViewModel = viewModel(),
+) {
     val context = LocalContext.current
     val themeMode by vm.themeMode.collectAsStateWithLifecycle()
     val notificationsEnabled by vm.notificationsEnabled.collectAsStateWithLifecycle()
     val notifyDaysBefore by vm.notifyDaysBefore.collectAsStateWithLifecycle()
     val locationVisible by vm.locationVisible.collectAsStateWithLifecycle()
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted -> vm.setNotificationsEnabled(granted, context) }
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { granted -> vm.setNotificationsEnabled(granted, context) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar("Settings", onBack) }
+        topBar = { FeatureTopBar("Settings", onBack) },
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ThemeSelector(selected = themeMode, onSelect = vm::setThemeMode)
             ToggleRow(
@@ -86,7 +97,7 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel()) {
                     } else {
                         vm.setNotificationsEnabled(true, context)
                     }
-                }
+                },
             )
             AnimatedVisibility(visible = notificationsEnabled) {
                 LeadTimeSelector(selected = notifyDaysBefore, onSelect = vm::setNotifyDaysBefore)
@@ -99,17 +110,20 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = viewModel()) {
 }
 
 @Composable
-private fun LeadTimeSelector(selected: Int, onSelect: (Int) -> Unit) {
+private fun LeadTimeSelector(
+    selected: Int,
+    onSelect: (Int) -> Unit,
+) {
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(
                 "Remind me",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LEAD_TIME_OPTIONS.forEach { (label, days) ->
@@ -117,7 +131,7 @@ private fun LeadTimeSelector(selected: Int, onSelect: (Int) -> Unit) {
                         label = label,
                         selected = selected == days,
                         modifier = Modifier.weight(1f),
-                        onClick = { onSelect(days) }
+                        onClick = { onSelect(days) },
                     )
                 }
             }
@@ -126,23 +140,32 @@ private fun LeadTimeSelector(selected: Int, onSelect: (Int) -> Unit) {
 }
 
 @Composable
-private fun LeadTimeChip(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun LeadTimeChip(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     val bg = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
     val fg = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(bg)
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(14.dp))
+                .background(bg)
+                .clickable(onClick = onClick)
+                .padding(vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = fg)
     }
 }
 
 @Composable
-private fun ThemeSelector(selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
+private fun ThemeSelector(
+    selected: ThemeMode,
+    onSelect: (ThemeMode) -> Unit,
+) {
     Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -163,17 +186,24 @@ private fun ThemeSelector(selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
 }
 
 @Composable
-private fun ThemeOption(icon: ImageVector, label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun ThemeOption(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     val bg = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
     val fg = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(bg)
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(bg)
+                .clickable(onClick = onClick)
+                .padding(vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Icon(icon, null, tint = fg)
         Text(label, style = MaterialTheme.typography.labelLarge, color = fg)
@@ -181,7 +211,13 @@ private fun ThemeOption(icon: ImageVector, label: String, selected: Boolean, mod
 }
 
 @Composable
-private fun ToggleRow(icon: ImageVector, title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun ToggleRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
     Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
@@ -196,7 +232,11 @@ private fun ToggleRow(icon: ImageVector, title: String, subtitle: String, checke
 }
 
 @Composable
-private fun InfoCard(icon: ImageVector, title: String, subtitle: String) {
+private fun InfoCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+) {
     Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
