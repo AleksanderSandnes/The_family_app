@@ -23,8 +23,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.TextStyle
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 class MealViewModel(
@@ -144,54 +147,86 @@ class MealViewModel(
             }
         }
 
-    fun createWeekPlan() =
-        viewModelScope.launch {
-            val userId = repo.currentUserId.first() ?: return@launch
-            val user = repo.getUser(userId) ?: return@launch
-            val familyId = user.familyId ?: return@launch
-            val cal = Calendar.getInstance()
-            val week = cal.get(Calendar.WEEK_OF_YEAR)
-            val fmt = SimpleDateFormat("dd MMM", Locale.getDefault())
-            cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-            val from = fmt.format(cal.time)
-            val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-            val dates = ArrayList<String>()
-            for (i in 0 until 7) {
-                dates.add(fmt.format(cal.time))
-                cal.add(Calendar.DAY_OF_MONTH, 1)
-            }
-            cal.add(Calendar.DAY_OF_MONTH, -1)
-            val to = fmt.format(cal.time)
+    fun createPlan(
+        name: String,
+        fromIso: String,
+        toIso: String,
+        icon: String,
+    ) = viewModelScope.launch {
+        val userId = repo.currentUserId.first() ?: return@launch
+        val user = repo.getUser(userId) ?: return@launch
+        val familyId = user.familyId ?: return@launch
 
-            val tempId = "temp-${System.currentTimeMillis()}"
-            _plans.value = _plans.value + MealPlanModel(id = tempId, familyId = familyId, fromDate = from, toDate = to, week = week)
-
-            runCatching {
-                val plan =
-                    db
-                        .from("meal_plans")
-                        .insert(
-                            buildJsonObject {
-                                put("family_id", familyId)
-                                put("from_date", from)
-                                put("to_date", to)
-                                put("week", week)
-                            },
-                        ) { select() }
-                        .decodeList<MealPlanModel>()
-                        .first()
-                dayNames.forEachIndexed { index, name ->
-                    db.from("meal_plan_days").insert(
-                        buildJsonObject {
-                            put("meal_plan_id", plan.id)
-                            put("day", name)
-                            put("date", dates[index])
-                        },
-                    )
-                }
-            }
-            loadPlans(familyId)
+        val from = LocalDate.parse(fromIso)
+        val to = LocalDate.parse(toIso)
+        val cal = Calendar.getInstance().also {
+            it.time = Date.from(from.atStartOfDay(ZoneOffset.UTC).toInstant())
         }
+        val week = cal.get(Calendar.WEEK_OF_YEAR)
+
+        val tempId = "temp-${System.currentTimeMillis()}"
+        _plans.value = _plans.value + MealPlanModel(
+            id = tempId, familyId = familyId,
+            name = name, icon = icon, fromDate = fromIso, toDate = toIso, week = week,
+        )
+
+        runCatching {
+            val plan =
+                db
+                    .from("meal_plans")
+                    .insert(
+                        buildJsonObject {
+                            put("family_id", familyId)
+                            put("name", name)
+                            put("icon", icon)
+                            put("from_date", fromIso)
+                            put("to_date", toIso)
+                            put("week", week)
+                        },
+                    ) { select() }
+                    .decodeList<MealPlanModel>()
+                    .first()
+
+            var current = from
+            while (!current.isAfter(to)) {
+                db.from("meal_plan_days").insert(
+                    buildJsonObject {
+                        put("meal_plan_id", plan.id)
+                        put("day", current.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()))
+                        put("date", current.toString())
+                    },
+                )
+                current = current.plusDays(1)
+            }
+        }
+        loadPlans(familyId)
+    }
+
+    fun renamePlan(
+        plan: MealPlanModel,
+        newName: String,
+    ) = viewModelScope.launch {
+        val updated = plan.copy(name = newName)
+        _selectedPlan.value = updated
+        _plans.value = _plans.value.map { if (it.id == plan.id) updated else it }
+        cache = _plans.value
+        runCatching {
+            db.from("meal_plans").update({ set("name", newName) }) { filter { eq("id", plan.id) } }
+        }
+    }
+
+    fun setPlanIcon(
+        plan: MealPlanModel,
+        newIcon: String,
+    ) = viewModelScope.launch {
+        val updated = plan.copy(icon = newIcon)
+        _selectedPlan.value = updated
+        _plans.value = _plans.value.map { if (it.id == plan.id) updated else it }
+        cache = _plans.value
+        runCatching {
+            db.from("meal_plans").update({ set("icon", newIcon) }) { filter { eq("id", plan.id) } }
+        }
+    }
 
     fun deletePlan(plan: MealPlanModel) =
         viewModelScope.launch {

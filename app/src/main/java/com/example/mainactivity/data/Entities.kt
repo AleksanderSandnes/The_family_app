@@ -48,6 +48,8 @@ data class MealPlanModel(
     @SerialName("from_date") val fromDate: String = "",
     @SerialName("to_date") val toDate: String = "",
     val week: Int = 0,
+    val name: String = "",
+    val icon: String = "restaurant",
 )
 
 @Serializable
