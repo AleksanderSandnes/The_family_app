@@ -8,6 +8,12 @@ import com.example.mainactivity.data.WishModel
 import com.example.mainactivity.data.WishlistModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +42,8 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     private val _wishes = MutableStateFlow<List<WishModel>>(emptyList())
     val wishes: StateFlow<List<WishModel>> = _wishes.asStateFlow()
 
+    private var realtimeChannel: RealtimeChannel? = null
+
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
@@ -54,13 +62,35 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun loadWishlists(userId: String) {
         if (_wishlists.value.isEmpty()) _isLoading.value = true
         runCatching {
-            val result = db.from("wishlists")
-                .select { filter { eq("owner_user_id", userId) } }
-                .decodeList<WishlistModel>()
+            val user = repo.getUser(userId)
+            val result = if (user?.familyId != null) {
+                db.from("wishlists")
+                    .select { filter { or { eq("owner_user_id", userId); eq("family_id", user.familyId) } } }
+                    .decodeList<WishlistModel>()
+                    .filter { it.familyId == null || it.familyId == user.familyId }
+            } else {
+                db.from("wishlists")
+                    .select { filter { eq("owner_user_id", userId) } }
+                    .decodeList<WishlistModel>()
+                    .filter { it.familyId == null }
+            }
             cache = result
             _wishlists.value = result
+            if (user?.familyId != null) subscribeToWishlists(user.familyId, userId)
         }
         _isLoading.value = false
+    }
+
+    private suspend fun subscribeToWishlists(familyId: String, userId: String) {
+        realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        val channel = SupabaseManager.client.channel("wishlists-$familyId")
+        realtimeChannel = channel
+        val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+            table = "wishlists"
+            filter("family_id", FilterOperator.EQ, familyId)
+        }
+        channel.subscribe()
+        viewModelScope.launch { flow.collect { loadWishlists(userId) } }
     }
 
     fun loadWishlistDetail(wishlistId: String) = viewModelScope.launch {
@@ -85,11 +115,13 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
 
     fun addWishlist(name: String) = viewModelScope.launch {
         val userId = repo.currentUserId.first() ?: return@launch
+        val user = repo.getUser(userId)
         val tempId = "temp-${System.currentTimeMillis()}"
-        _wishlists.value = _wishlists.value + WishlistModel(id = tempId, ownerUserId = userId, name = name)
+        _wishlists.value = _wishlists.value + WishlistModel(id = tempId, ownerUserId = userId, familyId = user?.familyId, name = name)
         runCatching {
             db.from("wishlists").insert(buildJsonObject {
                 put("owner_user_id", userId)
+                if (user?.familyId != null) put("family_id", user.familyId)
                 put("name", name)
             })
         }
@@ -131,5 +163,12 @@ class WishlistViewModel(app: Application) : AndroidViewModel(app) {
         _wishes.value = _wishes.value.filter { it.id != wish.id }
         runCatching { db.from("wishes").delete { filter { eq("id", wish.id) } } }
         loadWishlistDetail(wish.wishlistId).join()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        }
     }
 }

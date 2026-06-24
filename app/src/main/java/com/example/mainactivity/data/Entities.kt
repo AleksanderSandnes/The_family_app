@@ -86,6 +86,7 @@ data class BirthdayModel(
 data class WishlistModel(
     val id: String = "",
     @SerialName("owner_user_id") val ownerUserId: String = "",
+    @SerialName("family_id") val familyId: String? = null,
     val name: String = ""
 )
 
