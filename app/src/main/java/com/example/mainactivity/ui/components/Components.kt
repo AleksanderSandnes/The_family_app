@@ -76,7 +76,7 @@ import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import com.example.mainactivity.ui.theme.BrandGradient
 

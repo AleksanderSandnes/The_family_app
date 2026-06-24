@@ -9,7 +9,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
-import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,9 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.imageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.toBitmap
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.LoadingState
@@ -277,7 +277,7 @@ private suspend fun loadCircularBitmap(context: Context, url: String, sizePx: In
             .allowHardware(false)
             .build()
         val result = context.imageLoader.execute(request) as? SuccessResult ?: return null
-        val source = (result.drawable as? BitmapDrawable)?.bitmap ?: return null
+        val source = result.image?.toBitmap() ?: return null
 
         val output = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
