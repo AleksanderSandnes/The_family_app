@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
-import com.example.mainactivity.notifications.NotificationHelper
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -17,6 +16,7 @@ import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
+import com.example.mainactivity.notifications.NotificationHelper
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.first
 import java.time.Duration
@@ -197,7 +197,7 @@ class NotificationWorker(
 
 private val DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 
-fun daysUntilRecurring(
+internal fun daysUntilRecurring(
     dateStr: String,
     today: LocalDate,
 ): Int? {
@@ -213,7 +213,7 @@ fun daysUntilRecurring(
     return ChronoUnit.DAYS.between(today, target).toInt()
 }
 
-fun daysUntilOneTime(
+internal fun daysUntilOneTime(
     dateStr: String,
     today: LocalDate,
 ): Int? {

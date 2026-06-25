@@ -19,9 +19,8 @@ data class AuthUiState(
 
 class AuthViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
-    private val repo = FamilyRepository.get(app)
-
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 

@@ -14,9 +14,8 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
-    private val repo = FamilyRepository.get(app)
-
     val themeMode: StateFlow<ThemeMode> =
         repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
 

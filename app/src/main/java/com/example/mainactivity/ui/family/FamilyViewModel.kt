@@ -16,9 +16,8 @@ import kotlinx.coroutines.launch
 
 class FamilyViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
-    private val repo = FamilyRepository.get(app)
-
     private val _family = MutableStateFlow<FamilyModel?>(null)
     val family: StateFlow<FamilyModel?> = _family.asStateFlow()
 
@@ -105,17 +104,21 @@ class FamilyViewModel(
         }
 
     fun generateJoinCode(): String =
-        java.util.UUID.randomUUID().toString().take(8).uppercase()
+        java.util.UUID
+            .randomUUID()
+            .toString()
+            .take(8)
+            .uppercase()
 
     fun renameFamily(newName: String) {
         val fid = _family.value?.id ?: return
         viewModelScope.launch {
-            repo.renameFamily(fid, newName)
+            repo
+                .renameFamily(fid, newName)
                 .onSuccess {
                     val userId = repo.currentUserId.first() ?: return@launch
                     load(userId)
-                }
-                .onFailure { _error.value = it.message }
+                }.onFailure { _error.value = it.message }
         }
     }
 }

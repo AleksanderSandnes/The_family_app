@@ -33,8 +33,8 @@ import kotlinx.serialization.json.put
 
 class FamilyMapViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
-    private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
     private val _myLocation = MutableStateFlow<LatLng?>(null)

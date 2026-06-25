@@ -24,9 +24,8 @@ data class HomeUiState(
 
 class HomeViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
-    private val repo = FamilyRepository.get(app)
-
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 

@@ -72,7 +72,6 @@ import com.example.mainactivity.ui.theme.Pink500
 import com.example.mainactivity.ui.theme.Teal500
 import com.example.mainactivity.ui.theme.Violet500
 import com.example.mainactivity.ui.theme.heroGradient
-import java.util.Calendar
 
 private data class Feature(
     val title: String,
@@ -81,14 +80,6 @@ private data class Feature(
     val color: Color,
     val route: String,
 )
-
-/** Returns "Good morning", "Good afternoon", or "Good evening" based on the hour. */
-private fun timeBasedGreeting(): String =
-    when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-        in 0..11 -> "Good morning"
-        in 12..17 -> "Good afternoon"
-        else -> "Good evening"
-    }
 
 // All feature values are compile-time constants — hoisted to avoid reallocating on every recomposition.
 private val features =

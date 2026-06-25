@@ -28,12 +28,12 @@ import java.time.YearMonth
 
 class CalendarViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
     companion object {
         private var cache: List<CalendarEventModel> = emptyList()
     }
 
-    private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())

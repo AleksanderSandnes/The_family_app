@@ -23,12 +23,12 @@ import kotlinx.serialization.json.put
 
 class BirthdayViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
     companion object {
         private var cache: List<BirthdayModel> = emptyList()
     }
 
-    private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
     private val _birthdays = MutableStateFlow(cache)

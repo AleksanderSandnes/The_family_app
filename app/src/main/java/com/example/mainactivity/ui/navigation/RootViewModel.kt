@@ -22,9 +22,8 @@ sealed interface AuthGate {
 
 class RootViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
-    private val repo = FamilyRepository.get(app)
-
     val gate: StateFlow<AuthGate> =
         combine(
             repo.currentUserId,

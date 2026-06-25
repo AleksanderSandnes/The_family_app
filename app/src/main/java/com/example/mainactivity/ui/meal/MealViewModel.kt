@@ -32,12 +32,12 @@ import java.util.Locale
 
 class MealViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
     companion object {
         private var cache: List<MealPlanModel> = emptyList()
     }
 
-    private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
     private val _plans = MutableStateFlow(cache)

@@ -50,9 +50,9 @@ import java.io.File
 
 class ChatViewModel(
     app: Application,
+    internal val repo: FamilyRepository = FamilyRepository.get(app),
 ) : AndroidViewModel(app) {
     private val appContext: Context = app.applicationContext
-    private val repo = FamilyRepository.get(app)
     private val db get() = SupabaseManager.client.postgrest
 
     private val _conversations = MutableStateFlow<List<ConversationWithPreview>>(emptyList())
