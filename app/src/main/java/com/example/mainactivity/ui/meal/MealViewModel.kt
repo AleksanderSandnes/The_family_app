@@ -53,6 +53,9 @@ class MealViewModel(
     val days: StateFlow<List<MealPlanDayModel>> = _days.asStateFlow()
 
     private var realtimeChannel: RealtimeChannel? = null
+    /** Tracks which familyId the current channel is subscribed to, so we don't
+     *  re-subscribe on every userId emission when the family hasn't changed. */
+    private var subscribedFamilyId: String? = null
 
     init {
         viewModelScope.launch {
@@ -60,7 +63,8 @@ class MealViewModel(
                 if (userId != null) {
                     val user = repo.getUser(userId)
                     if (user?.familyId != null) {
-                        loadPlans(user.familyId)
+                        loadPlansOnly(user.familyId)
+                        subscribeToPlansOnce(user.familyId)
                     } else {
                         _plans.value = emptyList()
                     }
@@ -73,7 +77,12 @@ class MealViewModel(
             repo.familyChanged.collect {
                 val userId = repo.currentUserId.first() ?: return@collect
                 val user = repo.getUser(userId)
-                if (user?.familyId != null) loadPlans(user.familyId) else _plans.value = emptyList()
+                if (user?.familyId != null) {
+                    loadPlansOnly(user.familyId)
+                    subscribeToPlansOnce(user.familyId)
+                } else {
+                    _plans.value = emptyList()
+                }
             }
         }
     }
@@ -84,10 +93,12 @@ class MealViewModel(
         viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
             val user = repo.getUser(userId)
-            if (user?.familyId != null) loadPlans(user.familyId)
+            if (user?.familyId != null) loadPlansOnly(user.familyId)
         }
 
-    private suspend fun loadPlans(familyId: String) {
+    /** Fetches meal plans and updates the StateFlow. Does NOT touch the realtime
+     *  channel — safe to call repeatedly without causing subscription churn. */
+    private suspend fun loadPlansOnly(familyId: String) {
         if (_plans.value.isEmpty()) _isLoading.value = true
         runCatching {
             val result =
@@ -97,13 +108,21 @@ class MealViewModel(
                     .decodeList<MealPlanModel>()
             cache = result
             _plans.value = result
-            subscribeToPlans(familyId)
         }
         _isLoading.value = false
     }
 
-    private suspend fun subscribeToPlans(familyId: String) {
-        realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+    /** Creates a realtime channel for the given familyId, but only if we are not
+     *  already subscribed to that family. Idempotent across userId emissions. */
+    private fun subscribeToPlansOnce(familyId: String) {
+        if (subscribedFamilyId == familyId) return
+        subscribedFamilyId = familyId
+
+        // Tear down any existing channel for a different family.
+        realtimeChannel?.let { old ->
+            viewModelScope.launch { runCatching { SupabaseManager.client.realtime.removeChannel(old) } }
+        }
+
         val channel = SupabaseManager.client.channel("meal-plans-$familyId")
         realtimeChannel = channel
         val flow =
@@ -111,8 +130,11 @@ class MealViewModel(
                 table = "meal_plans"
                 filter("family_id", FilterOperator.EQ, familyId)
             }
-        channel.subscribe()
-        viewModelScope.launch { flow.collect { loadPlans(familyId) } }
+        viewModelScope.launch {
+            channel.subscribe()
+            // On any realtime event just reload data — do NOT re-subscribe.
+            flow.collect { loadPlansOnly(familyId) }
+        }
     }
 
     override fun onCleared() {
@@ -141,8 +163,10 @@ class MealViewModel(
                                 .select { filter { eq("meal_plan_id", planId) } }
                                 .decodeList<MealPlanDayModel>()
                         }
-                    _selectedPlan.value = planDeferred.await()
-                    _days.value = daysDeferred.await()
+                    val planResult = planDeferred.await()
+                    val daysResult = daysDeferred.await()
+                    _selectedPlan.value = planResult
+                    _days.value = daysResult
                 }
             }
         }
@@ -199,7 +223,7 @@ class MealViewModel(
                 current = current.plusDays(1)
             }
         }
-        loadPlans(familyId)
+        loadPlansOnly(familyId)
     }
 
     fun renamePlan(
@@ -234,7 +258,7 @@ class MealViewModel(
             runCatching { db.from("meal_plans").delete { filter { eq("id", plan.id) } } }
             val userId = repo.currentUserId.first() ?: return@launch
             val user = repo.getUser(userId) ?: return@launch
-            user.familyId?.let { loadPlans(it) }
+            user.familyId?.let { loadPlansOnly(it) }
         }
 
     fun setFood(

@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.SetMeal
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -73,6 +75,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -344,6 +349,7 @@ fun MealScreen(
                 text = { Text("Create a meal plan") },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.semantics { contentDescription = "Create new meal plan" },
             )
         },
     ) { padding ->
@@ -353,7 +359,11 @@ fun MealScreen(
             }
         } else if (plans.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                EmptyState(Icons.Filled.Restaurant, "No meal plans", "Plan a full week of family meals in one tap.")
+                EmptyState(
+                    Icons.Filled.Restaurant,
+                    "No meal plans yet",
+                    "No meal plans yet. Start planning!",
+                )
             }
         } else {
             LazyColumn(
@@ -362,18 +372,37 @@ fun MealScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(plans, key = { it.id }) { plan ->
-                    SwipeToRevealDelete(onDelete = { viewModel.deletePlan(plan) }, shape = RoundedCornerShape(20.dp)) {
-                        Surface(
+                    val dayCount = runCatching {
+                        val from = LocalDate.parse(plan.fromDate)
+                        val to = LocalDate.parse(plan.toDate)
+                        (to.toEpochDay() - from.toEpochDay() + 1).toInt().coerceAtLeast(0)
+                    }.getOrDefault(0)
+                    val dateRange = "${formatMealDate(plan.fromDate)} – ${formatMealDate(plan.toDate)}"
+                    val planName = plan.name.ifBlank { "Meal plan" }
+                    val cardDescription = "$planName, $dateRange, $dayCount days"
+
+                    SwipeToRevealDelete(
+                        onDelete = { viewModel.deletePlan(plan) },
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Card(
                             onClick = { onOpen(plan.id) },
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            shadowElevation = 2.dp,
-                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { contentDescription = cardDescription },
                         ) {
-                            Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                Modifier.padding(18.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                 Box(
                                     Modifier
-                                        .size(44.dp)
+                                        .size(40.dp)
                                         .clip(RoundedCornerShape(12.dp))
                                         .background(MaterialTheme.colorScheme.primaryContainer),
                                     contentAlignment = Alignment.Center,
@@ -385,20 +414,29 @@ fun MealScreen(
                                         modifier = Modifier.size(22.dp),
                                     )
                                 }
-                                Spacer(Modifier.size(12.dp))
+                                Spacer(Modifier.width(14.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        plan.name.ifBlank { "Meal plan" },
+                                        planName,
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                     Text(
-                                        "${formatMealDate(plan.fromDate)} – ${formatMealDate(plan.toDate)}",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        dateRange,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        "$dayCount days planned",
+                                        style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
-                                Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(
+                                    Icons.Filled.ChevronRight,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }
@@ -434,6 +472,8 @@ fun MealDetailScreen(
     var showRename by remember { mutableStateOf(false) }
     var showIconPicker by remember { mutableStateOf(false) }
 
+    val focusManager = LocalFocusManager.current
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = Modifier.imePadding(),
@@ -459,9 +499,52 @@ fun MealDetailScreen(
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
+            // Plan header below the top bar
+            plan?.let { p ->
+                item {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    mealIconVector(p.icon),
+                                    null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            }
+                            Column {
+                                Text(
+                                    p.name.ifBlank { "Meal plan" },
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    "${formatMealDate(p.fromDate)} – ${formatMealDate(p.toDate)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             items(days, key = { it.id }) { day ->
                 val isEditing = editingDayId == day.id
                 val focusRequester = remember { FocusRequester() }
@@ -471,7 +554,7 @@ fun MealDetailScreen(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(0.dp),
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -480,50 +563,98 @@ fun MealDetailScreen(
                             draft = day.food
                         },
                 ) {
-                    Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                day.day,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            if (isEditing) {
-                                OutlinedTextField(
-                                    value = draft,
-                                    onValueChange = { draft = it },
-                                    placeholder = { Text("What's for ${day.day}?") },
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(10.dp),
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                    keyboardActions = KeyboardActions(onDone = {
-                                        viewModel.setFood(day, draft)
-                                        editingDayId = null
-                                    }),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .focusRequester(focusRequester),
+                    Column {
+                        Row(
+                            Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // Day name + date on the left
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    day.day,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
+                                Text(
+                                    formatMealDate(day.date),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+
+                            // Meal entry or edit field
+                            if (isEditing) {
+                                Column(Modifier.weight(2f)) {
+                                    OutlinedTextField(
+                                        value = draft,
+                                        onValueChange = { draft = it },
+                                        placeholder = { Text("What's for ${day.day}?") },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(10.dp),
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                        keyboardActions = KeyboardActions(onDone = {
+                                            viewModel.setFood(day, draft)
+                                            editingDayId = null
+                                            focusManager.clearFocus()
+                                        }),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .focusRequester(focusRequester),
+                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.End,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        TextButton(onClick = {
+                                            editingDayId = null
+                                            focusManager.clearFocus()
+                                        }) { Text("Cancel") }
+                                        TextButton(onClick = {
+                                            viewModel.setFood(day, draft)
+                                            editingDayId = null
+                                            focusManager.clearFocus()
+                                        }) { Text("Save") }
+                                    }
+                                }
                             } else {
                                 Text(
-                                    day.food.ifBlank { "Tap to add a meal" },
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    text = if (day.food.isBlank()) "Tap to add meal" else day.food,
+                                    style = MaterialTheme.typography.bodyLarge,
                                     color = if (day.food.isBlank()) {
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                     } else {
-                                        MaterialTheme.colorScheme.primary
+                                        MaterialTheme.colorScheme.onSurface
                                     },
+                                    modifier = Modifier.weight(2f),
                                 )
+                                Spacer(Modifier.width(8.dp))
+                                IconButton(
+                                    onClick = {
+                                        editingDayId = day.id
+                                        draft = day.food
+                                    },
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .semantics {
+                                            contentDescription = "Edit ${day.day} meal"
+                                        },
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Edit,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
                             }
                         }
-                        if (!isEditing) {
-                            Text(
-                                formatMealDate(day.date),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(Modifier.size(8.dp))
-                            Icon(Icons.Filled.Edit, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        // Subtle divider between days
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .size(height = 1.dp, width = 0.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        )
                     }
                 }
             }
