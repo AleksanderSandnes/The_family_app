@@ -260,6 +260,9 @@ class ChatViewModel(
         }
     }
 
+    /** Public entry-point for pull-to-refresh; delegates to the private loader. */
+    suspend fun refreshConversations(userId: String) = loadConversations(userId)
+
     fun markRead(conversationId: String) {
         viewModelScope.launch {
             repo.markConversationRead(conversationId)

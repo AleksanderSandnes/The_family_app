@@ -71,6 +71,8 @@ import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -90,6 +92,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -111,7 +115,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -134,8 +141,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-// ─── Relative time helper ──────────────────────────────────────────────────
+// ─── Relative time helpers ─────────────────────────────────────────────────
 
+/** Short relative time label for conversation list preview (e.g. "2m ago", "Yesterday", "Mon"). */
 private fun relativeTime(isoString: String): String {
     return try {
         val instant = java.time.Instant.parse(isoString)
@@ -146,9 +154,18 @@ private fun relativeTime(isoString: String): String {
         val diffD = diffMs / 86_400_000
         when {
             diffMin < 1 -> "now"
-            diffH < 1 -> "${diffMin}m"
-            diffD < 1 -> "${diffH}h"
-            diffD < 7 -> "${diffD}d"
+            diffMin < 60 -> "${diffMin}m ago"
+            diffH < 24 -> "${diffH}h ago"
+            diffD == 1L -> "Yesterday"
+            diffD < 7 -> {
+                val cal = java.util.Calendar.getInstance()
+                cal.timeInMillis = instant.toEpochMilli()
+                cal.getDisplayName(
+                    java.util.Calendar.DAY_OF_WEEK,
+                    java.util.Calendar.SHORT,
+                    java.util.Locale.getDefault(),
+                ) ?: ""
+            }
             else -> {
                 val cal = java.util.Calendar.getInstance()
                 cal.timeInMillis = instant.toEpochMilli()
@@ -165,6 +182,55 @@ private fun relativeTime(isoString: String): String {
     }
 }
 
+/** Compact time label for message timestamps (e.g. "2:30 PM", "Yesterday 2:30 PM", "Mon 2:30 PM"). */
+private fun messageTimeLabel(isoString: String): String {
+    return try {
+        val instant = java.time.Instant.parse(isoString)
+        val nowMs = System.currentTimeMillis()
+        val diffMs = nowMs - instant.toEpochMilli()
+        val diffD = diffMs / 86_400_000
+        val odt = java.time.OffsetDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
+        val timePart = odt.format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"))
+        when {
+            diffD == 0L -> timePart
+            diffD == 1L -> "Yesterday $timePart"
+            diffD < 7 -> {
+                val cal = java.util.Calendar.getInstance()
+                cal.timeInMillis = instant.toEpochMilli()
+                val dow = cal.getDisplayName(
+                    java.util.Calendar.DAY_OF_WEEK,
+                    java.util.Calendar.SHORT,
+                    java.util.Locale.getDefault(),
+                ) ?: ""
+                "$dow $timePart"
+            }
+            else -> {
+                val cal = java.util.Calendar.getInstance()
+                cal.timeInMillis = instant.toEpochMilli()
+                val month = cal.getDisplayName(
+                    java.util.Calendar.MONTH,
+                    java.util.Calendar.SHORT,
+                    java.util.Locale.getDefault(),
+                ) ?: ""
+                "$month ${cal.get(java.util.Calendar.DAY_OF_MONTH)} $timePart"
+            }
+        }
+    } catch (e: Exception) {
+        ""
+    }
+}
+
+/** Returns true if the gap between two ISO timestamps exceeds 10 minutes. */
+private fun gapExceedsTenMinutes(earlierIso: String, laterIso: String): Boolean {
+    return try {
+        val earlier = java.time.Instant.parse(earlierIso).toEpochMilli()
+        val later = java.time.Instant.parse(laterIso).toEpochMilli()
+        (later - earlier) > 10 * 60_000L
+    } catch (e: Exception) {
+        false
+    }
+}
+
 // ─── Chat list screen ──────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -178,6 +244,9 @@ fun ChatScreen(
     val myId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showMemberPicker by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val pullState = rememberPullToRefreshState()
+    var isRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.navigateToConversation.collect { newId -> onOpen(newId) }
@@ -196,7 +265,7 @@ fun ChatScreen(
             )
         },
     ) { padding ->
-        if (isLoading) {
+        if (isLoading && conversations.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 LoadingState()
             }
@@ -204,21 +273,35 @@ fun ChatScreen(
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(
                     Icons.AutoMirrored.Filled.Chat,
-                    "No conversations",
-                    "Start a chat to keep your family connected.",
+                    "No conversations yet",
+                    "No conversations yet. Start chatting with your family!",
                 )
             }
         } else {
-            LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    isRefreshing = true
+                    scope.launch {
+                        myId?.let { viewModel.refreshConversations(it) }
+                        isRefreshing = false
+                    }
+                },
+                state = pullState,
+                modifier = Modifier.fillMaxSize().padding(padding),
             ) {
-                items(conversations, key = { it.conversation.id }) { preview ->
-                    ConversationRow(
-                        preview = preview,
-                        currentUserId = myId ?: "",
-                        onClick = { onOpen(preview.conversation.id) },
-                    )
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    items(conversations, key = { it.conversation.id }) { preview ->
+                        ConversationRow(
+                            preview = preview,
+                            currentUserId = myId ?: "",
+                            onClick = { onOpen(preview.conversation.id) },
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                 }
             }
         }
@@ -237,7 +320,7 @@ fun ChatScreen(
     }
 }
 
-// ─── Messenger-style conversation row ─────────────────────────────────────
+// ─── Card-based conversation row ───────────────────────────────────────────
 
 @Composable
 private fun ConversationRow(
@@ -270,12 +353,17 @@ private fun ConversationRow(
             ?.takeIf { it != 0 } ?: 0xFF6366F1.toInt(),
     )
 
-    Column {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             InitialAvatar(name = displayName, color = avatarColor, size = 56, avatarUri = avatarUri)
@@ -303,15 +391,15 @@ private fun ConversationRow(
                         )
                     }
                 }
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(3.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val previewText = when {
                         preview.lastMessage == null -> "No messages yet"
                         preview.lastMessage.messageType == "image" ->
-                            "${preview.lastSenderName?.let { "$it: " } ?: ""}📷 Photo"
+                            "${preview.lastSenderName?.let { "$it: " } ?: ""}Photo"
 
                         preview.lastMessage.messageType == "voice" ->
-                            "${preview.lastSenderName?.let { "$it: " } ?: ""}🎤 Voice message"
+                            "${preview.lastSenderName?.let { "$it: " } ?: ""}Voice message"
 
                         preview.lastSenderName != null ->
                             "${preview.lastSenderName}: ${preview.lastMessage.text}"
@@ -330,23 +418,22 @@ private fun ConversationRow(
                     )
                     if (isUnread) {
                         Spacer(Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE53935)),
+                        val count = preview.unreadCount
+                        PillTag(
+                            text = if (count > 99) "99+" else count.toString(),
+                            container = MaterialTheme.colorScheme.primary,
+                            content = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.semanticsContentDescription("$count unread messages"),
                         )
                     }
                 }
             }
         }
-        HorizontalDivider(
-            modifier = Modifier.padding(start = 84.dp),
-            thickness = 0.5.dp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-        )
     }
 }
+
+private fun Modifier.semanticsContentDescription(description: String): Modifier =
+    this.semantics { contentDescription = description }
 
 // ─── Conversation / message screen ────────────────────────────────────────
 
@@ -787,18 +874,33 @@ fun ConversationScreen(
                 ) {
                     itemsIndexed(messages, key = { _, msg -> msg.id }) { index, msg ->
                         val mine = msg.userFrom == myId
-                        val prevFrom = if (index > 0) messages[index - 1].userFrom else null
-                        val nextFrom = if (index < messages.lastIndex) messages[index + 1].userFrom else null
-                        val isFirstInGroup = prevFrom != msg.userFrom
-                        val isLastInGroup = nextFrom != msg.userFrom
-                        val timeLabel = remember(msg.sentAt) {
-                            runCatching {
-                                java.time.OffsetDateTime
-                                    .parse(msg.sentAt)
-                                    .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
-                            }.getOrDefault("")
+                        val prevMsg = if (index > 0) messages[index - 1] else null
+                        val nextMsg = if (index < messages.lastIndex) messages[index + 1] else null
+                        val isFirstInGroup = prevMsg?.userFrom != msg.userFrom ||
+                            (prevMsg != null && gapExceedsTenMinutes(prevMsg.sentAt, msg.sentAt))
+                        val isLastInGroup = nextMsg?.userFrom != msg.userFrom ||
+                            (nextMsg != null && gapExceedsTenMinutes(msg.sentAt, nextMsg.sentAt))
+                        val showTimeSeparator = isFirstInGroup && prevMsg != null &&
+                            gapExceedsTenMinutes(prevMsg.sentAt, msg.sentAt)
+                        val timeLabel = remember(msg.sentAt) { messageTimeLabel(msg.sentAt) }
+                        val senderProfile = if (!mine) userProfiles[msg.userFrom] else null
+                        val senderName = senderProfile?.name ?: "Unknown"
+                        val accessibilityDesc = remember(msg.id, timeLabel) {
+                            val who = if (mine) "You" else senderName
+                            val content = when (msg.messageType) {
+                                "image" -> "sent a photo"
+                                "voice" -> "sent a voice message"
+                                else -> msg.text
+                            }
+                            "Message from $who at $timeLabel: $content"
                         }
                         val msgReactions = reactionsMap[msg.id] ?: emptyMap()
+
+                        // Timestamp separator between groups with >10 min gap
+                        if (showTimeSeparator) {
+                            MessageTimeSeparator(timeLabel)
+                        }
+
                         MessageRow(
                             msg = msg,
                             mine = mine,
@@ -806,11 +908,12 @@ fun ConversationScreen(
                             timeLabel = timeLabel,
                             isFirstInGroup = isFirstInGroup,
                             isLastInGroup = isLastInGroup,
-                            senderProfile = if (!mine) userProfiles[msg.userFrom] else null,
+                            senderProfile = senderProfile,
                             messages = messages,
                             onReply = { viewModel.setReplyTo(msg) },
                             reactions = msgReactions,
                             onReact = { emoji -> viewModel.toggleReaction(msg.id, conversationId, emoji) },
+                            accessibilityDescription = accessibilityDesc,
                         )
                     }
                 }
@@ -1125,6 +1228,51 @@ private fun MemberSelectRow(
 
 // ─── Message rendering ─────────────────────────────────────────────────────
 
+/** Centered timestamp pill shown between message groups with >10 min gap. */
+@Composable
+private fun MessageTimeSeparator(label: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            )
+        }
+    }
+}
+
+/** Simple waveform placeholder with 5 bars of varying height. */
+@Composable
+private fun WaveformPlaceholder(isMine: Boolean, modifier: Modifier = Modifier) {
+    val barColor = if (isMine) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+    val heights = remember { listOf(10.dp, 18.dp, 14.dp, 20.dp, 12.dp) }
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        heights.forEach { h ->
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(h)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(barColor),
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MessageRow(
@@ -1139,6 +1287,7 @@ private fun MessageRow(
     onReply: () -> Unit,
     reactions: Map<String, List<String>>,
     onReact: (String) -> Unit,
+    accessibilityDescription: String = "",
 ) {
     var showTime by remember { mutableStateOf(false) }
     var showReactionPicker by remember { mutableStateOf(false) }
@@ -1149,16 +1298,17 @@ private fun MessageRow(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = if (isFirstInGroup) 6.dp else 0.dp),
+                    .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
+                    .let { if (accessibilityDescription.isNotEmpty()) it.semantics { contentDescription = accessibilityDescription } else it },
                 horizontalAlignment = Alignment.End,
             ) {
                 Box {
                     Surface(
                         shape = RoundedCornerShape(
-                            topStart = 18.dp,
-                            topEnd = 18.dp,
-                            bottomStart = 18.dp,
-                            bottomEnd = if (isLastInGroup) 4.dp else 18.dp,
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = 16.dp,
+                            bottomEnd = if (isLastInGroup) 4.dp else 16.dp,
                         ),
                         color = Color.Transparent,
                         modifier = Modifier
@@ -1200,7 +1350,8 @@ private fun MessageRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = if (isFirstInGroup) 6.dp else 0.dp),
+                    .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
+                    .let { if (accessibilityDescription.isNotEmpty()) it.semantics { contentDescription = accessibilityDescription } else it },
                 verticalAlignment = Alignment.Bottom,
             ) {
                 if (isLastInGroup) {
@@ -1224,12 +1375,12 @@ private fun MessageRow(
                     Box {
                         Surface(
                             shape = RoundedCornerShape(
-                                topStart = 18.dp,
-                                topEnd = 18.dp,
-                                bottomStart = if (isLastInGroup) 4.dp else 18.dp,
-                                bottomEnd = 18.dp,
+                                topStart = 16.dp,
+                                topEnd = 16.dp,
+                                bottomStart = if (isLastInGroup) 4.dp else 16.dp,
+                                bottomEnd = 16.dp,
                             ),
-                            color = MaterialTheme.colorScheme.surface,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier.combinedClickable(
                                 onLongClick = { showReactionPicker = true },
                                 onClick = { showTime = !showTime },
@@ -1309,7 +1460,7 @@ private fun MessageContent(
                 }
                 Text(
                     msg.text,
-                    color = if (mine) Color.White else MaterialTheme.colorScheme.onSurface,
+                    color = if (mine) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
@@ -1324,8 +1475,8 @@ private fun QuoteBubble(
     isMine: Boolean,
 ) {
     val accentColor = if (isMine) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary
-    val bgColor = if (isMine) Color.White.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
-    val textColor = if (isMine) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
+    val bgColor = if (isMine) Color.White.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface
+    val textColor = if (isMine) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurface
 
     Row(
         Modifier
