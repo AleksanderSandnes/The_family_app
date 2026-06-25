@@ -46,69 +46,128 @@ class ShoppingViewModel(
     private val _items = MutableStateFlow<List<ShoppingItemModel>>(emptyList())
     val items: StateFlow<List<ShoppingItemModel>> = _items.asStateFlow()
 
+    /** Map of listId to total item count, used to display a count badge on list cards. */
+    private val _itemCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val itemCounts: StateFlow<Map<String, Int>> = _itemCounts.asStateFlow()
+
     private var realtimeListsChannel: RealtimeChannel? = null
     private var realtimeItemsChannel: RealtimeChannel? = null
     private var currentUserId: String? = null
+
+    /** The familyId the lists channel is currently subscribed for -- guards against re-subscribe. */
+    private var subscribedListsFamilyId: String? = null
+
+    /** The listId the items channel is currently subscribed for -- guards against re-subscribe. */
+    private var subscribedItemsListId: String? = null
 
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
                 currentUserId = userId
-                if (userId != null) loadLists(userId) else _lists.value = emptyList()
+                if (userId != null) {
+                    loadLists(userId)
+                } else {
+                    _lists.value = emptyList()
+                    _itemCounts.value = emptyMap()
+                }
             }
         }
         viewModelScope.launch {
             repo.familyChanged.collect {
                 val userId = repo.currentUserId.first() ?: return@collect
-                loadLists(userId)
+                reloadLists(userId)
             }
         }
     }
 
-    /** Re-fetch from the server. Called on screen resume so data stays fresh
-     *  even though the ViewModel is Activity-scoped and init{} only runs once. */
+    /** Re-fetch from the server (called on screen resume). Does NOT re-subscribe. */
     fun refresh() =
         viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
-            loadLists(userId)
+            reloadLists(userId)
         }
 
+    /**
+     * Initial load: fetches data then sets up realtime subscription.
+     * Only called when userId first resolves from DataStore.
+     */
     private suspend fun loadLists(userId: String) {
         if (_lists.value.isEmpty()) _isLoading.value = true
         runCatching {
             val user = repo.getUser(userId)
-            val result =
-                if (user?.familyId != null) {
-                    db
-                        .from("shopping_lists")
-                        .select {
-                            filter {
-                                or {
-                                    eq("owner_user_id", userId)
-                                    eq("family_id", user.familyId)
-                                }
-                            }
-                        }.decodeList<ShoppingListModel>()
-                        .filter { it.familyId == null || it.familyId == user.familyId }
-                } else {
-                    db
-                        .from("shopping_lists")
-                        .select { filter { eq("owner_user_id", userId) } }
-                        .decodeList<ShoppingListModel>()
-                        .filter { it.familyId == null }
-                }
-            cache = result
-            _lists.value = result
-            if (user?.familyId != null) subscribeToLists(user.familyId, userId)
+            reloadListsInternal(userId, user?.familyId)
+            if (user?.familyId != null) subscribeToListsOnce(user.familyId, userId)
         }
         _isLoading.value = false
     }
 
-    private suspend fun subscribeToLists(
+    /**
+     * Pure data reload -- no subscribe. Used by the realtime collector, familyChanged,
+     * refresh(), and all list mutations so they never trigger re-subscription.
+     */
+    private suspend fun reloadLists(userId: String) {
+        runCatching {
+            val user = repo.getUser(userId)
+            reloadListsInternal(userId, user?.familyId)
+            // Also subscribe if the user just joined/created a family.
+            if (user?.familyId != null) subscribeToListsOnce(user.familyId, userId)
+        }
+    }
+
+    private suspend fun reloadListsInternal(
+        userId: String,
+        familyId: String?,
+    ) {
+        val result =
+            if (familyId != null) {
+                db
+                    .from("shopping_lists")
+                    .select {
+                        filter {
+                            or {
+                                eq("owner_user_id", userId)
+                                eq("family_id", familyId)
+                            }
+                        }
+                    }.decodeList<ShoppingListModel>()
+                    .filter { it.familyId == null || it.familyId == familyId }
+            } else {
+                db
+                    .from("shopping_lists")
+                    .select { filter { eq("owner_user_id", userId) } }
+                    .decodeList<ShoppingListModel>()
+                    .filter { it.familyId == null }
+            }
+        cache = result
+        _lists.value = result
+        loadItemCounts(result.map { it.id })
+    }
+
+    /** Loads total item count per list in one query and updates [_itemCounts]. */
+    private suspend fun loadItemCounts(listIds: List<String>) {
+        if (listIds.isEmpty()) {
+            _itemCounts.value = emptyMap()
+            return
+        }
+        runCatching {
+            val allItems =
+                db
+                    .from("shopping_items")
+                    .select {
+                        filter { isIn("list_id", listIds) }
+                    }.decodeList<ShoppingItemModel>()
+            _itemCounts.value = allItems.groupBy { it.listId }.mapValues { it.value.size }
+        }
+    }
+
+    /** Subscribe to the lists channel at most once per familyId. */
+    private suspend fun subscribeToListsOnce(
         familyId: String,
         userId: String,
     ) {
+        if (subscribedListsFamilyId == familyId) return
         realtimeListsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        subscribedListsFamilyId = familyId
         val channel = SupabaseManager.client.channel("shopping-lists-$familyId")
         realtimeListsChannel = channel
         val flow =
@@ -117,7 +176,8 @@ class ShoppingViewModel(
                 filter("family_id", FilterOperator.EQ, familyId)
             }
         channel.subscribe()
-        viewModelScope.launch { flow.collect { loadLists(userId) } }
+        // Collector calls reloadLists (data only) -- never re-subscribes.
+        viewModelScope.launch { flow.collect { reloadLists(userId) } }
     }
 
     fun loadListDetail(listId: String) =
@@ -143,11 +203,43 @@ class ShoppingViewModel(
                     _items.value = itemsDeferred.await()
                 }
             }
-            subscribeToItems(listId)
+            // Only subscribes when navigating to a new list; guard prevents re-subscribe on reload.
+            subscribeToItemsOnce(listId)
         }
 
-    private suspend fun subscribeToItems(listId: String) {
+    /**
+     * Pure data reload for items -- no subscribe. Used by the realtime collector and all item
+     * mutations so they never trigger re-subscription.
+     */
+    private suspend fun reloadItems(listId: String) {
+        runCatching {
+            coroutineScope {
+                val listDeferred =
+                    async {
+                        db
+                            .from("shopping_lists")
+                            .select { filter { eq("id", listId) } }
+                            .decodeList<ShoppingListModel>()
+                            .firstOrNull()
+                    }
+                val itemsDeferred =
+                    async {
+                        db
+                            .from("shopping_items")
+                            .select { filter { eq("list_id", listId) } }
+                            .decodeList<ShoppingItemModel>()
+                    }
+                _selectedList.value = listDeferred.await()
+                _items.value = itemsDeferred.await()
+            }
+        }
+    }
+
+    /** Subscribe to the items channel at most once per listId. */
+    private suspend fun subscribeToItemsOnce(listId: String) {
+        if (subscribedItemsListId == listId) return
         realtimeItemsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        subscribedItemsListId = listId
         val channel = SupabaseManager.client.channel("shopping-items-$listId")
         realtimeItemsChannel = channel
         val flow =
@@ -156,7 +248,8 @@ class ShoppingViewModel(
                 filter("list_id", FilterOperator.EQ, listId)
             }
         channel.subscribe()
-        viewModelScope.launch { flow.collect { loadListDetail(listId) } }
+        // Collector calls reloadItems (data only) -- never re-subscribes.
+        viewModelScope.launch { flow.collect { reloadItems(listId) } }
     }
 
     fun addList(
@@ -177,7 +270,7 @@ class ShoppingViewModel(
                 },
             )
         }
-        loadLists(userId)
+        reloadLists(userId)
     }
 
     fun changeListIcon(
@@ -189,7 +282,8 @@ class ShoppingViewModel(
         runCatching {
             db.from("shopping_lists").update({ set("icon", icon) }) { filter { eq("id", listId) } }
         }
-        loadListDetail(listId).join()
+        val userId = currentUserId ?: repo.currentUserId.first() ?: return@launch
+        reloadLists(userId)
     }
 
     fun deleteList(list: ShoppingListModel) =
@@ -197,7 +291,7 @@ class ShoppingViewModel(
             _lists.value = _lists.value.filter { it.id != list.id }
             runCatching { db.from("shopping_lists").delete { filter { eq("id", list.id) } } }
             val userId = repo.currentUserId.first() ?: return@launch
-            loadLists(userId)
+            reloadLists(userId)
         }
 
     fun addItem(
@@ -215,7 +309,7 @@ class ShoppingViewModel(
                     },
                 )
             }
-            loadListDetail(listId).join()
+            reloadItems(listId)
         }
 
     fun toggle(item: ShoppingItemModel) =
@@ -226,14 +320,14 @@ class ShoppingViewModel(
                     set("checked", !item.checked)
                 }) { filter { eq("id", item.id) } }
             }
-            loadListDetail(item.listId).join()
+            reloadItems(item.listId)
         }
 
     fun deleteItem(item: ShoppingItemModel) =
         viewModelScope.launch {
             _items.value = _items.value.filter { it.id != item.id }
             runCatching { db.from("shopping_items").delete { filter { eq("id", item.id) } } }
-            loadListDetail(item.listId).join()
+            reloadItems(item.listId)
         }
 
     fun renameItem(
@@ -244,7 +338,7 @@ class ShoppingViewModel(
         runCatching {
             db.from("shopping_items").update({ set("item", newName) }) { filter { eq("id", item.id) } }
         }
-        loadListDetail(item.listId).join()
+        reloadItems(item.listId)
     }
 
     fun renameList(
@@ -255,8 +349,25 @@ class ShoppingViewModel(
         runCatching {
             db.from("shopping_lists").update({ set("title", newTitle) }) { filter { eq("id", listId) } }
         }
-        loadListDetail(listId).join()
+        reloadItems(listId)
     }
+
+    /** Deletes all checked items from the given list. */
+    fun clearCompleted(listId: String) =
+        viewModelScope.launch {
+            val completed = _items.value.filter { it.checked }
+            if (completed.isEmpty()) return@launch
+            _items.value = _items.value.filter { !it.checked }
+            runCatching {
+                db.from("shopping_items").delete {
+                    filter {
+                        eq("list_id", listId)
+                        eq("checked", true)
+                    }
+                }
+            }
+            reloadItems(listId)
+        }
 
     override fun onCleared() {
         super.onCleared()
