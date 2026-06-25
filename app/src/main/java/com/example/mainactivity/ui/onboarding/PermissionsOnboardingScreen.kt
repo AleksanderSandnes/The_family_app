@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,6 +56,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -101,6 +105,21 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
         )
     }
 
+    // Combined launcher used by the "Continue" button — requests all ungranted permissions at once.
+    val combinedLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { results ->
+        notifGranted = results[Manifest.permission.POST_NOTIFICATIONS] ?: notifGranted
+        locationGranted =
+            results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            results[Manifest.permission.ACCESS_COARSE_LOCATION] == true ||
+            locationGranted
+        cameraGranted = results[Manifest.permission.CAMERA] ?: cameraGranted
+        micGranted = results[Manifest.permission.RECORD_AUDIO] ?: micGranted
+        onComplete()
+    }
+
+    // Per-card launchers for re-requesting individual permissions by tapping a card.
     val notifLauncher =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -117,10 +136,14 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
                 results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         }
 
-    val cameraAudioLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-            cameraGranted = results[Manifest.permission.CAMERA] == true
-            micGranted = results[Manifest.permission.RECORD_AUDIO] == true
+    val cameraLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            cameraGranted = granted
+        }
+
+    val micLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            micGranted = granted
         }
 
     val cards =
@@ -129,29 +152,44 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
                 icon = Icons.Filled.Notifications,
                 title = "Notifications",
                 description = "Get notified about new messages, birthdays, and upcoming events",
-                color = Color(0xFF6366F1),
+                accentColor = Color(0xFF6366F1),
                 granted = notifGranted,
+                onRequest = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notifLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                },
             ),
             PermissionCardData(
                 icon = Icons.Filled.LocationOn,
                 title = "Location",
                 description = "Share your location with family so everyone knows where each other are",
-                color = Color(0xFF14B8A6),
+                accentColor = Color(0xFF14B8A6),
                 granted = locationGranted,
+                onRequest = {
+                    locationLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION,
+                        ),
+                    )
+                },
             ),
             PermissionCardData(
                 icon = Icons.Filled.CameraAlt,
                 title = "Camera",
                 description = "Take photos for your profile picture and to share in chat",
-                color = Color(0xFFEC4899),
+                accentColor = Color(0xFFEC4899),
                 granted = cameraGranted,
+                onRequest = { cameraLauncher.launch(Manifest.permission.CAMERA) },
             ),
             PermissionCardData(
                 icon = Icons.Filled.Mic,
                 title = "Microphone",
                 description = "Record and send voice messages to family members in chat",
-                color = Color(0xFFF59E0B),
+                accentColor = Color(0xFFF59E0B),
                 granted = micGranted,
+                onRequest = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) },
             ),
         )
 
@@ -231,26 +269,22 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
 
             Button(
                 onClick = {
+                    val toRequest = mutableListOf<String>()
                     if (!notifGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        notifLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        toRequest.add(Manifest.permission.POST_NOTIFICATIONS)
                     }
                     if (!locationGranted) {
-                        locationLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION,
-                            ),
-                        )
+                        toRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+                        toRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
                     }
-                    if (!cameraGranted || !micGranted) {
-                        cameraAudioLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.CAMERA,
-                                Manifest.permission.RECORD_AUDIO,
-                            ),
-                        )
+                    if (!cameraGranted) toRequest.add(Manifest.permission.CAMERA)
+                    if (!micGranted) toRequest.add(Manifest.permission.RECORD_AUDIO)
+
+                    if (toRequest.isEmpty()) {
+                        onComplete()
+                    } else {
+                        combinedLauncher.launch(toRequest.toTypedArray())
                     }
-                    onComplete()
                 },
                 modifier =
                     Modifier
@@ -283,16 +317,26 @@ private data class PermissionCardData(
     val icon: ImageVector,
     val title: String,
     val description: String,
-    val color: Color,
+    val accentColor: Color,
     val granted: Boolean,
+    val onRequest: () -> Unit,
 )
 
 @Composable
 private fun PermissionCardItem(card: PermissionCardData) {
+    val semanticsLabel = if (card.granted) {
+        "${card.title} permission granted"
+    } else {
+        "Grant ${card.title} permission. Currently not granted"
+    }
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 72.dp)
+            .semantics { contentDescription = semanticsLabel }
+            .clickable(enabled = !card.granted) { card.onRequest() },
         shape = RoundedCornerShape(20.dp),
-        color = Color.White.copy(alpha = 0.12f),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         tonalElevation = 0.dp,
     ) {
         Row(
@@ -304,13 +348,13 @@ private fun PermissionCardItem(card: PermissionCardData) {
                     Modifier
                         .size(52.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(card.color.copy(alpha = 0.2f)),
+                        .background(card.accentColor.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     card.icon,
                     contentDescription = null,
-                    tint = card.color,
+                    tint = card.accentColor,
                     modifier = Modifier.size(28.dp),
                 )
             }
@@ -319,29 +363,29 @@ private fun PermissionCardItem(card: PermissionCardData) {
                 Text(
                     card.title,
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
                     card.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.75f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Spacer(Modifier.width(12.dp))
             if (card.granted) {
                 Icon(
                     Icons.Filled.CheckCircle,
-                    contentDescription = "Granted",
+                    contentDescription = null,
                     tint = Color(0xFF4ADE80),
                     modifier = Modifier.size(24.dp),
                 )
             } else {
                 Icon(
                     Icons.Filled.RadioButtonUnchecked,
-                    contentDescription = "Not granted",
-                    tint = Color.White.copy(alpha = 0.4f),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp),
                 )
             }
