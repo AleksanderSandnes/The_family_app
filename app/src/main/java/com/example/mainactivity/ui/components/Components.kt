@@ -245,7 +245,7 @@ fun InitialAvatar(
                     .size(size.dp)
                     .clip(CircleShape)
                     .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f))))
-                    .semantics { if (desc != null) contentDescription = desc },
+                    .semantics { if (desc != null) this.contentDescription = desc },
             contentAlignment = Alignment.Center,
         ) {
             Text(
