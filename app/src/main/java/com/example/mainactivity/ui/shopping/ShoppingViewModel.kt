@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
@@ -77,6 +78,21 @@ class ShoppingViewModel @Inject constructor(
             repo.familyChanged.collect {
                 val userId = repo.currentUserId.first() ?: return@collect
                 reloadLists(userId)
+            }
+        }
+        viewModelScope.launch {
+            var seenDisconnect = false
+            SupabaseManager.client.realtime.status.collect { status ->
+                when (status) {
+                    Realtime.Status.DISCONNECTED -> seenDisconnect = true
+                    Realtime.Status.CONNECTED -> if (seenDisconnect) {
+                        seenDisconnect = false
+                        val userId = repo.currentUserId.first() ?: return@collect
+                        reloadLists(userId)
+                        subscribedItemsListId?.let { reloadItems(it) }
+                    }
+                    else -> {}
+                }
             }
         }
     }
