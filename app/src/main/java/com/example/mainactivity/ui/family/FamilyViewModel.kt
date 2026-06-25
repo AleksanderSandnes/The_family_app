@@ -122,4 +122,15 @@ class FamilyViewModel @Inject constructor(
                 }.onFailure { _error.value = it.message }
         }
     }
+
+    fun removeMember(memberId: String) {
+        viewModelScope.launch {
+            repo.removeFamilyMember(memberId)
+                .onSuccess {
+                    val userId = repo.currentUserId.first() ?: return@launch
+                    load(userId)
+                }
+                .onFailure { _error.value = it.message }
+        }
+    }
 }
