@@ -44,7 +44,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,19 +52,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.toggleableState
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mainactivity.BuildConfig
 import com.example.mainactivity.data.ThemeMode
 import com.example.mainactivity.ui.components.FeatureTopBar
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.launch
 
 private val LEAD_TIME_OPTIONS =
     listOf(
@@ -87,25 +82,23 @@ fun SettingsScreen(
     val locationVisible by vm.locationVisible.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission(),
         ) { granted -> vm.setNotificationsEnabled(granted, context) }
 
-    // Show "Settings saved" when any pref changes after initial DataStore load settles.
-    // We delay 500ms before subscribing so that DataStore's async first-load emissions
-    // are already delivered (and thus skipped by drop(1)) before we start watching.
+    // Show "Settings saved" whenever any preference changes after the initial composition.
+    // drop(1) on each snapshotFlow skips the current value at subscription time (the
+    // already-settled DataStore value), so only real user-driven changes trigger the snackbar.
     LaunchedEffect(Unit) {
-        delay(500)
         merge(
             snapshotFlow { themeMode }.drop(1).map { },
             snapshotFlow { notificationsEnabled }.drop(1).map { },
             snapshotFlow { notifyDaysBefore }.drop(1).map { },
             snapshotFlow { locationVisible }.drop(1).map { },
         ).collect {
-            scope.launch { snackbarHostState.showSnackbar("Settings saved") }
+            snackbarHostState.showSnackbar("Settings saved")
         }
     }
 
@@ -314,12 +307,12 @@ private fun ThemeOption(
             modifier
                 .clip(RoundedCornerShape(16.dp))
                 .background(bg)
-                .clickable(onClick = onClick)
-                .heightIn(min = 48.dp)
-                .padding(vertical = 14.dp)
                 .semantics {
                     contentDescription = "$label theme${if (selected) ", selected" else ""}"
-                },
+                }
+                .clickable(onClick = onClick)
+                .heightIn(min = 48.dp)
+                .padding(vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -357,10 +350,7 @@ private fun ToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onChange,
-            modifier = Modifier.semantics {
-                toggleableState = ToggleableState(checked)
-                contentDescription = description
-            },
+            modifier = Modifier.semantics { contentDescription = description },
         )
     }
 }
