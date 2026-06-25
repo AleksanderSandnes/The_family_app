@@ -42,12 +42,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -59,13 +57,12 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mainactivity.ui.components.ErrorBanner
 import com.example.mainactivity.ui.components.InitialAvatar
 import com.example.mainactivity.ui.components.LoadingState
+import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.theme.Amber500
 import com.example.mainactivity.ui.theme.Emerald500
 import com.example.mainactivity.ui.theme.Indigo500
@@ -84,13 +81,23 @@ private data class Feature(
 )
 
 /** Returns "Good morning", "Good afternoon", or "Good evening" based on the hour. */
-private fun timeBasedGreeting(): String {
-    return when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
+private fun timeBasedGreeting(): String =
+    when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
         in 0..11 -> "Good morning"
         in 12..17 -> "Good afternoon"
         else -> "Good evening"
     }
-}
+
+// All feature values are compile-time constants — hoisted to avoid reallocating on every recomposition.
+private val features =
+    listOf(
+        Feature("Shopping", "Shared lists", Icons.Filled.ShoppingCart, Indigo500, "shopping"),
+        Feature("Meals", "Plan the week", Icons.Filled.Restaurant, Amber500, "meal"),
+        Feature("Calendar", "Family events", Icons.Filled.CalendarMonth, Teal500, "calendar"),
+        Feature("Birthdays", "Never miss one", Icons.Filled.Cake, Pink500, "birthday"),
+        Feature("Wishlists", "Gift ideas", Icons.Filled.CardGiftcard, Violet500, "wishlist"),
+        Feature("Family Map", "See where everyone is", Icons.Filled.Map, Emerald500, "family_map"),
+    )
 
 @Composable
 fun HomeScreen(
@@ -101,25 +108,7 @@ fun HomeScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dark = isSystemInDarkTheme()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer =
-            LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_RESUME) viewModel.refresh()
-            }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val features =
-        listOf(
-            Feature("Shopping", "Shared lists", Icons.Filled.ShoppingCart, Indigo500, "shopping"),
-            Feature("Meals", "Plan the week", Icons.Filled.Restaurant, Amber500, "meal"),
-            Feature("Calendar", "Family events", Icons.Filled.CalendarMonth, Teal500, "calendar"),
-            Feature("Birthdays", "Never miss one", Icons.Filled.Cake, Pink500, "birthday"),
-            Feature("Wishlists", "Gift ideas", Icons.Filled.CardGiftcard, Violet500, "wishlist"),
-            Feature("Family Map", "See where everyone is", Icons.Filled.Map, Emerald500, "family_map"),
-        )
+    RefreshOnResume { viewModel.refresh() }
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -160,13 +149,12 @@ fun HomeScreen(
             }
         }
 
-        // Loading skeleton while user data is not yet available
-        if (state.user == null) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                LoadingState()
+        when {
+            state.isLoading -> item(span = { GridItemSpan(maxLineSpan) }) { LoadingState() }
+            state.loadError -> item(span = { GridItemSpan(maxLineSpan) }) {
+                ErrorBanner(message = "Couldn't load your data. Pull to refresh.")
             }
-        } else {
-            items(features) { feature ->
+            else -> items(features) { feature ->
                 FeatureTile(
                     feature = feature,
                     aspectRatio = tileAspectRatio,
@@ -185,7 +173,14 @@ private fun HomeHeader(
 ) {
     val user = state.user
     val firstName = user?.name?.substringBefore(' ').orEmpty()
-    val greeting = timeBasedGreeting()
+    // Computed once per composition — changes at most twice per day
+    val greeting = remember { timeBasedGreeting() }
+    // Use a visible fallback color when avatarColor is 0 (never configured)
+    val avatarColor = if (user != null && user.avatarColor != 0) {
+        Color(user.avatarColor)
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
 
     Column {
         // Greeting row with avatar
@@ -211,7 +206,7 @@ private fun HomeHeader(
                 Spacer(Modifier.size(12.dp))
                 InitialAvatar(
                     name = user.name,
-                    color = Color(user.avatarColor),
+                    color = avatarColor,
                     avatarUri = user.avatarUrl,
                     size = 48,
                 )
@@ -220,17 +215,19 @@ private fun HomeHeader(
 
         Spacer(Modifier.height(16.dp))
 
-        // Family card — gradient hero card if family exists, CTA banner if signed-in but no family,
+        // Family card — gradient hero if family exists, CTA banner if signed-in but no family,
         // or nothing while still loading (user == null)
-        when {
-            user != null && state.family != null -> FamilyCard(
-                familyName = state.family.name,
-                memberCount = state.memberCount,
-                dark = dark,
-                onClick = onOpenFamily,
-            )
-            user != null && state.family == null -> NoFamilyBanner(onOpenFamily = onOpenFamily)
-            // user == null → still loading; LoadingState is shown in the grid below
+        if (user != null) {
+            if (state.family != null) {
+                FamilyCard(
+                    familyName = state.family.name,
+                    memberCount = state.memberCount,
+                    dark = dark,
+                    onClick = onOpenFamily,
+                )
+            } else {
+                NoFamilyBanner(onOpenFamily = onOpenFamily)
+            }
         }
     }
 }
@@ -242,17 +239,19 @@ private fun FamilyCard(
     dark: Boolean,
     onClick: () -> Unit,
 ) {
+    // Surface provides the click handler and ripple; Box carries the gradient background.
+    // shadowElevation on Surface requires an opaque color — use primaryContainer as the
+    // surface color so the shadow renders, then overdraw with the gradient inside.
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
-        color = Color.Transparent,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shadowElevation = 4.dp,
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(26.dp))
                 .background(heroGradient(dark))
                 .padding(20.dp),
         ) {
@@ -260,8 +259,7 @@ private fun FamilyCard(
                 Box(
                     Modifier
                         .size(52.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f)),
+                        .background(Color.White.copy(alpha = 0.2f), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Filled.Groups, null, tint = Color.White, modifier = Modifier.size(28.dp))
@@ -335,6 +333,10 @@ private fun FeatureTile(
         targetValue = if (isPressed) 0.97f else 1f,
         label = "tile-press",
     )
+    // Memoised per feature color — avoids allocation on every animation frame
+    val iconBrush = remember(feature.color) {
+        Brush.linearGradient(listOf(feature.color, feature.color.copy(alpha = 0.7f)))
+    }
 
     Surface(
         onClick = onClick,
@@ -356,8 +358,7 @@ private fun FeatureTile(
             Box(
                 Modifier
                     .size(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(listOf(feature.color, feature.color.copy(alpha = 0.7f)))),
+                    .background(iconBrush, RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(feature.icon, null, tint = Color.White, modifier = Modifier.size(32.dp))

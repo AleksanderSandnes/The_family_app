@@ -18,6 +18,8 @@ data class HomeUiState(
     val user: UserModel? = null,
     val family: FamilyModel? = null,
     val memberCount: Int = 0,
+    val isLoading: Boolean = true,
+    val loadError: Boolean = false,
 )
 
 class HomeViewModel(
@@ -31,7 +33,7 @@ class HomeViewModel(
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
-                if (userId != null) load(userId) else _state.value = HomeUiState()
+                if (userId != null) load(userId) else _state.value = HomeUiState(isLoading = false)
             }
         }
     }
@@ -43,8 +45,13 @@ class HomeViewModel(
         }
 
     private suspend fun load(userId: String) {
+        _state.value = _state.value.copy(isLoading = true, loadError = false)
         runCatching {
-            val user = repo.getUser(userId) ?: return
+            val user = repo.getUser(userId)
+            if (user == null) {
+                _state.value = HomeUiState(isLoading = false, loadError = true)
+                return
+            }
             val family = user.familyId?.let { repo.getFamily(it) }
             val memberCount =
                 if (user.familyId != null) {
@@ -56,7 +63,9 @@ class HomeViewModel(
                 } else {
                     0
                 }
-            _state.value = HomeUiState(user, family, memberCount)
+            _state.value = HomeUiState(user, family, memberCount, isLoading = false)
+        }.onFailure {
+            _state.value = _state.value.copy(isLoading = false, loadError = true)
         }
     }
 }
