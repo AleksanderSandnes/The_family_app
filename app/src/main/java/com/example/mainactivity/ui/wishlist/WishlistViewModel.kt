@@ -46,7 +46,10 @@ class WishlistViewModel(
     private val _wishes = MutableStateFlow<List<WishModel>>(emptyList())
     val wishes: StateFlow<List<WishModel>> = _wishes.asStateFlow()
 
-    private var realtimeChannel: RealtimeChannel? = null
+    private var realtimeWishlistsChannel: RealtimeChannel? = null
+    private var realtimeWishesChannel: RealtimeChannel? = null
+    private var subscribedFamilyId: String? = null
+    private var subscribedWishesListId: String? = null
 
     init {
         viewModelScope.launch {
@@ -95,20 +98,52 @@ class WishlistViewModel(
         _isLoading.value = false
     }
 
+    /** Data-only reload — does NOT re-subscribe; used by the realtime collector to avoid churn. */
+    private suspend fun loadWishlistsOnly(userId: String) {
+        runCatching {
+            val user = repo.getUser(userId)
+            val result =
+                if (user?.familyId != null) {
+                    db
+                        .from("wishlists")
+                        .select {
+                            filter {
+                                or {
+                                    eq("owner_user_id", userId)
+                                    eq("family_id", user.familyId)
+                                }
+                            }
+                        }.decodeList<WishlistModel>()
+                        .filter { it.familyId == null || it.familyId == user.familyId }
+                } else {
+                    db
+                        .from("wishlists")
+                        .select { filter { eq("owner_user_id", userId) } }
+                        .decodeList<WishlistModel>()
+                        .filter { it.familyId == null }
+                }
+            cache = result
+            _wishlists.value = result
+        }
+    }
+
     private suspend fun subscribeToWishlists(
         familyId: String,
         userId: String,
     ) {
-        realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        // Guard: if already subscribed to the same family, don't re-subscribe
+        if (subscribedFamilyId == familyId && realtimeWishlistsChannel != null) return
+        realtimeWishlistsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
         val channel = SupabaseManager.client.channel("wishlists-$familyId")
-        realtimeChannel = channel
+        realtimeWishlistsChannel = channel
+        subscribedFamilyId = familyId
         val flow =
             channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = "wishlists"
                 filter("family_id", FilterOperator.EQ, familyId)
             }
         channel.subscribe()
-        viewModelScope.launch { flow.collect { loadWishlists(userId) } }
+        viewModelScope.launch { flow.collect { loadWishlistsOnly(userId) } }
     }
 
     fun loadWishlistDetail(wishlistId: String) =
@@ -134,20 +169,54 @@ class WishlistViewModel(
                     _wishes.value = wishesDeferred.await()
                 }
             }
+            subscribeToWishes(wishlistId)
         }
 
-    fun addWishlist(name: String) =
+    /** Data-only wishes reload — does NOT re-subscribe; used by the realtime collector. */
+    private suspend fun loadWishesOnly(wishlistId: String) {
+        runCatching {
+            _wishes.value =
+                db
+                    .from("wishes")
+                    .select { filter { eq("wishlist_id", wishlistId) } }
+                    .decodeList<WishModel>()
+        }
+    }
+
+    private suspend fun subscribeToWishes(wishlistId: String) {
+        // Guard: if already subscribed to this wishlist, don't re-subscribe
+        if (subscribedWishesListId == wishlistId && realtimeWishesChannel != null) return
+        realtimeWishesChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+        val channel = SupabaseManager.client.channel("wishes-$wishlistId")
+        realtimeWishesChannel = channel
+        subscribedWishesListId = wishlistId
+        val flow =
+            channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                table = "wishes"
+                filter("wishlist_id", FilterOperator.EQ, wishlistId)
+            }
+        channel.subscribe()
+        viewModelScope.launch { flow.collect { loadWishesOnly(wishlistId) } }
+    }
+
+    fun addWishlist(
+        name: String,
+        icon: String = "card_giftcard",
+    ) =
         viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
             val user = repo.getUser(userId)
             val tempId = "temp-${System.currentTimeMillis()}"
-            _wishlists.value = _wishlists.value + WishlistModel(id = tempId, ownerUserId = userId, familyId = user?.familyId, name = name)
+            _wishlists.value =
+                _wishlists.value +
+                WishlistModel(id = tempId, ownerUserId = userId, familyId = user?.familyId, name = name, icon = icon)
             runCatching {
                 db.from("wishlists").insert(
                     buildJsonObject {
                         put("owner_user_id", userId)
                         if (user?.familyId != null) put("family_id", user.familyId)
                         put("name", name)
+                        put("icon", icon)
                     },
                 )
             }
@@ -161,6 +230,30 @@ class WishlistViewModel(
             val userId = repo.currentUserId.first() ?: return@launch
             loadWishlists(userId)
         }
+
+    fun renameWishlist(
+        wishlistId: String,
+        newName: String,
+    ) = viewModelScope.launch {
+        _wishlists.value = _wishlists.value.map { if (it.id == wishlistId) it.copy(name = newName) else it }
+        _selectedWishlist.value = _selectedWishlist.value?.copy(name = newName)
+        runCatching {
+            db.from("wishlists").update({ set("name", newName) }) { filter { eq("id", wishlistId) } }
+        }
+        loadWishlistDetail(wishlistId).join()
+    }
+
+    fun changeWishlistIcon(
+        wishlistId: String,
+        newIcon: String,
+    ) = viewModelScope.launch {
+        _wishlists.value = _wishlists.value.map { if (it.id == wishlistId) it.copy(icon = newIcon) else it }
+        _selectedWishlist.value = _selectedWishlist.value?.copy(icon = newIcon)
+        runCatching {
+            db.from("wishlists").update({ set("icon", newIcon) }) { filter { eq("id", wishlistId) } }
+        }
+        loadWishlistDetail(wishlistId).join()
+    }
 
     fun addWish(
         wishlistId: String,
@@ -203,7 +296,8 @@ class WishlistViewModel(
     override fun onCleared() {
         super.onCleared()
         viewModelScope.launch {
-            realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+            realtimeWishlistsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
+            realtimeWishesChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
         }
     }
 }

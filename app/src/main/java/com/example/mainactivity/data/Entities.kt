@@ -91,6 +91,7 @@ data class WishlistModel(
     @SerialName("owner_user_id") val ownerUserId: String = "",
     @SerialName("family_id") val familyId: String? = null,
     val name: String = "",
+    val icon: String = "card_giftcard",
 )
 
 @Serializable
