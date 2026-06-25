@@ -19,7 +19,7 @@ class BootReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val enabled = SessionManager(context.applicationContext).notificationsEnabled.first()
+                val enabled = SessionManager.get(context.applicationContext).notificationsEnabled.first()
                 if (enabled) NotificationWorker.schedule(context.applicationContext)
             } finally {
                 pendingResult.finish()

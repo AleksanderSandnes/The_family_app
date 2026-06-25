@@ -16,6 +16,7 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
@@ -30,10 +31,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import javax.inject.Inject
 
-class FamilyMapViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
+@HiltViewModel
+class FamilyMapViewModel @Inject constructor(
+    private val app: Application,
+    internal val repo: FamilyRepository,
 ) : AndroidViewModel(app) {
     private val db get() = SupabaseManager.client.postgrest
 

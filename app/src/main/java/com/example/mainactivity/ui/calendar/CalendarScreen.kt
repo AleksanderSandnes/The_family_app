@@ -88,7 +88,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
@@ -164,7 +164,7 @@ private fun parseMm(t: String) = t.substringAfter(":").toIntOrNull()?.coerceIn(0
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
+fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val displayedMonth by viewModel.displayedMonth.collectAsStateWithLifecycle()
     val dayEvents by viewModel.eventsForSelectedDate.collectAsStateWithLifecycle()

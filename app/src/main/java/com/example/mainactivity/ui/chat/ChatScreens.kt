@@ -120,7 +120,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.example.mainactivity.data.ConversationWithPreview
 import com.example.mainactivity.data.MessageModel
@@ -145,7 +145,7 @@ import kotlin.math.roundToInt
 @Composable
 fun ChatScreen(
     onOpen: (String) -> Unit,
-    viewModel: ChatViewModel = viewModel(),
+    viewModel: ChatViewModel = hiltViewModel(),
 ) {
     val conversations by viewModel.conversations.collectAsStateWithLifecycle(emptyList())
     val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle()
@@ -369,7 +369,7 @@ fun ConversationScreen(
     conversationId: String,
     onBack: () -> Unit,
     onNavigateTo: (String) -> Unit = {},
-    viewModel: ChatViewModel = viewModel(),
+    viewModel: ChatViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(conversationId) {
         viewModel.loadConversation(conversationId)

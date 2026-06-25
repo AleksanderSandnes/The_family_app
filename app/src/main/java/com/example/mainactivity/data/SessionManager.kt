@@ -6,15 +6,23 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
 private val Context.dataStore by preferencesDataStore(name = "session")
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
-class SessionManager(
-    private val context: Context,
+@Singleton
+class SessionManager @Inject constructor(
+    @ApplicationContext private val context: Context,
 ) {
     private val userIdKey = stringPreferencesKey("current_user_id_v2")
     private val themeModeKey = stringPreferencesKey("theme_mode")
@@ -83,5 +91,19 @@ class SessionManager(
 
     suspend fun signOut() {
         context.dataStore.edit { it.remove(userIdKey) }
+    }
+
+    companion object {
+        @EntryPoint
+        @InstallIn(SingletonComponent::class)
+        interface SessionManagerEntryPoint {
+            fun sessionManager(): SessionManager
+        }
+
+        fun get(context: Context): SessionManager =
+            EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                SessionManagerEntryPoint::class.java,
+            ).sessionManager()
     }
 }

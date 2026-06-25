@@ -53,7 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.example.mainactivity.ui.components.BirthdayPickerField
 import com.example.mainactivity.ui.components.ErrorBanner
@@ -69,7 +69,7 @@ fun ProfileScreen(
     onEdit: () -> Unit,
     onSettings: () -> Unit,
     onSignedOut: () -> Unit,
-    viewModel: ProfileViewModel = viewModel(),
+    viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
@@ -280,7 +280,7 @@ private fun ActionRow(
 @Composable
 fun ProfileEditScreen(
     onBack: () -> Unit,
-    viewModel: ProfileViewModel = viewModel(),
+    viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
     var name by remember(user) { mutableStateOf(user?.name ?: "") }

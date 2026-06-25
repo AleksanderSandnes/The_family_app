@@ -47,7 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.ui.components.BirthdayPickerField
 import com.example.mainactivity.ui.components.ErrorBanner
 import com.example.mainactivity.ui.components.FamilyTextField
@@ -59,7 +59,7 @@ import com.example.mainactivity.ui.theme.heroGradient
 fun LoginScreen(
     onAuthenticated: () -> Unit,
     onNavigateToRegister: () -> Unit,
-    viewModel: AuthViewModel = viewModel(),
+    viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var email by rememberSaveable { mutableStateOf("") }
@@ -100,7 +100,7 @@ fun LoginScreen(
 fun RegisterScreen(
     onAuthenticated: () -> Unit,
     onNavigateToLogin: () -> Unit,
-    viewModel: AuthViewModel = viewModel(),
+    viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var step by rememberSaveable { mutableStateOf(1) }

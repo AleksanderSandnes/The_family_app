@@ -1,12 +1,12 @@
 package com.example.mainactivity.ui.shopping
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.ShoppingItemModel
 import com.example.mainactivity.data.ShoppingListModel
 import com.example.mainactivity.data.remote.SupabaseManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
@@ -23,11 +23,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import javax.inject.Inject
 
-class ShoppingViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
-) : AndroidViewModel(app) {
+@HiltViewModel
+class ShoppingViewModel @Inject constructor(
+    internal val repo: FamilyRepository,
+) : ViewModel() {
     companion object {
         private var cache: List<ShoppingListModel> = emptyList()
     }

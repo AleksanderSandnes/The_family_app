@@ -14,16 +14,20 @@ import com.example.mainactivity.data.remote.SupabaseManager
 import com.example.mainactivity.notifications.NotificationHelper
 import com.example.mainactivity.ui.navigation.FamilyApp
 import com.example.mainactivity.ui.theme.TheFamilyAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 import io.github.jan.supabase.auth.handleDeeplinks
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var repo: FamilyRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         NotificationHelper.createAllChannels(this)
         handleAuthDeepLink(intent)
         setContent {
-            val repo = FamilyRepository.get(applicationContext)
             val themeMode by repo.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
             val darkTheme =
                 when (themeMode) {

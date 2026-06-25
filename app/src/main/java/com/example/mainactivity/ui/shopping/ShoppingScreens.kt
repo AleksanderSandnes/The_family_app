@@ -73,7 +73,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.data.ShoppingItemModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
@@ -107,7 +107,7 @@ private fun shoppingIconVector(key: String): ImageVector =
 fun ShoppingScreen(
     onBack: () -> Unit,
     onOpenList: (String) -> Unit,
-    viewModel: ShoppingViewModel = viewModel(),
+    viewModel: ShoppingViewModel = hiltViewModel(),
 ) {
     val lists by viewModel.lists.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
@@ -184,7 +184,7 @@ fun ShoppingScreen(
 fun ShoppingDetailScreen(
     listId: String,
     onBack: () -> Unit,
-    viewModel: ShoppingViewModel = viewModel(),
+    viewModel: ShoppingViewModel = hiltViewModel(),
 ) {
     androidx.compose.runtime.LaunchedEffect(listId) { viewModel.loadListDetail(listId) }
     val list by viewModel.selectedList.collectAsStateWithLifecycle()

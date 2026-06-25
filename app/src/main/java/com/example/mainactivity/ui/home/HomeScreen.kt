@@ -60,7 +60,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.ui.components.ErrorBanner
 import com.example.mainactivity.ui.components.InitialAvatar
 import com.example.mainactivity.ui.components.LoadingState
@@ -96,7 +96,7 @@ private val features =
 fun HomeScreen(
     onOpen: (String) -> Unit,
     onOpenFamily: () -> Unit,
-    viewModel: HomeViewModel = viewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dark = isSystemInDarkTheme()

@@ -1,11 +1,11 @@
 package com.example.mainactivity.ui.calendar
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.CalendarEventModel
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.remote.SupabaseManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
@@ -25,11 +25,12 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.time.LocalDate
 import java.time.YearMonth
+import javax.inject.Inject
 
-class CalendarViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
-) : AndroidViewModel(app) {
+@HiltViewModel
+class CalendarViewModel @Inject constructor(
+    internal val repo: FamilyRepository,
+) : ViewModel() {
     companion object {
         private var cache: List<CalendarEventModel> = emptyList()
     }
