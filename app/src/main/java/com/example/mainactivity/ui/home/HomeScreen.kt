@@ -58,6 +58,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -119,13 +120,15 @@ fun HomeScreen(
     val columns = if (isWideWindow) 3 else 2
     val horizontalPadding = if (isTablet) 32.dp else 20.dp
 
-    // Tiles must be shorter on larger screens so all 6 fit without scrolling
+    // Tiles must be shorter on larger screens so all 6 fit without scrolling.
+    // 1.15 on phone portrait: tile ≈143dp tall with 14dp padding leaves 115dp for content
+    // (44dp icon + 8dp gap + ~36dp text = 88dp) — fits with room to spare, no clipping.
     val tileAspectRatio =
         when {
-            isLandscape && isTablet -> 2.2f // tablet landscape: very wide tiles
-            isLandscape -> 1.5f // phone landscape
-            isTablet -> 1.4f // tablet portrait: wide tiles, 3 rows fit
-            else -> 1.3f // phone portrait
+            isLandscape && isTablet -> 2.2f
+            isLandscape -> 1.5f
+            isTablet -> 1.4f
+            else -> 1.15f
         }
 
     LazyVerticalGrid(
@@ -361,14 +364,14 @@ private fun FeatureTile(
         tonalElevation = 1.dp,
         shadowElevation = 2.dp,
     ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(
                 Modifier
-                    .size(48.dp)
-                    .background(iconBrush, RoundedCornerShape(16.dp)),
+                    .size(44.dp)
+                    .background(iconBrush, RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(feature.icon, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                Icon(feature.icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
             }
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
@@ -376,11 +379,14 @@ private fun FeatureTile(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
                 )
                 Text(
                     text = feature.subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

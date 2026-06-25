@@ -503,37 +503,6 @@ fun ConversationScreen(
             if (granted) viewModel.prepareCameraCapture(context, conversationId)?.let { cameraLauncher.launch(it) }
         }
 
-    val audioPermissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission(),
-        ) { granted ->
-            if (granted) startRecording()
-        }
-
-    // Message media launchers (new — for sending images in chat)
-    val msgGalleryLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.PickVisualMedia(),
-        ) { uri ->
-            uri ?: return@rememberLauncherForActivityResult
-            scope.launch {
-                val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.readBytes()
-                } ?: return@launch
-                viewModel.sendImage(conversationId, bytes, "img_${System.currentTimeMillis()}.jpg")
-            }
-        }
-
-    val msgCameraLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.TakePicturePreview(),
-        ) { bitmap ->
-            bitmap ?: return@rememberLauncherForActivityResult
-            val stream = java.io.ByteArrayOutputStream()
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, stream)
-            viewModel.sendImage(conversationId, stream.toByteArray(), "cam_${System.currentTimeMillis()}.jpg")
-        }
-
     fun startRecording() {
         val file = java.io.File(context.cacheDir, "voice_${System.currentTimeMillis()}.m4a")
         recordingFile = file
@@ -574,6 +543,37 @@ fun ConversationScreen(
         }
         recordingFile = null
     }
+
+    val audioPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            if (granted) startRecording()
+        }
+
+    // Message media launchers (new — for sending images in chat)
+    val msgGalleryLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            scope.launch {
+                val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.readBytes()
+                } ?: return@launch
+                viewModel.sendImage(conversationId, bytes, "img_${System.currentTimeMillis()}.jpg")
+            }
+        }
+
+    val msgCameraLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicturePreview(),
+        ) { bitmap ->
+            bitmap ?: return@rememberLauncherForActivityResult
+            val stream = java.io.ByteArrayOutputStream()
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, stream)
+            viewModel.sendImage(conversationId, stream.toByteArray(), "cam_${System.currentTimeMillis()}.jpg")
+        }
 
     Scaffold(
         modifier = Modifier.imePadding(),
