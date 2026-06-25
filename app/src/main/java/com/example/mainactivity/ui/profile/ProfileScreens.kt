@@ -288,6 +288,8 @@ fun ProfileEditScreen(
     var mobile by remember(user) { mutableStateOf(user?.mobile ?: "") }
     var birthday by remember(user) { mutableStateOf(user?.birthday ?: "") }
 
+    val saveEnabled = name.isNotBlank() && email.isNotBlank() && mobile.isNotBlank() && birthday.isNotBlank()
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { FeatureTopBar("Edit profile", onBack) },
@@ -297,21 +299,26 @@ fun ProfileEditScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            FamilyTextField(name, { name = it }, "Full name")
-            FamilyTextField(email, { email = it }, "Email", keyboardType = androidx.compose.ui.text.input.KeyboardType.Email)
-            FamilyTextField(mobile, { mobile = it }, "Mobile", keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
-            BirthdayPickerField(value = birthday, onChange = { birthday = it })
-            Spacer(Modifier.height(6.dp))
+            Text(
+                "Personal information",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FamilyTextField(name, { name = it }, "Full name *")
+            FamilyTextField(email, { email = it }, "Email *", keyboardType = androidx.compose.ui.text.input.KeyboardType.Email)
+            FamilyTextField(mobile, { mobile = it }, "Mobile *", keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
+            BirthdayPickerField(value = birthday, onChange = { birthday = it }, label = "Birthday *")
+            Spacer(Modifier.height(4.dp))
             PrimaryButton(
                 "Save changes",
                 onClick = {
                     viewModel.save(name, email, birthday, mobile)
                     onBack()
                 },
-                enabled = name.isNotBlank() && email.isNotBlank(),
+                enabled = saveEnabled,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

@@ -373,6 +373,15 @@ class FamilyRepository @Inject constructor(
         }
     }
 
+    suspend fun removeFamilyMember(memberId: String): Result<Unit> =
+        runCatching {
+            SupabaseManager.client.postgrest.from("users").update({
+                set("family_id", null as String?)
+            }) { filter { eq("id", memberId) } }
+            invalidateUserCache()
+            _familyChanged.emit(Unit)
+        }
+
     suspend fun renameFamily(
         familyId: String,
         newName: String,

@@ -5,7 +5,12 @@ package com.example.mainactivity.ui.components
 import android.content.ClipData
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -19,6 +24,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +40,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Cake
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -60,6 +68,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -70,6 +79,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -104,7 +115,7 @@ fun PrimaryButton(
         modifier =
             modifier
                 .scale(scale)
-                .height(56.dp)
+                .defaultMinSize(minHeight = 56.dp)
                 .clip(RoundedCornerShape(18.dp))
                 .background(if (active) gradient else Brush.linearGradient(listOf(Color(0xFFB6BAD6), Color(0xFFB6BAD6))))
                 .clickable(interactionSource = interaction, indication = null, enabled = active) { onClick() },
@@ -161,6 +172,8 @@ fun FamilyTextField(
     leadingIcon: ImageVector? = null,
     isPassword: Boolean = false,
     keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
+    imeAction: androidx.compose.ui.text.input.ImeAction = androidx.compose.ui.text.input.ImeAction.Default,
+    keyboardActions: androidx.compose.foundation.text.KeyboardActions = androidx.compose.foundation.text.KeyboardActions.Default,
     singleLine: Boolean = true,
     supportingText: String? = null,
     isError: Boolean = false,
@@ -191,7 +204,8 @@ fun FamilyTextField(
         visualTransformation = if (isPassword && !revealed) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardOptions =
             androidx.compose.foundation.text
-                .KeyboardOptions(keyboardType = keyboardType),
+                .KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+        keyboardActions = keyboardActions,
         supportingText = supportingText?.let { { Text(it) } },
         shape = RoundedCornerShape(16.dp),
         colors =
@@ -212,12 +226,14 @@ fun InitialAvatar(
     modifier: Modifier = Modifier,
     size: Int = 44,
     avatarUri: String? = null,
+    contentDescription: String? = name,
 ) {
+    val desc = contentDescription
     var imageFailed by remember(avatarUri) { mutableStateOf(false) }
     if (avatarUri != null && !imageFailed) {
         AsyncImage(
             model = avatarUri,
-            contentDescription = name,
+            contentDescription = desc,
             contentScale = ContentScale.Crop,
             modifier = modifier.size(size.dp).clip(CircleShape),
             onError = { imageFailed = true },
@@ -228,7 +244,8 @@ fun InitialAvatar(
                 modifier
                     .size(size.dp)
                     .clip(CircleShape)
-                    .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f)))),
+                    .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f))))
+                    .semantics { if (desc != null) contentDescription = desc },
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -247,6 +264,8 @@ fun EmptyState(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier.fillMaxWidth().padding(32.dp),
@@ -266,6 +285,10 @@ fun EmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (actionLabel != null && onAction != null) {
+            Spacer(Modifier.height(8.dp))
+            PrimaryButton(text = actionLabel, onClick = onAction)
+        }
     }
 }
 
@@ -360,6 +383,7 @@ fun CopyableCodeField(
 fun BirthdayPickerField(
     value: String,
     onChange: (String) -> Unit,
+    label: String = "Birthday (optional)",
 ) {
     var showPicker by remember { mutableStateOf(false) }
     val fallbackMillis = System.currentTimeMillis() - 30L * 365 * 24 * 60 * 60 * 1000
@@ -409,7 +433,7 @@ fun BirthdayPickerField(
         OutlinedTextField(
             value = displayText,
             onValueChange = {},
-            label = { Text("Birthday (optional)") },
+            label = { Text(label) },
             readOnly = true,
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Outlined.Cake, contentDescription = null) },
@@ -513,6 +537,57 @@ fun SwipeToRevealDelete(
             content()
         }
     }
+}
+
+/** Shimmer placeholder used while content is loading. */
+@Composable
+fun SkeletonLoader(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(8.dp),
+) {
+    val shimmerColors = listOf(
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+    )
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(tween(1200, easing = LinearEasing)),
+        label = "shimmer",
+    )
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset(translateAnim - 1000f, 0f),
+        end = Offset(translateAnim, 0f),
+    )
+    Box(modifier = modifier.clip(shape).background(brush))
+}
+
+/** Destructive-action confirmation dialog with error-styled confirm button. */
+@Composable
+fun ConfirmationDialog(
+    title: String,
+    message: String,
+    confirmText: String = "Delete",
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+        title = { Text(title) },
+        text = { Text(message, style = MaterialTheme.typography.bodyMedium) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(confirmText, color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 /**
