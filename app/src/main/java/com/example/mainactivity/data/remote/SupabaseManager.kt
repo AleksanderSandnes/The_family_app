@@ -7,6 +7,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
+import kotlin.time.Duration.Companion.seconds
 
 const val DEEP_LINK_SCHEME = "familyapp"
 const val DEEP_LINK_HOST = "auth"
@@ -23,7 +24,14 @@ object SupabaseManager {
                 flowType = FlowType.PKCE
             }
             install(Postgrest)
-            install(Realtime)
+            install(Realtime) {
+                // Default 15s is too short on mobile — server sometimes takes >15s to ack,
+                // causing spurious heartbeat timeouts every 30s. 25s gives more breathing room
+                // while still keeping the connection alive before Cloudflare's idle timeout.
+                heartbeatInterval = 25.seconds
+                // Reconnect quickly so the gap where events can be missed stays small.
+                reconnectDelay = 3.seconds
+            }
             install(Storage)
         }
     }

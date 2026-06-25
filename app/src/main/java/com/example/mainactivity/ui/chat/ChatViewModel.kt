@@ -21,6 +21,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.decodeRecord
@@ -128,6 +129,21 @@ class ChatViewModel @Inject constructor(
             repo.familyChanged.collect {
                 val userId = repo.currentUserId.first() ?: return@collect
                 loadConversations(userId)
+            }
+        }
+        viewModelScope.launch {
+            var seenDisconnect = false
+            SupabaseManager.client.realtime.status.collect { status ->
+                when (status) {
+                    Realtime.Status.DISCONNECTED -> seenDisconnect = true
+                    Realtime.Status.CONNECTED -> if (seenDisconnect) {
+                        seenDisconnect = false
+                        val userId = repo.currentUserId.first() ?: return@collect
+                        loadConversations(userId)
+                        _currentConversationId.value?.let { loadMessages(it) }
+                    }
+                    else -> {}
+                }
             }
         }
     }
