@@ -58,11 +58,13 @@ class ChatViewModel(
     private val _conversations = MutableStateFlow<List<ConversationWithPreview>>(emptyList())
     val conversations: StateFlow<List<ConversationWithPreview>> = _conversations.asStateFlow()
 
-    val totalUnread: StateFlow<Int> = _conversations
-        .map { list -> list.sumOf { it.unreadCount } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val totalUnread: StateFlow<Int> =
+        _conversations
+            .map { list -> list.sumOf { it.unreadCount } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     private val _currentConversationId = MutableStateFlow<String?>(null)
+    val currentConversationId: StateFlow<String?> = _currentConversationId.asStateFlow()
 
     fun setCurrentConversation(id: String?) {
         _currentConversationId.value = id
@@ -178,26 +180,30 @@ class ChatViewModel(
             _conversationParticipants.value = participantsMap
 
             // Fetch last message for each conversation in parallel
-            val previews = coroutineScope {
-                convs.map { conv ->
-                    async {
-                        val lastMsg = repo.getLastMessage(conv.id)
-                        val lastSenderName = when {
-                            lastMsg == null -> null
-                            lastMsg.userFrom == userId -> "You"
-                            else -> _userProfiles.value[lastMsg.userFrom]?.name
-                                ?: lastMsg.userFrom.take(8)
-                        }
-                        ConversationWithPreview(
-                            conversation = conv,
-                            lastMessage = lastMsg,
-                            lastSenderName = lastSenderName,
-                            unreadCount = 0,
-                            participants = participantsMap[conv.id] ?: emptyList(),
-                        )
-                    }
-                }.awaitAll()
-            }
+            val previews =
+                coroutineScope {
+                    convs
+                        .map { conv ->
+                            async {
+                                val lastMsg = repo.getLastMessage(conv.id)
+                                val lastSenderName =
+                                    when {
+                                        lastMsg == null -> null
+                                        lastMsg.userFrom == userId -> "You"
+                                        else ->
+                                            _userProfiles.value[lastMsg.userFrom]?.name
+                                                ?: lastMsg.userFrom.take(8)
+                                    }
+                                ConversationWithPreview(
+                                    conversation = conv,
+                                    lastMessage = lastMsg,
+                                    lastSenderName = lastSenderName,
+                                    unreadCount = 0,
+                                    participants = participantsMap[conv.id] ?: emptyList(),
+                                )
+                            }
+                        }.awaitAll()
+                }
 
             _conversations.value = previews
 
@@ -229,9 +235,11 @@ class ChatViewModel(
                         if (!isCurrentConv) {
                             _conversations.update { list ->
                                 list.map { p ->
-                                    if (p.conversation.id == convId)
+                                    if (p.conversation.id == convId) {
                                         p.copy(unreadCount = p.unreadCount + 1)
-                                    else p
+                                    } else {
+                                        p
+                                    }
                                 }
                             }
                         }
@@ -239,9 +247,11 @@ class ChatViewModel(
                         val senderName = _userProfiles.value[msg.userFrom]?.name ?: "Family member"
                         _conversations.update { list ->
                             list.map { p ->
-                                if (p.conversation.id == convId)
+                                if (p.conversation.id == convId) {
                                     p.copy(lastMessage = msg, lastSenderName = senderName)
-                                else p
+                                } else {
+                                    p
+                                }
                             }
                         }
                         // Post notification
@@ -358,9 +368,11 @@ class ChatViewModel(
                         .decodeList<MessageReactionModel>()
                 }.getOrNull() ?: return@launch
             _reactions.value =
-                result.groupBy { it.messageId }
+                result
+                    .groupBy { it.messageId }
                     .mapValues { (_, rs) ->
-                        rs.groupBy { it.emoji }
+                        rs
+                            .groupBy { it.emoji }
                             .mapValues { (_, users) -> users.map { it.userId } }
                     }
         }
@@ -399,7 +411,11 @@ class ChatViewModel(
         }
     }
 
-    fun toggleReaction(messageId: String, conversationId: String, emoji: String) {
+    fun toggleReaction(
+        messageId: String,
+        conversationId: String,
+        emoji: String,
+    ) {
         viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
             val currentReactions = _reactions.value[messageId]
@@ -414,7 +430,11 @@ class ChatViewModel(
 
     // ── Media send ───────────────────────────────────────────────────────────
 
-    fun sendImage(conversationId: String, bytes: ByteArray, filename: String) {
+    fun sendImage(
+        conversationId: String,
+        bytes: ByteArray,
+        filename: String,
+    ) {
         viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
             runCatching {
@@ -433,7 +453,11 @@ class ChatViewModel(
         }
     }
 
-    fun sendVoice(conversationId: String, bytes: ByteArray, filename: String) {
+    fun sendVoice(
+        conversationId: String,
+        bytes: ByteArray,
+        filename: String,
+    ) {
         viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
             runCatching {
@@ -465,7 +489,8 @@ class ChatViewModel(
                         (preview.conversation.userFrom == userId && preview.conversation.userTo == otherId) ||
                             (preview.conversation.userFrom == otherId && preview.conversation.userTo == userId)
                     )
-            }?.conversation?.id
+            }?.conversation
+            ?.id
             ?.let { return it }
 
         return runCatching {
@@ -773,7 +798,6 @@ class ChatViewModel(
         }
 
     override fun onCleared() {
-        super.onCleared()
         viewModelScope.launch {
             realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
             reactionsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }

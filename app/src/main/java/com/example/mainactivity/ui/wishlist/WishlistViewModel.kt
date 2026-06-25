@@ -294,7 +294,6 @@ class WishlistViewModel(
         }
 
     override fun onCleared() {
-        super.onCleared()
         viewModelScope.launch {
             realtimeWishlistsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
             realtimeWishesChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }

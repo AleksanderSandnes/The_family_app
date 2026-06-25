@@ -1,3 +1,5 @@
+@file:Suppress("InlinedApi")
+
 package com.example.mainactivity.ui.map
 
 import android.annotation.SuppressLint
@@ -6,6 +8,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
@@ -113,6 +116,7 @@ class LocationForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel =
             NotificationChannel(
                 CHANNEL_ID,

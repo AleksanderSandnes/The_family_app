@@ -1,16 +1,20 @@
-@file:Suppress("ktlint:standard:function-naming")
+@file:Suppress("ktlint:standard:function-naming", "InlinedApi", "UseKtx")
 
 package com.example.mainactivity.notifications
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.os.Build
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
@@ -23,13 +27,13 @@ import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.receivers.ReplyReceiver
 
 object NotificationHelper {
-
     const val CHANNEL_MESSAGES = "channel_messages"
     const val CHANNEL_BIRTHDAYS = "channel_birthdays"
     const val CHANNEL_CALENDAR = "channel_calendar"
     const val KEY_TEXT_REPLY = "key_text_reply"
 
     fun createAllChannels(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_MESSAGES, "Messages", NotificationManager.IMPORTANCE_HIGH)
@@ -53,7 +57,8 @@ object NotificationHelper {
     ) {
         val senderName = sender?.name ?: "Family member"
         val person =
-            Person.Builder()
+            Person
+                .Builder()
                 .setName(senderName)
                 .setIcon(IconCompat.createWithBitmap(createInitialBitmap(senderName)))
                 .build()
@@ -66,11 +71,11 @@ object NotificationHelper {
             }
 
         val messagingStyle =
-            NotificationCompat.MessagingStyle(person)
+            NotificationCompat
+                .MessagingStyle(person)
                 .also { style ->
                     if (conversation.name.isNotBlank()) style.conversationTitle = conversation.name
-                }
-                .addMessage(
+                }.addMessage(
                     NotificationCompat.MessagingStyle.Message(
                         messageText,
                         System.currentTimeMillis(),
@@ -79,7 +84,8 @@ object NotificationHelper {
                 )
 
         val remoteInput =
-            RemoteInput.Builder(KEY_TEXT_REPLY)
+            RemoteInput
+                .Builder(KEY_TEXT_REPLY)
                 .setLabel("Reply")
                 .build()
 
@@ -94,11 +100,13 @@ object NotificationHelper {
             )
 
         val replyAction =
-            NotificationCompat.Action.Builder(
-                android.R.drawable.ic_menu_send,
-                "Reply",
-                replyIntent,
-            ).addRemoteInput(remoteInput).build()
+            NotificationCompat.Action
+                .Builder(
+                    android.R.drawable.ic_menu_send,
+                    "Reply",
+                    replyIntent,
+                ).addRemoteInput(remoteInput)
+                .build()
 
         val openIntent =
             PendingIntent.getActivity(
@@ -112,7 +120,8 @@ object NotificationHelper {
             )
 
         val notification =
-            NotificationCompat.Builder(context, CHANNEL_MESSAGES)
+            NotificationCompat
+                .Builder(context, CHANNEL_MESSAGES)
                 .setSmallIcon(android.R.drawable.ic_dialog_email)
                 .setStyle(messagingStyle)
                 .addAction(replyAction)
@@ -122,8 +131,13 @@ object NotificationHelper {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .build()
 
-        runCatching {
-            NotificationManagerCompat.from(context).notify(conversation.id.hashCode(), notification)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            runCatching {
+                NotificationManagerCompat.from(context).notify(conversation.id.hashCode(), notification)
+            }
         }
     }
 

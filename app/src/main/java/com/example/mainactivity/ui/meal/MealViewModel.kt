@@ -53,6 +53,7 @@ class MealViewModel(
     val days: StateFlow<List<MealPlanDayModel>> = _days.asStateFlow()
 
     private var realtimeChannel: RealtimeChannel? = null
+
     /** Tracks which familyId the current channel is subscribed to, so we don't
      *  re-subscribe on every userId emission when the family hasn't changed. */
     private var subscribedFamilyId: String? = null
@@ -138,7 +139,6 @@ class MealViewModel(
     }
 
     override fun onCleared() {
-        super.onCleared()
         viewModelScope.launch {
             realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
         }
@@ -183,16 +183,23 @@ class MealViewModel(
 
         val from = LocalDate.parse(fromIso)
         val to = LocalDate.parse(toIso)
-        val cal = Calendar.getInstance().also {
-            it.time = Date.from(from.atStartOfDay(ZoneOffset.UTC).toInstant())
-        }
+        val cal =
+            Calendar.getInstance().also {
+                it.time = Date.from(from.atStartOfDay(ZoneOffset.UTC).toInstant())
+            }
         val week = cal.get(Calendar.WEEK_OF_YEAR)
 
         val tempId = "temp-${System.currentTimeMillis()}"
-        _plans.value = _plans.value + MealPlanModel(
-            id = tempId, familyId = familyId,
-            name = name, icon = icon, fromDate = fromIso, toDate = toIso, week = week,
-        )
+        _plans.value = _plans.value +
+            MealPlanModel(
+                id = tempId,
+                familyId = familyId,
+                name = name,
+                icon = icon,
+                fromDate = fromIso,
+                toDate = toIso,
+                week = week,
+            )
 
         runCatching {
             val plan =

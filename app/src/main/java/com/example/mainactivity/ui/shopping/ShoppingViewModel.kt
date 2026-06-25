@@ -370,7 +370,6 @@ class ShoppingViewModel(
         }
 
     override fun onCleared() {
-        super.onCleared()
         viewModelScope.launch {
             realtimeListsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
             realtimeItemsChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }

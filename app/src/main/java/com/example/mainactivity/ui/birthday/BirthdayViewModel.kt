@@ -127,7 +127,6 @@ class BirthdayViewModel(
     }
 
     override fun onCleared() {
-        super.onCleared()
         viewModelScope.launch {
             realtimeChannel?.let { runCatching { SupabaseManager.client.realtime.removeChannel(it) } }
         }

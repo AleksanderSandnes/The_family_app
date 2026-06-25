@@ -51,6 +51,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -111,9 +113,16 @@ fun HomeScreen(
     RefreshOnResume { viewModel.refresh() }
 
     val configuration = LocalConfiguration.current
+    val windowInfo = LocalWindowInfo.current
+    val density = LocalDensity.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    // Use screenWidthDp to match WindowWidthSizeClass.Compact boundary (< 600dp = phone portrait)
-    val isWideWindow = configuration.screenWidthDp >= 600
+    val screenWidthDp =
+        with(density) {
+            windowInfo.containerSize.width
+                .toDp()
+                .value
+        }
+    val isWideWindow = screenWidthDp >= 600
     val isTablet = configuration.smallestScreenWidthDp >= 600
     // Compact width: 2 columns. Medium/Expanded (wide window): 3 columns.
     val columns = if (isWideWindow) 3 else 2
@@ -123,17 +132,18 @@ fun HomeScreen(
     val tileAspectRatio =
         when {
             isLandscape && isTablet -> 2.2f // tablet landscape: very wide tiles
-            isLandscape -> 1.5f             // phone landscape
-            isTablet -> 1.4f               // tablet portrait: wide tiles, 3 rows fit
-            else -> 1.05f                   // phone portrait
+            isLandscape -> 1.5f // phone landscape
+            isTablet -> 1.4f // tablet portrait: wide tiles, 3 rows fit
+            else -> 1.05f // phone portrait
         }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding(),
         contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -151,16 +161,18 @@ fun HomeScreen(
 
         when {
             state.isLoading -> item(span = { GridItemSpan(maxLineSpan) }) { LoadingState() }
-            state.loadError -> item(span = { GridItemSpan(maxLineSpan) }) {
-                ErrorBanner(message = "Couldn't load your data. Pull to refresh.")
-            }
-            else -> items(features) { feature ->
-                FeatureTile(
-                    feature = feature,
-                    aspectRatio = tileAspectRatio,
-                    onClick = { onOpen(feature.route) },
-                )
-            }
+            state.loadError ->
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    ErrorBanner(message = "Couldn't load your data. Pull to refresh.")
+                }
+            else ->
+                items(features) { feature ->
+                    FeatureTile(
+                        feature = feature,
+                        aspectRatio = tileAspectRatio,
+                        onClick = { onOpen(feature.route) },
+                    )
+                }
         }
     }
 }
@@ -176,11 +188,12 @@ private fun HomeHeader(
     // Computed once per composition — changes at most twice per day
     val greeting = remember { timeBasedGreeting() }
     // Use a visible fallback color when avatarColor is 0 (never configured)
-    val avatarColor = if (user != null && user.avatarColor != 0) {
-        Color(user.avatarColor)
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
+    val avatarColor =
+        if (user != null && user.avatarColor != 0) {
+            Color(user.avatarColor)
+        } else {
+            MaterialTheme.colorScheme.primary
+        }
 
     Column {
         // Greeting row with avatar
@@ -311,9 +324,10 @@ private fun NoFamilyBanner(onOpenFamily: () -> Unit) {
             }
             TextButton(
                 onClick = onOpenFamily,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary,
-                ),
+                colors =
+                    ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
             ) {
                 Text("Get started", fontWeight = FontWeight.SemiBold)
             }
@@ -334,21 +348,23 @@ private fun FeatureTile(
         label = "tile-press",
     )
     // Memoised per feature color — avoids allocation on every animation frame
-    val iconBrush = remember(feature.color) {
-        Brush.linearGradient(listOf(feature.color, feature.color.copy(alpha = 0.7f)))
-    }
+    val iconBrush =
+        remember(feature.color) {
+            Brush.linearGradient(listOf(feature.color, feature.color.copy(alpha = 0.7f)))
+        }
 
     Surface(
         onClick = onClick,
         interactionSource = interactionSource,
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(aspectRatio)
-            .scale(scale)
-            .semantics {
-                role = Role.Button
-                contentDescription = "${feature.title} feature"
-            },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(aspectRatio)
+                .scale(scale)
+                .semantics {
+                    role = Role.Button
+                    contentDescription = "${feature.title} feature"
+                },
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,

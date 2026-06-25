@@ -1,4 +1,4 @@
-@file:Suppress("ktlint:standard:function-naming")
+@file:Suppress("ktlint:standard:function-naming", "InlinedApi")
 
 package com.example.mainactivity.ui.onboarding
 
@@ -106,18 +106,19 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
     }
 
     // Combined launcher used by the "Continue" button — requests all ungranted permissions at once.
-    val combinedLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions(),
-    ) { results ->
-        notifGranted = results[Manifest.permission.POST_NOTIFICATIONS] ?: notifGranted
-        locationGranted =
-            results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            results[Manifest.permission.ACCESS_COARSE_LOCATION] == true ||
-            locationGranted
-        cameraGranted = results[Manifest.permission.CAMERA] ?: cameraGranted
-        micGranted = results[Manifest.permission.RECORD_AUDIO] ?: micGranted
-        onComplete()
-    }
+    val combinedLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) { results ->
+            notifGranted = results[Manifest.permission.POST_NOTIFICATIONS] ?: notifGranted
+            locationGranted =
+                results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                results[Manifest.permission.ACCESS_COARSE_LOCATION] == true ||
+                locationGranted
+            cameraGranted = results[Manifest.permission.CAMERA] ?: cameraGranted
+            micGranted = results[Manifest.permission.RECORD_AUDIO] ?: micGranted
+            onComplete()
+        }
 
     // Per-card launchers for re-requesting individual permissions by tapping a card.
     val notifLauncher =
@@ -324,17 +325,19 @@ private data class PermissionCardData(
 
 @Composable
 private fun PermissionCardItem(card: PermissionCardData) {
-    val semanticsLabel = if (card.granted) {
-        "${card.title} permission granted"
-    } else {
-        "Grant ${card.title} permission. Currently not granted"
-    }
+    val semanticsLabel =
+        if (card.granted) {
+            "${card.title} permission granted"
+        } else {
+            "Grant ${card.title} permission. Currently not granted"
+        }
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 72.dp)
-            .semantics { contentDescription = semanticsLabel }
-            .clickable(enabled = !card.granted) { card.onRequest() },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 72.dp)
+                .semantics { contentDescription = semanticsLabel }
+                .clickable(enabled = !card.granted) { card.onRequest() },
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         tonalElevation = 0.dp,

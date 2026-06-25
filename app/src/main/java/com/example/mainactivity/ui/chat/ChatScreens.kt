@@ -58,7 +58,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -77,7 +76,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -118,7 +116,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -136,6 +133,7 @@ import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InitialAvatar
 import com.example.mainactivity.ui.components.InputDialog
 import com.example.mainactivity.ui.components.LoadingState
+import com.example.mainactivity.ui.components.PillTag
 import com.example.mainactivity.ui.theme.BrandGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -144,8 +142,8 @@ import kotlin.math.roundToInt
 // ─── Relative time helpers ─────────────────────────────────────────────────
 
 /** Short relative time label for conversation list preview (e.g. "2m ago", "Yesterday", "Mon"). */
-private fun relativeTime(isoString: String): String {
-    return try {
+private fun relativeTime(isoString: String): String =
+    try {
         val instant = java.time.Instant.parse(isoString)
         val nowMs = System.currentTimeMillis()
         val diffMs = nowMs - instant.toEpochMilli()
@@ -169,67 +167,80 @@ private fun relativeTime(isoString: String): String {
             else -> {
                 val cal = java.util.Calendar.getInstance()
                 cal.timeInMillis = instant.toEpochMilli()
-                val month = cal.getDisplayName(
-                    java.util.Calendar.MONTH,
-                    java.util.Calendar.SHORT,
-                    java.util.Locale.getDefault(),
-                ) ?: ""
+                val month =
+                    cal.getDisplayName(
+                        java.util.Calendar.MONTH,
+                        java.util.Calendar.SHORT,
+                        java.util.Locale.getDefault(),
+                    ) ?: ""
                 "$month ${cal.get(java.util.Calendar.DAY_OF_MONTH)}"
             }
         }
     } catch (e: Exception) {
         ""
     }
-}
 
 /** Compact time label for message timestamps (e.g. "2:30 PM", "Yesterday 2:30 PM", "Mon 2:30 PM"). */
-private fun messageTimeLabel(isoString: String): String {
-    return try {
+private fun messageTimeLabel(isoString: String): String =
+    try {
         val instant = java.time.Instant.parse(isoString)
         val nowMs = System.currentTimeMillis()
         val diffMs = nowMs - instant.toEpochMilli()
         val diffD = diffMs / 86_400_000
         val odt = java.time.OffsetDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
-        val timePart = odt.format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"))
+        val timePart =
+            odt.format(
+                java.time.format.DateTimeFormatter
+                    .ofPattern("h:mm a"),
+            )
         when {
             diffD == 0L -> timePart
             diffD == 1L -> "Yesterday $timePart"
             diffD < 7 -> {
                 val cal = java.util.Calendar.getInstance()
                 cal.timeInMillis = instant.toEpochMilli()
-                val dow = cal.getDisplayName(
-                    java.util.Calendar.DAY_OF_WEEK,
-                    java.util.Calendar.SHORT,
-                    java.util.Locale.getDefault(),
-                ) ?: ""
+                val dow =
+                    cal.getDisplayName(
+                        java.util.Calendar.DAY_OF_WEEK,
+                        java.util.Calendar.SHORT,
+                        java.util.Locale.getDefault(),
+                    ) ?: ""
                 "$dow $timePart"
             }
             else -> {
                 val cal = java.util.Calendar.getInstance()
                 cal.timeInMillis = instant.toEpochMilli()
-                val month = cal.getDisplayName(
-                    java.util.Calendar.MONTH,
-                    java.util.Calendar.SHORT,
-                    java.util.Locale.getDefault(),
-                ) ?: ""
+                val month =
+                    cal.getDisplayName(
+                        java.util.Calendar.MONTH,
+                        java.util.Calendar.SHORT,
+                        java.util.Locale.getDefault(),
+                    ) ?: ""
                 "$month ${cal.get(java.util.Calendar.DAY_OF_MONTH)} $timePart"
             }
         }
     } catch (e: Exception) {
         ""
     }
-}
 
 /** Returns true if the gap between two ISO timestamps exceeds 10 minutes. */
-private fun gapExceedsTenMinutes(earlierIso: String, laterIso: String): Boolean {
-    return try {
-        val earlier = java.time.Instant.parse(earlierIso).toEpochMilli()
-        val later = java.time.Instant.parse(laterIso).toEpochMilli()
+private fun gapExceedsTenMinutes(
+    earlierIso: String,
+    laterIso: String,
+): Boolean =
+    try {
+        val earlier =
+            java.time.Instant
+                .parse(earlierIso)
+                .toEpochMilli()
+        val later =
+            java.time.Instant
+                .parse(laterIso)
+                .toEpochMilli()
         (later - earlier) > 10 * 60_000L
     } catch (e: Exception) {
         false
     }
-}
 
 // ─── Chat list screen ──────────────────────────────────────────────────────
 
@@ -334,24 +345,32 @@ private fun ConversationRow(
     val isOneOnOne = participants.size == 2 || conv.userTo != null
     val other = participants.firstOrNull { it.id != currentUserId }
 
-    val displayName = remember(conv, participants, currentUserId) {
-        when {
-            isOneOnOne -> other?.name ?: conv.name.takeIf { it.isNotBlank() } ?: "Chat"
-            conv.name.isNotBlank() -> conv.name
-            else -> participants
-                .filter { it.id != currentUserId }
-                .take(3)
-                .joinToString(", ") { it.name.split(" ").first() }
-                .ifBlank { "Group chat" }
+    val displayName =
+        remember(conv, participants, currentUserId) {
+            when {
+                isOneOnOne -> other?.name ?: conv.name.takeIf { it.isNotBlank() } ?: "Chat"
+                conv.name.isNotBlank() -> conv.name
+                else ->
+                    participants
+                        .filter { it.id != currentUserId }
+                        .take(3)
+                        .joinToString(", ") { it.name.split(" ").first() }
+                        .ifBlank { "Group chat" }
+            }
         }
-    }
-    val avatarUri = if (conv.imageUri != null) conv.imageUri
-    else if (isOneOnOne) other?.avatarUrl
-    else null
-    val avatarColor = Color(
-        (if (isOneOnOne) other?.avatarColor else null)
-            ?.takeIf { it != 0 } ?: 0xFF6366F1.toInt(),
-    )
+    val avatarUri =
+        if (conv.imageUri != null) {
+            conv.imageUri
+        } else if (isOneOnOne) {
+            other?.avatarUrl
+        } else {
+            null
+        }
+    val avatarColor =
+        Color(
+            (if (isOneOnOne) other?.avatarColor else null)
+                ?.takeIf { it != 0 } ?: 0xFF6366F1.toInt(),
+        )
 
     Card(
         onClick = onClick,
@@ -361,9 +380,10 @@ private fun ConversationRow(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             InitialAvatar(name = displayName, color = avatarColor, size = 56, avatarUri = avatarUri)
@@ -386,31 +406,40 @@ private fun ConversationRow(
                         Text(
                             text = relativeTime(msg.sentAt),
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (isUnread) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            color =
+                                if (isUnread) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                },
                         )
                     }
                 }
                 Spacer(Modifier.height(3.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val previewText = when {
-                        preview.lastMessage == null -> "No messages yet"
-                        preview.lastMessage.messageType == "image" ->
-                            "${preview.lastSenderName?.let { "$it: " } ?: ""}Photo"
+                    val previewText =
+                        when {
+                            preview.lastMessage == null -> "No messages yet"
+                            preview.lastMessage.messageType == "image" ->
+                                "${preview.lastSenderName?.let { "$it: " } ?: ""}Photo"
 
-                        preview.lastMessage.messageType == "voice" ->
-                            "${preview.lastSenderName?.let { "$it: " } ?: ""}Voice message"
+                            preview.lastMessage.messageType == "voice" ->
+                                "${preview.lastSenderName?.let { "$it: " } ?: ""}Voice message"
 
-                        preview.lastSenderName != null ->
-                            "${preview.lastSenderName}: ${preview.lastMessage.text}"
+                            preview.lastSenderName != null ->
+                                "${preview.lastSenderName}: ${preview.lastMessage.text}"
 
-                        else -> preview.lastMessage.text
-                    }
+                            else -> preview.lastMessage.text
+                        }
                     Text(
                         text = previewText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (isUnread) MaterialTheme.colorScheme.onSurface
-                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                        color =
+                            if (isUnread) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                            },
                         fontWeight = if (isUnread) FontWeight.Medium else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -483,21 +512,23 @@ fun ConversationScreen(
     val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle()
     val reactionsMap by viewModel.reactions.collectAsStateWithLifecycle()
 
-    val title = remember(conversation, currentParticipants, myId) {
-        val conv = conversation ?: return@remember "Chat"
-        val others = currentParticipants.filter { it.id != myId }
-        when {
-            others.size == 1 -> others.first().name
-            conv.name.isNotBlank() -> conv.name
-            others.size > 1 -> others.take(3).joinToString(", ") { it.name.split(" ").first() }
-            else -> "Chat"
+    val title =
+        remember(conversation, currentParticipants, myId) {
+            val conv = conversation ?: return@remember "Chat"
+            val others = currentParticipants.filter { it.id != myId }
+            when {
+                others.size == 1 -> others.first().name
+                conv.name.isNotBlank() -> conv.name
+                others.size > 1 -> others.take(3).joinToString(", ") { it.name.split(" ").first() }
+                else -> "Chat"
+            }
         }
-    }
 
-    val availableToAdd = remember(familyMembers, currentParticipants, myId) {
-        val currentIds = currentParticipants.map { it.id }.toSet()
-        familyMembers.filter { it.id !in currentIds }
-    }
+    val availableToAdd =
+        remember(familyMembers, currentParticipants, myId) {
+            val currentIds = currentParticipants.map { it.id }.toSet()
+            familyMembers.filter { it.id !in currentIds }
+        }
     val isGroup = currentParticipants.size > 2
 
     var draft by remember { mutableStateOf("") }
@@ -532,7 +563,10 @@ fun ConversationScreen(
             prevMsgCount = 0
             return@LaunchedEffect
         }
-        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        val lastVisible =
+            listState.layoutInfo.visibleItemsInfo
+                .lastOrNull()
+                ?.index ?: -1
         val wasAtBottom = prevMsgCount == 0 || lastVisible >= (prevMsgCount - 2).coerceAtLeast(0)
         if (wasAtBottom) listState.scrollToItem(messages.lastIndex)
         prevMsgCount = messages.size
@@ -545,65 +579,80 @@ fun ConversationScreen(
 
     val showScrollToBottom by remember {
         derivedStateOf {
-            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val lastVisible =
+                listState.layoutInfo.visibleItemsInfo
+                    .lastOrNull()
+                    ?.index ?: 0
             messages.isNotEmpty() && lastVisible < messages.lastIndex - 1
         }
     }
 
     // Group image launchers (existing — unchanged)
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-    ) { uri -> uri?.let { viewModel.saveImageFromUri(context, it, conversationId) } }
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri -> uri?.let { viewModel.saveImageFromUri(context, it, conversationId) } }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-    ) { success -> viewModel.onCameraResult(context, success) }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicture(),
+        ) { success -> viewModel.onCameraResult(context, success) }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        if (granted) viewModel.prepareCameraCapture(context, conversationId)?.let { cameraLauncher.launch(it) }
-    }
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            if (granted) viewModel.prepareCameraCapture(context, conversationId)?.let { cameraLauncher.launch(it) }
+        }
 
     // Message media launchers (new — for sending images in chat)
-    val msgGalleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        val bytes = context.contentResolver.openInputStream(uri)?.readBytes() ?: return@rememberLauncherForActivityResult
-        viewModel.sendImage(conversationId, bytes, "img_${System.currentTimeMillis()}.jpg")
-    }
+    val msgGalleryLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            val bytes = context.contentResolver.openInputStream(uri)?.readBytes() ?: return@rememberLauncherForActivityResult
+            viewModel.sendImage(conversationId, bytes, "img_${System.currentTimeMillis()}.jpg")
+        }
 
-    val msgCameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview(),
-    ) { bitmap ->
-        bitmap ?: return@rememberLauncherForActivityResult
-        val stream = java.io.ByteArrayOutputStream()
-        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, stream)
-        viewModel.sendImage(conversationId, stream.toByteArray(), "cam_${System.currentTimeMillis()}.jpg")
-    }
+    val msgCameraLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicturePreview(),
+        ) { bitmap ->
+            bitmap ?: return@rememberLauncherForActivityResult
+            val stream = java.io.ByteArrayOutputStream()
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, stream)
+            viewModel.sendImage(conversationId, stream.toByteArray(), "cam_${System.currentTimeMillis()}.jpg")
+        }
 
     fun startRecording() {
         val file = java.io.File(context.cacheDir, "voice_${System.currentTimeMillis()}.m4a")
         recordingFile = file
-        val recorder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            android.media.MediaRecorder(context)
-        } else {
-            @Suppress("DEPRECATION")
-            android.media.MediaRecorder()
-        }
+        val recorder =
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                android.media.MediaRecorder(context)
+            } else {
+                @Suppress("DEPRECATION")
+                android.media.MediaRecorder()
+            }
         recorder.setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
         recorder.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
         recorder.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
         recorder.setOutputFile(file.absolutePath)
-        runCatching { recorder.prepare(); recorder.start() }
+        runCatching {
+            recorder.prepare()
+            recorder.start()
+        }
         mediaRecorder = recorder
         isRecording = true
     }
 
     fun stopRecording(send: Boolean) {
         isRecording = false
-        runCatching { mediaRecorder?.stop(); mediaRecorder?.release() }
+        runCatching {
+            mediaRecorder?.stop()
+            mediaRecorder?.release()
+        }
         mediaRecorder = null
         if (send) {
             recordingFile?.let { file ->
@@ -634,17 +683,26 @@ fun ConversationScreen(
                             if (isGroup) {
                                 DropdownMenuItem(
                                     text = { Text("Rename") },
-                                    onClick = { showMenu = false; showRename = true },
+                                    onClick = {
+                                        showMenu = false
+                                        showRename = true
+                                    },
                                 )
                             }
                             DropdownMenuItem(
                                 text = { Text("Change image") },
-                                onClick = { showMenu = false; showImagePicker = true },
+                                onClick = {
+                                    showMenu = false
+                                    showImagePicker = true
+                                },
                             )
                             if (conversation?.imageUri != null) {
                                 DropdownMenuItem(
                                     text = { Text("Remove image", color = MaterialTheme.colorScheme.error) },
-                                    onClick = { showMenu = false; viewModel.removeImage(conversationId) },
+                                    onClick = {
+                                        showMenu = false
+                                        viewModel.removeImage(conversationId)
+                                    },
                                 )
                             }
                             if (availableToAdd.isNotEmpty()) {
@@ -652,21 +710,30 @@ fun ConversationScreen(
                                 DropdownMenuItem(
                                     text = { Text(if (isGroup) "Add member" else "Add member (creates group)") },
                                     leadingIcon = { Icon(Icons.Filled.GroupAdd, null, tint = MaterialTheme.colorScheme.primary) },
-                                    onClick = { showMenu = false; showAddMember = true },
+                                    onClick = {
+                                        showMenu = false
+                                        showAddMember = true
+                                    },
                                 )
                             }
                             if (isGroup) {
                                 DropdownMenuItem(
                                     text = { Text("Remove member", color = MaterialTheme.colorScheme.error) },
                                     leadingIcon = { Icon(Icons.Filled.PersonRemove, null, tint = MaterialTheme.colorScheme.error) },
-                                    onClick = { showMenu = false; showRemoveMember = true },
+                                    onClick = {
+                                        showMenu = false
+                                        showRemoveMember = true
+                                    },
                                 )
                             }
                             HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text("Delete conversation", color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = { showMenu = false; showDeleteConfirm = true },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteConfirm = true
+                                },
                             )
                         }
                     }
@@ -722,9 +789,10 @@ fun ConversationScreen(
                     if (isRecording) {
                         // Recording overlay
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             val dotAlpha by rememberInfiniteTransition(label = "rec").animateFloat(
@@ -734,10 +802,11 @@ fun ConversationScreen(
                                 label = "dot",
                             )
                             Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFE53935).copy(alpha = dotAlpha)),
+                                modifier =
+                                    Modifier
+                                        .size(12.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFE53935).copy(alpha = dotAlpha)),
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
@@ -759,9 +828,10 @@ fun ConversationScreen(
                     } else {
                         // Messenger-style input row
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 4.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 4.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                             verticalAlignment = Alignment.Bottom,
                         ) {
                             // Gallery + camera icons (hidden when typing)
@@ -805,10 +875,11 @@ fun ConversationScreen(
                                 },
                                 shape = RoundedCornerShape(24.dp),
                                 maxLines = 5,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
-                                ),
+                                colors =
+                                    OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
+                                    ),
                             )
 
                             // Send or mic
@@ -832,15 +903,16 @@ fun ConversationScreen(
                                 } else {
                                     IconButton(
                                         onClick = {},
-                                        modifier = Modifier.pointerInput(Unit) {
-                                            detectTapGestures(
-                                                onPress = {
-                                                    startRecording()
-                                                    tryAwaitRelease()
-                                                    stopRecording(true)
-                                                },
-                                            )
-                                        },
+                                        modifier =
+                                            Modifier.pointerInput(Unit) {
+                                                detectTapGestures(
+                                                    onPress = {
+                                                        startRecording()
+                                                        tryAwaitRelease()
+                                                        stopRecording(true)
+                                                    },
+                                                )
+                                            },
                                     ) {
                                         Icon(
                                             Icons.Filled.Mic,
@@ -876,24 +948,30 @@ fun ConversationScreen(
                         val mine = msg.userFrom == myId
                         val prevMsg = if (index > 0) messages[index - 1] else null
                         val nextMsg = if (index < messages.lastIndex) messages[index + 1] else null
-                        val isFirstInGroup = prevMsg?.userFrom != msg.userFrom ||
-                            (prevMsg != null && gapExceedsTenMinutes(prevMsg.sentAt, msg.sentAt))
-                        val isLastInGroup = nextMsg?.userFrom != msg.userFrom ||
-                            (nextMsg != null && gapExceedsTenMinutes(msg.sentAt, nextMsg.sentAt))
-                        val showTimeSeparator = isFirstInGroup && prevMsg != null &&
-                            gapExceedsTenMinutes(prevMsg.sentAt, msg.sentAt)
+                        val isFirstInGroup =
+                            prevMsg?.userFrom != msg.userFrom ||
+                                (prevMsg != null && gapExceedsTenMinutes(prevMsg.sentAt, msg.sentAt))
+                        val isLastInGroup =
+                            nextMsg?.userFrom != msg.userFrom ||
+                                (nextMsg != null && gapExceedsTenMinutes(msg.sentAt, nextMsg.sentAt))
+                        val showTimeSeparator =
+                            isFirstInGroup &&
+                                prevMsg != null &&
+                                gapExceedsTenMinutes(prevMsg.sentAt, msg.sentAt)
                         val timeLabel = remember(msg.sentAt) { messageTimeLabel(msg.sentAt) }
                         val senderProfile = if (!mine) userProfiles[msg.userFrom] else null
                         val senderName = senderProfile?.name ?: "Unknown"
-                        val accessibilityDesc = remember(msg.id, timeLabel) {
-                            val who = if (mine) "You" else senderName
-                            val content = when (msg.messageType) {
-                                "image" -> "sent a photo"
-                                "voice" -> "sent a voice message"
-                                else -> msg.text
+                        val accessibilityDesc =
+                            remember(msg.id, timeLabel) {
+                                val who = if (mine) "You" else senderName
+                                val content =
+                                    when (msg.messageType) {
+                                        "image" -> "sent a photo"
+                                        "voice" -> "sent a voice message"
+                                        else -> msg.text
+                                    }
+                                "Message from $who at $timeLabel: $content"
                             }
-                            "Message from $who at $timeLabel: $content"
-                        }
                         val msgReactions = reactionsMap[msg.id] ?: emptyMap()
 
                         // Timestamp separator between groups with >10 min gap
@@ -1060,8 +1138,12 @@ private fun NewConversationSheet(
                             member = member,
                             selected = member.id in selectedIds,
                             onToggle = {
-                                selectedIds = if (member.id in selectedIds) selectedIds - member.id
-                                else selectedIds + member.id
+                                selectedIds =
+                                    if (member.id in selectedIds) {
+                                        selectedIds - member.id
+                                    } else {
+                                        selectedIds + member.id
+                                    }
                             },
                         )
                     }
@@ -1232,9 +1314,10 @@ private fun MemberSelectRow(
 @Composable
 private fun MessageTimeSeparator(label: String) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
@@ -1253,7 +1336,10 @@ private fun MessageTimeSeparator(label: String) {
 
 /** Simple waveform placeholder with 5 bars of varying height. */
 @Composable
-private fun WaveformPlaceholder(isMine: Boolean, modifier: Modifier = Modifier) {
+private fun WaveformPlaceholder(
+    isMine: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val barColor = if (isMine) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
     val heights = remember { listOf(10.dp, 18.dp, 14.dp, 20.dp, 12.dp) }
     Row(
@@ -1263,11 +1349,12 @@ private fun WaveformPlaceholder(isMine: Boolean, modifier: Modifier = Modifier) 
     ) {
         heights.forEach { h ->
             Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(h)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(barColor),
+                modifier =
+                    Modifier
+                        .width(3.dp)
+                        .height(h)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(barColor),
             )
         }
     }
@@ -1296,27 +1383,30 @@ private fun MessageRow(
     SwipeToReplyWrapper(onReply = onReply) {
         if (mine) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
-                    .let { if (accessibilityDescription.isNotEmpty()) it.semantics { contentDescription = accessibilityDescription } else it },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
+                        .let { if (accessibilityDescription.isNotEmpty()) it.semantics { contentDescription = accessibilityDescription } else it },
                 horizontalAlignment = Alignment.End,
             ) {
                 Box {
                     Surface(
-                        shape = RoundedCornerShape(
-                            topStart = 16.dp,
-                            topEnd = 16.dp,
-                            bottomStart = 16.dp,
-                            bottomEnd = if (isLastInGroup) 4.dp else 16.dp,
-                        ),
-                        color = Color.Transparent,
-                        modifier = Modifier
-                            .widthIn(max = 280.dp)
-                            .combinedClickable(
-                                onLongClick = { showReactionPicker = true },
-                                onClick = { showTime = !showTime },
+                        shape =
+                            RoundedCornerShape(
+                                topStart = 16.dp,
+                                topEnd = 16.dp,
+                                bottomStart = 16.dp,
+                                bottomEnd = if (isLastInGroup) 4.dp else 16.dp,
                             ),
+                        color = Color.Transparent,
+                        modifier =
+                            Modifier
+                                .widthIn(max = 280.dp)
+                                .combinedClickable(
+                                    onLongClick = { showReactionPicker = true },
+                                    onClick = { showTime = !showTime },
+                                ),
                     ) {
                         Box(Modifier.background(BrandGradient)) {
                             MessageContent(msg, mine = true, myId = myId, messages = messages)
@@ -1324,7 +1414,10 @@ private fun MessageRow(
                     }
                     if (showReactionPicker) {
                         ReactionPickerPopup(
-                            onReact = { emoji -> onReact(emoji); showReactionPicker = false },
+                            onReact = { emoji ->
+                                onReact(emoji)
+                                showReactionPicker = false
+                            },
                             onDismiss = { showReactionPicker = false },
                         )
                     }
@@ -1348,10 +1441,11 @@ private fun MessageRow(
             }
         } else {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
-                    .let { if (accessibilityDescription.isNotEmpty()) it.semantics { contentDescription = accessibilityDescription } else it },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = if (isFirstInGroup) 6.dp else 0.dp)
+                        .let { if (accessibilityDescription.isNotEmpty()) it.semantics { contentDescription = accessibilityDescription } else it },
                 verticalAlignment = Alignment.Bottom,
             ) {
                 if (isLastInGroup) {
@@ -1374,23 +1468,28 @@ private fun MessageRow(
                     }
                     Box {
                         Surface(
-                            shape = RoundedCornerShape(
-                                topStart = 16.dp,
-                                topEnd = 16.dp,
-                                bottomStart = if (isLastInGroup) 4.dp else 16.dp,
-                                bottomEnd = 16.dp,
-                            ),
+                            shape =
+                                RoundedCornerShape(
+                                    topStart = 16.dp,
+                                    topEnd = 16.dp,
+                                    bottomStart = if (isLastInGroup) 4.dp else 16.dp,
+                                    bottomEnd = 16.dp,
+                                ),
                             color = MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.combinedClickable(
-                                onLongClick = { showReactionPicker = true },
-                                onClick = { showTime = !showTime },
-                            ),
+                            modifier =
+                                Modifier.combinedClickable(
+                                    onLongClick = { showReactionPicker = true },
+                                    onClick = { showTime = !showTime },
+                                ),
                         ) {
                             MessageContent(msg, mine = false, myId = myId, messages = messages)
                         }
                         if (showReactionPicker) {
                             ReactionPickerPopup(
-                                onReact = { emoji -> onReact(emoji); showReactionPicker = false },
+                                onReact = { emoji ->
+                                    onReact(emoji)
+                                    showReactionPicker = false
+                                },
                                 onDismiss = { showReactionPicker = false },
                             )
                         }
@@ -1430,10 +1529,11 @@ private fun MessageContent(
                 model = msg.mediaUrl,
                 contentDescription = "Image",
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .widthIn(max = 220.dp)
-                    .heightIn(max = 260.dp)
-                    .clip(RoundedCornerShape(14.dp)),
+                modifier =
+                    Modifier
+                        .widthIn(max = 220.dp)
+                        .heightIn(max = 260.dp)
+                        .clip(RoundedCornerShape(14.dp)),
             )
         }
         "voice" -> {
@@ -1447,11 +1547,12 @@ private fun MessageContent(
                     val quoted = messages.find { it.id == msg.replyToId }
                     if (quoted != null) {
                         QuoteBubble(
-                            text = when (quoted.messageType) {
-                                "image" -> "📷 Photo"
-                                "voice" -> "🎤 Voice message"
-                                else -> quoted.text
-                            },
+                            text =
+                                when (quoted.messageType) {
+                                    "image" -> "📷 Photo"
+                                    "voice" -> "🎤 Voice message"
+                                    else -> quoted.text
+                                },
                             isQuotedMine = quoted.userFrom == myId,
                             isMine = mine,
                         )
@@ -1519,10 +1620,11 @@ private fun SwipeToReplyWrapper(
         Icon(
             Icons.AutoMirrored.Filled.Reply,
             contentDescription = null,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 8.dp)
-                .alpha(iconAlpha),
+            modifier =
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 8.dp)
+                    .alpha(iconAlpha),
             tint = MaterialTheme.colorScheme.primary,
         )
         Box(
