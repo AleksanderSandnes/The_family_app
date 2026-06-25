@@ -53,10 +53,13 @@ private val DarkColors =
         onTertiary = Color.White,
         background = Ink,
         onBackground = InkText,
+        // InkSurface (#141A2A) for cards/surfaces; InkSurfaceVariant (#1E2638) for nested containers
         surface = InkSurface,
         onSurface = InkText,
         surfaceVariant = InkSurfaceVariant,
         onSurfaceVariant = InkTextMuted,
+        // surfaceTint is used by Material 3 tonal elevation overlays in dark mode
+        surfaceTint = Indigo300,
         outline = InkBorder,
         outlineVariant = InkSurfaceVariant,
         error = Rose500,

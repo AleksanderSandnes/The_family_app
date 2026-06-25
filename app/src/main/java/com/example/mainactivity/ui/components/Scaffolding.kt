@@ -24,6 +24,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
@@ -40,7 +42,7 @@ fun FeatureTopBar(
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back")
                 }
             }
         },
@@ -103,6 +105,7 @@ fun InputDialog(
             TextButton(
                 onClick = { if (value.isNotBlank()) onConfirm(value.trim(), second.trim()) },
                 enabled = value.isNotBlank(),
+                modifier = Modifier.semantics { contentDescription = confirmText },
             ) { Text(confirmText) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
