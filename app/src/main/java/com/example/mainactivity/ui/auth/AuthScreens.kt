@@ -67,7 +67,6 @@ import com.example.mainactivity.ui.components.PrimaryButton
 import com.example.mainactivity.ui.components.SecondaryButton
 import com.example.mainactivity.ui.theme.Amber500
 import com.example.mainactivity.ui.theme.Emerald500
-import com.example.mainactivity.ui.theme.Rose500
 import com.example.mainactivity.ui.theme.heroGradient
 
 @Composable
@@ -326,12 +325,12 @@ private fun StepIndicator(
 
 /** Calculates password strength score 0-3 based on length and character variety. */
 private fun passwordStrength(password: String): Int {
-    if (password.isEmpty()) return 0
-    var score = 0
+    if (password.length < 6) return 0
+    var score = 1 // at least 6 chars = minimum score of 1
     if (password.length >= 8) score++
     if (password.any { it.isUpperCase() } && password.any { it.isLowerCase() }) score++
-    if (password.any { !it.isLetterOrDigit() } || password.any { it.isDigit() }) score++
-    return score.coerceAtLeast(if (password.length >= 6) 1 else 0)
+    if (password.any { !it.isLetterOrDigit() }) score++
+    return score.coerceIn(0, 3)
 }
 
 @Composable
@@ -339,12 +338,14 @@ private fun PasswordStrengthBar(password: String) {
     if (password.isEmpty()) return
     val strength = passwordStrength(password)
     val label = when (strength) {
+        0 -> "Too short"
         1 -> "Weak"
         2 -> "Medium"
+        3 -> "Strong"
         else -> "Strong"
     }
     val color = when (strength) {
-        1 -> Rose500
+        0, 1 -> MaterialTheme.colorScheme.error
         2 -> Amber500
         else -> Emerald500
     }
