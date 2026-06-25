@@ -81,7 +81,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
@@ -331,7 +331,7 @@ private fun DatePickerButton(
 fun MealScreen(
     onBack: () -> Unit,
     onOpen: (String) -> Unit,
-    viewModel: MealViewModel = viewModel(),
+    viewModel: MealViewModel = hiltViewModel(),
 ) {
     val plans by viewModel.plans.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
@@ -460,7 +460,7 @@ fun MealScreen(
 fun MealDetailScreen(
     planId: String,
     onBack: () -> Unit,
-    viewModel: MealViewModel = viewModel(),
+    viewModel: MealViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(planId) { viewModel.loadPlanDetail(planId) }
     val plan by viewModel.selectedPlan.collectAsStateWithLifecycle()

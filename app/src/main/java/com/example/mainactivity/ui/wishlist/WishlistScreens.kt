@@ -68,7 +68,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.LoadingState
@@ -103,7 +103,7 @@ private fun wishlistIconVector(key: String): ImageVector =
 fun WishlistScreen(
     onBack: () -> Unit,
     onOpen: (String) -> Unit,
-    viewModel: WishlistViewModel = viewModel(),
+    viewModel: WishlistViewModel = hiltViewModel(),
 ) {
     val wishlists by viewModel.wishlists.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
@@ -203,7 +203,7 @@ fun WishlistScreen(
 fun WishlistDetailScreen(
     wishlistId: String,
     onBack: () -> Unit,
-    viewModel: WishlistViewModel = viewModel(),
+    viewModel: WishlistViewModel = hiltViewModel(),
 ) {
     androidx.compose.runtime.LaunchedEffect(wishlistId) { viewModel.loadWishlistDetail(wishlistId) }
     val wishlist by viewModel.selectedWishlist.collectAsStateWithLifecycle()

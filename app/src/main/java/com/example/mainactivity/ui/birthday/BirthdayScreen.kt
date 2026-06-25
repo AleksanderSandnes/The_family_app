@@ -43,7 +43,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.data.BirthdayModel
 import com.example.mainactivity.ui.components.BirthdayPickerField
 import com.example.mainactivity.ui.components.EmptyState
@@ -59,7 +59,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun BirthdayScreen(
     onBack: () -> Unit,
-    viewModel: BirthdayViewModel = viewModel(),
+    viewModel: BirthdayViewModel = hiltViewModel(),
 ) {
     val birthdays by viewModel.birthdays.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)

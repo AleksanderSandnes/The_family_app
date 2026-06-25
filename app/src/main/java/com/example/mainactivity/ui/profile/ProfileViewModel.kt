@@ -1,15 +1,15 @@
 package com.example.mainactivity.ui.profile
 
-import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
@@ -20,11 +20,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import javax.inject.Inject
 
-class ProfileViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
-) : AndroidViewModel(app) {
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    internal val repo: FamilyRepository,
+) : ViewModel() {
     private val _user = MutableStateFlow<UserModel?>(null)
     val user: StateFlow<UserModel?> = _user.asStateFlow()
 

@@ -4,6 +4,10 @@ import android.content.Context
 import com.example.mainactivity.data.remote.DEEP_LINK_HOST
 import com.example.mainactivity.data.remote.DEEP_LINK_SCHEME
 import com.example.mainactivity.data.remote.SupabaseManager
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
@@ -11,6 +15,8 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import java.time.Instant
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -20,7 +26,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-class FamilyRepository(
+@Singleton
+class FamilyRepository @Inject constructor(
     val session: SessionManager,
 ) {
     private val _familyChanged = MutableSharedFlow<Unit>()
@@ -461,14 +468,17 @@ class FamilyRepository(
     }
 
     companion object {
-        @Volatile private var instance: FamilyRepository? = null
+        @EntryPoint
+        @InstallIn(SingletonComponent::class)
+        interface FamilyRepositoryEntryPoint {
+            fun familyRepository(): FamilyRepository
+        }
 
         fun get(context: Context): FamilyRepository =
-            instance ?: synchronized(this) {
-                instance ?: FamilyRepository(
-                    SessionManager(context.applicationContext),
-                ).also { instance = it }
-            }
+            EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                FamilyRepositoryEntryPoint::class.java,
+            ).familyRepository()
 
         private val avatarColors =
             intArrayOf(

@@ -36,8 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -88,7 +88,7 @@ private val bottomDestinations =
     )
 
 @Composable
-fun FamilyApp(rootViewModel: RootViewModel = viewModel()) {
+fun FamilyApp(rootViewModel: RootViewModel = hiltViewModel()) {
     val gate by rootViewModel.gate.collectAsStateWithLifecycle()
     when (gate) {
         AuthGate.Loading ->
@@ -127,14 +127,14 @@ private fun AuthFlow() {
 private fun MainFlow() {
     // Hoist feature ViewModels to MainFlow scope (Activity-scoped).
     // init{} fires immediately on login — data loads in the background before user taps any screen.
-    val shoppingVm: ShoppingViewModel = viewModel()
-    val birthdayVm: BirthdayViewModel = viewModel()
-    val wishlistVm: WishlistViewModel = viewModel()
-    val mealVm: MealViewModel = viewModel()
-    val calendarVm: CalendarViewModel = viewModel()
+    val shoppingVm: ShoppingViewModel = hiltViewModel()
+    val birthdayVm: BirthdayViewModel = hiltViewModel()
+    val wishlistVm: WishlistViewModel = hiltViewModel()
+    val mealVm: MealViewModel = hiltViewModel()
+    val calendarVm: CalendarViewModel = hiltViewModel()
     // Shared so the list (ChatScreen) and detail (ConversationScreen) use the SAME
     // instance — a delete in the detail screen must reflect in the list on pop-back.
-    val chatVm: ChatViewModel = viewModel()
+    val chatVm: ChatViewModel = hiltViewModel()
 
     val chatUnread by chatVm.totalUnread.collectAsStateWithLifecycle()
 

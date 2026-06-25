@@ -1,12 +1,12 @@
 package com.example.mainactivity.ui.meal
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.MealPlanDayModel
 import com.example.mainactivity.data.MealPlanModel
 import com.example.mainactivity.data.remote.SupabaseManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
@@ -29,11 +29,12 @@ import java.time.format.TextStyle
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
-class MealViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
-) : AndroidViewModel(app) {
+@HiltViewModel
+class MealViewModel @Inject constructor(
+    internal val repo: FamilyRepository,
+) : ViewModel() {
     companion object {
         private var cache: List<MealPlanModel> = emptyList()
     }

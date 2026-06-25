@@ -1,14 +1,15 @@
 package com.example.mainactivity.ui.navigation
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed interface AuthGate {
     data object Loading : AuthGate
@@ -20,10 +21,10 @@ sealed interface AuthGate {
     data object SignedIn : AuthGate
 }
 
-class RootViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
-) : AndroidViewModel(app) {
+@HiltViewModel
+class RootViewModel @Inject constructor(
+    internal val repo: FamilyRepository,
+) : ViewModel() {
     val gate: StateFlow<AuthGate> =
         combine(
             repo.currentUserId,

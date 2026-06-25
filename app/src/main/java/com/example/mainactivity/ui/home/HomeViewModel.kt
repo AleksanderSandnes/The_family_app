@@ -1,18 +1,19 @@
 package com.example.mainactivity.ui.home
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyModel
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class HomeUiState(
     val user: UserModel? = null,
@@ -22,10 +23,10 @@ data class HomeUiState(
     val loadError: Boolean = false,
 )
 
-class HomeViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
-) : AndroidViewModel(app) {
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    internal val repo: FamilyRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 

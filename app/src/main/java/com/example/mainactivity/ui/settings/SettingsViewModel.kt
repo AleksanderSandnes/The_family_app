@@ -1,21 +1,22 @@
 package com.example.mainactivity.ui.settings
 
-import android.app.Application
 import android.content.Context
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.ThemeMode
 import com.example.mainactivity.workers.NotificationWorker
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class SettingsViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
-) : AndroidViewModel(app) {
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    internal val repo: FamilyRepository,
+) : ViewModel() {
     val themeMode: StateFlow<ThemeMode> =
         repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
 

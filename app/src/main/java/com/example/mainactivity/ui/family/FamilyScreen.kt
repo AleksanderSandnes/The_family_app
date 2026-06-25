@@ -36,7 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.ui.components.CopyableCodeField
 import com.example.mainactivity.ui.components.ErrorBanner
 import com.example.mainactivity.ui.components.FamilyTextField
@@ -50,7 +50,7 @@ import com.example.mainactivity.ui.components.SecondaryButton
 @Composable
 fun FamilyScreen(
     onBack: (() -> Unit)? = null,
-    viewModel: FamilyViewModel = viewModel(),
+    viewModel: FamilyViewModel = hiltViewModel(),
 ) {
     val family by viewModel.family.collectAsStateWithLifecycle()
     val members by viewModel.members.collectAsStateWithLifecycle()

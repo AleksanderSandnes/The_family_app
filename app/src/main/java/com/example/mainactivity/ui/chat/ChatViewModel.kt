@@ -16,6 +16,7 @@ import com.example.mainactivity.data.MessageReactionModel
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import com.example.mainactivity.notifications.NotificationHelper
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
@@ -47,10 +48,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.io.File
+import javax.inject.Inject
 
-class ChatViewModel(
-    app: Application,
-    internal val repo: FamilyRepository = FamilyRepository.get(app),
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    private val app: Application,
+    internal val repo: FamilyRepository,
 ) : AndroidViewModel(app) {
     private val appContext: Context = app.applicationContext
     private val db get() = SupabaseManager.client.postgrest

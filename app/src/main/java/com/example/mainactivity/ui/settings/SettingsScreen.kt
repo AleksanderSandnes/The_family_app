@@ -43,7 +43,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mainactivity.data.ThemeMode
 import com.example.mainactivity.ui.components.FeatureTopBar
 
@@ -58,7 +58,7 @@ private val LEAD_TIME_OPTIONS =
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    vm: SettingsViewModel = viewModel(),
+    vm: SettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val themeMode by vm.themeMode.collectAsStateWithLifecycle()
