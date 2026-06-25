@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -108,6 +109,28 @@ private val SECTION_DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d MMMM", Local
 private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 private val WEEKDAY_LABELS = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
 
+/** Maps icon key → a stable index 0–5 used to pick a dot color from the Material color scheme. */
+private fun iconColorIndex(key: String): Int =
+    when (key) {
+        "schedule" -> 0
+        "cake" -> 1
+        "people" -> 2
+        "work" -> 3
+        "school" -> 4
+        "restaurant" -> 5
+        "flight" -> 0
+        "local_hospital" -> 1
+        "celebration" -> 2
+        "shopping_cart" -> 3
+        "music_note" -> 4
+        "fitness_center" -> 5
+        "wb_sunny" -> 0
+        "favorite" -> 1
+        "star" -> 2
+        "emoji_events" -> 3
+        else -> 0
+    }
+
 private data class CalendarIconOption(
     val key: String,
     val vector: ImageVector,
@@ -152,25 +175,42 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
 
     RefreshOnResume { viewModel.refresh() }
 
-    val datesWithEvents =
+    // Map each date to the list of icon keys for events on that date (max collected per day)
+    val dateEventIcons: Map<LocalDate, List<String>> =
         remember(allEvents) {
-            buildSet<LocalDate> {
+            buildMap<LocalDate, MutableList<String>> {
                 allEvents.forEach { e ->
-                    runCatching { add(LocalDate.parse(e.dateFrom)) }
-                    runCatching { add(LocalDate.parse(e.dateTo)) }
+                    val from = runCatching { LocalDate.parse(e.dateFrom) }.getOrNull() ?: return@forEach
+                    val to = runCatching { LocalDate.parse(e.dateTo) }.getOrElse { from }
+                    var d = from
+                    while (!d.isAfter(to)) {
+                        getOrPut(d) { mutableListOf() }.add(e.icon)
+                        d = d.plusDays(1)
+                        // Safety: cap per-date iteration for multi-day events
+                        if (d.isAfter(from.plusDays(60))) break
+                    }
                 }
             }
         }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar("Calendar") },
+        topBar = {
+            FeatureTopBar(
+                title = "Calendar",
+                actions = {
+                    TextButton(onClick = { viewModel.selectDate(LocalDate.now()) }) {
+                        Text("Today")
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAdd = true },
                 containerColor = MaterialTheme.colorScheme.primary,
             ) {
-                Icon(Icons.Filled.Add, "New event", tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(Icons.Filled.Add, "Add new calendar event", tint = MaterialTheme.colorScheme.onPrimary)
             }
         },
     ) { padding ->
@@ -178,7 +218,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
             MonthCalendarSection(
                 displayedMonth = displayedMonth,
                 selectedDate = selectedDate,
-                datesWithEvents = datesWithEvents,
+                dateEventIcons = dateEventIcons,
                 onPrevMonth = viewModel::prevMonth,
                 onNextMonth = viewModel::nextMonth,
                 onDaySelected = viewModel::selectDate,
@@ -196,7 +236,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
                 }
             } else if (dayEvents.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    EmptyState(Icons.Filled.CalendarMonth, "No events", "Tap + to add an event.")
+                    EmptyState(Icons.Filled.CalendarMonth, "No events today", "Tap + to add an event.")
                 }
             } else {
                 LazyColumn(
@@ -255,7 +295,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = viewModel()) {
 private fun MonthCalendarSection(
     displayedMonth: YearMonth,
     selectedDate: LocalDate,
-    datesWithEvents: Set<LocalDate>,
+    dateEventIcons: Map<LocalDate, List<String>>,
     onPrevMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onDaySelected: (LocalDate) -> Unit,
@@ -288,11 +328,12 @@ private fun MonthCalendarSection(
                 monthCells(month).chunked(7).forEach { week ->
                     Row(Modifier.fillMaxWidth()) {
                         week.forEach { date ->
+                            val eventIcons = if (date != null) dateEventIcons[date].orEmpty() else emptyList()
                             DayCell(
                                 date = date,
                                 isSelected = date == selectedDate,
                                 isToday = date == today,
-                                hasEvents = date != null && date in datesWithEvents,
+                                eventIcons = eventIcons,
                                 modifier = Modifier.weight(1f),
                                 onClick = { if (date != null) onDaySelected(date) },
                             )
@@ -335,15 +376,46 @@ private fun DayCell(
     date: LocalDate?,
     isSelected: Boolean,
     isToday: Boolean,
-    hasEvents: Boolean,
+    eventIcons: List<String>,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    // Resolve dot colors from the scheme — must be done inside composition
+    val dotColors =
+        listOf(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.secondary,
+            MaterialTheme.colorScheme.tertiary,
+            MaterialTheme.colorScheme.error,
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.secondaryContainer,
+        )
+
+    val dayName = date?.dayOfWeek?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: ""
+    val monthName = date?.month?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: ""
+    val eventCount = eventIcons.size
+    val a11yDesc =
+        if (date != null) {
+            "$dayName, $monthName ${date.dayOfMonth}. $eventCount ${if (eventCount == 1) "event" else "events"}"
+        } else {
+            null
+        }
+
     Box(
         modifier =
             modifier
+                .heightIn(min = 44.dp)
                 .aspectRatio(1f)
-                .then(if (date != null) Modifier.clickable(onClick = onClick) else Modifier),
+                .then(
+                    if (date != null) {
+                        Modifier.clickable(
+                            onClickLabel = a11yDesc,
+                            onClick = onClick,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ),
         contentAlignment = Alignment.Center,
     ) {
         if (date == null) return@Box
@@ -351,11 +423,17 @@ private fun DayCell(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            val bgColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+            // Today wins: filled primary circle. Selected-not-today: primaryContainer + border ring.
+            val bgColor =
+                when {
+                    isToday -> MaterialTheme.colorScheme.primary
+                    isSelected -> MaterialTheme.colorScheme.primaryContainer
+                    else -> Color.Transparent
+                }
             val textColor =
                 when {
-                    isSelected -> MaterialTheme.colorScheme.onPrimary
-                    isToday -> MaterialTheme.colorScheme.primary
+                    isToday -> MaterialTheme.colorScheme.onPrimary
+                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
                     else -> MaterialTheme.colorScheme.onSurface
                 }
             Box(
@@ -365,7 +443,7 @@ private fun DayCell(
                         .clip(CircleShape)
                         .background(bgColor)
                         .then(
-                            if (isToday && !isSelected) {
+                            if (isSelected && !isToday) {
                                 Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
                             } else {
                                 Modifier
@@ -383,18 +461,24 @@ private fun DayCell(
                 )
             }
             Spacer(Modifier.height(2.dp))
-            Box(
-                Modifier
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (hasEvents && !isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            Color.Transparent
-                        },
-                    ),
-            )
+            // Up to 3 color-coded dots
+            val dots = eventIcons.take(3)
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                if (dots.isEmpty()) {
+                    // Reserve space so all cells have the same height
+                    Spacer(Modifier.size(6.dp))
+                } else {
+                    dots.forEach { icon ->
+                        val colorIdx = iconColorIndex(icon)
+                        Box(
+                            Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(dotColors[colorIdx % dotColors.size]),
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -415,7 +499,23 @@ private fun EventCard(
     onDelete: () -> Unit,
     onEdit: () -> Unit,
 ) {
-    val subtitle = eventSubtitle(event)
+    val timeLabel = eventTimeLabel(event)
+    // Color-code the icon container by event type
+    val iconContainerColors =
+        listOf(
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.secondaryContainer,
+            MaterialTheme.colorScheme.tertiaryContainer,
+            MaterialTheme.colorScheme.errorContainer,
+        )
+    val iconContentColors =
+        listOf(
+            MaterialTheme.colorScheme.onPrimaryContainer,
+            MaterialTheme.colorScheme.onSecondaryContainer,
+            MaterialTheme.colorScheme.onTertiaryContainer,
+            MaterialTheme.colorScheme.onErrorContainer,
+        )
+    val idx = iconColorIndex(event.icon) % iconContainerColors.size
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -430,13 +530,13 @@ private fun EventCard(
                 Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(iconContainerColors[idx]),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     iconVector(event.icon),
-                    null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    contentDescription = null,
+                    tint = iconContentColors[idx],
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -444,13 +544,13 @@ private fun EventCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     event.activity,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                if (subtitle.isNotBlank()) {
+                if (timeLabel.isNotBlank()) {
                     Text(
-                        subtitle,
+                        timeLabel,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -463,25 +563,14 @@ private fun EventCard(
     }
 }
 
-private fun eventSubtitle(event: CalendarEventModel): String {
-    fun fmtDate(s: String) =
-        try {
-            LocalDate.parse(s).format(SHORT_DATE)
-        } catch (_: Exception) {
-            s
-        }
-    val from = fmtDate(event.dateFrom)
-    val to = fmtDate(event.dateTo)
-    val dateRange = if (to.isBlank() || from == to) from else "$from – $to"
-    return if (event.allDay) {
-        listOf("All day", dateRange).filter { it.isNotBlank() }.joinToString(" · ")
-    } else {
-        val timeRange =
-            listOf(event.timeFrom, event.timeTo)
-                .filter { it.isNotBlank() }
-                .joinToString(" – ")
-        listOf(dateRange, timeRange).filter { it.isNotBlank() }.joinToString(" · ")
-    }
+/** Returns a concise time/date label for the event card. Time is shown prominently first. */
+private fun eventTimeLabel(event: CalendarEventModel): String {
+    if (event.allDay) return "All day"
+    val timeRange =
+        listOf(event.timeFrom, event.timeTo)
+            .filter { it.isNotBlank() }
+            .joinToString(" – ")
+    return timeRange
 }
 
 @Composable
