@@ -22,6 +22,7 @@ data class FamilyModel(
     val name: String = "",
     @SerialName("join_code") val joinCode: String = "",
     @SerialName("admin_id") val adminId: String? = null,
+    @SerialName("photo_url") val photoUrl: String? = null,
 )
 
 @Serializable

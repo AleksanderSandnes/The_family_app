@@ -391,6 +391,16 @@ class FamilyRepository @Inject constructor(
             }) { filter { eq("id", familyId) } }
         }
 
+    suspend fun updateFamilyPhoto(
+        familyId: String,
+        photoUrl: String,
+    ): Result<Unit> =
+        runCatching {
+            SupabaseManager.client.postgrest.from("families").update({
+                set("photo_url", photoUrl)
+            }) { filter { eq("id", familyId) } }
+        }
+
     // ---- Chat ----
 
     suspend fun getLastMessage(conversationId: String): MessageModel? =

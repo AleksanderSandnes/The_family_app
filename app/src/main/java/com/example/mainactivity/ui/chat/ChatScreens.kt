@@ -84,6 +84,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -164,14 +165,15 @@ fun ChatScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            FeatureTopBar(
-                title = "Chats",
-                actions = {
-                    IconButton(onClick = { showMemberPicker = true }) {
-                        Icon(Icons.Filled.Edit, contentDescription = "New conversation")
-                    }
-                },
-            )
+            FeatureTopBar(title = "Chats")
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showMemberPicker = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+            ) {
+                Icon(Icons.Filled.Edit, contentDescription = "New conversation", tint = MaterialTheme.colorScheme.onPrimary)
+            }
         },
     ) { padding ->
         if (isLoading && conversations.isEmpty()) {
@@ -201,7 +203,7 @@ fun ChatScreen(
             ) {
                 LazyColumn(
                     Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 80.dp),
                 ) {
                     items(conversations, key = { it.conversation.id }) { preview ->
                         ConversationRow(

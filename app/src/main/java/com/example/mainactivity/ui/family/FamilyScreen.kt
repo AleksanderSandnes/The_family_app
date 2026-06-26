@@ -2,6 +2,9 @@
 
 package com.example.mainactivity.ui.family
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,11 +27,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.GroupAdd
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -44,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -72,17 +80,53 @@ fun FamilyScreen(
     val members by viewModel.members.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     var showCreate by remember { mutableStateOf(false) }
     var showJoin by remember { mutableStateOf(false) }
     var showLeaveConfirm by remember { mutableStateOf(false) }
     var memberToRemove by remember { mutableStateOf<UserModel?>(null) }
+    var showPhotoMenu by remember { mutableStateOf(false) }
 
     val isAdmin = family != null && family!!.adminId == currentUser?.id
 
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) viewModel.uploadFamilyPhoto(context, uri)
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar("Family", onBack) },
+        topBar = {
+            FeatureTopBar(
+                title = "Family",
+                onBack = onBack,
+                actions = {
+                    if (family != null) {
+                        Box {
+                            IconButton(onClick = { showPhotoMenu = true }) {
+                                Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                            }
+                            DropdownMenu(
+                                expanded = showPhotoMenu,
+                                onDismissRequest = { showPhotoMenu = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Change family photo") },
+                                    onClick = {
+                                        showPhotoMenu = false
+                                        photoPickerLauncher.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
+                                    },
+                                )
+                            }
+                        }
+                    }
+                },
+            )
+        },
     ) { padding ->
         if (family == null) {
             // ── No-family empty state ──────────────────────────────────────

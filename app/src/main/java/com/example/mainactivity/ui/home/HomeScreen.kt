@@ -46,9 +46,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -230,6 +233,7 @@ private fun HomeHeader(
                     familyName = state.family.name,
                     memberCount = state.memberCount,
                     dark = dark,
+                    photoUrl = state.family.photoUrl,
                     onClick = onOpenFamily,
                 )
             } else {
@@ -244,6 +248,7 @@ private fun FamilyCard(
     familyName: String,
     memberCount: Int,
     dark: Boolean,
+    photoUrl: String?,
     onClick: () -> Unit,
 ) {
     // Surface provides the click handler and ripple; Box carries the gradient background.
@@ -266,10 +271,20 @@ private fun FamilyCard(
                 Box(
                     Modifier
                         .size(52.dp)
-                        .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Groups, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                    if (photoUrl != null) {
+                        AsyncImage(
+                            model = photoUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
+                    } else {
+                        Icon(Icons.Filled.Groups, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                    }
                 }
                 Spacer(Modifier.size(14.dp))
                 Column(Modifier.weight(1f)) {
