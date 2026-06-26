@@ -177,7 +177,6 @@ fun ProfileScreen(
                     Spacer(Modifier.size(16.dp))
                     Column {
                         Text(user?.name ?: "", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text(user?.email ?: "", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
