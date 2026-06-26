@@ -13,7 +13,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -76,7 +75,7 @@ fun FeatureTopBar(
     )
 }
 
-/** Large-title top bar for top-level screens (Home, Calendar, Chat list, Family, Profile).
+/** Compact top bar for top-level screens (Home, Calendar, Chat list, Family, Profile).
  *  Trailing [actions] host the avatar / notifications bell / search per D3. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,8 +84,8 @@ fun AppLargeTopBar(
     modifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    LargeTopAppBar(
-        title = { Text(title, style = MaterialTheme.typography.headlineMedium) },
+    TopAppBar(
+        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         actions = actions,
         modifier = modifier,
         colors =
