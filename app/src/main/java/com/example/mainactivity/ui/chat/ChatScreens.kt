@@ -744,7 +744,7 @@ fun ConversationScreen(
                                         )
                                     }
                                     IconButton(onClick = {
-                                        val captureDir = java.io.File(context.cacheDir, "chat_captures").also { it.mkdirs() }
+                                        val captureDir = java.io.File(context.cacheDir, "camera_captures").also { it.mkdirs() }
                                         val file = java.io.File(captureDir, "chat_${System.currentTimeMillis()}.jpg")
                                         msgCameraFile = file
                                         val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
@@ -1340,6 +1340,7 @@ private fun MessageRow(
     var showTime by remember { mutableStateOf(false) }
     var showReactionPicker by remember { mutableStateOf(false) }
     val myReaction = reactions.entries.find { myId != null && myId in it.value }?.key
+    val chipOverlap = 13.dp
 
     SwipeToReplyWrapper(onReply = onReply) {
         if (mine) {
@@ -1352,44 +1353,52 @@ private fun MessageRow(
                 horizontalAlignment = Alignment.End,
             ) {
                 Box {
-                    Surface(
-                        shape =
-                            RoundedCornerShape(
-                                topStart = 16.dp,
-                                topEnd = 16.dp,
-                                bottomStart = 16.dp,
-                                bottomEnd = if (isLastInGroup) 4.dp else 16.dp,
-                            ),
-                        color = Color.Transparent,
-                        modifier =
-                            Modifier
-                                .widthIn(max = 280.dp)
-                                .combinedClickable(
-                                    onLongClick = { showReactionPicker = true },
-                                    onClick = { showTime = !showTime },
-                                ),
-                    ) {
-                        Box(Modifier.background(BrandGradient)) {
-                            MessageContent(msg, mine = true, myId = myId, messages = messages)
+                    Column {
+                        Box {
+                            Surface(
+                                shape =
+                                    RoundedCornerShape(
+                                        topStart = 16.dp,
+                                        topEnd = 16.dp,
+                                        bottomStart = 16.dp,
+                                        bottomEnd = if (isLastInGroup) 4.dp else 16.dp,
+                                    ),
+                                color = Color.Transparent,
+                                modifier =
+                                    Modifier
+                                        .widthIn(max = 280.dp)
+                                        .combinedClickable(
+                                            onLongClick = { showReactionPicker = true },
+                                            onClick = { showTime = !showTime },
+                                        ),
+                            ) {
+                                Box(Modifier.background(BrandGradient)) {
+                                    MessageContent(msg, mine = true, myId = myId, messages = messages)
+                                }
+                            }
+                            if (showReactionPicker) {
+                                ReactionPickerPopup(
+                                    onReact = { emoji ->
+                                        onReact(emoji)
+                                        showReactionPicker = false
+                                    },
+                                    onDismiss = { showReactionPicker = false },
+                                )
+                            }
+                        }
+                        if (reactions.isNotEmpty()) {
+                            Spacer(Modifier.height(chipOverlap))
                         }
                     }
-                    if (showReactionPicker) {
-                        ReactionPickerPopup(
-                            onReact = { emoji ->
-                                onReact(emoji)
-                                showReactionPicker = false
-                            },
-                            onDismiss = { showReactionPicker = false },
+                    if (reactions.isNotEmpty()) {
+                        ReactionChipsRow(
+                            reactions = reactions,
+                            myReaction = myReaction,
+                            isMine = true,
+                            onTap = onReact,
+                            modifier = Modifier.align(Alignment.BottomEnd),
                         )
                     }
-                }
-                if (reactions.isNotEmpty()) {
-                    ReactionChipsRow(
-                        reactions = reactions,
-                        myReaction = myReaction,
-                        isMine = true,
-                        onTap = onReact,
-                    )
                 }
                 if (showTime && timeLabel.isNotEmpty()) {
                     Text(
@@ -1428,40 +1437,48 @@ private fun MessageRow(
                         )
                     }
                     Box {
-                        Surface(
-                            shape =
-                                RoundedCornerShape(
-                                    topStart = 16.dp,
-                                    topEnd = 16.dp,
-                                    bottomStart = if (isLastInGroup) 4.dp else 16.dp,
-                                    bottomEnd = 16.dp,
-                                ),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            modifier =
-                                Modifier.combinedClickable(
-                                    onLongClick = { showReactionPicker = true },
-                                    onClick = { showTime = !showTime },
-                                ),
-                        ) {
-                            MessageContent(msg, mine = false, myId = myId, messages = messages)
+                        Column {
+                            Box {
+                                Surface(
+                                    shape =
+                                        RoundedCornerShape(
+                                            topStart = 16.dp,
+                                            topEnd = 16.dp,
+                                            bottomStart = if (isLastInGroup) 4.dp else 16.dp,
+                                            bottomEnd = 16.dp,
+                                        ),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier =
+                                        Modifier.combinedClickable(
+                                            onLongClick = { showReactionPicker = true },
+                                            onClick = { showTime = !showTime },
+                                        ),
+                                ) {
+                                    MessageContent(msg, mine = false, myId = myId, messages = messages)
+                                }
+                                if (showReactionPicker) {
+                                    ReactionPickerPopup(
+                                        onReact = { emoji ->
+                                            onReact(emoji)
+                                            showReactionPicker = false
+                                        },
+                                        onDismiss = { showReactionPicker = false },
+                                    )
+                                }
+                            }
+                            if (reactions.isNotEmpty()) {
+                                Spacer(Modifier.height(chipOverlap))
+                            }
                         }
-                        if (showReactionPicker) {
-                            ReactionPickerPopup(
-                                onReact = { emoji ->
-                                    onReact(emoji)
-                                    showReactionPicker = false
-                                },
-                                onDismiss = { showReactionPicker = false },
+                        if (reactions.isNotEmpty()) {
+                            ReactionChipsRow(
+                                reactions = reactions,
+                                myReaction = myReaction,
+                                isMine = false,
+                                onTap = onReact,
+                                modifier = Modifier.align(Alignment.BottomStart),
                             )
                         }
-                    }
-                    if (reactions.isNotEmpty()) {
-                        ReactionChipsRow(
-                            reactions = reactions,
-                            myReaction = myReaction,
-                            isMine = false,
-                            onTap = onReact,
-                        )
                     }
                     if (showTime && timeLabel.isNotEmpty()) {
                         Text(
