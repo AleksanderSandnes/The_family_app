@@ -566,14 +566,21 @@ fun ConversationScreen(
             }
         }
 
+    var msgCameraFile by remember { mutableStateOf<java.io.File?>(null) }
     val msgCameraLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.TakePicturePreview(),
-        ) { bitmap ->
-            bitmap ?: return@rememberLauncherForActivityResult
-            val stream = java.io.ByteArrayOutputStream()
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, stream)
-            viewModel.sendImage(conversationId, stream.toByteArray(), "cam_${System.currentTimeMillis()}.jpg")
+            contract = ActivityResultContracts.TakePicture(),
+        ) { success ->
+            if (success) {
+                val file = msgCameraFile ?: return@rememberLauncherForActivityResult
+                scope.launch {
+                    val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        file.readBytes().also { file.delete() }
+                    }
+                    viewModel.sendImage(conversationId, bytes, "cam_${System.currentTimeMillis()}.jpg")
+                }
+            }
+            msgCameraFile = null
         }
 
     Scaffold(
@@ -736,7 +743,13 @@ fun ConversationScreen(
                                             tint = MaterialTheme.colorScheme.primary,
                                         )
                                     }
-                                    IconButton(onClick = { msgCameraLauncher.launch(null) }) {
+                                    IconButton(onClick = {
+                                        val captureDir = java.io.File(context.cacheDir, "chat_captures").also { it.mkdirs() }
+                                        val file = java.io.File(captureDir, "chat_${System.currentTimeMillis()}.jpg")
+                                        msgCameraFile = file
+                                        val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                                        msgCameraLauncher.launch(uri)
+                                    }) {
                                         Icon(
                                             Icons.Filled.CameraAlt,
                                             contentDescription = "Camera",
