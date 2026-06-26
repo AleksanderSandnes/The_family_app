@@ -2,6 +2,7 @@
 
 package com.example.mainactivity.ui.family
 
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -219,6 +221,23 @@ fun FamilyScreen(
                                     modifier = Modifier.semantics {
                                         contentDescription = "Family invite code: ${family!!.joinCode}"
                                     },
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                SecondaryButton(
+                                    text = "Share invite",
+                                    onClick = {
+                                        val message =
+                                            "Join our family \"${family!!.name}\" on The Family App!\n\n" +
+                                                "Open the app, tap \"Join with Invite Code\", and enter:\n${family!!.joinCode}"
+                                        val send =
+                                            Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(Intent.EXTRA_TEXT, message)
+                                            }
+                                        context.startActivity(Intent.createChooser(send, "Share invite"))
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    leadingIcon = Icons.Filled.Share,
                                 )
                             }
                         }
