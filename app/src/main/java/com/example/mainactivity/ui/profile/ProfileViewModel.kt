@@ -94,6 +94,7 @@ class ProfileViewModel @Inject constructor(
         sourceUri: Uri,
     ) =
         viewModelScope.launch {
+            _error.value = null
             runCatching {
                 val raw =
                     withContext(Dispatchers.IO) {
