@@ -19,9 +19,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -32,6 +34,19 @@ class FamilyRepository @Inject constructor(
 ) {
     private val _familyChanged = MutableSharedFlow<Unit>()
     val familyChanged: SharedFlow<Unit> = _familyChanged.asSharedFlow()
+
+    // Family invite code captured from a deep link (familyapp://join?code=...).
+    // Consumed by FamilyScreen once the user is signed in.
+    private val _pendingJoinCode = MutableStateFlow<String?>(null)
+    val pendingJoinCode: StateFlow<String?> = _pendingJoinCode.asStateFlow()
+
+    fun setPendingJoinCode(code: String) {
+        _pendingJoinCode.value = code
+    }
+
+    fun consumePendingJoinCode() {
+        _pendingJoinCode.value = null
+    }
 
     val currentUserId: Flow<String?> = session.currentUserId
     val themeMode: Flow<ThemeMode> = session.themeMode

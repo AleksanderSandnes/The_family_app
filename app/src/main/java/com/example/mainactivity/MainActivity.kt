@@ -53,5 +53,13 @@ class MainActivity : ComponentActivity() {
 
     private fun handleAuthDeepLink(intent: Intent) {
         SupabaseManager.client.handleDeeplinks(intent)
+        // Family invite: familyapp://join?code=XXXX — stash the code so FamilyScreen
+        // can open the join flow once the user is signed in.
+        val data = intent.data
+        if (data?.scheme == "familyapp" && data.host == "join") {
+            data.getQueryParameter("code")?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                repo.setPendingJoinCode(it.uppercase())
+            }
+        }
     }
 }

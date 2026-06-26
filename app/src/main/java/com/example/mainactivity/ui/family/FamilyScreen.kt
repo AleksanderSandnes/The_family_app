@@ -4,6 +4,7 @@ package com.example.mainactivity.ui.family
 
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.Image
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -45,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,6 +77,7 @@ import com.example.mainactivity.ui.components.PillTag
 import com.example.mainactivity.ui.components.PrimaryButton
 import com.example.mainactivity.ui.components.SecondaryButton
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
+import com.example.mainactivity.ui.navigation.Routes
 
 @Composable
 fun FamilyScreen(
@@ -90,6 +94,18 @@ fun FamilyScreen(
     var showLeaveConfirm by remember { mutableStateOf(false) }
     var memberToRemove by remember { mutableStateOf<UserModel?>(null) }
     var showPhotoMenu by remember { mutableStateOf(false) }
+    var joinInitial by remember { mutableStateOf("") }
+    var showQr by remember { mutableStateOf(false) }
+
+    val pendingJoin by viewModel.pendingJoinCode.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingJoin) {
+        val code = pendingJoin
+        if (code != null) {
+            joinInitial = code
+            showJoin = true
+            viewModel.consumePendingJoinCode()
+        }
+    }
 
     val isAdmin = family != null && family!!.adminId == currentUser?.id
 
@@ -176,7 +192,10 @@ fun FamilyScreen(
                     Spacer(Modifier.height(12.dp))
                     SecondaryButton(
                         text = "Join with Invite Code",
-                        onClick = { showJoin = true },
+                        onClick = {
+                            joinInitial = ""
+                            showJoin = true
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = Icons.Filled.GroupAdd,
                     )
@@ -228,7 +247,8 @@ fun FamilyScreen(
                                     onClick = {
                                         val message =
                                             "Join our family \"${family!!.name}\" on The Family App!\n\n" +
-                                                "Open the app, tap \"Join with Invite Code\", and enter:\n${family!!.joinCode}"
+                                                "Tap to join: ${Routes.inviteLink(family!!.joinCode)}\n\n" +
+                                                "Or open the app, tap \"Join with Invite Code\", and enter: ${family!!.joinCode}"
                                         val send =
                                             Intent(Intent.ACTION_SEND).apply {
                                                 type = "text/plain"
@@ -238,6 +258,13 @@ fun FamilyScreen(
                                     },
                                     modifier = Modifier.fillMaxWidth(),
                                     leadingIcon = Icons.Filled.Share,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                SecondaryButton(
+                                    text = "Show QR code",
+                                    onClick = { showQr = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    leadingIcon = Icons.Filled.QrCode2,
                                 )
                             }
                         }
@@ -340,6 +367,7 @@ fun FamilyScreen(
         InputDialog(
             title = "Join a family",
             label = "Invite code",
+            initial = joinInitial,
             confirmText = "Join",
             onDismiss = {
                 showJoin = false
@@ -348,6 +376,34 @@ fun FamilyScreen(
             onConfirm = { code, _ ->
                 viewModel.joinFamily(code)
                 showJoin = false
+            },
+        )
+    }
+
+    if (showQr && family != null) {
+        val link = Routes.inviteLink(family!!.joinCode)
+        val qr = remember(link) { generateQrBitmap(link) }
+        AlertDialog(
+            onDismissRequest = { showQr = false },
+            shape = RoundedCornerShape(24.dp),
+            confirmButton = { TextButton(onClick = { showQr = false }) { Text("Done") } },
+            title = { Text("Scan to join") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (qr != null) {
+                        Image(
+                            bitmap = qr,
+                            contentDescription = "Family invite QR code",
+                            modifier = Modifier.size(220.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        family!!.joinCode,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             },
         )
     }

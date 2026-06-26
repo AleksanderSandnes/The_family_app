@@ -43,6 +43,11 @@ class FamilyViewModel @Inject constructor(
     private val _isUploading = MutableStateFlow(false)
     val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
 
+    /** Invite code captured from a deep link; FamilyScreen opens the join flow with it. */
+    val pendingJoinCode = repo.pendingJoinCode
+
+    fun consumePendingJoinCode() = repo.consumePendingJoinCode()
+
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->

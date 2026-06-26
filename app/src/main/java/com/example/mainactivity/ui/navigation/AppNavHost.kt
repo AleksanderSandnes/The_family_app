@@ -31,6 +31,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +57,7 @@ import com.example.mainactivity.ui.chat.ChatScreen
 import com.example.mainactivity.ui.chat.ChatViewModel
 import com.example.mainactivity.ui.chat.ConversationScreen
 import com.example.mainactivity.ui.family.FamilyScreen
+import com.example.mainactivity.ui.family.FamilyViewModel
 import com.example.mainactivity.ui.home.HomeScreen
 import com.example.mainactivity.ui.map.FamilyMapScreen
 import com.example.mainactivity.ui.meal.MealDetailScreen
@@ -135,6 +137,7 @@ private fun MainFlow() {
     // Shared so the list (ChatScreen) and detail (ConversationScreen) use the SAME
     // instance — a delete in the detail screen must reflect in the list on pop-back.
     val chatVm: ChatViewModel = hiltViewModel()
+    val familyVm: FamilyViewModel = hiltViewModel()
 
     val chatUnread by chatVm.totalUnread.collectAsStateWithLifecycle()
 
@@ -142,6 +145,15 @@ private fun MainFlow() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomDestinations.map { it.route }
+
+    // An invite deep link (familyapp://join?code=…) routes the user to Family,
+    // which opens the join flow pre-filled with the code.
+    val pendingJoin by familyVm.pendingJoinCode.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingJoin) {
+        if (pendingJoin != null) {
+            navController.navigate(Routes.FAMILY) { launchSingleTop = true }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -245,7 +257,7 @@ private fun MainFlow() {
                 exitTransition = { fadeOut(tween(200)) },
                 popEnterTransition = { fadeIn(tween(200)) },
                 popExitTransition = { fadeOut(tween(200)) },
-            ) { FamilyScreen() }
+            ) { FamilyScreen(viewModel = familyVm) }
             composable(
                 Routes.PROFILE,
                 enterTransition = { fadeIn(tween(200)) },

@@ -31,4 +31,6 @@ object Routes {
     fun chatDetail(id: String) = "chat/$id"
 
     const val CHAT_DETAIL_DEEP_LINK = "familyapp://chat/{conversationId}"
+
+    fun inviteLink(code: String) = "familyapp://join?code=$code"
 }
