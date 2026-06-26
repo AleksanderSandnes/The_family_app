@@ -357,6 +357,7 @@ fun MealScreen(
 ) {
     val plans by viewModel.plans.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
+    val planProgress by viewModel.planProgress.collectAsStateWithLifecycle(emptyMap())
     var showCreate by remember { mutableStateOf(false) }
 
     RefreshOnResume { viewModel.refresh() }
@@ -395,7 +396,14 @@ fun MealScreen(
                         }.getOrDefault(0)
                     val dateRange = "${formatMealDate(plan.fromDate)} – ${formatMealDate(plan.toDate)}"
                     val planName = plan.name.ifBlank { "Meal plan" }
-                    val cardDescription = "$planName, $dateRange, $dayCount days"
+                    val prog = planProgress[plan.id]
+                    val planLabel =
+                        if (prog != null && prog.total > 0) {
+                            "${prog.planned} of ${prog.total} dinners planned"
+                        } else {
+                            "$dayCount days"
+                        }
+                    val cardDescription = "$planName, $dateRange, $planLabel"
 
                     SwipeToRevealDelete(
                         onDelete = { viewModel.deletePlan(plan) },
@@ -433,7 +441,7 @@ fun MealScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 Text(
-                                    "$dayCount days",
+                                    planLabel,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )

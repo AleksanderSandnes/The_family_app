@@ -115,6 +115,13 @@ private val SHOPPING_ICON_OPTIONS =
 private fun shoppingIconVector(key: String): ImageVector =
     SHOPPING_ICON_OPTIONS.firstOrNull { it.key == key }?.vector ?: Icons.Filled.ShoppingCart
 
+private fun shoppingProgressLabel(p: ListProgress?): String =
+    when {
+        p == null || p.total == 0 -> "No items yet"
+        p.bought == p.total -> "All bought"
+        else -> "${p.bought} of ${p.total} bought"
+    }
+
 @Composable
 fun ShoppingScreen(
     onBack: () -> Unit,
@@ -123,6 +130,7 @@ fun ShoppingScreen(
 ) {
     val lists by viewModel.lists.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
+    val progress by viewModel.listProgress.collectAsStateWithLifecycle(emptyMap())
     var showAdd by remember { mutableStateOf(false) }
 
     RefreshOnResume { viewModel.refresh() }
@@ -163,7 +171,14 @@ fun ShoppingScreen(
                                 Icon(shoppingIconVector(list.icon), null, tint = MaterialTheme.colorScheme.primary)
                             }
                             Spacer(Modifier.size(8.dp))
-                            Text(list.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Column(Modifier.weight(1f)) {
+                                Text(list.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(
+                                    shoppingProgressLabel(progress[list.id]),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

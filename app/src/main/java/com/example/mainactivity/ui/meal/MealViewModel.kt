@@ -31,6 +31,12 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+/** Per-plan meal progress: days with a dinner planned out of total days. */
+data class MealProgress(
+    val planned: Int,
+    val total: Int,
+)
+
 @HiltViewModel
 class MealViewModel @Inject constructor(
     internal val repo: FamilyRepository,
@@ -43,6 +49,9 @@ class MealViewModel @Inject constructor(
 
     private val _plans = MutableStateFlow(cache)
     val plans: StateFlow<List<MealPlanModel>> = _plans.asStateFlow()
+
+    private val _planProgress = MutableStateFlow<Map<String, MealProgress>>(emptyMap())
+    val planProgress: StateFlow<Map<String, MealProgress>> = _planProgress.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -110,8 +119,28 @@ class MealViewModel @Inject constructor(
                     .decodeList<MealPlanModel>()
             cache = result
             _plans.value = result
+            loadPlanProgress(result.map { it.id })
         }
         _isLoading.value = false
+    }
+
+    /** Loads planned/total day counts per plan in one query. */
+    private suspend fun loadPlanProgress(planIds: List<String>) {
+        if (planIds.isEmpty()) {
+            _planProgress.value = emptyMap()
+            return
+        }
+        runCatching {
+            val allDays =
+                db
+                    .from("meal_plan_days")
+                    .select { filter { isIn("meal_plan_id", planIds) } }
+                    .decodeList<MealPlanDayModel>()
+            _planProgress.value =
+                allDays.groupBy { it.mealPlanId }.mapValues { (_, days) ->
+                    MealProgress(planned = days.count { it.food.isNotBlank() }, total = days.size)
+                }
+        }
     }
 
     /** Creates a realtime channel for the given familyId, but only if we are not

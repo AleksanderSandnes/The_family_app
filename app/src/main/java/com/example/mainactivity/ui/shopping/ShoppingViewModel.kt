@@ -26,6 +26,12 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import javax.inject.Inject
 
+/** Per-list shopping progress: items bought out of total. */
+data class ListProgress(
+    val bought: Int,
+    val total: Int,
+)
+
 @HiltViewModel
 class ShoppingViewModel @Inject constructor(
     internal val repo: FamilyRepository,
@@ -48,9 +54,9 @@ class ShoppingViewModel @Inject constructor(
     private val _items = MutableStateFlow<List<ShoppingItemModel>>(emptyList())
     val items: StateFlow<List<ShoppingItemModel>> = _items.asStateFlow()
 
-    /** Map of listId to total item count, used to display a count badge on list cards. */
-    private val _itemCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
-    val itemCounts: StateFlow<Map<String, Int>> = _itemCounts.asStateFlow()
+    /** Map of listId to bought/total progress, shown on list cards. */
+    private val _listProgress = MutableStateFlow<Map<String, ListProgress>>(emptyMap())
+    val listProgress: StateFlow<Map<String, ListProgress>> = _listProgress.asStateFlow()
 
     private var realtimeListsChannel: RealtimeChannel? = null
     private var realtimeItemsChannel: RealtimeChannel? = null
@@ -70,7 +76,7 @@ class ShoppingViewModel @Inject constructor(
                     loadLists(userId)
                 } else {
                     _lists.value = emptyList()
-                    _itemCounts.value = emptyMap()
+                    _listProgress.value = emptyMap()
                 }
             }
         }
@@ -157,13 +163,13 @@ class ShoppingViewModel @Inject constructor(
             }
         cache = result
         _lists.value = result
-        loadItemCounts(result.map { it.id })
+        loadListProgress(result.map { it.id })
     }
 
-    /** Loads total item count per list in one query and updates [_itemCounts]. */
-    private suspend fun loadItemCounts(listIds: List<String>) {
+    /** Loads bought/total progress per list in one query and updates [_listProgress]. */
+    private suspend fun loadListProgress(listIds: List<String>) {
         if (listIds.isEmpty()) {
-            _itemCounts.value = emptyMap()
+            _listProgress.value = emptyMap()
             return
         }
         runCatching {
@@ -173,7 +179,10 @@ class ShoppingViewModel @Inject constructor(
                     .select {
                         filter { isIn("list_id", listIds) }
                     }.decodeList<ShoppingItemModel>()
-            _itemCounts.value = allItems.groupBy { it.listId }.mapValues { it.value.size }
+            _listProgress.value =
+                allItems.groupBy { it.listId }.mapValues { (_, items) ->
+                    ListProgress(bought = items.count { it.checked }, total = items.size)
+                }
         }
     }
 
