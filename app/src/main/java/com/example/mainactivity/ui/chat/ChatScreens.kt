@@ -1373,7 +1373,11 @@ private fun MessageRow(
                                         ),
                             ) {
                                 Box(Modifier.background(BrandGradient)) {
-                                    MessageContent(msg, mine = true, myId = myId, messages = messages)
+                                    MessageContent(
+                                        msg, mine = true, myId = myId, messages = messages,
+                                        onLongClick = { showReactionPicker = true },
+                                        extraBottomPadding = if (reactions.isNotEmpty()) chipOverlap else 0.dp,
+                                    )
                                 }
                             }
                             if (showReactionPicker) {
@@ -1454,7 +1458,11 @@ private fun MessageRow(
                                             onClick = { showTime = !showTime },
                                         ),
                                 ) {
-                                    MessageContent(msg, mine = false, myId = myId, messages = messages)
+                                    MessageContent(
+                                        msg, mine = false, myId = myId, messages = messages,
+                                        onLongClick = { showReactionPicker = true },
+                                        extraBottomPadding = if (reactions.isNotEmpty()) chipOverlap else 0.dp,
+                                    )
                                 }
                                 if (showReactionPicker) {
                                     ReactionPickerPopup(
@@ -1500,6 +1508,8 @@ private fun MessageContent(
     mine: Boolean,
     myId: String?,
     messages: List<MessageModel>,
+    onLongClick: (() -> Unit)? = null,
+    extraBottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     when (msg.messageType) {
         "image" -> {
@@ -1512,7 +1522,10 @@ private fun MessageContent(
                     .width(220.dp)
                     .height(165.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .clickable { showViewer = true },
+                    .combinedClickable(
+                        onClick = { showViewer = true },
+                        onLongClick = { onLongClick?.invoke() },
+                    ),
             )
             if (showViewer && msg.mediaUrl != null) {
                 ImageViewerDialog(url = msg.mediaUrl, onDismiss = { showViewer = false })
@@ -1539,7 +1552,7 @@ private fun MessageContent(
             }
         }
         else -> {
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp + extraBottomPadding)) {
                 if (msg.replyToId != null) {
                     val quoted = messages.find { it.id == msg.replyToId }
                     if (quoted != null) {
