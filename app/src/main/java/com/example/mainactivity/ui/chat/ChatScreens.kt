@@ -125,6 +125,7 @@ import coil3.compose.AsyncImage
 import com.example.mainactivity.data.ConversationWithPreview
 import com.example.mainactivity.data.MessageModel
 import com.example.mainactivity.data.UserModel
+import com.example.mainactivity.ui.chat.components.ImageViewerDialog
 import com.example.mainactivity.ui.chat.components.ReactionChipsRow
 import com.example.mainactivity.ui.chat.components.ReactionPickerPopup
 import com.example.mainactivity.ui.chat.components.VoiceNoteMessage
@@ -1472,16 +1473,20 @@ private fun MessageContent(
 ) {
     when (msg.messageType) {
         "image" -> {
+            var showViewer by remember { mutableStateOf(false) }
             AsyncImage(
                 model = msg.mediaUrl,
                 contentDescription = "Image",
                 contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .widthIn(max = 220.dp)
-                        .heightIn(max = 260.dp)
-                        .clip(RoundedCornerShape(14.dp)),
+                modifier = Modifier
+                    .width(220.dp)
+                    .height(165.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .clickable { showViewer = true },
             )
+            if (showViewer && msg.mediaUrl != null) {
+                ImageViewerDialog(url = msg.mediaUrl, onDismiss = { showViewer = false })
+            }
         }
         "voice" -> {
             Box(Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
