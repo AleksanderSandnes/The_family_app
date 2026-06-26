@@ -4,6 +4,7 @@ package com.example.mainactivity.ui.map
 
 import android.Manifest
 import android.content.Context
+import android.location.Geocoder
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -82,6 +83,7 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -491,6 +493,35 @@ private fun BackgroundPermissionCard(
     }
 }
 
+/** Reverse-geocodes each shared location to a short place name (locality / area), cached by
+ *  user id. Runs off the main thread; returns partial results as they resolve. */
+@Composable
+private fun rememberGeocodedPlaces(
+    locations: List<UserLocationModel>,
+    context: Context,
+): Map<String, String> {
+    val places = remember { mutableStateMapOf<String, String>() }
+    LaunchedEffect(locations) {
+        if (!Geocoder.isPresent()) return@LaunchedEffect
+        val geocoder = Geocoder(context, Locale.getDefault())
+        locations.forEach { loc ->
+            if (places.containsKey(loc.userId)) return@forEach
+            val place =
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        @Suppress("DEPRECATION")
+                        geocoder
+                            .getFromLocation(loc.lat, loc.lng, 1)
+                            ?.firstOrNull()
+                            ?.let { it.locality ?: it.subAdminArea ?: it.thoroughfare ?: it.adminArea }
+                    }.getOrNull()
+                }
+            if (!place.isNullOrBlank()) places[loc.userId] = place
+        }
+    }
+    return places
+}
+
 @Composable
 private fun MemberLegend(
     locations: List<UserLocationModel>,
@@ -499,6 +530,8 @@ private fun MemberLegend(
     modifier: Modifier = Modifier,
 ) {
     val locationByUserId = locations.associateBy { it.userId }
+    val context = LocalContext.current
+    val places = rememberGeocodedPlaces(locations, context)
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -520,7 +553,10 @@ private fun MemberLegend(
                     val loc = locationByUserId[member.id]
                     val isSharing = loc != null
                     val rowAlpha = if (isSharing) 1f else 0.4f
-                    val statusText = if (isSharing) formatLastSeen(loc?.updatedAt) else "Not sharing"
+                    val lastSeen = if (isSharing) formatLastSeen(loc?.updatedAt) else "Not sharing"
+                    val place = places[member.id]
+                    val statusText =
+                        if (isSharing && !place.isNullOrBlank()) "$place · $lastSeen" else lastSeen
                     val avatarColor =
                         member.avatarColor
                             .takeIf { it != 0 }
