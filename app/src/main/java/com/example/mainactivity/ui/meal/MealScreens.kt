@@ -87,6 +87,7 @@ import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.InputDialog
 import com.example.mainactivity.ui.components.ListCard
 import com.example.mainactivity.ui.components.ListSkeleton
+import com.example.mainactivity.ui.components.PullRefresh
 import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
 import java.time.Instant
@@ -369,10 +370,14 @@ fun MealScreen(
             AppFab(text = "Create a meal plan", icon = Icons.Filled.Add, onClick = { showCreate = true })
         },
     ) { padding ->
+        PullRefresh(
+            onRefresh = { viewModel.refresh().join() },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
         if (isLoading) {
-            ListSkeleton(Modifier.fillMaxSize().padding(padding))
+            ListSkeleton(Modifier.fillMaxSize())
         } else if (plans.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EmptyState(
                     Icons.Filled.Restaurant,
                     "No meal plans yet",
@@ -383,7 +388,7 @@ fun MealScreen(
             }
         } else {
             LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
+                Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -455,6 +460,7 @@ fun MealScreen(
                     }
                 }
             }
+        }
         }
     }
 

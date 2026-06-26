@@ -88,6 +88,7 @@ import com.example.mainactivity.ui.components.InputDialog
 import com.example.mainactivity.ui.components.ListCard
 import com.example.mainactivity.ui.components.ListSkeleton
 import com.example.mainactivity.ui.components.PillTag
+import com.example.mainactivity.ui.components.PullRefresh
 import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
 
@@ -142,10 +143,14 @@ fun ShoppingScreen(
             AppFab(text = "New list", icon = Icons.Filled.Add, onClick = { showAdd = true })
         },
     ) { padding ->
+        PullRefresh(
+            onRefresh = { viewModel.refresh().join() },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
         if (isLoading) {
-            ListSkeleton(Modifier.fillMaxSize().padding(padding))
+            ListSkeleton(Modifier.fillMaxSize())
         } else if (lists.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EmptyState(
                     Icons.Filled.ShoppingCart,
                     "No lists yet",
@@ -156,7 +161,7 @@ fun ShoppingScreen(
             }
         } else {
             LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
+                Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -184,6 +189,7 @@ fun ShoppingScreen(
                     }
                 }
             }
+        }
         }
     }
 

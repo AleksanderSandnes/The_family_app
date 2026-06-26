@@ -95,6 +95,7 @@ import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.ListCard
 import com.example.mainactivity.ui.components.ListSkeleton
 import com.example.mainactivity.ui.components.PrimaryButton
+import com.example.mainactivity.ui.components.PullRefresh
 import com.example.mainactivity.ui.components.RefreshOnResume
 import com.example.mainactivity.ui.components.SecondaryButton
 import com.example.mainactivity.ui.components.SwipeToRevealDelete
@@ -146,12 +147,16 @@ fun WishlistScreen(
             AppFab(text = "New wishlist", icon = Icons.Filled.Add, onClick = { showAdd = true })
         },
     ) { padding ->
+        PullRefresh(
+            onRefresh = { viewModel.refresh().join() },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
         when {
             isLoading -> {
-                ListSkeleton(Modifier.fillMaxSize().padding(padding))
+                ListSkeleton(Modifier.fillMaxSize())
             }
             wishlists.isEmpty() -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
                         Icons.Filled.CardGiftcard,
                         "No wishlists yet",
@@ -163,7 +168,7 @@ fun WishlistScreen(
             }
             else -> {
                 LazyColumn(
-                    Modifier.fillMaxSize().padding(padding),
+                    Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -210,6 +215,7 @@ fun WishlistScreen(
                     }
                 }
             }
+        }
         }
     }
 

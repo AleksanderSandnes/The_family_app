@@ -54,6 +54,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -694,6 +695,32 @@ fun SkeletonLoader(
         end = Offset(translateAnim, 0f),
     )
     Box(modifier = modifier.clip(shape).background(brush))
+}
+
+/** Wraps a scrollable screen body with swipe-down pull-to-refresh. [onRefresh] suspends
+ *  until the reload completes (e.g. `viewModel.refresh().join()`). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PullRefresh(
+    onRefresh: suspend () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    var refreshing by remember { mutableStateOf(false) }
+    PullToRefreshBox(
+        isRefreshing = refreshing,
+        onRefresh = {
+            refreshing = true
+            scope.launch {
+                onRefresh()
+                refreshing = false
+            }
+        },
+        modifier = modifier,
+    ) {
+        content()
+    }
 }
 
 /** Content-shaped loading placeholder for list screens — a column of shimmer cards.
