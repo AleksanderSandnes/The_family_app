@@ -705,47 +705,11 @@ fun ConversationScreen(
                         }
                     }
 
-                    if (isRecording) {
-                        // Recording overlay
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            val dotAlpha by rememberInfiniteTransition(label = "rec").animateFloat(
-                                initialValue = 1f,
-                                targetValue = 0.2f,
-                                animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
-                                label = "dot",
-                            )
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(12.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFE53935).copy(alpha = dotAlpha)),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                "%d:%02d".format(recordingSeconds / 60, recordingSeconds % 60),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Spacer(Modifier.weight(1f))
-                            Text(
-                                "← Slide to cancel",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            IconButton(onClick = { stopRecording(false) }) {
-                                Icon(Icons.Filled.Close, "Cancel recording", tint = Color(0xFFE53935))
-                            }
-                        }
-                    } else {
-                        // Messenger-style input row
+                    // Input row is always in composition so the mic pointerInput
+                    // coroutine (tryAwaitRelease) stays alive while recording.
+                    // The recording overlay is layered on top rather than replacing the row.
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        // Messenger-style input row — always present
                         Row(
                             modifier =
                                 Modifier
@@ -848,6 +812,49 @@ fun ConversationScreen(
                                             tint = MaterialTheme.colorScheme.primary,
                                         )
                                     }
+                                }
+                            }
+                        }
+
+                        // Recording overlay — covers input row while recording
+                        if (isRecording) {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .matchParentSize()
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                val dotAlpha by rememberInfiniteTransition(label = "rec").animateFloat(
+                                    initialValue = 1f,
+                                    targetValue = 0.2f,
+                                    animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+                                    label = "dot",
+                                )
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .size(12.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFE53935).copy(alpha = dotAlpha)),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "%d:%02d".format(recordingSeconds / 60, recordingSeconds % 60),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    "Release to send",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                IconButton(onClick = { stopRecording(false) }) {
+                                    Icon(Icons.Filled.Close, "Cancel recording", tint = Color(0xFFE53935))
                                 }
                             }
                         }
