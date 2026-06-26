@@ -39,7 +39,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Celebration
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
@@ -65,6 +64,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -94,6 +94,7 @@ import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
 import com.example.mainactivity.ui.components.LoadingState
 import com.example.mainactivity.ui.components.RefreshOnResume
+import com.example.mainactivity.ui.components.SwipeToRevealDelete
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -244,11 +245,15 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     items(dayEvents, key = { it.id }) { event ->
-                        EventCard(
-                            event = event,
+                        SwipeToRevealDelete(
                             onDelete = { viewModel.delete(event) },
-                            onEdit = { eventToEdit = event },
-                        )
+                            shape = RoundedCornerShape(20.dp),
+                        ) {
+                            EventCard(
+                                event = event,
+                                onEdit = { eventToEdit = event },
+                            )
+                        }
                     }
                     item { Spacer(Modifier.height(80.dp)) }
                 }
@@ -506,7 +511,6 @@ private fun monthCells(month: YearMonth): List<LocalDate?> {
 @Composable
 private fun EventCard(
     event: CalendarEventModel,
-    onDelete: () -> Unit,
     onEdit: () -> Unit,
 ) {
     val timeLabel = eventTimeLabel(event)
@@ -565,9 +569,6 @@ private fun EventCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -703,6 +704,12 @@ private fun EventDialog(
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                        ),
                     )
                 }
                 AnimatedVisibility(visible = showIconPicker) {
@@ -715,7 +722,7 @@ private fun EventDialog(
                     )
                 }
                 Spacer(Modifier.height(8.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -724,7 +731,7 @@ private fun EventDialog(
                     Text("All day", style = MaterialTheme.typography.bodyLarge)
                     Switch(checked = allDay, onCheckedChange = { allDay = it })
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                 DateTimeRow(
                     label = "Starts",
                     date = dateFrom,
@@ -732,7 +739,7 @@ private fun EventDialog(
                     onDateClick = { showDateFromPicker = true },
                     onTimeClick = { showTimeFromPicker = true },
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                 DateTimeRow(
                     label = "Ends",
                     date = dateTo,
@@ -740,7 +747,7 @@ private fun EventDialog(
                     onDateClick = { showDateToPicker = true },
                     onTimeClick = { showTimeToPicker = true },
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
             }
         },
         confirmButton = {
