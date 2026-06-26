@@ -218,7 +218,9 @@ fun AppFab(
         text = { Text(text, fontWeight = FontWeight.SemiBold) },
         icon = { Icon(icon, contentDescription = null) },
         onClick = onClick,
-        modifier = modifier,
+        // The label text isn't surfaced as the FAB's accessibility node, so set it
+        // explicitly for screen readers (and UI test tooling).
+        modifier = modifier.semantics { contentDescription = text },
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
     )
