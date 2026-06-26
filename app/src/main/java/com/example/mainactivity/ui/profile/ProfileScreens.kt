@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -74,6 +75,7 @@ fun ProfileScreen(
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val isUploading by viewModel.isUploading.collectAsStateWithLifecycle()
     val dark = androidx.compose.foundation.isSystemInDarkTheme()
     val context = LocalContext.current
 
@@ -119,9 +121,10 @@ fun ProfileScreen(
                     .padding(24.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Avatar circle — clickable to change photo
+                    // Avatar circle — clickable to change photo (disabled during upload)
                     Box(
-                        Modifier.size(72.dp).clip(CircleShape).clickable { showAvatarPicker = true },
+                        Modifier.size(72.dp).clip(CircleShape)
+                            .clickable(enabled = !isUploading) { showAvatarPicker = true },
                     ) {
                         val avatarUri = user?.avatarUrl
                         var imgFailed by remember(avatarUri) { mutableStateOf(false) }
@@ -150,17 +153,25 @@ fun ProfileScreen(
                                 )
                             }
                         }
-                        // Camera indicator strip at bottom of circle
+                        // Upload spinner overlay (full circle) or camera strip (idle)
                         Box(
                             Modifier
                                 .fillMaxWidth()
                                 .align(Alignment.BottomCenter)
-                                .height(20.dp)
-                                .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
-                                .background(Color.Black.copy(alpha = 0.38f)),
+                                .height(if (isUploading) 72.dp else 20.dp)
+                                .clip(if (isUploading) CircleShape else RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
+                                .background(Color.Black.copy(alpha = if (isUploading) 0.55f else 0.38f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(Icons.Filled.CameraAlt, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                            if (isUploading) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(28.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Icon(Icons.Filled.CameraAlt, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                            }
                         }
                     }
                     Spacer(Modifier.size(16.dp))
