@@ -437,8 +437,21 @@ class ChatViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
-            val currentReactions = _reactions.value[messageId]
-            val myCurrentEmoji = currentReactions?.entries?.find { userId in it.value }?.key
+            val myCurrentEmoji = _reactions.value[messageId]?.entries?.find { userId in it.value }?.key
+
+            // Optimistic update so the UI reflects the change immediately
+            _reactions.update { current ->
+                val msgs = current[messageId]?.toMutableMap() ?: mutableMapOf()
+                if (myCurrentEmoji != null) {
+                    val remaining = msgs[myCurrentEmoji].orEmpty().filter { it != userId }
+                    if (remaining.isEmpty()) msgs.remove(myCurrentEmoji) else msgs[myCurrentEmoji] = remaining
+                }
+                if (myCurrentEmoji != emoji) {
+                    msgs[emoji] = msgs[emoji].orEmpty() + userId
+                }
+                if (msgs.isEmpty()) current - messageId else current + (messageId to msgs)
+            }
+
             if (myCurrentEmoji == emoji) {
                 repo.removeReaction(messageId)
             } else {
