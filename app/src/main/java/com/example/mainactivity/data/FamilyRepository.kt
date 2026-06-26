@@ -215,7 +215,6 @@ class FamilyRepository @Inject constructor(
         }
 
     suspend fun joinFamily(
-        name: String,
         code: String,
         userId: String,
     ): Result<String> =
@@ -224,10 +223,10 @@ class FamilyRepository @Inject constructor(
             val family =
                 client.postgrest
                     .from("families")
-                    .select { filter { eq("name", name.trim()) } }
+                    .select { filter { eq("join_code", code.trim()) } }
                     .decodeList<FamilyModel>()
-                    .firstOrNull { it.joinCode == code }
-                    ?: error("Family name or join code is incorrect.")
+                    .firstOrNull()
+                    ?: error("Join code is incorrect.")
             client.postgrest.from("users").update({
                 set("family_id", family.id)
             }) { filter { eq("id", userId) } }

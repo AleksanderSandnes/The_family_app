@@ -68,6 +68,18 @@ class WishlistViewModel @Inject constructor(
             loadWishlists(userId)
         }
 
+    private val ownerNameCache = mutableMapOf<String, String>()
+
+    private suspend fun resolveOwnerNames(wishlists: List<WishlistModel>): List<WishlistModel> {
+        val uniqueIds = wishlists.map { it.ownerUserId }.distinct()
+        for (id in uniqueIds) {
+            if (id !in ownerNameCache) {
+                ownerNameCache[id] = repo.getUser(id)?.name ?: ""
+            }
+        }
+        return wishlists.map { it.copy(ownerName = ownerNameCache[it.ownerUserId] ?: "") }
+    }
+
     private suspend fun loadWishlists(userId: String) {
         if (_wishlists.value.isEmpty()) _isLoading.value = true
         runCatching {
@@ -92,8 +104,9 @@ class WishlistViewModel @Inject constructor(
                         .decodeList<WishlistModel>()
                         .filter { it.familyId == null }
                 }
-            cache = result
-            _wishlists.value = result
+            val resolved = resolveOwnerNames(result)
+            cache = resolved
+            _wishlists.value = resolved
             if (user?.familyId != null) subscribeToWishlists(user.familyId, userId)
         }
         _isLoading.value = false
@@ -123,8 +136,9 @@ class WishlistViewModel @Inject constructor(
                         .decodeList<WishlistModel>()
                         .filter { it.familyId == null }
                 }
-            cache = result
-            _wishlists.value = result
+            val resolved = resolveOwnerNames(result)
+            cache = resolved
+            _wishlists.value = resolved
         }
     }
 

@@ -320,15 +320,14 @@ fun FamilyScreen(
     if (showJoin) {
         InputDialog(
             title = "Join a family",
-            label = "Family name",
-            secondLabel = "Invite code",
+            label = "Invite code",
             confirmText = "Join",
             onDismiss = {
                 showJoin = false
                 viewModel.clearError()
             },
-            onConfirm = { name, code ->
-                viewModel.joinFamily(name, code)
+            onConfirm = { code, _ ->
+                viewModel.joinFamily(code)
                 showJoin = false
             },
         )

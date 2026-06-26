@@ -180,12 +180,20 @@ fun WishlistScreen(
                                         )
                                     }
                                     Spacer(Modifier.width(14.dp))
-                                    Text(
-                                        wl.name,
-                                        Modifier.weight(1f),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            wl.name,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        if (wl.ownerName.isNotEmpty()) {
+                                            Text(
+                                                "By ${wl.ownerName}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
                                     Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }

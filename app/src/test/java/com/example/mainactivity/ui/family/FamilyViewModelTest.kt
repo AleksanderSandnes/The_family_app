@@ -184,12 +184,12 @@ class FamilyViewModelTest {
         userId.value = "user1"
         advanceUntilIdle()
 
-        coEvery { repo.joinFamily("MyFamily", "CODE1234", "user1") } returns Result.success("fam-id")
+        coEvery { repo.joinFamily("CODE1234", "user1") } returns Result.success("fam-id")
 
-        vm.joinFamily("MyFamily", "CODE1234")
+        vm.joinFamily("CODE1234")
         advanceUntilIdle()
 
-        coVerify { repo.joinFamily("MyFamily", "CODE1234", "user1") }
+        coVerify { repo.joinFamily("CODE1234", "user1") }
     }
 
     @Test
@@ -198,9 +198,9 @@ class FamilyViewModelTest {
             userId.value = "user1"
             advanceUntilIdle()
 
-            coEvery { repo.joinFamily(any(), any(), any()) } returns Result.success("fam-id")
+            coEvery { repo.joinFamily(any(), any()) } returns Result.success("fam-id")
 
-            vm.joinFamily("MyFamily", "CODE1234")
+            vm.joinFamily("CODE1234")
             advanceUntilIdle()
 
             // Once from the init collector's load(), once from onSuccess { load(userId) }
@@ -212,10 +212,10 @@ class FamilyViewModelTest {
         userId.value = "user1"
         advanceUntilIdle()
 
-        coEvery { repo.joinFamily(any(), any(), any()) } returns
+        coEvery { repo.joinFamily(any(), any()) } returns
             Result.failure(RuntimeException("Invalid code"))
 
-        vm.joinFamily("MyFamily", "WRONGCODE")
+        vm.joinFamily("WRONGCODE")
         advanceUntilIdle()
 
         assertEquals("Invalid code", vm.error.value)
@@ -223,10 +223,10 @@ class FamilyViewModelTest {
 
     @Test
     fun `joinFamily with null userId is a no-op`() = runTest(dispatcherRule.dispatcher) {
-        vm.joinFamily("MyFamily", "CODE1234")
+        vm.joinFamily("CODE1234")
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { repo.joinFamily(any(), any(), any()) }
+        coVerify(exactly = 0) { repo.joinFamily(any(), any()) }
     }
 
     // ──────────────────────────────────────────────────────────────

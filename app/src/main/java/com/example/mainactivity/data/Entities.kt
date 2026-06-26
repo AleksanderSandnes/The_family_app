@@ -93,6 +93,7 @@ data class WishlistModel(
     @SerialName("family_id") val familyId: String? = null,
     val name: String = "",
     val icon: String = "card_giftcard",
+    @kotlinx.serialization.Transient val ownerName: String = "",
 )
 
 @Serializable

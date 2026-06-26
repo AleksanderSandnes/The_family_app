@@ -97,14 +97,11 @@ class FamilyViewModel @Inject constructor(
                 .onFailure { _error.value = it.message }
         }
 
-    fun joinFamily(
-        name: String,
-        code: String,
-    ) =
+    fun joinFamily(code: String) =
         viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
             repo
-                .joinFamily(name, code, userId)
+                .joinFamily(code, userId)
                 .onSuccess { load(userId) }
                 .onFailure { _error.value = it.message }
         }
