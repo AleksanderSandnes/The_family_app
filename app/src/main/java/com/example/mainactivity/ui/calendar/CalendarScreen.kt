@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,6 +59,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -173,6 +175,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     var showAdd by remember { mutableStateOf(false) }
     var eventToEdit by remember { mutableStateOf<CalendarEventModel?>(null) }
+    var view by remember { mutableStateOf(CalendarView.Month) }
 
     RefreshOnResume { viewModel.refresh() }
 
@@ -215,47 +218,34 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            MonthCalendarSection(
-                displayedMonth = displayedMonth,
-                selectedDate = selectedDate,
-                dateEventIcons = dateEventIcons,
-                onPrevMonth = viewModel::prevMonth,
-                onNextMonth = viewModel::nextMonth,
-                onDaySelected = viewModel::selectDate,
-            )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            Text(
-                selectedDate.format(SECTION_DATE_FMT),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-            )
-            if (isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    LoadingState()
+            CalendarViewToggle(view = view, onSelect = { view = it })
+            when (view) {
+                CalendarView.Month -> {
+                    MonthCalendarSection(
+                        displayedMonth = displayedMonth,
+                        selectedDate = selectedDate,
+                        dateEventIcons = dateEventIcons,
+                        onPrevMonth = viewModel::prevMonth,
+                        onNextMonth = viewModel::nextMonth,
+                        onDaySelected = viewModel::selectDate,
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    SelectedDateHeader(selectedDate)
+                    DayEventsList(isLoading, dayEvents, { eventToEdit = it }, { viewModel.delete(it) })
                 }
-            } else if (dayEvents.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    EmptyState(Icons.Filled.CalendarMonth, "No events today", "Tap + to add an event.")
+                CalendarView.Week -> {
+                    WeekStrip(selectedDate, dateEventIcons, viewModel::selectDate)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    SelectedDateHeader(selectedDate)
+                    DayEventsList(isLoading, dayEvents, { eventToEdit = it }, { viewModel.delete(it) })
                 }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    items(dayEvents, key = { it.id }) { event ->
-                        SwipeToRevealDelete(
-                            onDelete = { viewModel.delete(event) },
-                            shape = RoundedCornerShape(20.dp),
-                        ) {
-                            EventCard(
-                                event = event,
-                                onEdit = { eventToEdit = event },
-                            )
-                        }
-                    }
-                    item { Spacer(Modifier.height(80.dp)) }
-                }
+                CalendarView.Agenda ->
+                    AgendaList(
+                        modifier = Modifier.weight(1f),
+                        events = allEvents,
+                        onEdit = { eventToEdit = it },
+                        onDelete = { viewModel.delete(it) },
+                    )
             }
         }
     }
@@ -292,6 +282,162 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 eventToEdit = null
             },
         )
+    }
+}
+
+private enum class CalendarView(val label: String) {
+    Month("Month"),
+    Week("Week"),
+    Agenda("Agenda"),
+}
+
+@Composable
+private fun CalendarViewToggle(
+    view: CalendarView,
+    onSelect: (CalendarView) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        CalendarView.entries.forEach { v ->
+            FilterChip(
+                selected = view == v,
+                onClick = { onSelect(v) },
+                label = { Text(v.label) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SelectedDateHeader(date: LocalDate) {
+    Text(
+        date.format(SECTION_DATE_FMT),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+    )
+}
+
+/** The selected day's events (loading / empty / list) — shared by Month and Week views. */
+@Composable
+private fun ColumnScope.DayEventsList(
+    isLoading: Boolean,
+    dayEvents: List<CalendarEventModel>,
+    onEdit: (CalendarEventModel) -> Unit,
+    onDelete: (CalendarEventModel) -> Unit,
+) {
+    when {
+        isLoading ->
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                LoadingState()
+            }
+        dayEvents.isEmpty() ->
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                EmptyState(Icons.Filled.CalendarMonth, "No events", "Tap + to add an event.")
+            }
+        else ->
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(dayEvents, key = { it.id }) { event ->
+                    SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(20.dp)) {
+                        EventCard(event = event, onEdit = { onEdit(event) })
+                    }
+                }
+                item { Spacer(Modifier.height(80.dp)) }
+            }
+    }
+}
+
+/** Single-week strip for the Week view — reuses the month grid's DayCell. */
+@Composable
+private fun WeekStrip(
+    selectedDate: LocalDate,
+    dateEventIcons: Map<LocalDate, List<String>>,
+    onDaySelected: (LocalDate) -> Unit,
+) {
+    val today = LocalDate.now()
+    val monday = selectedDate.minusDays((selectedDate.dayOfWeek.value - 1).toLong())
+    Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+            WEEKDAY_LABELS.forEach { label ->
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth()) {
+            (0..6).forEach { i ->
+                val date = monday.plusDays(i.toLong())
+                DayCell(
+                    date = date,
+                    isSelected = date == selectedDate,
+                    isToday = date == today,
+                    eventIcons = dateEventIcons[date].orEmpty(),
+                    modifier = Modifier.weight(1f),
+                    onClick = { onDaySelected(date) },
+                )
+            }
+        }
+    }
+}
+
+/** Chronological list of all upcoming events, grouped by date. */
+@Composable
+private fun AgendaList(
+    modifier: Modifier = Modifier,
+    events: List<CalendarEventModel>,
+    onEdit: (CalendarEventModel) -> Unit,
+    onDelete: (CalendarEventModel) -> Unit,
+) {
+    val today = LocalDate.now()
+    val grouped =
+        remember(events) {
+            events
+                .filter { e ->
+                    val end = runCatching { LocalDate.parse(e.dateTo.ifBlank { e.dateFrom }) }.getOrNull()
+                    end != null && !end.isBefore(today)
+                }
+                .sortedBy { runCatching { LocalDate.parse(it.dateFrom) }.getOrNull() ?: LocalDate.MAX }
+                .groupBy { runCatching { LocalDate.parse(it.dateFrom) }.getOrNull() }
+        }
+    if (grouped.isEmpty()) {
+        Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            EmptyState(Icons.Filled.CalendarMonth, "Nothing coming up", "Tap + to add an event.")
+        }
+        return
+    }
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        grouped.forEach { (date, dayEvents) ->
+            item(key = "header-$date") {
+                Text(
+                    date?.format(SECTION_DATE_FMT) ?: "Upcoming",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+                )
+            }
+            items(dayEvents, key = { it.id }) { event ->
+                SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(20.dp)) {
+                    EventCard(event = event, onEdit = { onEdit(event) })
+                }
+            }
+        }
+        item { Spacer(Modifier.height(80.dp)) }
     }
 }
 
