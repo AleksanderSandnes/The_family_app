@@ -221,7 +221,7 @@ class MealViewModel
                 }
             val week = cal.get(Calendar.WEEK_OF_YEAR)
 
-            val tempId = "temp-${System.currentTimeMillis()}"
+            val tempId = "temp-${java.util.UUID.randomUUID()}"
             _plans.value = _plans.value +
                 MealPlanModel(
                     id = tempId,

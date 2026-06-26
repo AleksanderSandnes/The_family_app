@@ -290,7 +290,7 @@ class WishlistViewModel
             viewModelScope.launch {
                 val userId = repo.currentUserId.first() ?: return@launch
                 val user = repo.getUser(userId)
-                val tempId = "temp-${System.currentTimeMillis()}"
+                val tempId = "temp-${java.util.UUID.randomUUID()}"
                 _wishlists.value =
                     _wishlists.value +
                     WishlistModel(id = tempId, ownerUserId = userId, familyId = user?.familyId, name = name, icon = icon)
@@ -351,7 +351,7 @@ class WishlistViewModel
                 val userId = repo.currentUserId.first() ?: return@launch
                 val cleanLink = link?.trim()?.takeIf { it.isNotEmpty() }
                 val cleanPrice = price?.trim()?.takeIf { it.isNotEmpty() }
-                val tempId = "temp-${System.currentTimeMillis()}"
+                val tempId = "temp-${java.util.UUID.randomUUID()}"
                 _wishes.value =
                     _wishes.value +
                     WishModel(

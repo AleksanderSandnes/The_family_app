@@ -794,7 +794,7 @@ class ChatViewModel
                 val pendingReplyTo = _replyTo.value
                 _replyTo.value = null
 
-                val tempId = "temp-${System.currentTimeMillis()}"
+                val tempId = "temp-${java.util.UUID.randomUUID()}"
                 _messages.update {
                     it +
                         MessageModel(

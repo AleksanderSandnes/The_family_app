@@ -1,17 +1,21 @@
 package com.example.mainactivity.ui.settings
 
-import androidx.work.WorkManager
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.ThemeMode
 import com.example.mainactivity.util.MainDispatcherRule
+import com.example.mainactivity.workers.NotificationWorker
+import io.mockk.Runs
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -57,6 +61,17 @@ class SettingsViewModelTest {
         every { repo.locationVisible } returns locationVisible
 
         vm = SettingsViewModel(repo)
+
+        // The notification toggle calls NotificationWorker.schedule/cancel, which reach
+        // WorkManager (needs a real Context). Mock the side-effect out for all tests.
+        mockkObject(NotificationWorker.Companion)
+        every { NotificationWorker.schedule(any()) } just Runs
+        every { NotificationWorker.cancel(any()) } just Runs
+    }
+
+    @After
+    fun tearDown() {
+        unmockkAll()
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -98,6 +113,7 @@ class SettingsViewModelTest {
     @Test
     fun `themeMode StateFlow reflects repo flow change to DARK`() =
         runTest(dispatcherRule.dispatcher) {
+            backgroundScope.launch { vm.themeMode.collect {} } // activate WhileSubscribed
             themeMode.value = ThemeMode.DARK
             advanceUntilIdle()
             assertEquals(ThemeMode.DARK, vm.themeMode.value)
@@ -106,6 +122,7 @@ class SettingsViewModelTest {
     @Test
     fun `notificationsEnabled StateFlow reflects repo flow change to false`() =
         runTest(dispatcherRule.dispatcher) {
+            backgroundScope.launch { vm.notificationsEnabled.collect {} }
             notificationsEnabled.value = false
             advanceUntilIdle()
             assertFalse(vm.notificationsEnabled.value)
@@ -114,6 +131,7 @@ class SettingsViewModelTest {
     @Test
     fun `notifyDaysBefore StateFlow reflects repo flow change to 7`() =
         runTest(dispatcherRule.dispatcher) {
+            backgroundScope.launch { vm.notifyDaysBefore.collect {} }
             notifyDaysBefore.value = 7
             advanceUntilIdle()
             assertEquals(7, vm.notifyDaysBefore.value)
@@ -122,6 +140,7 @@ class SettingsViewModelTest {
     @Test
     fun `locationVisible StateFlow reflects repo flow change to true`() =
         runTest(dispatcherRule.dispatcher) {
+            backgroundScope.launch { vm.locationVisible.collect {} }
             locationVisible.value = true
             advanceUntilIdle()
             assertTrue(vm.locationVisible.value)
@@ -210,30 +229,22 @@ class SettingsViewModelTest {
     @Test
     fun `setNotificationsEnabled true calls repo and schedules WorkManager`() =
         runTest(dispatcherRule.dispatcher) {
-            mockkStatic(WorkManager::class)
-            val wm = mockk<WorkManager>(relaxed = true)
-            every { WorkManager.getInstance(any()) } returns wm
-
             val context = mockk<android.content.Context>(relaxed = true)
             vm.setNotificationsEnabled(true, context)
             advanceUntilIdle()
 
             coVerify { repo.setNotificationsEnabled(true) }
-            unmockkStatic(WorkManager::class)
+            coVerify { NotificationWorker.schedule(context) }
         }
 
     @Test
     fun `setNotificationsEnabled false calls repo and cancels WorkManager`() =
         runTest(dispatcherRule.dispatcher) {
-            mockkStatic(WorkManager::class)
-            val wm = mockk<WorkManager>(relaxed = true)
-            every { WorkManager.getInstance(any()) } returns wm
-
             val context = mockk<android.content.Context>(relaxed = true)
             vm.setNotificationsEnabled(false, context)
             advanceUntilIdle()
 
             coVerify { repo.setNotificationsEnabled(false) }
-            unmockkStatic(WorkManager::class)
+            coVerify { NotificationWorker.cancel(context) }
         }
 }

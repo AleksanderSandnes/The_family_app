@@ -142,7 +142,7 @@ class BirthdayViewModel
             viewModelScope.launch {
                 val userId = repo.currentUserId.first() ?: return@launch
                 val user = repo.getUser(userId) ?: return@launch
-                val tempId = "temp-${System.currentTimeMillis()}"
+                val tempId = "temp-${java.util.UUID.randomUUID()}"
                 _birthdays.value = _birthdays.value +
                     BirthdayModel(
                         id = tempId,

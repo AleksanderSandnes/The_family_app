@@ -171,7 +171,7 @@ class CalendarViewModel
                 val userId = repo.currentUserId.first() ?: return@launch
                 val user = repo.getUser(userId) ?: return@launch
                 val resolvedDateTo = if (dateTo.isBlank()) dateFrom else dateTo
-                val tempId = "temp-${System.currentTimeMillis()}"
+                val tempId = "temp-${java.util.UUID.randomUUID()}"
                 _events.value = _events.value +
                     CalendarEventModel(
                         id = tempId,

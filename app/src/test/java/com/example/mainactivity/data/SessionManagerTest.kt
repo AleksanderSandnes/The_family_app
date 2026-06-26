@@ -3,6 +3,7 @@ package com.example.mainactivity.data
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,6 +24,15 @@ class SessionManagerTest {
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         sessionManager = SessionManager(context)
+        // The Preferences DataStore is a process singleton keyed by file name, so writes
+        // leak across tests in the suite. Reset to defaults before each test.
+        runBlocking {
+            sessionManager.signOut()
+            sessionManager.setThemeMode(ThemeMode.SYSTEM)
+            sessionManager.setNotificationsEnabled(true)
+            sessionManager.setNotifyDaysBefore(1)
+            sessionManager.setLocationVisible(false)
+        }
     }
 
     // --- Default values ---

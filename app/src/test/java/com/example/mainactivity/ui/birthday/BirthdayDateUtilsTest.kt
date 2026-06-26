@@ -61,11 +61,12 @@ class BirthdayDateUtilsTest {
     }
 
     @Test
-    fun nextBirthdayDate_feb29InNonLeapYear_returnsNull() {
-        // 2023 is not a leap year. bd.withYear(2023) for Feb 29 throws → caught → null
+    fun nextBirthdayDate_feb29InNonLeapYear_returnsNextLeapYear() {
+        // LocalDate.withYear adjusts Feb 29 to Feb 28 in a non-leap year (it does not throw),
+        // so 2023-02-28 is already past 2023-06-25 → the next actual Feb 29 lands in leap 2024.
         val nonLeapToday = LocalDate.of(2023, 6, 25)
         val result = nextBirthdayDate("2000-02-29", nonLeapToday)
-        assertNull(result)
+        assertEquals(LocalDate.of(2024, 2, 29), result)
     }
 
     @Test
