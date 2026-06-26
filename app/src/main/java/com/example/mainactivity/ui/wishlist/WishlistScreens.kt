@@ -74,6 +74,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.mainactivity.data.WishModel
+import com.example.mainactivity.data.WishReservationModel
 import com.example.mainactivity.ui.components.AppFab
 import com.example.mainactivity.ui.components.EmptyState
 import com.example.mainactivity.ui.components.FeatureTopBar
@@ -219,6 +221,9 @@ fun WishlistDetailScreen(
 
     var newWishText by remember { mutableStateOf("") }
     val haptics = LocalHapticFeedback.current
+    val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
+    val reservations by viewModel.reservations.collectAsStateWithLifecycle()
+    val isOwner = currentUserId != null && wishlist?.ownerUserId == currentUserId
     var showMenu by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showChangeIconDialog by remember { mutableStateOf(false) }
@@ -259,11 +264,13 @@ fun WishlistDetailScreen(
             )
         },
         bottomBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 4.dp,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            // Only the wishlist owner adds wishes; family members view + reserve.
+            if (isOwner) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                 Row(
                     modifier =
                         Modifier
@@ -310,6 +317,7 @@ fun WishlistDetailScreen(
                     }
                 }
             }
+            }
         },
     ) { padding ->
         if (sortedWishes.isEmpty()) {
@@ -324,6 +332,17 @@ fun WishlistDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(sortedWishes, key = { it.id }) { wish ->
+                    if (!isOwner) {
+                        MemberWishCard(
+                            wish = wish,
+                            reservation = reservations[wish.id],
+                            currentUserId = currentUserId,
+                            onReserve = { viewModel.reserve(wish) },
+                            onUnreserve = { viewModel.unreserve(wish) },
+                            modifier = Modifier.animateItem(),
+                        )
+                        return@items
+                    }
                     SwipeToRevealDelete(
                         onDelete = { viewModel.deleteWish(wish) },
                         modifier = Modifier.animateItem(),
@@ -402,6 +421,55 @@ fun WishlistDetailScreen(
                 showChangeIconDialog = false
             },
         )
+    }
+}
+
+/** A wish as seen by a NON-owner family member: title + reserve/claim control.
+ *  Reservation state is hidden from the wishlist owner at the DB level (RLS). */
+@Composable
+private fun MemberWishCard(
+    wish: WishModel,
+    reservation: WishReservationModel?,
+    currentUserId: String?,
+    onReserve: () -> Unit,
+    onUnreserve: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val reservedByMe = reservation != null && reservation.reservedBy == currentUserId
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            Modifier.padding(start = 16.dp, top = 6.dp, bottom = 6.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                wish.text,
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.width(8.dp))
+            when {
+                reservation == null ->
+                    TextButton(onClick = onReserve) { Text("Reserve") }
+                reservedByMe ->
+                    TextButton(onClick = onUnreserve) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Reserved by you")
+                    }
+                else ->
+                    Text(
+                        "Reserved",
+                        modifier = Modifier.padding(end = 8.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+            }
+        }
     }
 }
 

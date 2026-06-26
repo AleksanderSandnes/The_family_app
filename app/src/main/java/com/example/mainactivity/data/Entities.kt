@@ -106,6 +106,14 @@ data class WishModel(
 )
 
 @Serializable
+data class WishReservationModel(
+    val id: String = "",
+    @SerialName("wish_id") val wishId: String = "",
+    @SerialName("reserved_by") val reservedBy: String = "",
+    @SerialName("created_at") val createdAt: String = "",
+)
+
+@Serializable
 data class ConversationModel(
     val id: String = "",
     @SerialName("user_from") val userFrom: String = "",

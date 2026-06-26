@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.WishModel
+import com.example.mainactivity.data.WishReservationModel
 import com.example.mainactivity.data.WishlistModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,6 +48,14 @@ class WishlistViewModel @Inject constructor(
     private val _wishes = MutableStateFlow<List<WishModel>>(emptyList())
     val wishes: StateFlow<List<WishModel>> = _wishes.asStateFlow()
 
+    private val _currentUserId = MutableStateFlow<String?>(null)
+    val currentUserId: StateFlow<String?> = _currentUserId.asStateFlow()
+
+    // Reservations visible to the current user, keyed by wish id. Empty for the wishlist
+    // owner (RLS hides reservations on their own wishlists to preserve the surprise).
+    private val _reservations = MutableStateFlow<Map<String, WishReservationModel>>(emptyMap())
+    val reservations: StateFlow<Map<String, WishReservationModel>> = _reservations.asStateFlow()
+
     private var realtimeWishlistsChannel: RealtimeChannel? = null
     private var realtimeWishesChannel: RealtimeChannel? = null
     private var subscribedFamilyId: String? = null
@@ -55,6 +64,7 @@ class WishlistViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             repo.currentUserId.collect { userId ->
+                _currentUserId.value = userId
                 if (userId != null) loadWishlists(userId) else _wishlists.value = emptyList()
             }
         }
@@ -183,6 +193,7 @@ class WishlistViewModel @Inject constructor(
                     _selectedWishlist.value = wishlistDeferred.await()
                     _wishes.value = wishesDeferred.await()
                 }
+                loadReservations()
             }
             subscribeToWishes(wishlistId)
         }
@@ -196,7 +207,58 @@ class WishlistViewModel @Inject constructor(
                     .select { filter { eq("wishlist_id", wishlistId) } }
                     .decodeList<WishModel>()
         }
+        loadReservations()
     }
+
+    /** Loads reservations the current user is allowed to see (none if they own the wishlist). */
+    private suspend fun loadReservations() {
+        val wishIds = _wishes.value.map { it.id }.filter { !it.startsWith("temp-") }
+        _reservations.value =
+            if (wishIds.isEmpty()) {
+                emptyMap()
+            } else {
+                runCatching {
+                    db
+                        .from("wish_reservations")
+                        .select { filter { isIn("wish_id", wishIds) } }
+                        .decodeList<WishReservationModel>()
+                        .associateBy { it.wishId }
+                }.getOrDefault(emptyMap())
+            }
+    }
+
+    /** Claim a gift (hidden from the wishlist owner via RLS). */
+    fun reserve(wish: WishModel) =
+        viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            _reservations.value =
+                _reservations.value + (wish.id to WishReservationModel(wishId = wish.id, reservedBy = userId))
+            runCatching {
+                db.from("wish_reservations").insert(
+                    buildJsonObject {
+                        put("wish_id", wish.id)
+                        put("reserved_by", userId)
+                    },
+                )
+            }
+            loadReservations()
+        }
+
+    /** Release a claim made by the current user. */
+    fun unreserve(wish: WishModel) =
+        viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            _reservations.value = _reservations.value - wish.id
+            runCatching {
+                db.from("wish_reservations").delete {
+                    filter {
+                        eq("wish_id", wish.id)
+                        eq("reserved_by", userId)
+                    }
+                }
+            }
+            loadReservations()
+        }
 
     private suspend fun subscribeToWishes(wishlistId: String) {
         // Guard: if already subscribed to this wishlist, don't re-subscribe
