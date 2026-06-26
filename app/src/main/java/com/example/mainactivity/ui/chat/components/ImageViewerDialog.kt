@@ -170,7 +170,7 @@ private fun downloadImage(
     context: Context,
     url: String,
 ) {
-    try {
+    runCatching {
         val filename = "family_${System.currentTimeMillis()}.jpg"
         val request =
             DownloadManager
@@ -182,7 +182,7 @@ private fun downloadImage(
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         dm.enqueue(request)
         Toast.makeText(context, "Saving to gallery…", Toast.LENGTH_SHORT).show()
-    } catch (e: Exception) {
+    }.onFailure {
         Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show()
     }
 }

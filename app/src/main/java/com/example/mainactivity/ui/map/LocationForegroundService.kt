@@ -32,6 +32,9 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.time.Instant
 
+private const val LOCATION_UPDATE_INTERVAL_MS = 5 * 60_000L
+private const val LOCATION_MIN_UPDATE_INTERVAL_MS = 3 * 60_000L
+
 class LocationForegroundService : Service() {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var fusedClient: FusedLocationProviderClient
@@ -61,8 +64,8 @@ class LocationForegroundService : Service() {
             LocationRequest
                 .Builder(
                     Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                    5 * 60_000L,
-                ).setMinUpdateIntervalMillis(3 * 60_000L)
+                    LOCATION_UPDATE_INTERVAL_MS,
+                ).setMinUpdateIntervalMillis(LOCATION_MIN_UPDATE_INTERVAL_MS)
                 .build()
 
         locationCallback =

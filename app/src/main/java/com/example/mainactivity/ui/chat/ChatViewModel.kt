@@ -62,6 +62,10 @@ data class TypingSignal(
     val typing: Boolean,
 )
 
+private const val TYPING_AUTOCLEAR_MS = 5000L
+private const val TYPING_THROTTLE_MS = 2000L
+private const val USER_ID_PREVIEW_LENGTH = 8
+
 @HiltViewModel
 class ChatViewModel
     @Inject
@@ -238,7 +242,7 @@ class ChatViewModel
                                             lastMsg.userFrom == userId -> "You"
                                             else ->
                                                 _userProfiles.value[lastMsg.userFrom]?.name
-                                                    ?: lastMsg.userFrom.take(8)
+                                                    ?: lastMsg.userFrom.take(USER_ID_PREVIEW_LENGTH)
                                         }
                                     ConversationWithPreview(
                                         conversation = conv,
@@ -419,7 +423,7 @@ class ChatViewModel
                         // Auto-clear in case the "stopped typing" signal is missed.
                         typingClearJobs[signal.userId] =
                             viewModelScope.launch {
-                                delay(5000)
+                                delay(TYPING_AUTOCLEAR_MS)
                                 _typingUsers.update { it - signal.userId }
                             }
                     } else {
@@ -434,7 +438,7 @@ class ChatViewModel
             val channel = typingChannel ?: return
             val me = myUserId ?: return
             val now = System.currentTimeMillis()
-            if (typing && now - lastTypingSentMs < 2000) return
+            if (typing && now - lastTypingSentMs < TYPING_THROTTLE_MS) return
             if (typing) lastTypingSentMs = now
             viewModelScope.launch {
                 runCatching { channel.broadcast("typing", TypingSignal(me, typing)) }
@@ -858,20 +862,15 @@ class ChatViewModel
             context: Context,
             conversationId: String,
         ): Uri? =
-            try {
+            runCatching {
                 val captureDir = File(context.cacheDir, "camera_captures").also { it.mkdirs() }
                 val file = File(captureDir, "group_pending.jpg")
                 pendingCameraFile = file
                 pendingCameraConversationId = conversationId
                 FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            } catch (e: Exception) {
-                null
-            }
+            }.getOrNull()
 
-        fun onCameraResult(
-            context: Context,
-            success: Boolean,
-        ) =
+        fun onCameraResult(success: Boolean) =
             viewModelScope.launch {
                 if (!success) {
                     pendingCameraFile = null

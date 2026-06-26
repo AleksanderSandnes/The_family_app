@@ -1,97 +1,75 @@
 package com.example.mainactivity.ui.chat
 
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Locale
+
+private const val MILLIS_PER_MINUTE = 60_000L
+private const val MILLIS_PER_HOUR = 3_600_000L
+private const val MILLIS_PER_DAY = 86_400_000L
+private const val MINUTES_PER_HOUR = 60
+private const val HOURS_PER_DAY = 24
+private const val DAYS_PER_WEEK = 7
+private const val PRESENCE_ACTIVE_NOW_MINUTES = 2
+private const val MESSAGE_GROUP_GAP_MILLIS = 10 * MILLIS_PER_MINUTE
+
+private fun dayOfWeekShort(epochMs: Long): String {
+    val cal = Calendar.getInstance()
+    cal.timeInMillis = epochMs
+    return cal.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault()) ?: ""
+}
+
+private fun monthDayShort(epochMs: Long): String {
+    val cal = Calendar.getInstance()
+    cal.timeInMillis = epochMs
+    val month = cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) ?: ""
+    return "$month ${cal.get(Calendar.DAY_OF_MONTH)}"
+}
+
 /** Short relative time label for conversation list preview (e.g. "2m ago", "Yesterday", "Mon"). */
 internal fun relativeTime(isoString: String): String =
-    try {
-        val instant = java.time.Instant.parse(isoString)
-        val nowMs = System.currentTimeMillis()
-        val diffMs = nowMs - instant.toEpochMilli()
-        val diffMin = diffMs / 60_000
-        val diffH = diffMs / 3_600_000
-        val diffD = diffMs / 86_400_000
+    runCatching {
+        val instant = Instant.parse(isoString)
+        val diffMs = System.currentTimeMillis() - instant.toEpochMilli()
+        val diffMin = diffMs / MILLIS_PER_MINUTE
+        val diffH = diffMs / MILLIS_PER_HOUR
+        val diffD = diffMs / MILLIS_PER_DAY
         when {
             diffMin < 1 -> "now"
-            diffMin < 60 -> "${diffMin}m ago"
-            diffH < 24 -> "${diffH}h ago"
+            diffMin < MINUTES_PER_HOUR -> "${diffMin}m ago"
+            diffH < HOURS_PER_DAY -> "${diffH}h ago"
             diffD == 1L -> "Yesterday"
-            diffD < 7 -> {
-                val cal = java.util.Calendar.getInstance()
-                cal.timeInMillis = instant.toEpochMilli()
-                cal.getDisplayName(
-                    java.util.Calendar.DAY_OF_WEEK,
-                    java.util.Calendar.SHORT,
-                    java.util.Locale.getDefault(),
-                ) ?: ""
-            }
-            else -> {
-                val cal = java.util.Calendar.getInstance()
-                cal.timeInMillis = instant.toEpochMilli()
-                val month =
-                    cal.getDisplayName(
-                        java.util.Calendar.MONTH,
-                        java.util.Calendar.SHORT,
-                        java.util.Locale.getDefault(),
-                    ) ?: ""
-                "$month ${cal.get(java.util.Calendar.DAY_OF_MONTH)}"
-            }
+            diffD < DAYS_PER_WEEK -> dayOfWeekShort(instant.toEpochMilli())
+            else -> monthDayShort(instant.toEpochMilli())
         }
-    } catch (e: Exception) {
-        ""
-    }
+    }.getOrDefault("")
 
 /** Compact time label for message timestamps (e.g. "2:30 PM", "Yesterday 2:30 PM", "Mon 2:30 PM"). */
 internal fun messageTimeLabel(isoString: String): String =
-    try {
-        val instant = java.time.Instant.parse(isoString)
-        val nowMs = System.currentTimeMillis()
-        val diffMs = nowMs - instant.toEpochMilli()
-        val diffD = diffMs / 86_400_000
-        val odt = java.time.OffsetDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
-        val timePart =
-            odt.format(
-                java.time.format.DateTimeFormatter
-                    .ofPattern("h:mm a"),
-            )
+    runCatching {
+        val instant = Instant.parse(isoString)
+        val diffD = (System.currentTimeMillis() - instant.toEpochMilli()) / MILLIS_PER_DAY
+        val odt = OffsetDateTime.ofInstant(instant, ZoneId.systemDefault())
+        val timePart = odt.format(DateTimeFormatter.ofPattern("h:mm a"))
         when {
             diffD == 0L -> timePart
             diffD == 1L -> "Yesterday $timePart"
-            diffD < 7 -> {
-                val cal = java.util.Calendar.getInstance()
-                cal.timeInMillis = instant.toEpochMilli()
-                val dow =
-                    cal.getDisplayName(
-                        java.util.Calendar.DAY_OF_WEEK,
-                        java.util.Calendar.SHORT,
-                        java.util.Locale.getDefault(),
-                    ) ?: ""
-                "$dow $timePart"
-            }
-            else -> {
-                val cal = java.util.Calendar.getInstance()
-                cal.timeInMillis = instant.toEpochMilli()
-                val month =
-                    cal.getDisplayName(
-                        java.util.Calendar.MONTH,
-                        java.util.Calendar.SHORT,
-                        java.util.Locale.getDefault(),
-                    ) ?: ""
-                "$month ${cal.get(java.util.Calendar.DAY_OF_MONTH)} $timePart"
-            }
+            diffD < DAYS_PER_WEEK -> "${dayOfWeekShort(instant.toEpochMilli())} $timePart"
+            else -> "${monthDayShort(instant.toEpochMilli())} $timePart"
         }
-    } catch (e: Exception) {
-        ""
-    }
+    }.getOrDefault("")
 
 /** Chat-header presence: "Active now" within 2 minutes, else "Active {relative}", or null. */
 internal fun presenceLabel(lastActiveIso: String?): String? {
     if (lastActiveIso == null) return null
-    return try {
-        val instant = java.time.Instant.parse(lastActiveIso)
-        val diffMin = (System.currentTimeMillis() - instant.toEpochMilli()) / 60_000
-        if (diffMin < 2) "Active now" else "Active ${relativeTime(lastActiveIso)}"
-    } catch (e: Exception) {
-        null
-    }
+    return runCatching {
+        val instant = Instant.parse(lastActiveIso)
+        val diffMin = (System.currentTimeMillis() - instant.toEpochMilli()) / MILLIS_PER_MINUTE
+        if (diffMin < PRESENCE_ACTIVE_NOW_MINUTES) "Active now" else "Active ${relativeTime(lastActiveIso)}"
+    }.getOrNull()
 }
 
 /** True if another participant's last-read time [otherLastRead] is at or after [sentAt],
@@ -101,13 +79,9 @@ internal fun messageSeen(
     sentAt: String,
 ): Boolean {
     if (otherLastRead == null) return false
-    return try {
-        !java.time.Instant
-            .parse(otherLastRead)
-            .isBefore(java.time.Instant.parse(sentAt))
-    } catch (e: Exception) {
-        false
-    }
+    return runCatching {
+        !Instant.parse(otherLastRead).isBefore(Instant.parse(sentAt))
+    }.getOrDefault(false)
 }
 
 /** Returns true if the gap between two ISO timestamps exceeds 10 minutes. */
@@ -115,16 +89,8 @@ internal fun gapExceedsTenMinutes(
     earlierIso: String,
     laterIso: String,
 ): Boolean =
-    try {
-        val earlier =
-            java.time.Instant
-                .parse(earlierIso)
-                .toEpochMilli()
-        val later =
-            java.time.Instant
-                .parse(laterIso)
-                .toEpochMilli()
-        (later - earlier) > 10 * 60_000L
-    } catch (e: Exception) {
-        false
-    }
+    runCatching {
+        val earlier = Instant.parse(earlierIso).toEpochMilli()
+        val later = Instant.parse(laterIso).toEpochMilli()
+        (later - earlier) > MESSAGE_GROUP_GAP_MILLIS
+    }.getOrDefault(false)

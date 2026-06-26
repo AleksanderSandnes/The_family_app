@@ -25,6 +25,9 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
 
+private const val MAX_IMAGE_DIM = 1024
+private const val JPEG_QUALITY = 85
+
 @HiltViewModel
 class ProfileViewModel
     @Inject
@@ -62,19 +65,14 @@ class ProfileViewModel
         }
 
         fun prepareCameraCapture(context: Context): Uri? =
-            try {
+            runCatching {
                 val captureDir = File(context.cacheDir, "camera_captures").also { it.mkdirs() }
                 val file = File(captureDir, "avatar_pending.jpg")
                 pendingCameraFile = file
                 FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            } catch (e: Exception) {
-                null
-            }
+            }.getOrNull()
 
-        fun onCameraResult(
-            context: Context,
-            success: Boolean,
-        ) =
+        fun onCameraResult(success: Boolean) =
             viewModelScope.launch {
                 if (!success) {
                     pendingCameraFile = null
@@ -116,7 +114,7 @@ class ProfileViewModel
         private suspend fun compressImage(bytes: ByteArray): ByteArray =
             withContext(Dispatchers.IO) {
                 val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@withContext bytes
-                val maxDim = 1024
+                val maxDim = MAX_IMAGE_DIM
                 val scale = minOf(maxDim.toFloat() / bmp.width, maxDim.toFloat() / bmp.height, 1f)
                 val scaled =
                     if (scale < 1f) {
@@ -129,7 +127,7 @@ class ProfileViewModel
                     } else {
                         bmp
                     }
-                ByteArrayOutputStream().also { scaled.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
+                ByteArrayOutputStream().also { scaled.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }.toByteArray()
             }
 
         fun removeAvatar() =

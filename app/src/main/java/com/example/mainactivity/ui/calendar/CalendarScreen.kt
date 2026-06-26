@@ -105,34 +105,39 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val SHORT_DATE = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 private val SHORT_DATE_DAY = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
 private val MONTH_YEAR_FMT = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
 private val SECTION_DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)
 private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 private val WEEKDAY_LABELS = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
 
+private const val MAX_HOUR = 23
+private const val MAX_MINUTE = 59
+private const val DEFAULT_EVENT_HOUR = 9
+private const val DAYS_PER_WEEK = 7
+
 /** Maps icon key → a stable index 0–5 used to pick a dot color from the Material color scheme. */
-private fun iconColorIndex(key: String): Int =
-    when (key) {
-        "schedule" -> 0
-        "cake" -> 1
-        "people" -> 2
-        "work" -> 3
-        "school" -> 4
-        "restaurant" -> 5
-        "flight" -> 0
-        "local_hospital" -> 1
-        "celebration" -> 2
-        "shopping_cart" -> 3
-        "music_note" -> 4
-        "fitness_center" -> 5
-        "wb_sunny" -> 0
-        "favorite" -> 1
-        "star" -> 2
-        "emoji_events" -> 3
-        else -> 0
-    }
+private val ICON_COLOR_INDEX =
+    mapOf(
+        "schedule" to 0,
+        "cake" to 1,
+        "people" to 2,
+        "work" to 3,
+        "school" to 4,
+        "restaurant" to 5,
+        "flight" to 0,
+        "local_hospital" to 1,
+        "celebration" to 2,
+        "shopping_cart" to 3,
+        "music_note" to 4,
+        "fitness_center" to 5,
+        "wb_sunny" to 0,
+        "favorite" to 1,
+        "star" to 2,
+        "emoji_events" to 3,
+    )
+
+private fun iconColorIndex(key: String): Int = ICON_COLOR_INDEX[key] ?: 0
 
 private data class CalendarIconOption(
     val key: String,
@@ -161,9 +166,9 @@ private val CALENDAR_ICON_OPTIONS =
 
 private fun iconVector(key: String): ImageVector = CALENDAR_ICON_OPTIONS.find { it.key == key }?.vector ?: Icons.Filled.Schedule
 
-private fun parseHh(t: String) = t.substringBefore(":").toIntOrNull()?.coerceIn(0, 23) ?: 9
+private fun parseHh(t: String) = t.substringBefore(":").toIntOrNull()?.coerceIn(0, MAX_HOUR) ?: DEFAULT_EVENT_HOUR
 
-private fun parseMm(t: String) = t.substringAfter(":").toIntOrNull()?.coerceIn(0, 59) ?: 0
+private fun parseMm(t: String) = t.substringAfter(":").toIntOrNull()?.coerceIn(0, MAX_MINUTE) ?: 0
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -378,7 +383,7 @@ private fun WeekStrip(
             }
         }
         Row(Modifier.fillMaxWidth()) {
-            (0..6).forEach { i ->
+            for (i in 0..6) {
                 val date = monday.plusDays(i.toLong())
                 DayCell(
                     date = date,
@@ -650,7 +655,7 @@ private fun monthCells(month: YearMonth): List<LocalDate?> {
     val result = mutableListOf<LocalDate?>()
     repeat(offset) { result.add(null) }
     for (d in 1..month.lengthOfMonth()) result.add(month.atDay(d))
-    while (result.size % 7 != 0) result.add(null)
+    while (result.size % DAYS_PER_WEEK != 0) result.add(null)
     return result
 }
 

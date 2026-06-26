@@ -567,6 +567,6 @@ class FamilyRepository
                     0xFF10B981.toInt(),
                 )
 
-            fun palette(seed: String): Int = avatarColors[(seed.hashCode() and 0x7FFFFFFF) % avatarColors.size]
+            fun palette(seed: String): Int = avatarColors[(seed.hashCode() and Int.MAX_VALUE) % avatarColors.size]
         }
     }

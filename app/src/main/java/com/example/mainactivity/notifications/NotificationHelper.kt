@@ -32,6 +32,9 @@ object NotificationHelper {
     const val CHANNEL_CALENDAR = "channel_calendar"
     const val KEY_TEXT_REPLY = "key_text_reply"
 
+    private const val AVATAR_BITMAP_SIZE = 96
+    private const val AVATAR_TEXT_RATIO = 0.45f
+
     fun createAllChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -142,14 +145,14 @@ object NotificationHelper {
     }
 
     private fun createInitialBitmap(name: String): Bitmap {
-        val size = 96
+        val size = AVATAR_BITMAP_SIZE
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.color = android.graphics.Color.parseColor("#6366F1")
         canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
         paint.color = android.graphics.Color.WHITE
-        paint.textSize = size * 0.45f
+        paint.textSize = size * AVATAR_TEXT_RATIO
         paint.typeface = Typeface.DEFAULT_BOLD
         paint.textAlign = Paint.Align.CENTER
         val initial = name.firstOrNull()?.uppercaseChar()?.toString() ?: "?"

@@ -24,6 +24,10 @@ naming:
     ignoreAnnotated: ['Composable']
 
 style:
+  MaxLineLength:
+    # The project deliberately sets `max_line_length = off` in .editorconfig (ktlint
+    # honours it); detekt's line-length rule would contradict that policy.
+    active: false
   MagicNumber:
     ignoreAnnotated: ['Composable']
     ignoreNumbers: ['-1', '0', '1', '2', '100']

@@ -506,7 +506,7 @@ fun ConversationScreen(
     val cameraLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.TakePicture(),
-        ) { success -> viewModel.onCameraResult(context, success) }
+        ) { success -> viewModel.onCameraResult(success) }
 
     val cameraPermissionLauncher =
         rememberLauncherForActivityResult(

@@ -33,6 +33,9 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import javax.inject.Inject
 
+private const val LOCATION_UPDATE_INTERVAL_MS = 30_000L
+private const val LOCATION_MIN_UPDATE_INTERVAL_MS = 15_000L
+
 @HiltViewModel
 class FamilyMapViewModel
     @Inject
@@ -126,8 +129,8 @@ class FamilyMapViewModel
                 LocationRequest
                     .Builder(
                         Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                        30_000L,
-                    ).setMinUpdateIntervalMillis(15_000L)
+                        LOCATION_UPDATE_INTERVAL_MS,
+                    ).setMinUpdateIntervalMillis(LOCATION_MIN_UPDATE_INTERVAL_MS)
                     .build()
 
             locationCallback =

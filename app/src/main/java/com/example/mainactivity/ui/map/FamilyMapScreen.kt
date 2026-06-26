@@ -356,6 +356,13 @@ private suspend fun buildMarkerBitmap(
     return createInitialsBitmap(name, colorInt, sizePx)
 }
 
+private const val AVATAR_BORDER_STROKE_RATIO = 0.07f
+private const val AVATAR_BORDER_INSET_RATIO = 0.035f
+private const val AVATAR_INITIAL_TEXT_RATIO = 0.42f
+private const val SECONDS_PER_MINUTE = 60
+private const val SECONDS_PER_HOUR = 3600
+private const val SECONDS_PER_DAY = 86400
+
 private fun createInitialsBitmap(
     name: String,
     colorInt: Int,
@@ -372,9 +379,9 @@ private fun createInitialsBitmap(
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.WHITE
             style = Paint.Style.STROKE
-            strokeWidth = sizePx * 0.07f
+            strokeWidth = sizePx * AVATAR_BORDER_STROKE_RATIO
         }
-    canvas.drawCircle(radius, radius, radius - sizePx * 0.035f, borderPaint)
+    canvas.drawCircle(radius, radius, radius - sizePx * AVATAR_BORDER_INSET_RATIO, borderPaint)
 
     val initial =
         name
@@ -386,7 +393,7 @@ private fun createInitialsBitmap(
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.WHITE
             textAlign = Paint.Align.CENTER
-            textSize = sizePx * 0.42f
+            textSize = sizePx * AVATAR_INITIAL_TEXT_RATIO
             typeface = Typeface.DEFAULT_BOLD
         }
     val bounds = Rect()
@@ -424,9 +431,9 @@ private suspend fun loadCircularBitmap(
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = android.graphics.Color.WHITE
                 style = Paint.Style.STROKE
-                strokeWidth = sizePx * 0.07f
+                strokeWidth = sizePx * AVATAR_BORDER_STROKE_RATIO
             }
-        canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f - sizePx * 0.035f, borderPaint)
+        canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f - sizePx * AVATAR_BORDER_INSET_RATIO, borderPaint)
         output
     } catch (_: Exception) {
         null
@@ -443,9 +450,9 @@ private fun formatLastSeen(updatedAt: String?): String {
                 .between(instant, java.time.Instant.now())
                 .seconds
         when {
-            seconds < 60 -> "Just now" // also handles clock-skew futures (negative seconds)
-            seconds < 3600 -> "${seconds / 60} min ago"
-            seconds < 86400 -> "${seconds / 3600} hours ago"
+            seconds < SECONDS_PER_MINUTE -> "Just now" // also handles clock-skew futures (negative seconds)
+            seconds < SECONDS_PER_HOUR -> "${seconds / SECONDS_PER_MINUTE} min ago"
+            seconds < SECONDS_PER_DAY -> "${seconds / SECONDS_PER_HOUR} hours ago"
             else ->
                 instant
                     .atZone(java.time.ZoneId.systemDefault())

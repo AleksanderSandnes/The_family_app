@@ -64,9 +64,12 @@ val FeatureFamily = Violet600
 val BrandGradient = Brush.linearGradient(listOf(Indigo600, Violet600))
 val BrandGradientSoft = Brush.linearGradient(listOf(Indigo500, Violet500))
 
+private val HeroDarkStart = Color(0xFF3730A3)
+private val HeroDarkEnd = Color(0xFF6D28D9)
+
 fun heroGradient(dark: Boolean): Brush =
     if (dark) {
-        Brush.linearGradient(listOf(Color(0xFF3730A3), Color(0xFF6D28D9)))
+        Brush.linearGradient(listOf(HeroDarkStart, HeroDarkEnd))
     } else {
         Brush.linearGradient(listOf(Indigo600, Violet600))
     }

@@ -24,6 +24,10 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
+private const val JOIN_CODE_LENGTH = 8
+private const val MAX_IMAGE_DIM = 1024
+private const val JPEG_QUALITY = 85
+
 @HiltViewModel
 class FamilyViewModel
     @Inject
@@ -124,7 +128,7 @@ class FamilyViewModel
             java.util.UUID
                 .randomUUID()
                 .toString()
-                .take(8)
+                .take(JOIN_CODE_LENGTH)
                 .uppercase()
 
         fun renameFamily(newName: String) {
@@ -178,7 +182,7 @@ class FamilyViewModel
                 val bmp =
                     BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                         ?: return@withContext bytes
-                val maxDim = 1024
+                val maxDim = MAX_IMAGE_DIM
                 val scale = minOf(maxDim.toFloat() / bmp.width, maxDim.toFloat() / bmp.height, 1f)
                 val scaled =
                     if (scale < 1f) {
@@ -191,7 +195,7 @@ class FamilyViewModel
                     } else {
                         bmp
                     }
-                ByteArrayOutputStream().also { scaled.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
+                ByteArrayOutputStream().also { scaled.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }.toByteArray()
             }
 
         fun removeMember(memberId: String) {

@@ -29,6 +29,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 const val NOTIFICATION_WORK_NAME = "family_notifications"
+private const val NOTIFICATION_HOUR = 9
 
 class NotificationWorker(
     context: Context,
@@ -41,78 +42,83 @@ class NotificationWorker(
         val userId = repo.currentUserId.first() ?: return Result.success()
         val daysBefore = repo.notifyDaysBefore.first()
         val today = LocalDate.now()
-        val db = SupabaseManager.client.postgrest
 
         NotificationHelper.createAllChannels(applicationContext)
 
         val user =
             runCatching {
-                db
+                SupabaseManager.client.postgrest
                     .from("users")
                     .select { filter { eq("id", userId) } }
                     .decodeList<UserModel>()
                     .firstOrNull()
             }.getOrNull() ?: return Result.success()
 
-        val birthdays =
-            runCatching {
-                if (user.familyId != null) {
-                    db
-                        .from("birthdays")
-                        .select {
-                            filter {
-                                or {
-                                    eq("made_by_user_id", userId)
-                                    eq("family_id", user.familyId)
-                                }
-                            }
-                        }.decodeList<BirthdayModel>()
-                } else {
-                    db
-                        .from("birthdays")
-                        .select {
-                            filter { eq("made_by_user_id", userId) }
-                        }.decodeList<BirthdayModel>()
-                }
-            }.getOrDefault(emptyList())
-
-        birthdays.forEach { b ->
-            val daysUntil = daysUntilRecurring(b.date, today) ?: return@forEach
-            if (daysUntil == 0 || (daysBefore > 0 && daysUntil == daysBefore)) {
-                postBirthdayNotification(b, daysUntil)
-            }
-        }
-
-        val events =
-            runCatching {
-                if (user.familyId != null) {
-                    db
-                        .from("calendar_events")
-                        .select {
-                            filter {
-                                or {
-                                    eq("user_id", userId)
-                                    eq("family_id", user.familyId)
-                                }
-                            }
-                        }.decodeList<CalendarEventModel>()
-                } else {
-                    db
-                        .from("calendar_events")
-                        .select {
-                            filter { eq("user_id", userId) }
-                        }.decodeList<CalendarEventModel>()
-                }
-            }.getOrDefault(emptyList())
-
-        events.forEach { e ->
-            val daysUntil = daysUntilOneTime(e.dateFrom, today) ?: return@forEach
-            if (daysUntil == 0 || (daysBefore > 0 && daysUntil == daysBefore)) {
-                postEventNotification(e, daysUntil)
-            }
-        }
-
+        notifyBirthdays(fetchBirthdays(userId, user.familyId), today, daysBefore)
+        notifyEvents(fetchEvents(userId, user.familyId), today, daysBefore)
         return Result.success()
+    }
+
+    private suspend fun fetchBirthdays(
+        userId: String,
+        familyId: String?,
+    ): List<BirthdayModel> =
+        runCatching {
+            val db = SupabaseManager.client.postgrest
+            if (familyId != null) {
+                db.from("birthdays").select {
+                    filter {
+                        or {
+                            eq("made_by_user_id", userId)
+                            eq("family_id", familyId)
+                        }
+                    }
+                }
+            } else {
+                db.from("birthdays").select { filter { eq("made_by_user_id", userId) } }
+            }.decodeList<BirthdayModel>()
+        }.getOrDefault(emptyList())
+
+    private suspend fun fetchEvents(
+        userId: String,
+        familyId: String?,
+    ): List<CalendarEventModel> =
+        runCatching {
+            val db = SupabaseManager.client.postgrest
+            if (familyId != null) {
+                db.from("calendar_events").select {
+                    filter {
+                        or {
+                            eq("user_id", userId)
+                            eq("family_id", familyId)
+                        }
+                    }
+                }
+            } else {
+                db.from("calendar_events").select { filter { eq("user_id", userId) } }
+            }.decodeList<CalendarEventModel>()
+        }.getOrDefault(emptyList())
+
+    private fun notifyBirthdays(
+        birthdays: List<BirthdayModel>,
+        today: LocalDate,
+        daysBefore: Int,
+    ) = birthdays.forEach { b ->
+        val daysUntil = daysUntilRecurring(b.date, today) ?: return@forEach
+        if (daysUntil == 0 || (daysBefore > 0 && daysUntil == daysBefore)) {
+            postBirthdayNotification(b, daysUntil)
+        }
+    }
+
+    private fun notifyEvents(
+        events: List<CalendarEventModel>,
+        today: LocalDate,
+        daysBefore: Int,
+    ) = events.forEach { e ->
+        val daysUntil = daysUntilOneTime(e.dateFrom, today) ?: return@forEach
+        if (daysUntil == 0 || (daysBefore > 0 && daysUntil == daysBefore)) {
+            postEventNotification(e, daysUntil)
+        }
     }
 
     private fun tapIntent(): PendingIntent {
@@ -188,7 +194,7 @@ class NotificationWorker(
 
         private fun nextNineAmDelayMillis(): Long {
             val now = LocalDateTime.now()
-            val nineAmToday = now.toLocalDate().atTime(9, 0)
+            val nineAmToday = now.toLocalDate().atTime(NOTIFICATION_HOUR, 0)
             val nineAm = if (now.isBefore(nineAmToday)) nineAmToday else nineAmToday.plusDays(1)
             return Duration.between(now, nineAm).toMillis().coerceAtLeast(0L)
         }

@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val MIN_PASSWORD_LENGTH = 6
+
 data class AuthUiState(
     val loading: Boolean = false,
     val error: String? = null,
@@ -120,7 +122,7 @@ class AuthViewModel
                 setError("Please enter a valid email address.")
                 return false
             }
-            if (password.length < 6) {
+            if (password.length < MIN_PASSWORD_LENGTH) {
                 setError("Password must be at least 6 characters.")
                 return false
             }
