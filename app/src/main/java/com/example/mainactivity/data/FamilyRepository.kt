@@ -399,6 +399,9 @@ class FamilyRepository @Inject constructor(
             SupabaseManager.client.postgrest.from("families").update({
                 set("photo_url", photoUrl)
             }) { filter { eq("id", familyId) } }
+            Unit
+        }.also {
+            if (it.isSuccess) _familyChanged.emit(Unit)
         }
 
     // ---- Chat ----

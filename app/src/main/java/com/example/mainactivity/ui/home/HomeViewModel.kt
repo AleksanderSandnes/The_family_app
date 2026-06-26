@@ -36,6 +36,12 @@ class HomeViewModel @Inject constructor(
                 if (userId != null) load(userId) else _state.value = HomeUiState(isLoading = false)
             }
         }
+        viewModelScope.launch {
+            repo.familyChanged.collect {
+                val userId = repo.currentUserId.first() ?: return@collect
+                load(userId)
+            }
+        }
     }
 
     fun refresh() =
