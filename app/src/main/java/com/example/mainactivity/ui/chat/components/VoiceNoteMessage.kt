@@ -31,7 +31,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 @Composable
 fun VoiceNoteMessage(
@@ -48,6 +50,23 @@ fun VoiceNoteMessage(
         onDispose {
             player.value?.release()
             player.value = null
+        }
+    }
+
+    // Pre-fetch duration so the timestamp is correct before the user taps play.
+    LaunchedEffect(url) {
+        if (url.isNotEmpty()) {
+            withContext(Dispatchers.IO) {
+                try {
+                    val retriever = android.media.MediaMetadataRetriever()
+                    retriever.setDataSource(url, emptyMap())
+                    val ms = retriever.extractMetadata(
+                        android.media.MediaMetadataRetriever.METADATA_KEY_DURATION
+                    )?.toIntOrNull() ?: 0
+                    retriever.release()
+                    durationMs = ms
+                } catch (_: Exception) {}
+            }
         }
     }
 
