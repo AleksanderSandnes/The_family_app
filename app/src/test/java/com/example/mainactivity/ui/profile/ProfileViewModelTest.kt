@@ -215,7 +215,7 @@ class ProfileViewModelTest {
             advanceUntilIdle()
 
             assertNull(vm.user.value)
-            coVerify(exactly = 0) { repo.updateProfile(any(), any(), any(), any(), any(), any()) }
+            coVerify(exactly = 0) { repo.updateProfile(any(), any()) }
         }
 
     // ─────────────────────────────────────────────────────────────────────────

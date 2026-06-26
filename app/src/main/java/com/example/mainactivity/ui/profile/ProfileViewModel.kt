@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
+import com.example.mainactivity.data.ProfileUpdate
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -144,7 +145,7 @@ class ProfileViewModel
                     SupabaseManager.client.storage
                         .from("avatars")
                         .delete("$authId/avatar.jpg")
-                    repo.updateProfile(userId, current.name, current.email, current.birthday, current.mobile, null)
+                    repo.updateProfile(userId, ProfileUpdate(current.name, current.email, current.birthday, current.mobile, null))
                     _user.value = current.copy(avatarUrl = null)
                 }.onFailure { e -> Log.e("ProfileVM", "Avatar remove failed", e) }
             }
@@ -158,7 +159,7 @@ class ProfileViewModel
             viewModelScope.launch {
                 val userId = repo.currentUserId.first() ?: return@launch
                 val current = _user.value ?: return@launch
-                repo.updateProfile(userId, name.trim(), email.trim(), birthday.trim(), mobile.trim(), current.avatarUrl)
+                repo.updateProfile(userId, ProfileUpdate(name.trim(), email.trim(), birthday.trim(), mobile.trim(), current.avatarUrl))
                 _user.value =
                     current.copy(
                         name = name.trim(),
@@ -190,7 +191,7 @@ class ProfileViewModel
                         val bucket = SupabaseManager.client.storage.from("avatars")
                         bucket.upload("$authId/avatar.jpg", bytes) { upsert = true }
                         val url = bucket.publicUrl("$authId/avatar.jpg") + "?t=${System.currentTimeMillis()}"
-                        repo.updateProfile(userId, current.name, current.email, current.birthday, current.mobile, url)
+                        repo.updateProfile(userId, ProfileUpdate(current.name, current.email, current.birthday, current.mobile, url))
                         _user.value = current.copy(avatarUrl = url)
                     }.onFailure { e ->
                         Log.e("ProfileVM", "Avatar upload failed", e)

@@ -252,7 +252,7 @@ fun RegisterScreen(
                         step = 1
                         viewModel.clearError()
                     },
-                    onSubmit = { viewModel.register(name, email, password, confirm, birthday, mobile) },
+                    onSubmit = { viewModel.register(RegistrationForm(name, email, password, confirm, birthday, mobile)) },
                 )
         }
         if (step == 1) {

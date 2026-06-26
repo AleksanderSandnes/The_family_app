@@ -29,6 +29,15 @@ import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** Editable profile fields for [FamilyRepository.updateProfile], grouped into one parameter. */
+data class ProfileUpdate(
+    val name: String,
+    val email: String,
+    val birthday: String,
+    val mobile: String,
+    val avatarUrl: String?,
+)
+
 @Singleton
 class FamilyRepository
     @Inject
@@ -395,19 +404,15 @@ class FamilyRepository
 
         suspend fun updateProfile(
             userId: String,
-            name: String,
-            email: String,
-            birthday: String,
-            mobile: String,
-            avatarUrl: String?,
+            update: ProfileUpdate,
         ) {
             runCatching {
                 SupabaseManager.client.postgrest.from("users").update({
-                    set("name", name)
-                    set("email", email)
-                    set("birthday", birthday)
-                    set("mobile", mobile)
-                    set("avatar_url", avatarUrl)
+                    set("name", update.name)
+                    set("email", update.email)
+                    set("birthday", update.birthday)
+                    set("mobile", update.mobile)
+                    set("avatar_url", update.avatarUrl)
                 }) { filter { eq("id", userId) } }
                 invalidateUserCache()
             }

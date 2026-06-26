@@ -414,7 +414,7 @@ fun WishlistDetailScreen(
         AddWishDialog(
             onDismiss = { showAddWish = false },
             onConfirm = { text, link, price, image ->
-                viewModel.addWish(context, wishlistId, text, link, price, image)
+                viewModel.addWish(context, wishlistId, WishDraft(text, link, price, image))
                 showAddWish = false
             },
         )

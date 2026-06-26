@@ -27,6 +27,17 @@ import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
 
+/** The fields for a new calendar event, grouped into a single parameter. */
+data class EventDraft(
+    val activity: String,
+    val allDay: Boolean,
+    val dateFrom: String,
+    val dateTo: String,
+    val timeFrom: String,
+    val timeTo: String,
+    val icon: String = "schedule",
+)
+
 @HiltViewModel
 class CalendarViewModel
     @Inject
@@ -158,45 +169,37 @@ class CalendarViewModel
             _displayedMonth.value = _displayedMonth.value.minusMonths(1)
         }
 
-        fun addEvent(
-            activity: String,
-            allDay: Boolean,
-            dateFrom: String,
-            dateTo: String,
-            timeFrom: String,
-            timeTo: String,
-            icon: String = "schedule",
-        ) =
+        fun addEvent(draft: EventDraft) =
             viewModelScope.launch {
                 val userId = repo.currentUserId.first() ?: return@launch
                 val user = repo.getUser(userId) ?: return@launch
-                val resolvedDateTo = if (dateTo.isBlank()) dateFrom else dateTo
+                val resolvedDateTo = if (draft.dateTo.isBlank()) draft.dateFrom else draft.dateTo
                 val tempId = "temp-${java.util.UUID.randomUUID()}"
                 _events.value = _events.value +
                     CalendarEventModel(
                         id = tempId,
                         userId = userId,
                         familyId = user.familyId,
-                        activity = activity,
-                        allDay = allDay,
-                        dateFrom = dateFrom,
+                        activity = draft.activity,
+                        allDay = draft.allDay,
+                        dateFrom = draft.dateFrom,
                         dateTo = resolvedDateTo,
-                        timeFrom = if (allDay) "" else timeFrom,
-                        timeTo = if (allDay) "" else timeTo,
-                        icon = icon,
+                        timeFrom = if (draft.allDay) "" else draft.timeFrom,
+                        timeTo = if (draft.allDay) "" else draft.timeTo,
+                        icon = draft.icon,
                     )
                 runCatching {
                     db.from("calendar_events").insert(
                         buildJsonObject {
                             put("user_id", userId)
                             if (user.familyId != null) put("family_id", user.familyId)
-                            put("activity", activity)
-                            put("all_day", allDay)
-                            put("date_from", dateFrom)
+                            put("activity", draft.activity)
+                            put("all_day", draft.allDay)
+                            put("date_from", draft.dateFrom)
                             put("date_to", resolvedDateTo)
-                            put("time_from", if (allDay) "" else timeFrom)
-                            put("time_to", if (allDay) "" else timeTo)
-                            put("icon", icon)
+                            put("time_from", if (draft.allDay) "" else draft.timeFrom)
+                            put("time_to", if (draft.allDay) "" else draft.timeTo)
+                            put("icon", draft.icon)
                         },
                     )
                 }

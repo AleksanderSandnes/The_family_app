@@ -343,12 +343,14 @@ class CalendarViewModelTest {
             advanceUntilIdle()
 
             vm.addEvent(
-                activity = "Team lunch",
-                allDay = false,
-                dateFrom = "2025-07-10",
-                dateTo = "2025-07-10",
-                timeFrom = "12:00",
-                timeTo = "13:00",
+                EventDraft(
+                    activity = "Team lunch",
+                    allDay = false,
+                    dateFrom = "2025-07-10",
+                    dateTo = "2025-07-10",
+                    timeFrom = "12:00",
+                    timeTo = "13:00",
+                ),
             )
             advanceUntilIdle()
 
@@ -368,12 +370,14 @@ class CalendarViewModelTest {
             advanceUntilIdle()
 
             vm.addEvent(
-                activity = "Solo day",
-                allDay = true,
-                dateFrom = "2025-07-15",
-                dateTo = "",
-                timeFrom = "",
-                timeTo = "",
+                EventDraft(
+                    activity = "Solo day",
+                    allDay = true,
+                    dateFrom = "2025-07-15",
+                    dateTo = "",
+                    timeFrom = "",
+                    timeTo = "",
+                ),
             )
             advanceUntilIdle()
 
@@ -393,12 +397,14 @@ class CalendarViewModelTest {
             advanceUntilIdle()
 
             vm.addEvent(
-                activity = "Ghost event",
-                allDay = false,
-                dateFrom = "2025-07-10",
-                dateTo = "2025-07-10",
-                timeFrom = "",
-                timeTo = "",
+                EventDraft(
+                    activity = "Ghost event",
+                    allDay = false,
+                    dateFrom = "2025-07-10",
+                    dateTo = "2025-07-10",
+                    timeFrom = "",
+                    timeTo = "",
+                ),
             )
             advanceUntilIdle()
 
@@ -417,12 +423,14 @@ class CalendarViewModelTest {
             advanceUntilIdle()
 
             vm.addEvent(
-                activity = "Holiday",
-                allDay = true,
-                dateFrom = "2025-08-01",
-                dateTo = "2025-08-01",
-                timeFrom = "09:00",
-                timeTo = "17:00",
+                EventDraft(
+                    activity = "Holiday",
+                    allDay = true,
+                    dateFrom = "2025-08-01",
+                    dateTo = "2025-08-01",
+                    timeFrom = "09:00",
+                    timeTo = "17:00",
+                ),
             )
             advanceUntilIdle()
 
@@ -585,12 +593,14 @@ class CalendarViewModelTest {
 
                 userId.value = "user-1"
                 vm.addEvent(
-                    activity = "Turbine event",
-                    allDay = false,
-                    dateFrom = "2025-09-01",
-                    dateTo = "2025-09-01",
-                    timeFrom = "10:00",
-                    timeTo = "11:00",
+                    EventDraft(
+                        activity = "Turbine event",
+                        allDay = false,
+                        dateFrom = "2025-09-01",
+                        dateTo = "2025-09-01",
+                        timeFrom = "10:00",
+                        timeTo = "11:00",
+                    ),
                 )
                 advanceUntilIdle()
 

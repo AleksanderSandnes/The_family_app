@@ -21,6 +21,16 @@ data class AuthUiState(
     val success: Boolean = false,
 )
 
+/** The sign-up form fields, grouped to keep register() to a single parameter. */
+data class RegistrationForm(
+    val name: String,
+    val email: String,
+    val password: String,
+    val confirm: String,
+    val birthday: String,
+    val mobile: String,
+)
+
 @HiltViewModel
 class AuthViewModel
     @Inject
@@ -75,22 +85,15 @@ class AuthViewModel
             }
         }
 
-        fun register(
-            name: String,
-            email: String,
-            password: String,
-            confirm: String,
-            birthday: String,
-            mobile: String,
-        ) {
+        fun register(form: RegistrationForm) {
             when {
-                name.isBlank() -> return setError("Please enter your name.")
-                !validate(email = email, password = password) -> return
-                password != confirm -> return setError("Passwords do not match.")
+                form.name.isBlank() -> return setError("Please enter your name.")
+                !validate(email = form.email, password = form.password) -> return
+                form.password != form.confirm -> return setError("Passwords do not match.")
             }
             _state.update { it.copy(loading = true, error = null) }
             viewModelScope.launch {
-                val registerResult = repo.register(name, email, password, birthday, mobile)
+                val registerResult = repo.register(form.name, form.email, form.password, form.birthday, form.mobile)
                 if (registerResult.isFailure) {
                     val e = registerResult.exceptionOrNull()!!
                     Log.e("Auth", "Register failed", e)

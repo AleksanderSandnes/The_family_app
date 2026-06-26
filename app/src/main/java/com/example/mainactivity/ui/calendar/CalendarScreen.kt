@@ -261,7 +261,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
             initialDate = selectedDate,
             onDismiss = { showAdd = false },
             onSave = { activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon ->
-                viewModel.addEvent(activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon)
+                viewModel.addEvent(EventDraft(activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon))
                 showAdd = false
             },
         )

@@ -291,7 +291,7 @@ class WishlistViewModelTest {
             userId.value = "u1"
             advanceUntilIdle()
 
-            vm.addWish(ctx, "wl-1", "New bicycle")
+            vm.addWish(ctx, "wl-1", WishDraft("New bicycle"))
             advanceUntilIdle()
 
             val items = vm.wishes.value
@@ -307,7 +307,7 @@ class WishlistViewModelTest {
             userId.value = "u1"
             advanceUntilIdle()
 
-            vm.addWish(ctx, "wishlist-99", "Lego set")
+            vm.addWish(ctx, "wishlist-99", WishDraft("Lego set"))
             advanceUntilIdle()
 
             assertEquals("wishlist-99", vm.wishes.value[0].wishlistId)
@@ -323,7 +323,7 @@ class WishlistViewModelTest {
             userId.value = "u1"
             advanceUntilIdle()
 
-            vm.addWish(ctx, "wl-1", "Delete me")
+            vm.addWish(ctx, "wl-1", WishDraft("Delete me"))
             advanceUntilIdle()
 
             val wish = vm.wishes.value.first()
@@ -339,9 +339,9 @@ class WishlistViewModelTest {
             userId.value = "u1"
             advanceUntilIdle()
 
-            vm.addWish(ctx, "wl-1", "Keep me")
+            vm.addWish(ctx, "wl-1", WishDraft("Keep me"))
             advanceUntilIdle()
-            vm.addWish(ctx, "wl-1", "Delete me")
+            vm.addWish(ctx, "wl-1", WishDraft("Delete me"))
             advanceUntilIdle()
 
             val toDelete = vm.wishes.value.first { it.text == "Delete me" }
@@ -362,7 +362,7 @@ class WishlistViewModelTest {
             userId.value = "u1"
             advanceUntilIdle()
 
-            vm.addWish(ctx, "wl-1", "Gift")
+            vm.addWish(ctx, "wl-1", WishDraft("Gift"))
             advanceUntilIdle()
 
             val wish = vm.wishes.value.first()
@@ -381,7 +381,7 @@ class WishlistViewModelTest {
             userId.value = "u1"
             advanceUntilIdle()
 
-            vm.addWish(ctx, "wl-1", "Gift")
+            vm.addWish(ctx, "wl-1", WishDraft("Gift"))
             advanceUntilIdle()
 
             val wish = vm.wishes.value.first()

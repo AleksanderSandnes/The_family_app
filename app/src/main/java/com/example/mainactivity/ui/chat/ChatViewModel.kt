@@ -66,6 +66,10 @@ private const val TYPING_AUTOCLEAR_MS = 5000L
 private const val TYPING_THROTTLE_MS = 2000L
 private const val USER_ID_PREVIEW_LENGTH = 8
 
+// Intentionally one class shared by the chat list and chat detail screens (see CLAUDE.md),
+// so detail-screen deletes reflect in the list on pop-back. Splitting it into separate
+// ViewModels would break that documented contract, so LargeClass is suppressed by design.
+@Suppress("LargeClass")
 @HiltViewModel
 class ChatViewModel
     @Inject

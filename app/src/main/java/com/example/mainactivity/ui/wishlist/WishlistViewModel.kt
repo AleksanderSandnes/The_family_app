@@ -31,6 +31,14 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import javax.inject.Inject
 
+/** The user-entered details for a new wish (groups the optional rich fields). */
+data class WishDraft(
+    val text: String,
+    val link: String? = null,
+    val price: String? = null,
+    val imageUri: Uri? = null,
+)
+
 @HiltViewModel
 class WishlistViewModel
     @Inject
@@ -342,15 +350,12 @@ class WishlistViewModel
         fun addWish(
             context: Context,
             wishlistId: String,
-            text: String,
-            link: String? = null,
-            price: String? = null,
-            imageUri: Uri? = null,
+            draft: WishDraft,
         ) =
             viewModelScope.launch {
                 val userId = repo.currentUserId.first() ?: return@launch
-                val cleanLink = link?.trim()?.takeIf { it.isNotEmpty() }
-                val cleanPrice = price?.trim()?.takeIf { it.isNotEmpty() }
+                val cleanLink = draft.link?.trim()?.takeIf { it.isNotEmpty() }
+                val cleanPrice = draft.price?.trim()?.takeIf { it.isNotEmpty() }
                 val tempId = "temp-${java.util.UUID.randomUUID()}"
                 _wishes.value =
                     _wishes.value +
@@ -358,18 +363,18 @@ class WishlistViewModel
                         id = tempId,
                         wishlistId = wishlistId,
                         userId = userId,
-                        text = text,
+                        text = draft.text,
                         checked = false,
                         link = cleanLink,
                         price = cleanPrice,
                     )
-                val imageUrl = imageUri?.let { uploadWishImage(context, userId, it) }
+                val imageUrl = draft.imageUri?.let { uploadWishImage(context, userId, it) }
                 runCatching {
                     db.from("wishes").insert(
                         buildJsonObject {
                             put("wishlist_id", wishlistId)
                             put("user_id", userId)
-                            put("text", text)
+                            put("text", draft.text)
                             if (cleanLink != null) put("link", cleanLink)
                             if (cleanPrice != null) put("price", cleanPrice)
                             if (imageUrl != null) put("image_url", imageUrl)
