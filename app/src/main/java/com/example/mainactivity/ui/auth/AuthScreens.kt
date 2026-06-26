@@ -156,6 +156,12 @@ fun LoginScreen(
             loading = state.loading,
             modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Sign in button" },
         )
+        Spacer(Modifier.height(12.dp))
+        SecondaryButton(
+            text = "Continue with Google",
+            onClick = { viewModel.signInWithGoogle() },
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Continue with Google button" },
+        )
         AuthFooter(
             prompt = "New to The Family App?",
             action = "Create account",

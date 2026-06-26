@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +25,27 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
+
+    init {
+        // Finalize external (Google OAuth) sign-in: once the browser redirect lands and the
+        // session becomes Authenticated, resolve + persist the app user so the auth gate flips.
+        viewModelScope.launch {
+            repo.sessionStatusFlow.collect { status ->
+                if (status is SessionStatus.Authenticated) {
+                    repo.completeSignInAfterConfirmation()
+                }
+            }
+        }
+    }
+
+    fun signInWithGoogle() {
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            repo.signInWithGoogle().onFailure { e ->
+                _state.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
+            }
+        }
+    }
 
     fun clearError() = _state.update { it.copy(error = null) }
 

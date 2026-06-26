@@ -9,6 +9,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.postgrest
@@ -173,6 +174,13 @@ class FamilyRepository @Inject constructor(
                     .firstOrNull() ?: error("User profile not found")
             session.signIn(user.id)
             user.id
+        }
+
+    /** Starts the browser-based Google OAuth flow. Completion arrives via the
+     *  familyapp://auth deep link; AuthViewModel finalizes the app session on Authenticated. */
+    suspend fun signInWithGoogle(): Result<Unit> =
+        runCatching {
+            SupabaseManager.client.auth.signInWith(Google)
         }
 
     suspend fun login(
