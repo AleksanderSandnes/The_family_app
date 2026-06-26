@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
@@ -217,7 +218,9 @@ private fun MainFlow() {
         NavHost(
             navController = navController,
             startDestination = Routes.HOME,
-            modifier = Modifier.padding(padding),
+            // Consume the scaffold insets so each screen's own Scaffold doesn't re-apply the
+            // bottom navigation-bar inset (which doubled the gap below FABs above the nav bar).
+            modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             // Default: iOS-style horizontal slide for detail/feature screens
             enterTransition = { slideInHorizontally(tween(300)) { it } + fadeIn(tween(300)) },
             exitTransition = { slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(200)) },
