@@ -263,7 +263,6 @@ private fun StepIndicator(
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -309,18 +308,13 @@ private fun StepIndicator(
                                     if (i < currentStep) {
                                         MaterialTheme.colorScheme.primary
                                     } else {
-                                        MaterialTheme.colorScheme.outlineVariant
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
                                     },
                                 ),
                     )
                 }
             }
         }
-        Text(
-            text = "Step $currentStep of $totalSteps",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
