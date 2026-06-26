@@ -77,10 +77,11 @@ fun ReactionChipsRow(
     myReaction: String?,
     isMine: Boolean,
     onTap: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     if (reactions.isEmpty()) return
     Row(
-        modifier = Modifier.padding(top = 4.dp, start = if (isMine) 0.dp else 48.dp),
+        modifier = modifier,
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
     ) {
         reactions.entries.sortedByDescending { it.value.size }.take(5).forEach { (emoji, users) ->
@@ -92,6 +93,7 @@ fun ReactionChipsRow(
                     } else {
                         MaterialTheme.colorScheme.surfaceVariant
                     },
+                shadowElevation = 2.dp,
                 modifier =
                     Modifier
                         .padding(end = 4.dp)
