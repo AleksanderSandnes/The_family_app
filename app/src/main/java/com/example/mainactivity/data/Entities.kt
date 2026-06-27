@@ -15,6 +15,10 @@ data class UserModel(
     @SerialName("avatar_color") val avatarColor: Int = 0,
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("last_active_at") val lastActiveAt: String? = null,
+    // Server mirror of the client DataStore notification settings, so server-side push
+    // (daily reminders) can honour each user's preference. See add_push_notifications.sql.
+    @SerialName("notifications_enabled") val notificationsEnabled: Boolean = true,
+    @SerialName("notify_days_before") val notifyDaysBefore: Int = 1,
 )
 
 @Serializable

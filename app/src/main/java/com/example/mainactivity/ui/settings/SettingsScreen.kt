@@ -49,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -75,7 +74,6 @@ fun SettingsScreen(
     onBack: () -> Unit,
     vm: SettingsViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val themeMode by vm.themeMode.collectAsStateWithLifecycle()
     val notificationsEnabled by vm.notificationsEnabled.collectAsStateWithLifecycle()
     val notifyDaysBefore by vm.notifyDaysBefore.collectAsStateWithLifecycle()
@@ -86,7 +84,7 @@ fun SettingsScreen(
     val permissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission(),
-        ) { granted -> vm.setNotificationsEnabled(granted, context) }
+        ) { granted -> vm.setNotificationsEnabled(granted) }
 
     // Show "Settings saved" whenever any preference changes after the initial composition.
     // drop(1) on each snapshotFlow skips the current value at subscription time (the
@@ -131,11 +129,11 @@ fun SettingsScreen(
                     checked = notificationsEnabled,
                     onChange = { enabled ->
                         if (!enabled) {
-                            vm.setNotificationsEnabled(false, context)
+                            vm.setNotificationsEnabled(false)
                         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         } else {
-                            vm.setNotificationsEnabled(true, context)
+                            vm.setNotificationsEnabled(true)
                         }
                     },
                 )

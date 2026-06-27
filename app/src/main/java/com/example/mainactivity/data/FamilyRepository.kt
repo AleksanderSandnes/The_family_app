@@ -12,9 +12,11 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import com.google.firebase.messaging.FirebaseMessaging
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +30,7 @@ import kotlinx.serialization.json.put
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.resume
 
 /** Editable profile fields for [FamilyRepository.updateProfile], grouped into one parameter. */
 data class ProfileUpdate(
@@ -89,9 +92,91 @@ class FamilyRepository
 
         suspend fun setThemeMode(mode: ThemeMode) = session.setThemeMode(mode)
 
-        suspend fun setNotificationsEnabled(enabled: Boolean) = session.setNotificationsEnabled(enabled)
+        suspend fun setNotificationsEnabled(enabled: Boolean) {
+            session.setNotificationsEnabled(enabled)
+            updateUserNotificationPrefs(enabled = enabled)
+        }
 
-        suspend fun setNotifyDaysBefore(days: Int) = session.setNotifyDaysBefore(days)
+        suspend fun setNotifyDaysBefore(days: Int) {
+            session.setNotifyDaysBefore(days)
+            updateUserNotificationPrefs(days = days)
+        }
+
+        /** Mirrors the client notification settings onto the user's row so the server-side
+         *  daily-reminders function can honour them. The DataStore copy stays the UI source
+         *  of truth; this row is the server's read-only mirror. */
+        private suspend fun updateUserNotificationPrefs(
+            enabled: Boolean? = null,
+            days: Int? = null,
+        ) {
+            val userId = currentUserId.first() ?: return
+            runCatching {
+                SupabaseManager.client.postgrest.from("users").update({
+                    enabled?.let { set("notifications_enabled", it) }
+                    days?.let { set("notify_days_before", it) }
+                }) { filter { eq("id", userId) } }
+                invalidateUserCache()
+            }
+        }
+
+        /** Pushes the current DataStore notification settings to the server once after sign-in. */
+        suspend fun syncNotificationPrefsToServer() {
+            updateUserNotificationPrefs(
+                enabled = session.notificationsEnabled.first(),
+                days = session.notifyDaysBefore.first(),
+            )
+        }
+
+        // ---- Push notification tokens (FCM) ----
+
+        @Volatile private var lastPushToken: String? = null
+
+        /** Fetches the current FCM token and stores it for the signed-in user. Safe to call
+         *  repeatedly (upsert) and a no-op when Firebase isn't configured or no user is signed in. */
+        suspend fun syncPushToken() {
+            val token = runCatching { fetchFcmToken() }.getOrNull() ?: return
+            registerPushToken(token)
+        }
+
+        /** Upserts a device push token for the current user. Called from [syncPushToken] and
+         *  from `FamilyMessagingService.onNewToken`. */
+        suspend fun registerPushToken(token: String) {
+            val userId = currentUserId.first() ?: return
+            lastPushToken = token
+            runCatching {
+                SupabaseManager.client.postgrest
+                    .from("device_push_tokens")
+                    .upsert(
+                        buildJsonObject {
+                            put("user_id", userId)
+                            put("token", token)
+                            put("platform", "android")
+                            put("updated_at", Instant.now().toString())
+                        },
+                    ) { onConflict = "token" }
+            }
+        }
+
+        /** Removes this device's push token. Must run while still authenticated (RLS), so it
+         *  is called from [signOut] before the auth session is torn down. */
+        suspend fun unregisterPushToken() {
+            val token = lastPushToken ?: runCatching { fetchFcmToken() }.getOrNull() ?: return
+            runCatching {
+                SupabaseManager.client.postgrest
+                    .from("device_push_tokens")
+                    .delete { filter { eq("token", token) } }
+            }
+            lastPushToken = null
+        }
+
+        private suspend fun fetchFcmToken(): String? =
+            suspendCancellableCoroutine { cont ->
+                FirebaseMessaging
+                    .getInstance()
+                    .token
+                    .addOnSuccessListener { if (cont.isActive) cont.resume(it) }
+                    .addOnFailureListener { if (cont.isActive) cont.resume(null) }
+            }
 
         suspend fun setLocationVisible(enabled: Boolean) = session.setLocationVisible(enabled)
 
@@ -229,6 +314,8 @@ class FamilyRepository
             }
 
         suspend fun signOut() {
+            // Remove this device's push token while the auth session is still valid (RLS).
+            unregisterPushToken()
             runCatching { SupabaseManager.client.auth.signOut() }
             invalidateUserCache()
             session.signOut()

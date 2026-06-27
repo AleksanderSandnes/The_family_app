@@ -39,6 +39,19 @@ class RootViewModel
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AuthGate.Loading)
 
+        init {
+            // Once fully signed in, register this device's FCM token and mirror the local
+            // notification settings to the server so push delivery works and respects them.
+            viewModelScope.launch {
+                gate.collect { state ->
+                    if (state is AuthGate.SignedIn) {
+                        repo.syncPushToken()
+                        repo.syncNotificationPrefsToServer()
+                    }
+                }
+            }
+        }
+
         fun completePermissionsOnboarding() =
             viewModelScope.launch {
                 repo.setPermissionsRequested()

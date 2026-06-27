@@ -3,13 +3,9 @@ package com.example.mainactivity.ui.settings
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.ThemeMode
 import com.example.mainactivity.util.MainDispatcherRule
-import com.example.mainactivity.workers.NotificationWorker
-import io.mockk.Runs
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -61,12 +57,6 @@ class SettingsViewModelTest {
         every { repo.locationVisible } returns locationVisible
 
         vm = SettingsViewModel(repo)
-
-        // The notification toggle calls NotificationWorker.schedule/cancel, which reach
-        // WorkManager (needs a real Context). Mock the side-effect out for all tests.
-        mockkObject(NotificationWorker.Companion)
-        every { NotificationWorker.schedule(any()) } just Runs
-        every { NotificationWorker.cancel(any()) } just Runs
     }
 
     @After
@@ -223,28 +213,22 @@ class SettingsViewModelTest {
         }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 6. setNotificationsEnabled — delegates to repo; WorkManager is mocked
+    // 6. setNotificationsEnabled — delegates to repo (server push handles delivery)
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    fun `setNotificationsEnabled true calls repo and schedules WorkManager`() =
+    fun `setNotificationsEnabled true delegates to repo`() =
         runTest(dispatcherRule.dispatcher) {
-            val context = mockk<android.content.Context>(relaxed = true)
-            vm.setNotificationsEnabled(true, context)
+            vm.setNotificationsEnabled(true)
             advanceUntilIdle()
-
             coVerify { repo.setNotificationsEnabled(true) }
-            coVerify { NotificationWorker.schedule(context) }
         }
 
     @Test
-    fun `setNotificationsEnabled false calls repo and cancels WorkManager`() =
+    fun `setNotificationsEnabled false delegates to repo`() =
         runTest(dispatcherRule.dispatcher) {
-            val context = mockk<android.content.Context>(relaxed = true)
-            vm.setNotificationsEnabled(false, context)
+            vm.setNotificationsEnabled(false)
             advanceUntilIdle()
-
             coVerify { repo.setNotificationsEnabled(false) }
-            coVerify { NotificationWorker.cancel(context) }
         }
 }

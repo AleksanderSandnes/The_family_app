@@ -1,11 +1,9 @@
 package com.example.mainactivity.ui.settings
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.ThemeMode
-import com.example.mainactivity.workers.NotificationWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,13 +34,12 @@ class SettingsViewModel
                 repo.setThemeMode(mode)
             }
 
-        fun setNotificationsEnabled(
-            enabled: Boolean,
-            context: Context,
-        ) =
+        // Birthday/event reminders are delivered by the server (daily-reminders Edge
+        // Function) which reads the mirrored `notifications_enabled` flag, so the client
+        // only needs to persist the preference — no local WorkManager to (de)schedule.
+        fun setNotificationsEnabled(enabled: Boolean) =
             viewModelScope.launch {
                 repo.setNotificationsEnabled(enabled)
-                if (enabled) NotificationWorker.schedule(context) else NotificationWorker.cancel(context)
             }
 
         fun setNotifyDaysBefore(days: Int) =

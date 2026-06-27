@@ -108,6 +108,75 @@ object NotificationHelper {
         }
     }
 
+    /** Birthday reminder (server push, type=birthday). Mirrors the title wording of the
+     *  retired NotificationWorker so existing copy is preserved. */
+    fun postBirthdayNotification(
+        context: Context,
+        name: String,
+        daysUntil: Int,
+    ) {
+        val title =
+            if (daysUntil <= 0) {
+                "$name's birthday is today!"
+            } else {
+                "$name's birthday is in $daysUntil day${if (daysUntil == 1) "" else "s"}"
+            }
+        postReminder(context, CHANNEL_BIRTHDAYS, ("birthday-$name").hashCode(), title)
+    }
+
+    /** Calendar event reminder (server push, type=event). */
+    fun postEventNotification(
+        context: Context,
+        activity: String,
+        daysUntil: Int,
+    ) {
+        val title =
+            if (daysUntil <= 0) {
+                "$activity is today!"
+            } else {
+                "$activity is in $daysUntil day${if (daysUntil == 1) "" else "s"}"
+            }
+        postReminder(context, CHANNEL_CALENDAR, ("event-$activity").hashCode(), title)
+    }
+
+    private fun postReminder(
+        context: Context,
+        channelId: String,
+        notificationId: Int,
+        title: String,
+    ) {
+        val icon =
+            if (channelId == CHANNEL_BIRTHDAYS) {
+                android.R.drawable.ic_popup_reminder
+            } else {
+                android.R.drawable.ic_menu_today
+            }
+        val notification =
+            NotificationCompat
+                .Builder(context, channelId)
+                .setSmallIcon(icon)
+                .setContentTitle(title)
+                .setAutoCancel(true)
+                .setContentIntent(buildOpenAppIntent(context))
+                .build()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            runCatching { NotificationManagerCompat.from(context).notify(notificationId, notification) }
+        }
+    }
+
+    private fun buildOpenAppIntent(context: Context): PendingIntent =
+        PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
     private fun buildReplyAction(
         context: Context,
         conversation: ConversationModel,

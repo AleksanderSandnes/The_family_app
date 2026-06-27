@@ -15,7 +15,6 @@ import com.example.mainactivity.data.MessageModel
 import com.example.mainactivity.data.MessageReactionModel
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
-import com.example.mainactivity.notifications.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
@@ -77,7 +76,6 @@ class ChatViewModel
         private val app: Application,
         internal val repo: FamilyRepository,
     ) : AndroidViewModel(app) {
-        private val appContext: Context = app.applicationContext
         private val db get() = SupabaseManager.client.postgrest
 
         private val _conversations = MutableStateFlow<List<ConversationWithPreview>>(emptyList())
@@ -93,6 +91,8 @@ class ChatViewModel
 
         fun setCurrentConversation(id: String?) {
             _currentConversationId.value = id
+            // Let FamilyMessagingService suppress push notifications for the open chat.
+            com.example.mainactivity.notifications.ActiveChat.conversationId = id
         }
 
         private val _isLoading = MutableStateFlow(false)
@@ -266,7 +266,6 @@ class ChatViewModel
             }
 
         private suspend fun subscribeAllForNotifications(userId: String) {
-            val notifEnabled = repo.notificationsEnabled.first()
             _conversations.value.forEach { preview ->
                 val convId = preview.conversation.id
                 if (notifChannels.containsKey(convId)) return@forEach
@@ -306,16 +305,9 @@ class ChatViewModel
                                     }
                                 }
                             }
-                            // Post notification
-                            if (!isCurrentConv && notifEnabled) {
-                                val sender = _userProfiles.value[msg.userFrom]
-                                NotificationHelper.postMessageNotification(
-                                    appContext,
-                                    preview.conversation,
-                                    msg,
-                                    sender,
-                                )
-                            }
+                            // Note: message notifications are delivered via FCM
+                            // (FamilyMessagingService) so they also arrive when the app is
+                            // killed. This Realtime path only keeps the in-app list live.
                         }
                     }
                 }
