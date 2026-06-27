@@ -1,8 +1,6 @@
 package com.example.mainactivity.ui.profile
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
@@ -12,6 +10,7 @@ import com.example.mainactivity.data.FamilyRepository
 import com.example.mainactivity.data.ProfileUpdate
 import com.example.mainactivity.data.UserModel
 import com.example.mainactivity.data.remote.SupabaseManager
+import com.example.mainactivity.util.compressImageWithOrientation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.storage.storage
@@ -22,7 +21,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
 
@@ -113,23 +111,7 @@ class ProfileViewModel
             }
 
         private suspend fun compressImage(bytes: ByteArray): ByteArray =
-            withContext(Dispatchers.IO) {
-                val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@withContext bytes
-                val maxDim = MAX_IMAGE_DIM
-                val scale = minOf(maxDim.toFloat() / bmp.width, maxDim.toFloat() / bmp.height, 1f)
-                val scaled =
-                    if (scale < 1f) {
-                        Bitmap.createScaledBitmap(
-                            bmp,
-                            (bmp.width * scale).toInt(),
-                            (bmp.height * scale).toInt(),
-                            true,
-                        )
-                    } else {
-                        bmp
-                    }
-                ByteArrayOutputStream().also { scaled.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }.toByteArray()
-            }
+            withContext(Dispatchers.IO) { compressImageWithOrientation(bytes, MAX_IMAGE_DIM, JPEG_QUALITY) }
 
         fun removeAvatar() =
             viewModelScope.launch {
