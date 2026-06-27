@@ -6,6 +6,13 @@ apply plugin: 'io.gitlab.arturbosch.detekt'
 apply plugin: 'com.google.devtools.ksp'
 apply plugin: 'com.google.dagger.hilt.android'
 
+// Apply the Firebase google-services plugin only once google-services.json has been
+// added (manual Firebase setup step). This keeps the build green before Firebase is
+// configured; the firebase-messaging dependency below still compiles regardless.
+if (file("google-services.json").exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
+
 def localProps = new Properties()
 def localPropsFile = rootProject.file("local.properties")
 if (localPropsFile.exists()) localPropsFile.withInputStream { localProps.load(it) }
@@ -117,6 +124,11 @@ dependencies {
     // Image loading (Coil 3 — artifact group changed from io.coil-kt to io.coil-kt.coil3)
     implementation 'io.coil-kt.coil3:coil-compose:3.5.0'
     implementation 'io.coil-kt.coil3:coil-network-okhttp:3.5.0'
+
+    // Firebase Cloud Messaging — push notifications (events, birthdays, messages).
+    // BoM-managed versions; requires app/google-services.json (see Firebase setup).
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-messaging'
 
     // WorkManager
     implementation 'androidx.work:work-runtime-ktx:2.11.2'

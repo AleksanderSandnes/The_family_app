@@ -5,3 +5,7 @@ build/
 *.apk
 local.properties
 release.keystore
+app/google-services.json
+
+# Supabase CLI local state
+supabase/.temp/

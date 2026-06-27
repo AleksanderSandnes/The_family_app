@@ -12,6 +12,10 @@ buildscript {
         classpath "com.diffplug.spotless:spotless-plugin-gradle:6.25.0"
         classpath "io.gitlab.arturbosch.detekt:detekt-gradle-plugin:1.23.8"
         classpath "com.google.dagger:hilt-android-gradle-plugin:2.59.2"
+        // Firebase Cloud Messaging (push notifications). The plugin is only applied
+        // in app/build.gradle when google-services.json is present, so the build still
+        // succeeds before Firebase is configured.
+        classpath "com.google.gms:google-services:4.4.2"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
