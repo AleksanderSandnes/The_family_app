@@ -18,7 +18,7 @@ def localPropsFile = rootProject.file("local.properties")
 if (localPropsFile.exists()) localPropsFile.withInputStream { localProps.load(it) }
 
 android {
-    namespace = "com.example.mainactivity"
+    namespace = "com.sandnes.familyapp"
     compileSdk = 37
 
     defaultConfig {

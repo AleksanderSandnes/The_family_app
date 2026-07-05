@@ -91,7 +91,7 @@ cd android
 ## Project structure
 
 ```
-android/app/src/main/java/com/example/mainactivity/
+android/app/src/main/java/com/sandnes/familyapp/
 ├── data/
 │   ├── remote/       # SupabaseManager (Auth, Postgrest, Realtime, Storage)
 │   ├── Entities.kt   # kotlinx-serializable data models (UserModel, FamilyModel, …)

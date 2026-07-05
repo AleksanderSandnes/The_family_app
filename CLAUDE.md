@@ -73,7 +73,7 @@ There are **two different UUIDs** for every user. Confusing them causes subtle, 
 ### UI layer
 
 ```
-android/app/src/main/java/com/example/mainactivity/
+android/app/src/main/java/com/sandnes/familyapp/
   data/
     Entities.kt          — all @Serializable data classes (UserModel, FamilyModel, …)
     FamilyRepository.kt  — singleton; auth, family, profile operations
