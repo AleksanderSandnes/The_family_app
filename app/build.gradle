@@ -22,7 +22,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId "com.example.mainactivity"
+        applicationId "com.sandnes.familyapp"
         minSdk = 23
         targetSdk = 37
         versionCode 1

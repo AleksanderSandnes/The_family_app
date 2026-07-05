@@ -12,7 +12,6 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.location.Geocoder
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -117,18 +116,7 @@ fun FamilyMapScreen(
                 Manifest.permission.ACCESS_COARSE_LOCATION,
             ) == PackageManager.PERMISSION_GRANTED
 
-    fun bgGranted() =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-
     var foregroundGranted by remember { mutableStateOf(fgGranted()) }
-    var backgroundGranted by remember { mutableStateOf(bgGranted()) }
     var rationaleShown by rememberSaveable { mutableStateOf(false) }
     var showRationaleDialog by remember { mutableStateOf(false) }
 
@@ -142,25 +130,12 @@ fun FamilyMapScreen(
             foregroundGranted = granted
             if (granted) {
                 viewModel.startLocationUpdates()
-                if (backgroundGranted && !LocationForegroundService.isRunning) {
+                if (!LocationForegroundService.isRunning) {
                     ContextCompat.startForegroundService(
                         context,
                         Intent(context, LocationForegroundService::class.java),
                     )
                 }
-            }
-        }
-
-    val bgLauncher =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) { granted ->
-            backgroundGranted = granted
-            if (granted) {
-                ContextCompat.startForegroundService(
-                    context,
-                    Intent(context, LocationForegroundService::class.java),
-                )
             }
         }
 
@@ -208,7 +183,7 @@ fun FamilyMapScreen(
     LaunchedEffect(Unit) {
         if (foregroundGranted) {
             viewModel.startLocationUpdates()
-            if (backgroundGranted && !LocationForegroundService.isRunning) {
+            if (!LocationForegroundService.isRunning) {
                 ContextCompat.startForegroundService(
                     context,
                     Intent(context, LocationForegroundService::class.java),
@@ -311,19 +286,6 @@ fun FamilyMapScreen(
                         contentColor = MaterialTheme.colorScheme.primary,
                     ) {
                         Icon(Icons.Filled.MyLocation, contentDescription = "Center on my location")
-                    }
-
-                    if (foregroundGranted &&
-                        !backgroundGranted &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                    ) {
-                        Spacer(Modifier.size(8.dp))
-                        BackgroundPermissionCard(
-                            onRequest = {
-                                bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
                     }
 
                     if (!isSolo) {
@@ -464,39 +426,6 @@ private fun formatLastSeen(updatedAt: String?): String {
         }
     } catch (_: Exception) {
         "Location shared"
-    }
-}
-
-@Composable
-private fun BackgroundPermissionCard(
-    onRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        modifier = modifier,
-    ) {
-        Row(
-            Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "Share in background",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-                Text(
-                    "Let family see you even when the app is closed.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
-            Spacer(Modifier.size(10.dp))
-            Button(onClick = onRequest) { Text("Allow") }
-        }
     }
 }
 
