@@ -102,6 +102,8 @@ export interface PushAlert {
   body: string;
   /** APNs thread-id for notification grouping (e.g. the conversation id). */
   threadId?: string;
+  /** APNs category — selects the iOS notification actions (MESSAGE enables inline reply). */
+  category?: string;
 }
 
 function buildMessage(
@@ -124,6 +126,7 @@ function buildMessage(
           "mutable-content": 1,
           sound: "default",
           ...(alert?.threadId ? { "thread-id": alert.threadId } : {}),
+          ...(alert?.category ? { category: alert.category } : {}),
         },
       },
     },

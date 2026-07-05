@@ -18,6 +18,9 @@ packages:
   Nuke:
     url: https://github.com/kean/Nuke
     from: 12.8.0
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
 
 targets:
   FamilyApp:
@@ -32,6 +35,8 @@ targets:
         product: Nuke
       - package: Nuke
         product: NukeUI
+      - package: Firebase
+        product: FirebaseMessaging
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sandnes.familyapp
@@ -45,6 +50,11 @@ targets:
       testTargets:
         - FamilyAppTests
       gatherCoverageData: true
+    entitlements:
+      path: FamilyApp/FamilyApp.entitlements
+      properties:
+        # Xcode flips this to `production` automatically for App Store builds.
+        aps-environment: development
     info:
       path: FamilyApp/Info.plist
       properties:

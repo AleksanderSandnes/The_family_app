@@ -69,6 +69,7 @@ Deno.serve(async (req) => {
       title: conversation?.name || senderName,
       body: conversation?.name ? `${senderName}: ${preview}` : preview,
       threadId: String(msg.conversation_id),
+      category: "MESSAGE",
     });
 
     return new Response("ok", { status: 200 });

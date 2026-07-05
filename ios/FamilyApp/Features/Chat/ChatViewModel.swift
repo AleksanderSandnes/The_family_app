@@ -82,6 +82,8 @@ final class ChatViewModel {
 
     func setCurrentConversation(_ id: String?) {
         currentConversationId = id
+        // Lets the notification delegate suppress pushes for the open chat.
+        ActiveChat.conversationId = id
     }
 
     // MARK: - Conversation list

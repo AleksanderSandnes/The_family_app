@@ -37,6 +37,12 @@ struct FamilyApp: App {
             .onOpenURL { url in
                 deepLinks.handle(url)
             }
+            .onReceive(NotificationCenter.default.publisher(for: .openConversationDeepLink)) { note in
+                // Push tap routed from the notification delegate.
+                if let conversationId = note.userInfo?["conversationId"] as? String {
+                    deepLinks.pendingConversationId = conversationId
+                }
+            }
             .task {
                 await root.bootstrap()
             }

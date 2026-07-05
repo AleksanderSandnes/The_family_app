@@ -103,6 +103,7 @@ Deno.serve(async (_req) => {
             title: "Birthday reminder 🎂",
             body: d === 0 ? `${name} has a birthday today!` : `${name} has a birthday in ${d} ${d === 1 ? "day" : "days"}`,
             threadId: "birthdays",
+            category: "BIRTHDAY",
           });
           sent++;
         }
@@ -115,6 +116,7 @@ Deno.serve(async (_req) => {
             title: "Event reminder 📅",
             body: d === 0 ? `${activity} is today` : `${activity} is in ${d} ${d === 1 ? "day" : "days"}`,
             threadId: "events",
+            category: "EVENT",
           });
           sent++;
         }
