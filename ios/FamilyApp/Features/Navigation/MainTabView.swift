@@ -16,6 +16,8 @@ struct MainTabView: View {
 
     // Hoisted feature view models — created once for the signed-in session.
     @State private var homeViewModel = HomeViewModel()
+    @State private var shoppingViewModel = ShoppingViewModel()
+    @State private var mealViewModel = MealViewModel()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -78,13 +80,13 @@ struct MainTabView: View {
     private func destination(for route: Route) -> some View {
         switch route {
         case .shopping:
-            PlaceholderScreen(title: "Shopping")
+            ShoppingScreen(viewModel: shoppingViewModel) { homePath.append(.shoppingDetail(listId: $0)) }
         case .shoppingDetail(let listId):
-            PlaceholderScreen(title: "List \(listId)")
+            ShoppingDetailScreen(listId: listId, viewModel: shoppingViewModel)
         case .meal:
-            PlaceholderScreen(title: "Meals")
+            MealScreen(viewModel: mealViewModel) { homePath.append(.mealDetail(planId: $0)) }
         case .mealDetail(let planId):
-            PlaceholderScreen(title: "Plan \(planId)")
+            MealDetailScreen(planId: planId, viewModel: mealViewModel)
         case .birthday:
             PlaceholderScreen(title: "Birthdays")
         case .wishlist:

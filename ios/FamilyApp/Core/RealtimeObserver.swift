@@ -10,11 +10,13 @@ final class RealtimeObserver {
     private var channel: RealtimeChannelV2?
     private var task: Task<Void, Never>?
 
-    /// Subscribes to all postgres changes on `table` and calls `onChange` for every event.
+    /// Subscribes to postgres changes on `table` and calls `onChange` for every event.
     /// `scope` is appended to the channel name for uniqueness (Android: the familyId).
+    /// `filter` optionally narrows server-side, e.g. `"family_id=eq.\(familyId)"`.
     func start(
         table: String,
         scope: String,
+        filter: String? = nil,
         onChange: @escaping @MainActor () async -> Void
     ) {
         stop()
@@ -22,7 +24,12 @@ final class RealtimeObserver {
         let channel = client.channel("\(table)-\(scope)")
         self.channel = channel
 
-        let changes = channel.postgresChange(AnyAction.self, schema: "public", table: table)
+        let changes = channel.postgresChange(
+            AnyAction.self,
+            schema: "public",
+            table: table,
+            filter: filter
+        )
         task = Task {
             await channel.subscribe()
             for await _ in changes {
