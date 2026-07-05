@@ -119,7 +119,7 @@ struct MainTabView: View {
         case .settings:
             SettingsScreen()
         case .familyMap:
-            PlaceholderScreen(title: "Family Map")
+            FamilyMapScreen()
         }
     }
 }
