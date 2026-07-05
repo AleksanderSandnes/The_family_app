@@ -77,6 +77,27 @@ struct EmptyState: View {
     }
 }
 
+/// Inline error banner — mirrors ErrorBanner in Components.kt. Renders nothing when nil.
+struct ErrorBanner: View {
+    let message: String?
+
+    var body: some View {
+        if let message {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Color.appError)
+                Text(message)
+                    .font(.bodyMedium)
+                    .foregroundStyle(Color.appError)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(Spacing.md)
+            .background(Color.appError.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+        }
+    }
+}
+
 /// Full-width centered loading spinner.
 struct LoadingState: View {
     var body: some View {
