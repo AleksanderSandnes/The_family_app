@@ -202,3 +202,30 @@ Always use `MaterialTheme.colorScheme.*` tokens — never hardcode colors.
 5. **Realtime channel uniqueness.** Use `"tablename-$familyId"` naming. Duplicate channel names cause subscription collisions.
 
 6. **`auth_id` vs `id` in Storage.** Every place that constructs a Storage path for avatars must use `auth.currentSessionOrNull()?.user?.id`, not the DataStore user ID. These are different UUIDs and the storage RLS will silently reject the wrong one.
+
+## iOS app (`ios/`)
+
+Native SwiftUI port with 1:1 feature/design parity, same Supabase backend. Full details in `ios/README.md`.
+
+- **Project generation:** XcodeGen — edit `ios/project.yml`, never a checked-in `.xcodeproj` (it's gitignored and regenerated with `xcodegen generate` on the Mac).
+- **Secrets:** `ios/Config/Secrets.xcconfig` (gitignored, from `Secrets.example.xcconfig`) → injected into Info.plist → read by `SupabaseClientProvider`. Same values as `android/local.properties`.
+- **Toolchain reality:** this Linux environment cannot compile Swift. Author sources + `project.yml` here; `xcodebuild` runs on the Mac. Keep Swift APIs conservative and aligned with supabase-swift 2.x.
+- **Unit tests:** every phase adds tests under `ios/FamilyAppTests/` (XCTest target `FamilyAppTests`, wired into the scheme).
+
+### Translation dictionary (Android → iOS)
+
+| Android | iOS |
+|---|---|
+| `@HiltViewModel` + StateFlow | `@Observable @MainActor` final class per feature |
+| `FamilyRepository.get(context)` | `FamilyRepository.shared` |
+| DataStore `session` prefs | `SessionStore` (UserDefaults, **identical keys**: `current_user_id_v2`, `theme_mode`, `notifications_enabled`, `notify_days_before`, `location_visible`) |
+| `SupabaseManager.client` | `SupabaseClientProvider.client` (PKCE, `familyapp://auth`, heartbeat 25 s) |
+| `postgresChangeFlow`, channel `"table-$familyId"`, full reload | `RealtimeObserver` — same channel names, same reload-on-any-event, teardown on disappear |
+| Optimistic UI (temp ID → call → reload, no rollback) | identical, temp `UUID()` |
+| Storage paths via auth UUID | `StorageService` — enforces `avatars/{auth_uid}/…` internally; never build storage paths at call sites |
+| Coil | Nuke `LazyImage` |
+| `ui/theme/` tokens | `DesignSystem/` — identical hex values, type sizes, radii, spacing |
+| Google Maps Compose | MapKit |
+| WorkManager reminders | none (server-side `daily-reminders`) |
+
+**The dual-ID rule applies verbatim on iOS:** `SessionStore.currentUserId` = `public.users.id` (FKs); `client.auth.currentSession?.user.id` = `auth_id` (RLS + storage). See pitfall 6 above.

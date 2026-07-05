@@ -1,0 +1,290 @@
+// Data models mirroring android/.../data/Entities.kt 1:1.
+// CodingKeys map to the snake_case Postgres columns; keep both platforms in sync.
+import Foundation
+
+struct UserModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var authId: String?
+    var name: String = ""
+    var email: String = ""
+    var birthday: String = ""
+    var mobile: String = ""
+    var familyId: String?
+    var avatarColor: Int = 0
+    var avatarUrl: String?
+    var lastActiveAt: String?
+    // Server mirror of the client notification settings, so server-side push
+    // (daily reminders) can honour each user's preference.
+    var notificationsEnabled: Bool = true
+    var notifyDaysBefore: Int = 1
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, email, birthday, mobile
+        case authId = "auth_id"
+        case familyId = "family_id"
+        case avatarColor = "avatar_color"
+        case avatarUrl = "avatar_url"
+        case lastActiveAt = "last_active_at"
+        case notificationsEnabled = "notifications_enabled"
+        case notifyDaysBefore = "notify_days_before"
+    }
+}
+
+struct FamilyModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var name: String = ""
+    var joinCode: String = ""
+    var adminId: String?
+    var photoUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case joinCode = "join_code"
+        case adminId = "admin_id"
+        case photoUrl = "photo_url"
+    }
+}
+
+struct ShoppingListModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var title: String = ""
+    var ownerUserId: String = ""
+    var familyId: String?
+    var icon: String = "shopping_cart"
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, icon
+        case ownerUserId = "owner_user_id"
+        case familyId = "family_id"
+    }
+}
+
+struct ShoppingItemModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var listId: String = ""
+    var item: String = ""
+    var checked: Bool = false
+
+    enum CodingKeys: String, CodingKey {
+        case id, item, checked
+        case listId = "list_id"
+    }
+}
+
+struct MealPlanModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var familyId: String = ""
+    var fromDate: String = ""
+    var toDate: String = ""
+    var week: Int = 0
+    var name: String = ""
+    var icon: String = "restaurant"
+
+    enum CodingKeys: String, CodingKey {
+        case id, week, name, icon
+        case familyId = "family_id"
+        case fromDate = "from_date"
+        case toDate = "to_date"
+    }
+}
+
+struct MealPlanDayModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var mealPlanId: String = ""
+    var day: String = ""
+    var date: String = ""
+    var food: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, day, date, food
+        case mealPlanId = "meal_plan_id"
+    }
+}
+
+struct CalendarEventModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var userId: String = ""
+    var familyId: String?
+    var dateFrom: String = ""
+    var dateTo: String = ""
+    var timeFrom: String = ""
+    var timeTo: String = ""
+    var activity: String = ""
+    var allDay: Bool = false
+    var icon: String = "schedule"
+
+    enum CodingKeys: String, CodingKey {
+        case id, activity, icon
+        case userId = "user_id"
+        case familyId = "family_id"
+        case dateFrom = "date_from"
+        case dateTo = "date_to"
+        case timeFrom = "time_from"
+        case timeTo = "time_to"
+        case allDay = "all_day"
+    }
+}
+
+struct BirthdayModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var name: String = ""
+    var date: String = ""
+    var familyId: String?
+    var userId: String?
+    var madeByUserId: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, date
+        case familyId = "family_id"
+        case userId = "user_id"
+        case madeByUserId = "made_by_user_id"
+    }
+}
+
+struct WishlistModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var ownerUserId: String = ""
+    var familyId: String?
+    var name: String = ""
+    var icon: String = "card_giftcard"
+    // Not a DB column (Kotlin @Transient) — resolved client-side from family members.
+    var ownerName: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, icon
+        case ownerUserId = "owner_user_id"
+        case familyId = "family_id"
+    }
+}
+
+struct WishModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var wishlistId: String = ""
+    var userId: String = ""
+    var text: String = ""
+    var checked: Bool = false
+    var link: String?
+    var price: String?
+    var imageUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, text, checked, link, price
+        case wishlistId = "wishlist_id"
+        case userId = "user_id"
+        case imageUrl = "image_url"
+    }
+}
+
+struct WishReservationModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var wishId: String = ""
+    var reservedBy: String = ""
+    var createdAt: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case wishId = "wish_id"
+        case reservedBy = "reserved_by"
+        case createdAt = "created_at"
+    }
+}
+
+struct ConversationModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var userFrom: String = ""
+    var userTo: String?
+    var name: String = ""
+    var familyId: String?
+    var imageUri: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case userFrom = "user_from"
+        case userTo = "user_to"
+        case familyId = "family_id"
+        case imageUri = "image_uri"
+    }
+}
+
+struct UserLocationModel: Codable, Hashable {
+    var userId: String = ""
+    var familyId: String?
+    var lat: Double = 0
+    var lng: Double = 0
+    var displayName: String = ""
+    var visible: Bool = false
+    var updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case lat, lng, visible
+        case userId = "user_id"
+        case familyId = "family_id"
+        case displayName = "display_name"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct ConversationParticipantModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var conversationId: String = ""
+    var userId: String = ""
+    var joinedAt: String = ""
+    var lastReadAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case conversationId = "conversation_id"
+        case userId = "user_id"
+        case joinedAt = "joined_at"
+        case lastReadAt = "last_read_at"
+    }
+}
+
+struct MessageModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var conversationId: String = ""
+    var userFrom: String = ""
+    var text: String = ""
+    var sentAt: String = ""
+    var replyToId: String?
+    var messageType: String = "text"
+    var mediaUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, text
+        case conversationId = "conversation_id"
+        case userFrom = "user_from"
+        case sentAt = "sent_at"
+        case replyToId = "reply_to_id"
+        case messageType = "message_type"
+        case mediaUrl = "media_url"
+    }
+}
+
+struct MessageReactionModel: Codable, Identifiable, Hashable {
+    var id: String = ""
+    var messageId: String = ""
+    var conversationId: String = ""
+    var userId: String = ""
+    var emoji: String = ""
+    var createdAt: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, emoji
+        case messageId = "message_id"
+        case conversationId = "conversation_id"
+        case userId = "user_id"
+        case createdAt = "created_at"
+    }
+}
+
+/// UI aggregate for the conversation list — not a DB row.
+struct ConversationWithPreview: Identifiable, Hashable {
+    var conversation: ConversationModel
+    var lastMessage: MessageModel?
+    var lastSenderName: String?
+    var unreadCount: Int
+    var participants: [UserModel]
+
+    var id: String { conversation.id }
+}

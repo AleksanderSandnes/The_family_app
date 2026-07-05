@@ -1,0 +1,3 @@
+// Shared build settings for all configurations.
+// Secrets.xcconfig is gitignored — copy Secrets.example.xcconfig and fill it in.
+#include? "Secrets.xcconfig"
