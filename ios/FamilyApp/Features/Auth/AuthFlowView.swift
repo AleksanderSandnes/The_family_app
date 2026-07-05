@@ -1,0 +1,443 @@
+// Auth flow — the iOS twin of AuthScreens.kt: hero-gradient scaffold with a floating
+// form card, login screen, 2-step registration with step indicator and password
+// strength bar. Success flips the root auth gate via SessionStore.
+import SwiftUI
+
+struct AuthFlowView: View {
+    @State private var viewModel = AuthViewModel()
+    @State private var showRegister = false
+
+    var body: some View {
+        NavigationStack {
+            LoginScreen(viewModel: viewModel) { showRegister = true }
+                .navigationDestination(isPresented: $showRegister) {
+                    RegisterScreen(viewModel: viewModel)
+                        .navigationBarBackButtonHidden()
+                }
+        }
+    }
+}
+
+// MARK: - Login
+
+struct LoginScreen: View {
+    @Bindable var viewModel: AuthViewModel
+    let onNavigateToRegister: () -> Void
+
+    @State private var email = ""
+    @State private var password = ""
+    @State private var showForgotDialog = false
+
+    var body: some View {
+        AuthScaffold(title: "Welcome back", subtitle: "Sign in to keep your family in sync.") {
+            ErrorBanner(message: viewModel.error)
+            FamilyTextField(
+                label: "Email",
+                text: $email.clearingError(viewModel),
+                systemImage: "envelope",
+                keyboardType: .emailAddress,
+                textContentType: .emailAddress,
+                autocapitalization: .never
+            )
+            .accessibilityLabel("Email address field")
+            FamilyTextField(
+                label: "Password",
+                text: $password.clearingError(viewModel),
+                systemImage: "lock",
+                isPassword: true,
+                textContentType: .password
+            )
+            .accessibilityLabel("Password field")
+
+            Button("Forgot password?") { showForgotDialog = true }
+                .font(.labelMedium)
+                .foregroundStyle(Color.appPrimary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+
+            PrimaryButton(
+                text: "Sign in",
+                enabled: !email.isEmpty && !password.isEmpty,
+                loading: viewModel.loading
+            ) {
+                viewModel.login(email: email, password: password)
+            }
+            .accessibilityLabel("Sign in button")
+
+            SecondaryButton(text: "Continue with Google", systemImage: "globe") {
+                viewModel.signInWithGoogle()
+            }
+            .accessibilityLabel("Continue with Google button")
+
+            AuthFooter(prompt: "New to The Family App?", action: "Create account") {
+                viewModel.clearError()
+                onNavigateToRegister()
+            }
+        }
+        .alert("Forgot password?", isPresented: $showForgotDialog) {
+            Button("OK") {}
+        } message: {
+            Text("Password reset is coming soon. Contact support at support@familyapp.com")
+        }
+    }
+}
+
+// MARK: - Register (2 steps)
+
+struct RegisterScreen: View {
+    @Bindable var viewModel: AuthViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var step = 1
+    @State private var form = RegistrationForm()
+
+    private var title: String { step == 1 ? "Create your account" : "About you" }
+    private var subtitle: String {
+        step == 1
+            ? "Start with your login details."
+            : "Optional details to help your family recognize you."
+    }
+
+    var body: some View {
+        AuthScaffold(title: title, subtitle: subtitle) {
+            StepIndicator(currentStep: step, totalSteps: 2)
+            ErrorBanner(message: viewModel.error)
+            if step == 1 {
+                registrationStep1
+                AuthFooter(prompt: "Already have an account?", action: "Sign in") {
+                    viewModel.clearError()
+                    dismiss()
+                }
+            } else {
+                registrationStep2
+            }
+        }
+    }
+
+    @ViewBuilder private var registrationStep1: some View {
+        FamilyTextField(
+            label: "Full name",
+            text: $form.name.clearingError(viewModel),
+            systemImage: "person",
+            textContentType: .name,
+            autocapitalization: .words
+        )
+        FamilyTextField(
+            label: "Email",
+            text: $form.email.clearingError(viewModel),
+            systemImage: "envelope",
+            keyboardType: .emailAddress,
+            textContentType: .emailAddress,
+            autocapitalization: .never
+        )
+        FamilyTextField(
+            label: "Password",
+            text: $form.password.clearingError(viewModel),
+            systemImage: "lock",
+            isPassword: true,
+            textContentType: .newPassword
+        )
+        PasswordStrengthBar(password: form.password)
+        FamilyTextField(
+            label: "Confirm password",
+            text: $form.confirm.clearingError(viewModel),
+            systemImage: "lock",
+            isPassword: true,
+            textContentType: .newPassword
+        )
+        PrimaryButton(
+            text: "Continue",
+            enabled: !form.name.isEmpty && !form.email.isEmpty
+                && !form.password.isEmpty && !form.confirm.isEmpty,
+            loading: viewModel.loading
+        ) {
+            advanceToStep2()
+        }
+        .accessibilityLabel("Continue to next step button")
+    }
+
+    @ViewBuilder private var registrationStep2: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            BirthdayPickerField(isoDate: $form.birthday)
+            Text("Used to track family birthdays")
+                .font(.labelMedium)
+                .foregroundStyle(Color.appOnSurfaceVariant)
+                .padding(.leading, Spacing.lg)
+        }
+        VStack(alignment: .leading, spacing: 2) {
+            FamilyTextField(
+                label: "Mobile (optional)",
+                text: $form.mobile,
+                systemImage: "phone",
+                keyboardType: .phonePad,
+                textContentType: .telephoneNumber
+            )
+            Text("For family contact info")
+                .font(.labelMedium)
+                .foregroundStyle(Color.appOnSurfaceVariant)
+                .padding(.leading, Spacing.lg)
+        }
+        PrimaryButton(text: "Create account", loading: viewModel.loading) {
+            viewModel.register(form)
+        }
+        .accessibilityLabel("Create account button")
+        SecondaryButton(text: "Back") {
+            step = 1
+            viewModel.clearError()
+        }
+    }
+
+    private func advanceToStep2() {
+        if form.name.trimmingCharacters(in: .whitespaces).isEmpty {
+            viewModel.setError("Please enter your name.")
+        } else if !form.email.contains("@") || !form.email.contains(".") {
+            viewModel.setError("Please enter a valid email address.")
+        } else if form.password.count < minPasswordLength {
+            viewModel.setError("Password must be at least 6 characters.")
+        } else if form.password != form.confirm {
+            viewModel.setError("Passwords do not match.")
+        } else {
+            viewModel.clearError()
+            step = 2
+        }
+    }
+}
+
+// MARK: - Building blocks
+
+/// Hero-gradient full-screen background with brand header and a floating form card.
+struct AuthScaffold<Content: View>: View {
+    let title: String
+    let subtitle: String
+    @ViewBuilder let content: () -> Content
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var visible = false
+
+    var body: some View {
+        ZStack {
+            Gradients.hero(dark: colorScheme == .dark)
+                .ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Brand header
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color.white.opacity(0.18))
+                        .frame(width: 72, height: 72)
+                        .overlay(
+                            Image(systemName: "person.3.fill")
+                                .font(.system(size: 30))
+                                .foregroundStyle(.white)
+                        )
+                    Text("The Family App")
+                        .font(.headlineMedium)
+                        .foregroundStyle(.white)
+                        .padding(.top, 14)
+                    Text("One home for everything you share")
+                        .font(.bodyMedium)
+                        .foregroundStyle(.white.opacity(0.8))
+
+                    // Form card
+                    VStack(alignment: .leading, spacing: Spacing.md) {
+                        Text(title)
+                            .font(.headlineSmall.weight(.bold))
+                            .foregroundStyle(Color.appOnSurface)
+                        Text(subtitle)
+                            .font(.bodyMedium)
+                            .foregroundStyle(Color.appOnSurfaceVariant)
+                        content()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Spacing.xxl)
+                    .padding(.vertical, Spacing.xxxl)
+                    .background(Color.appSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                    .padding(.top, Spacing.xxxl)
+                    .opacity(visible ? 1 : 0)
+                    .offset(y: visible ? 0 : 24)
+                }
+                .frame(maxWidth: 480)
+                .padding(.horizontal, Spacing.xxl)
+                .padding(.vertical, 48)
+                .frame(maxWidth: .infinity)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.4)) { visible = true }
+        }
+    }
+}
+
+struct StepIndicator: View {
+    let currentStep: Int
+    var totalSteps = 2
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(1...totalSteps, id: \.self) { index in
+                let reached = index <= currentStep
+                ZStack {
+                    Circle()
+                        .fill(reached ? Color.appPrimary : .clear)
+                        .frame(width: 30, height: 30)
+                    if !reached {
+                        Circle()
+                            .strokeBorder(Color.appOnSurface.opacity(0.45), lineWidth: 1.5)
+                            .frame(width: 30, height: 30)
+                    }
+                    Text("\(index)")
+                        .font(.labelMedium.weight(.bold))
+                        .foregroundStyle(reached ? Color.appOnPrimary : Color.appOnSurfaceVariant)
+                }
+                if index < totalSteps {
+                    Rectangle()
+                        .fill(index < currentStep
+                            ? Color.appPrimary
+                            : Color.appOnSurface.opacity(0.35))
+                        .frame(width: 44, height: 2)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct PasswordStrengthBar: View {
+    let password: String
+
+    var body: some View {
+        if !password.isEmpty {
+            let strength = passwordStrength(password)
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack(spacing: Spacing.xs) {
+                    ForEach(1...3, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(index <= strength ? color(for: strength) : Color.appSurfaceVariant)
+                            .frame(height: 4)
+                    }
+                }
+                Text(label(for: strength))
+                    .font(.labelMedium)
+                    .foregroundStyle(color(for: strength))
+            }
+        }
+    }
+
+    private func label(for strength: Int) -> String {
+        switch strength {
+        case 0: "Too short"
+        case 1: "Weak"
+        case 2: "Medium"
+        default: "Strong"
+        }
+    }
+
+    private func color(for strength: Int) -> Color {
+        switch strength {
+        case 0, 1: .appError
+        case 2: .appWarning
+        default: .appSuccess
+        }
+    }
+}
+
+/// Read-only field that opens a date picker sheet; stores ISO-8601 (yyyy-MM-dd) —
+/// mirrors BirthdayPickerField in Components.kt.
+struct BirthdayPickerField: View {
+    @Binding var isoDate: String
+    var label = "Birthday (optional)"
+
+    @State private var showPicker = false
+    @State private var selection = Date()
+
+    private static let isoFormat: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
+
+    var body: some View {
+        Button {
+            selection = Self.isoFormat.date(from: isoDate)
+                ?? Calendar.current.date(byAdding: .year, value: -30, to: .now)!
+            showPicker = true
+        } label: {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "birthday.cake")
+                    .foregroundStyle(Color.appOnSurfaceVariant)
+                Text(displayText.isEmpty ? label : displayText)
+                    .font(.bodyLarge)
+                    .foregroundStyle(displayText.isEmpty ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                Spacer()
+            }
+            .padding(.horizontal, Spacing.lg)
+            .frame(minHeight: 56)
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
+                    .strokeBorder(Color.appOnSurface.opacity(0.45), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showPicker) {
+            VStack(spacing: Spacing.lg) {
+                DatePicker("Birthday", selection: $selection, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding(Spacing.lg)
+                PrimaryButton(text: "Done") {
+                    isoDate = Self.isoFormat.string(from: selection)
+                    showPicker = false
+                }
+                .padding(.horizontal, Spacing.screenEdge)
+            }
+            .padding(.bottom, Spacing.lg)
+            .presentationDetents([.medium, .large])
+            .presentationCornerRadius(Radius.sheet)
+        }
+    }
+
+    private var displayText: String {
+        guard let date = Self.isoFormat.date(from: isoDate) else { return "" }
+        return date.formatted(.dateTime.month(.wide).day().year())
+    }
+}
+
+struct AuthFooter: View {
+    let prompt: String
+    let action: String
+    let onTap: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            Text(prompt)
+                .font(.bodyMedium)
+                .foregroundStyle(Color.appOnSurfaceVariant)
+            Button(action: onTap) {
+                Text(action)
+                    .font(.bodyMedium.weight(.semibold))
+                    .foregroundStyle(Color.appPrimary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, Spacing.xs)
+    }
+}
+
+// MARK: - Helpers
+
+private extension Binding where Value == String {
+    /// Clears the view model error on every edit — mirrors the Android onValueChange
+    /// pattern of `viewModel.clearError()` alongside the state update.
+    @MainActor
+    func clearingError(_ viewModel: AuthViewModel) -> Binding<String> {
+        Binding(
+            get: { wrappedValue },
+            set: { newValue in
+                wrappedValue = newValue
+                viewModel.clearError()
+            }
+        )
+    }
+}

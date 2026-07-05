@@ -1,11 +1,11 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - family
 ---
 # Family: invite code + QR dialog + members are shown (read-only; no destructive actions).
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - tapOn: "Family"
 - assertVisible: "Invite Code"
 - assertVisible: "Share invite"

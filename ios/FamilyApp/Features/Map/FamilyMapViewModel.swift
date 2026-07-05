@@ -1,0 +1,172 @@
+// Family map view model — the iOS twin of FamilyMapViewModel.kt: publishes the own
+// location every 30 s while the map is open (foreground-only v1, matching Android's
+// Play-Store build), streams family member locations via realtime.
+import CoreLocation
+import Foundation
+import Observation
+import Supabase
+
+private let publishIntervalSeconds: Double = 30
+
+@Observable
+@MainActor
+final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
+    private(set) var myLocation: CLLocationCoordinate2D?
+    private(set) var locations: [UserLocationModel] = []
+    private(set) var userProfiles: [String: UserModel] = [:]
+    private(set) var isLoading = false
+    private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
+
+    var currentUserId: String? { repo.session.currentUserId }
+
+    private let repo = FamilyRepository.shared
+    private var client: SupabaseClient { SupabaseClientProvider.client }
+    private let observer = RealtimeObserver()
+    private var currentFamilyId: String?
+
+    private let locationManager = CLLocationManager()
+    private var publishTask: Task<Void, Never>?
+    private var lastPublish = Date.distantPast
+
+    override init() {
+        super.init()
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        authorizationStatus = locationManager.authorizationStatus
+        Task { await load() }
+    }
+
+    func requestPermission() {
+        locationManager.requestWhenInUseAuthorization()
+    }
+
+    private func load() async {
+        guard let userId = repo.session.currentUserId,
+              let user = await repo.getUser(userId) else { return }
+        currentFamilyId = user.familyId
+        await loadLocations()
+        guard let familyId = user.familyId else { return }
+        let members = await repo.getFamilyMembers(familyId: familyId)
+        userProfiles = Dictionary(members.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        observer.start(
+            table: "user_locations",
+            scope: familyId,
+            filter: "family_id=eq.\(familyId)"
+        ) { [weak self] in
+            await self?.loadLocations()
+        }
+    }
+
+    private func loadLocations() async {
+        guard let familyId = currentFamilyId, let myId = repo.session.currentUserId else { return }
+        isLoading = true
+        defer { isLoading = false }
+        if let fetched: [UserLocationModel] = try? await client.from("user_locations")
+            .select()
+            .eq("family_id", value: familyId)
+            .eq("visible", value: true)
+            .execute()
+            .value {
+            locations = fetched.filter { $0.userId != myId }
+        }
+    }
+
+    // MARK: - Own location publishing (30 s while the map is open)
+
+    func startLocationUpdates() {
+        guard publishTask == nil else { return }
+        locationManager.startUpdatingLocation()
+        publishTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(publishIntervalSeconds))
+                guard let self, let coordinate = self.myLocation else { continue }
+                await self.publishLocation(lat: coordinate.latitude, lng: coordinate.longitude)
+            }
+        }
+    }
+
+    func stopLocationUpdates() {
+        locationManager.stopUpdatingLocation()
+        publishTask?.cancel()
+        publishTask = nil
+    }
+
+    /// Foreground-only v1: hide the pin when the map screen goes away.
+    func clearOwnLocation() {
+        Task {
+            guard let userId = repo.session.currentUserId else { return }
+            try? await client.from("user_locations")
+                .update(["visible": AnyJSON.bool(false)])
+                .eq("user_id", value: userId)
+                .execute()
+        }
+    }
+
+    private func publishLocation(lat: Double, lng: Double) async {
+        guard let userId = repo.session.currentUserId,
+              let user = await repo.getUser(userId) else { return }
+        let visible = repo.session.locationVisible
+        try? await client.from("user_locations").upsert([
+            "user_id": AnyJSON.string(userId),
+            "family_id": user.familyId.map { AnyJSON.string($0) } ?? .null,
+            "lat": .double(lat),
+            "lng": .double(lng),
+            "display_name": .string(user.name),
+            "visible": .bool(visible),
+            "updated_at": .string(isoNow()),
+        ]).execute()
+    }
+
+    // MARK: - CLLocationManagerDelegate
+
+    nonisolated func locationManager(
+        _ manager: CLLocationManager,
+        didUpdateLocations newLocations: [CLLocation]
+    ) {
+        guard let location = newLocations.last else { return }
+        Task { @MainActor in
+            let isFirstFix = myLocation == nil
+            myLocation = location.coordinate
+            // Publish immediately on the first fix, then the 30 s timer takes over.
+            if isFirstFix || Date().timeIntervalSince(lastPublish) >= publishIntervalSeconds {
+                lastPublish = Date()
+                await publishLocation(
+                    lat: location.coordinate.latitude,
+                    lng: location.coordinate.longitude
+                )
+            }
+        }
+    }
+
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        Task { @MainActor in
+            authorizationStatus = status
+            if status == .authorizedWhenInUse || status == .authorizedAlways {
+                startLocationUpdates()
+            }
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
+}
+
+/// Last-seen label — mirrors formatLastSeen in FamilyMapScreen.kt.
+func formatLastSeen(
+    _ updatedAt: String?,
+    nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000)
+) -> String {
+    guard let updatedAt else { return "Unknown" }
+    guard let instant = parseInstantMs(updatedAt) else { return "Location shared" }
+    let seconds = (nowMs - instant) / 1000
+    switch true {
+    case seconds < 60: return "Just now" // also handles clock-skew futures
+    case seconds < 3600: return "\(seconds / 60) min ago"
+    case seconds < 86_400: return "\(seconds / 3600) hours ago"
+    default:
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter.string(from: Date(timeIntervalSince1970: Double(instant) / 1000))
+    }
+}

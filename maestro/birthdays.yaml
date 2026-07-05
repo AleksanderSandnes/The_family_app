@@ -1,11 +1,11 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - birthdays
 ---
 # Birthdays: add a birthday (name + date picker), then delete it.
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - assertVisible: "Quick access"
 - scrollUntilVisible:
     element: "Birthdays"

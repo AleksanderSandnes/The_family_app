@@ -1,11 +1,11 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - map
 ---
 # Family Map: opens and shows the "On the map" roster.
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - assertVisible: "Quick access"
 - scrollUntilVisible:
     element: "See where everyone is"

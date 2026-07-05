@@ -1,11 +1,11 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - meals
 ---
 # Meals: open a plan, add a dinner to an empty day, then clear it.
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - assertVisible: "Quick access"
 - scrollUntilVisible:
     element: "Plan the week"

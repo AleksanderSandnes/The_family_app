@@ -7,7 +7,7 @@
 // Date helpers below mirror NotificationWorker.kt's daysUntilRecurring / daysUntilOneTime.
 // See supabase/functions/README.md for the cron wiring.
 import { serviceClient } from "../_shared/client.ts";
-import { sendPushToTokens } from "../_shared/fcm.ts";
+import { PushTarget, sendPushToTokens } from "../_shared/fcm.ts";
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
@@ -77,15 +77,15 @@ Deno.serve(async (_req) => {
     const familyIds = [...new Set(recipients.map((u) => u.family_id))];
 
     const [{ data: tokenRows }, { data: birthdays }, { data: events }] = await Promise.all([
-      supabase.from("device_push_tokens").select("user_id, token").in("user_id", userIds),
+      supabase.from("device_push_tokens").select("user_id, token, platform").in("user_id", userIds),
       supabase.from("birthdays").select("name, date, family_id").in("family_id", familyIds),
       supabase.from("calendar_events").select("activity, date_from, family_id").in("family_id", familyIds),
     ]);
 
-    const tokensByUser = new Map<string, string[]>();
+    const tokensByUser = new Map<string, PushTarget[]>();
     for (const r of tokenRows ?? []) {
       const arr = tokensByUser.get(r.user_id) ?? [];
-      arr.push(r.token);
+      arr.push({ token: r.token, platform: r.platform });
       tokensByUser.set(r.user_id, arr);
     }
 
@@ -98,14 +98,26 @@ Deno.serve(async (_req) => {
       for (const b of (birthdays ?? []).filter((x) => x.family_id === user.family_id)) {
         const d = daysUntilRecurring(b.date ?? "", today);
         if (d !== null && shouldNotify(d, lead)) {
-          await sendPushToTokens(supabase, tokens, { type: "birthday", name: b.name ?? "", daysUntil: String(d) });
+          const name = b.name ?? "";
+          await sendPushToTokens(supabase, tokens, { type: "birthday", name, daysUntil: String(d) }, {
+            title: "Birthday reminder 🎂",
+            body: d === 0 ? `${name} has a birthday today!` : `${name} has a birthday in ${d} ${d === 1 ? "day" : "days"}`,
+            threadId: "birthdays",
+            category: "BIRTHDAY",
+          });
           sent++;
         }
       }
       for (const e of (events ?? []).filter((x) => x.family_id === user.family_id)) {
         const d = daysUntilOneTime(e.date_from ?? "", today);
         if (d !== null && shouldNotify(d, lead)) {
-          await sendPushToTokens(supabase, tokens, { type: "event", activity: e.activity ?? "", daysUntil: String(d) });
+          const activity = e.activity ?? "";
+          await sendPushToTokens(supabase, tokens, { type: "event", activity, daysUntil: String(d) }, {
+            title: "Event reminder 📅",
+            body: d === 0 ? `${activity} is today` : `${activity} is in ${d} ${d === 1 ? "day" : "days"}`,
+            threadId: "events",
+            category: "EVENT",
+          });
           sent++;
         }
       }

@@ -1,9 +1,20 @@
 # The Family App
 
-The Family App is an Android application that gives families one shared home for
-everyday coordination — shopping, meals, calendar, birthdays, wishlists, chat,
-real-time location sharing and more — wrapped in a modern, premium interface
-backed by a live cloud backend.
+The Family App gives families one shared home for everyday coordination —
+shopping, meals, calendar, birthdays, wishlists, chat, real-time location
+sharing and more — wrapped in a modern, premium interface backed by a live
+cloud backend.
+
+## Repository layout
+
+```
+android/    # the Android app (Jetpack Compose + Material 3) — Gradle root
+ios/        # the native iOS app (SwiftUI, XcodeGen) — in development
+supabase/   # shared backend: schema baseline, SQL migrations, edge functions
+maestro/    # Maestro UI end-to-end flows (shared E2E ground)
+```
+
+Both apps talk to the same Supabase project (Auth, Postgrest, Realtime, Storage).
 
 ## Features
 
@@ -48,7 +59,7 @@ backed by a live cloud backend.
 
 ### Prerequisites
 
-Create a `local.properties` file in the project root (next to `settings.gradle`) with the following keys:
+Create a `local.properties` file in the `android/` directory (next to `android/settings.gradle`) with the following keys:
 
 ```properties
 SUPABASE_URL=https://your-project.supabase.co
@@ -60,15 +71,16 @@ These values are injected as `BuildConfig` fields at compile time and are never 
 
 ### Android Studio
 
-1. Open the project root.
+1. Open the `android/` directory (the Gradle root), not the repo root.
 2. Ensure the Android SDK is installed and configured.
-3. Add `local.properties` as described above.
+3. Add `android/local.properties` as described above.
 4. Let Gradle sync.
 5. Build and run the `app` module on an emulator or device (API 23+).
 
 ### Command line
 
 ```bash
+cd android
 ./gradlew assembleDebug          # build the debug APK
 ./gradlew testDebugUnitTest      # run the unit-test suite
 ./gradlew spotlessApply          # format (ktlint)
@@ -79,7 +91,7 @@ These values are injected as `BuildConfig` fields at compile time and are never 
 ## Project structure
 
 ```
-app/src/main/java/com/example/mainactivity/
+android/app/src/main/java/com/sandnes/familyapp/
 ├── data/
 │   ├── remote/       # SupabaseManager (Auth, Postgrest, Realtime, Storage)
 │   ├── Entities.kt   # kotlinx-serializable data models (UserModel, FamilyModel, …)
@@ -99,9 +111,9 @@ app/src/main/java/com/example/mainactivity/
 │   └── navigation/   # Navigation Compose graph + auth gate
 └── MainActivity.kt   # single Activity entry point
 
-config/detekt/        # detekt config (Compose-friendly)
-maestro/              # Maestro UI end-to-end flows (one per page)
-supabase/             # schema baseline + incremental SQL migrations
+android/config/detekt/  # detekt config (Compose-friendly)
+maestro/                # Maestro UI end-to-end flows (one per page)
+supabase/               # schema baseline + incremental SQL migrations
 ```
 
 ## Quality & testing

@@ -1,8 +1,13 @@
 // FCM HTTP v1 sender for Supabase Edge Functions (Deno).
 //
-// All pushes are DATA-ONLY messages — the Android client (FamilyMessagingService) builds
+// Android pushes are DATA-ONLY messages — the Android client (FamilyMessagingService) builds
 // the actual notification so it controls channel, styling, and de-dup, and so delivery
 // works even when the app is killed. FCM data values must all be strings.
+//
+// iOS pushes carry a `notification` block + `apns` section instead: data-only messages are
+// background-throttled on iOS, so APNs must display the alert itself. The data payload is
+// still attached for deep-linking on tap. A token's `platform` column decides the shape;
+// anything other than 'ios' gets the original byte-identical Android payload.
 //
 // Requires the `FCM_SERVICE_ACCOUNT` secret: the full service-account JSON downloaded from
 // Firebase (Project settings → Service accounts → Generate new private key). The Firebase
@@ -85,39 +90,84 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
   return cachedToken.token;
 }
 
+/** One push destination: an FCM token plus the platform it was registered from. */
+export interface PushTarget {
+  token: string;
+  platform?: string | null; // 'android' (default) | 'ios'
+}
+
+/** Visible alert content — required for iOS targets, ignored for Android (data-only). */
+export interface PushAlert {
+  title: string;
+  body: string;
+  /** APNs thread-id for notification grouping (e.g. the conversation id). */
+  threadId?: string;
+  /** APNs category — selects the iOS notification actions (MESSAGE enables inline reply). */
+  category?: string;
+}
+
+function buildMessage(
+  target: PushTarget,
+  data: Record<string, string>,
+  alert?: PushAlert,
+): Record<string, unknown> {
+  if (target.platform !== "ios") {
+    // Android: byte-identical to the original data-only payload.
+    return { token: target.token, data, android: { priority: "high" } };
+  }
+  return {
+    token: target.token,
+    data,
+    ...(alert ? { notification: { title: alert.title, body: alert.body } } : {}),
+    apns: {
+      headers: { "apns-push-type": "alert", "apns-priority": "10" },
+      payload: {
+        aps: {
+          "mutable-content": 1,
+          sound: "default",
+          ...(alert?.threadId ? { "thread-id": alert.threadId } : {}),
+          ...(alert?.category ? { category: alert.category } : {}),
+        },
+      },
+    },
+  };
+}
+
 /**
- * Sends a data-only push to each token. Tokens FCM reports as unregistered/invalid are
- * pruned from `device_push_tokens` so stale tokens don't accumulate.
+ * Sends a push to each target, shaped per platform (see file header). Tokens FCM reports
+ * as unregistered/invalid are pruned from `device_push_tokens` so stale tokens don't
+ * accumulate.
  */
 export async function sendPushToTokens(
   supabase: SupabaseClient,
-  tokens: string[],
+  targets: PushTarget[],
   data: Record<string, string>,
+  alert?: PushAlert,
 ): Promise<void> {
-  if (tokens.length === 0) return;
+  if (targets.length === 0) return;
   const sa = getServiceAccount();
   const accessToken = await getAccessToken(sa);
   const url = `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
   const stale: string[] = [];
 
   await Promise.all(
-    tokens.map(async (token) => {
+    targets.map(async (target) => {
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          message: { token, data, android: { priority: "high" } },
-        }),
+        body: JSON.stringify({ message: buildMessage(target, data, alert) }),
       });
       if (res.ok) return;
       // 404 UNREGISTERED, 400 invalid argument (bad/expired token) → prune.
       if (res.status === 404 || res.status === 400) {
-        stale.push(token);
+        stale.push(target.token);
       } else {
-        console.error(`FCM send failed (${res.status}) for ${token.slice(0, 12)}…: ${await res.text()}`);
+        console.error(
+          `FCM send failed (${res.status}) for ${target.token.slice(0, 12)}…: ${await res.text()}`,
+        );
       }
     }),
   );

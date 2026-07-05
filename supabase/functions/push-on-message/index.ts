@@ -41,10 +41,10 @@ Deno.serve(async (req) => {
 
     const { data: tokenRows } = await supabase
       .from("device_push_tokens")
-      .select("token")
+      .select("token, platform")
       .in("user_id", enabledIds);
-    const tokens = (tokenRows ?? []).map((t) => t.token);
-    if (tokens.length === 0) return new Response("no tokens", { status: 200 });
+    const targets = (tokenRows ?? []).map((t) => ({ token: t.token, platform: t.platform }));
+    if (targets.length === 0) return new Response("no tokens", { status: 200 });
 
     const preview = msg.message_type === "image"
       ? "📷 Image"
@@ -52,7 +52,9 @@ Deno.serve(async (req) => {
       ? "🎤 Voice message"
       : (msg.text ?? "");
 
-    await sendPushToTokens(supabase, tokens, {
+    const senderName = sender?.name ?? "Family member";
+
+    await sendPushToTokens(supabase, targets, {
       type: "message",
       conversationId: String(msg.conversation_id),
       conversationName: conversation?.name ?? "",
@@ -61,7 +63,13 @@ Deno.serve(async (req) => {
       messageType: msg.message_type ?? "text",
       text: preview,
       senderId: String(msg.user_from ?? ""),
-      senderName: sender?.name ?? "Family member",
+      senderName,
+    }, {
+      // Alert content for iOS targets; Android ignores this and builds its own notification.
+      title: conversation?.name || senderName,
+      body: conversation?.name ? `${senderName}: ${preview}` : preview,
+      threadId: String(msg.conversation_id),
+      category: "MESSAGE",
     });
 
     return new Response("ok", { status: 200 });

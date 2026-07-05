@@ -1,0 +1,149 @@
+// Voice notes — the iOS twin of the Android MediaRecorder flow + VoiceNoteMessage:
+// AVAudioRecorder producing m4a/AAC into the same chat-media bucket, AVAudioPlayer
+// playback with progress.
+import AVFoundation
+import Observation
+import SwiftUI
+
+/// Records m4a/AAC voice notes — parity with Android's MediaRecorder settings.
+@Observable
+@MainActor
+final class VoiceRecorder {
+    private(set) var isRecording = false
+    private(set) var seconds = 0
+
+    private var recorder: AVAudioRecorder?
+    private var fileURL: URL?
+    private var tickTask: Task<Void, Never>?
+
+    func start() async -> Bool {
+        let session = AVAudioSession.sharedInstance()
+        let granted = await withCheckedContinuation { continuation in
+            session.requestRecordPermission { continuation.resume(returning: $0) }
+        }
+        guard granted else { return false }
+        do {
+            try session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
+            try session.setActive(true)
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("voice_\(Int(Date().timeIntervalSince1970 * 1000)).m4a")
+            fileURL = url
+            let settings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: 44_100,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
+            ]
+            let recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder.record()
+            self.recorder = recorder
+            isRecording = true
+            seconds = 0
+            tickTask = Task { [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(1))
+                    guard let self, self.isRecording else { break }
+                    self.seconds += 1
+                }
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Stops recording; returns the audio data and filename when `send` is true.
+    func stop(send: Bool) -> (data: Data, filename: String)? {
+        isRecording = false
+        tickTask?.cancel()
+        recorder?.stop()
+        recorder = nil
+        defer {
+            if let fileURL { try? FileManager.default.removeItem(at: fileURL) }
+            fileURL = nil
+        }
+        guard send, let fileURL, let data = try? Data(contentsOf: fileURL) else { return nil }
+        return (data, fileURL.lastPathComponent)
+    }
+}
+
+/// Playable voice-note bubble content.
+struct VoiceNoteView: View {
+    let url: String
+    let tint: Color
+
+    @State private var player = VoicePlayer()
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            Button {
+                player.toggle(urlString: url)
+            } label: {
+                Image(systemName: player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(tint)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(player.isPlaying ? "Pause voice message" : "Play voice message")
+            // Simple waveform placeholder (Android parity).
+            HStack(spacing: 2) {
+                ForEach(0..<18, id: \.self) { index in
+                    Capsule()
+                        .fill(tint.opacity(index % 3 == 0 ? 0.9 : 0.5))
+                        .frame(width: 2.5, height: CGFloat([8, 14, 10, 18, 12, 16][index % 6]))
+                }
+            }
+            Text(player.durationLabel)
+                .font(.labelMedium)
+                .foregroundStyle(tint)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+@Observable
+@MainActor
+final class VoicePlayer: NSObject, AVAudioPlayerDelegate {
+    private(set) var isPlaying = false
+    private(set) var durationLabel = "0:00"
+
+    private var player: AVAudioPlayer?
+    private var loadTask: Task<Void, Never>?
+
+    func toggle(urlString: String) {
+        if isPlaying {
+            player?.pause()
+            isPlaying = false
+            return
+        }
+        if let player {
+            player.play()
+            isPlaying = true
+            return
+        }
+        loadTask?.cancel()
+        loadTask = Task {
+            guard let url = URL(string: urlString),
+                  let (data, _) = try? await URLSession.shared.data(from: url),
+                  let player = try? AVAudioPlayer(data: data)
+            else { return }
+            try? AVAudioSession.sharedInstance().setCategory(.playback)
+            player.delegate = self
+            self.player = player
+            durationLabel = Self.format(player.duration)
+            player.play()
+            isPlaying = true
+        }
+    }
+
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in
+            isPlaying = false
+        }
+    }
+
+    private static func format(_ duration: TimeInterval) -> String {
+        let total = Int(duration.rounded())
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+}
