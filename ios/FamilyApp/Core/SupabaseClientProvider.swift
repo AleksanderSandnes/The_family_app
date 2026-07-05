@@ -28,7 +28,13 @@ enum SupabaseClientProvider {
             options: SupabaseClientOptions(
                 auth: SupabaseClientOptions.AuthOptions(
                     redirectToURL: authRedirectURL,
-                    flowType: .pkce
+                    flowType: .pkce,
+                    // Emit the stored session immediately as the initial session (opt-in to
+                    // supabase-swift's next-major behavior; silences the runtime warning). Safe
+                    // here: the auth gate doesn't trust `.initialSession` — RootViewModel.bootstrap()
+                    // refreshes via `auth.session` and gates on the persisted app user id, and an
+                    // expired token is refreshed in the background by the library.
+                    emitLocalSessionAsInitialSession: true
                 ),
                 realtime: RealtimeClientOptions(
                     // Default 15s is too short on mobile — the server sometimes takes >15s

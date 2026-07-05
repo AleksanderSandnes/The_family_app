@@ -19,21 +19,41 @@ final class RealtimeObserver {
         filter: RealtimePostgresFilter? = nil,
         onChange: @escaping @MainActor () async -> Void
     ) {
-        stop()
-        let client = SupabaseClientProvider.client
-        let channel = client.channel("\(table)-\(scope)")
-        self.channel = channel
+        // Tear the previous subscription down and *await* its removal before recreating the
+        // topic. The client reuses a channel by topic and rejects postgres callbacks added
+        // after `subscribe()`, so on a re-entrant start() (view re-appear, refresh) a plain
+        // fire-and-forget removeChannel would let `client.channel(topic:)` hand back a still-
+        // subscribed channel — `postgresChange` would then log "Cannot add postgres_changes
+        // callbacks after subscribe()". Sequencing removal → create → register → subscribe in
+        // one task guarantees a fresh, unsubscribed channel.
+        let previousChannel = channel
+        task?.cancel()
+        channel = nil
 
-        let changes = channel.postgresChange(
-            AnyAction.self,
-            schema: "public",
-            table: table,
-            filter: filter
-        )
-        task = Task {
+        let client = SupabaseClientProvider.client
+        let topic = "\(table)-\(scope)"
+
+        task = Task { [weak self] in
+            if let previousChannel {
+                await client.removeChannel(previousChannel)
+            }
+            guard !Task.isCancelled else { return }
+
+            let channel = client.channel(topic)
+            self?.channel = channel
+
+            // Register the postgres listener *before* subscribing (registration is synchronous).
+            let changes = channel.postgresChange(
+                AnyAction.self,
+                schema: "public",
+                table: table,
+                filter: filter
+            )
+
             do {
                 try await channel.subscribeWithError()
             } catch {
+                await client.removeChannel(channel)
                 return
             }
             for await _ in changes {
