@@ -25,6 +25,10 @@ enum StorageService {
         try await upload(bucket: "avatars", path: "\(try authUid())/\(filename)", data: data)
     }
 
+    static func deleteAvatar(filename: String) async throws {
+        _ = try await client.storage.from("avatars").remove(paths: ["\(try authUid())/\(filename)"])
+    }
+
     @discardableResult
     static func uploadGroupImage(data: Data, filename: String) async throws -> String {
         try await upload(bucket: "group-images", path: "\(try authUid())/\(filename)", data: data)

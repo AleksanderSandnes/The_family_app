@@ -22,8 +22,13 @@ struct FamilyApp: App {
                         .background(Color.appBackground)
                 case .signedOut:
                     AuthFlowView()
+                case .needsPermissions:
+                    PermissionsOnboardingScreen {
+                        root.completePermissionsOnboarding()
+                    }
                 case .signedIn:
                     MainTabView()
+                        .task { await root.onSignedIn() }
                 }
             }
             .environment(root)

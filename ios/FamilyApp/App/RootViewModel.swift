@@ -6,6 +6,7 @@ import Observation
 enum AuthGate {
     case loading
     case signedOut
+    case needsPermissions
     case signedIn
 }
 
@@ -14,10 +15,13 @@ enum AuthGate {
 final class RootViewModel {
     private let store = SessionStore.shared
     private var bootstrapped = false
+    private var didSyncAfterSignIn = false
 
     var gate: AuthGate {
         if !bootstrapped { return .loading }
-        return store.currentUserId != nil ? .signedIn : .signedOut
+        if store.currentUserId == nil { return .signedOut }
+        if !store.permissionsRequested { return .needsPermissions }
+        return .signedIn
     }
 
     /// Restores the Supabase auth session (supabase-swift persists it in the keychain),
@@ -31,5 +35,18 @@ final class RootViewModel {
         if store.currentUserId != nil {
             await FamilyRepository.shared.touchLastActive()
         }
+    }
+
+    /// Once fully signed in, register this device's push token and mirror the local
+    /// notification settings to the server (Android RootViewModel parity).
+    func onSignedIn() async {
+        guard !didSyncAfterSignIn else { return }
+        didSyncAfterSignIn = true
+        await FamilyRepository.shared.syncPushToken()
+        await FamilyRepository.shared.syncNotificationPrefsToServer()
+    }
+
+    func completePermissionsOnboarding() {
+        store.setPermissionsRequested()
     }
 }

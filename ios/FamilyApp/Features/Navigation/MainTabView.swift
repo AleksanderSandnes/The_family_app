@@ -21,6 +21,8 @@ struct MainTabView: View {
     @State private var calendarViewModel = CalendarViewModel()
     @State private var birthdayViewModel = BirthdayViewModel()
     @State private var wishlistViewModel = WishlistViewModel()
+    @State private var familyViewModel = FamilyViewModel()
+    @State private var profileViewModel = ProfileViewModel()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -51,15 +53,19 @@ struct MainTabView: View {
             .tag(Tab.chat)
 
             NavigationStack(path: $familyPath) {
-                PlaceholderScreen(title: "Family")
+                FamilyScreen(viewModel: familyViewModel)
                     .navigationDestination(for: Route.self) { destination(for: $0) }
             }
             .tabItem { Label("Family", systemImage: "person.3.fill") }
             .tag(Tab.family)
 
             NavigationStack(path: $profilePath) {
-                PlaceholderScreen(title: "Profile")
-                    .navigationDestination(for: Route.self) { destination(for: $0) }
+                ProfileScreen(
+                    viewModel: profileViewModel,
+                    onEdit: { profilePath.append(.profileEdit) },
+                    onSettings: { profilePath.append(.settings) }
+                )
+                .navigationDestination(for: Route.self) { destination(for: $0) }
             }
             .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
             .tag(Tab.profile)
@@ -99,9 +105,9 @@ struct MainTabView: View {
         case .chatDetail(let conversationId):
             PlaceholderScreen(title: "Conversation \(conversationId)")
         case .profileEdit:
-            PlaceholderScreen(title: "Edit profile")
+            ProfileEditScreen(viewModel: profileViewModel)
         case .settings:
-            PlaceholderScreen(title: "Settings")
+            SettingsScreen()
         case .familyMap:
             PlaceholderScreen(title: "Family Map")
         }
