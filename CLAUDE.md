@@ -2,11 +2,22 @@
 
 ## What this project is
 
-An Android family coordination app. One shared space for shopping, meals, calendar, birthdays, wishlists, chat, and location sharing. Single-Activity, 100% Jetpack Compose + Material 3, backed by Supabase (Postgres + Realtime + Storage + Auth).
+A family coordination app. One shared space for shopping, meals, calendar, birthdays, wishlists, chat, and location sharing. The Android app is single-Activity, 100% Jetpack Compose + Material 3, backed by Supabase (Postgres + Realtime + Storage + Auth). A native iOS app (SwiftUI) sharing the same Supabase backend is in development under `ios/`.
+
+## Repository layout
+
+```
+android/    # Android app — the Gradle root (settings.gradle, app/, config/, gradlew)
+ios/        # native iOS app (SwiftUI + supabase-swift, XcodeGen) — in development
+supabase/   # shared backend: schema.sql baseline, incremental migrations, edge functions
+maestro/    # Maestro UI end-to-end flows
+```
+
+All Gradle commands run from `android/`. `local.properties`, `google-services.json`, and `release.keystore` live inside `android/` (gitignored).
 
 ## Mandatory workflow rules
 
-Always run `./gradlew assembleDebug`, `./gradlew build`, or any build/test commands to verify that there is no errors.
+Always run `cd android && ./gradlew assembleDebug`, `./gradlew build`, or any build/test commands to verify that there is no errors.
 
 **Branch workflow — no exceptions:**
 1. Branch from `master` with a descriptive name: `feat/`, `fix/`, `chore/` prefix (e.g. `feat/calendar-recurring-events`).
@@ -62,7 +73,7 @@ There are **two different UUIDs** for every user. Confusing them causes subtle, 
 ### UI layer
 
 ```
-app/src/main/java/com/example/mainactivity/
+android/app/src/main/java/com/example/mainactivity/
   data/
     Entities.kt          — all @Serializable data classes (UserModel, FamilyModel, …)
     FamilyRepository.kt  — singleton; auth, family, profile operations
@@ -152,7 +163,7 @@ The `limit 1` is required — without it, a multi-row subquery can break the pol
 
 **Storage buckets:** `avatars` and `group-images`. Created by `supabase/add_storage_buckets.sql`. Avatars path: `avatars/{auth_uid}/{filename}` — must use auth UUID, not `public.users.id`.
 
-## Secrets — `local.properties` (gitignored)
+## Secrets — `android/local.properties` (gitignored)
 
 ```
 SUPABASE_URL=...

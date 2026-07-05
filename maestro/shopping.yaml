@@ -1,11 +1,11 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - shopping
 ---
 # Shopping: open a list, add an item, complete it, delete it.
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - assertVisible: "Quick access"
 - scrollUntilVisible:
     element: "Shared lists"

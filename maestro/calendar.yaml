@@ -1,11 +1,11 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - calendar
 ---
 # Calendar: switch views, create an event, delete it.
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - tapOn: "Calendar"
 - assertVisible: "Today"
 

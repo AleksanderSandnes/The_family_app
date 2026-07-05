@@ -1,11 +1,11 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - wishlists
 ---
 # Wishlists: open own list, add a rich wish (text/link/price), delete it.
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - assertVisible: "Quick access"
 - scrollUntilVisible:
     element: "Gift ideas"

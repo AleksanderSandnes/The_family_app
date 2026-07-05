@@ -1,4 +1,4 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - profile
@@ -6,7 +6,7 @@ tags:
 ---
 # Profile + Settings: open settings, toggle theme Dark -> Light (restores Light).
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - tapOn: "Profile"
 - assertVisible: "Edit profile"
 - assertVisible: "Sign out"

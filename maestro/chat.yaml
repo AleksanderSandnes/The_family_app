@@ -1,4 +1,4 @@
-appId: com.example.mainactivity
+appId: com.sandnes.familyapp
 tags:
   - smoke
   - chat
@@ -6,7 +6,7 @@ tags:
 # Chat: open the first conversation and send a message.
 # (No per-message delete exists, so this leaves one short test message.)
 - launchApp:
-    appId: com.example.mainactivity
+    appId: com.sandnes.familyapp
 - tapOn: "Chat"
 - assertVisible: "Chats"
 
