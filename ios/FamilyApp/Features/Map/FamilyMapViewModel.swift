@@ -17,10 +17,15 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
     private(set) var isLoading = false
     private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
 
-    var currentUserId: String? { repo.session.currentUserId }
+    var currentUserId: String? {
+        repo.session.currentUserId
+    }
 
     private let repo = FamilyRepository.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    private var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
+
     private let observer = RealtimeObserver()
     private var currentFamilyId: String?
 
@@ -79,8 +84,8 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
         publishTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(publishIntervalSeconds))
-                guard let self, let coordinate = self.myLocation else { continue }
-                await self.publishLocation(lat: coordinate.latitude, lng: coordinate.longitude)
+                guard let self, let coordinate = myLocation else { continue }
+                await publishLocation(lat: coordinate.latitude, lng: coordinate.longitude)
             }
         }
     }
@@ -162,7 +167,7 @@ func formatLastSeen(
     switch true {
     case seconds < 60: return "Just now" // also handles clock-skew futures
     case seconds < 3600: return "\(seconds / 60) min ago"
-    case seconds < 86_400: return "\(seconds / 3600) hours ago"
+    case seconds < 86400: return "\(seconds / 3600) hours ago"
     default:
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"

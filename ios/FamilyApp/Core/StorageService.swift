@@ -10,7 +10,9 @@ import Foundation
 import Supabase
 
 enum StorageService {
-    private static var client: SupabaseClient { SupabaseClientProvider.client }
+    private static var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
 
     /// The Supabase Auth UUID (auth_id) — the ONLY id allowed in storage paths.
     private static func authUid() throws -> String {
@@ -22,16 +24,16 @@ enum StorageService {
 
     @discardableResult
     static func uploadAvatar(data: Data, filename: String) async throws -> String {
-        try await upload(bucket: "avatars", path: "\(try authUid())/\(filename)", data: data)
+        try await upload(bucket: "avatars", path: "\(authUid())/\(filename)", data: data)
     }
 
     static func deleteAvatar(filename: String) async throws {
-        _ = try await client.storage.from("avatars").remove(paths: ["\(try authUid())/\(filename)"])
+        _ = try await client.storage.from("avatars").remove(paths: ["\(authUid())/\(filename)"])
     }
 
     @discardableResult
     static func uploadGroupImage(data: Data, filename: String) async throws -> String {
-        try await upload(bucket: "group-images", path: "\(try authUid())/\(filename)", data: data)
+        try await upload(bucket: "group-images", path: "\(authUid())/\(filename)", data: data)
     }
 
     /// wish-images allows any authenticated write; Android's path convention is the APP
@@ -49,7 +51,7 @@ enum StorageService {
     ) async throws -> String {
         try await upload(
             bucket: "chat-media",
-            path: "\(conversationId)/\(try authUid())/\(filename)",
+            path: "\(conversationId)/\(authUid())/\(filename)",
             data: data
         )
     }

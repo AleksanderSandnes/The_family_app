@@ -1,0 +1,42 @@
+# Pre-commit hooks for The Family App — iOS Swift only.
+# Install once:  brew install pre-commit && pre-commit install
+# Run manually:  pre-commit run --all-files
+# These hooks operate on STAGED Swift files only (that's what pre-commit passes).
+# Order matters: SwiftFormat autofixes layout first, then SwiftLint autofixes the
+# safe subset, then SwiftLint lints and BLOCKS the commit on any remaining issue.
+#
+# Requires swiftformat + swiftlint on PATH (brew install swiftformat swiftlint).
+# Uses `system` language so the hooks call the Homebrew-installed binaries
+# directly (no network / ruby / node bootstrapping).
+repos:
+  - repo: local
+    hooks:
+      # 1. SwiftFormat — autofix formatting on staged Swift files, re-stage them.
+      - id: swiftformat
+        name: SwiftFormat (autofix)
+        entry: swiftformat
+        language: system
+        types: [swift]
+        # Only lint iOS files; skip anything outside ios/ just in case.
+        files: ^ios/(FamilyApp|FamilyAppTests)/
+        args: ["--config", ".swiftformat"]
+
+      # 2. SwiftLint autocorrect — apply the safe autofixable rules.
+      # No --config: swiftlint discovers the root .swiftlint.yml and the nested
+      # ios/FamilyAppTests/.swiftlint.yml override per file (--config would disable that).
+      - id: swiftlint-fix
+        name: SwiftLint (autofix safe rules)
+        entry: swiftlint
+        language: system
+        types: [swift]
+        files: ^ios/(FamilyApp|FamilyAppTests)/
+        args: ["--fix"]
+
+      # 3. SwiftLint strict lint — BLOCK the commit on any remaining violation.
+      - id: swiftlint
+        name: SwiftLint (lint / gate)
+        entry: swiftlint
+        language: system
+        types: [swift]
+        files: ^ios/(FamilyApp|FamilyAppTests)/
+        args: ["lint", "--strict"]

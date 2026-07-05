@@ -25,10 +25,14 @@ final class WishlistViewModel {
     /// Reservations visible to the current user, keyed by wish id. Empty for the owner.
     private(set) var reservations: [String: WishReservationModel] = [:]
 
-    var currentUserId: String? { repo.session.currentUserId }
+    var currentUserId: String? {
+        repo.session.currentUserId
+    }
 
     private let repo = FamilyRepository.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    private var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
 
     private let wishlistsObserver = RealtimeObserver()
     private let wishesObserver = RealtimeObserver()
@@ -60,12 +64,12 @@ final class WishlistViewModel {
         if userId == repo.session.currentUserId {
             return await repo.getUser(userId)?.name
         }
-        let users: [UserModel]? = try? await client.from("users")
+        let users: [UserModel] = await (try? client.from("users")
             .select()
             .eq("id", value: userId)
             .execute()
-            .value
-        return users?.first?.name
+            .value) ?? []
+        return users.first?.name
     }
 
     private func loadWishlists() async {
@@ -79,14 +83,14 @@ final class WishlistViewModel {
 
         let result: [WishlistModel]
         if let familyId = user?.familyId {
-            let fetched: [WishlistModel] = (try? await client.from("wishlists")
+            let fetched: [WishlistModel] = await (try? client.from("wishlists")
                 .select()
                 .or("owner_user_id.eq.\(userId),family_id.eq.\(familyId)")
                 .execute()
                 .value) ?? wishlists
             result = fetched.filter { $0.familyId == nil || $0.familyId == familyId }
         } else {
-            let fetched: [WishlistModel] = (try? await client.from("wishlists")
+            let fetched: [WishlistModel] = await (try? client.from("wishlists")
                 .select()
                 .eq("owner_user_id", value: userId)
                 .execute()
@@ -119,18 +123,18 @@ final class WishlistViewModel {
     }
 
     private func reloadDetail(_ wishlistId: String) async {
-        async let listFetch: [WishlistModel]? = try? client.from("wishlists")
+        async let listFetch: [WishlistModel] = (try? client.from("wishlists")
             .select()
             .eq("id", value: wishlistId)
             .execute()
-            .value
-        async let wishesFetch: [WishModel]? = try? client.from("wishes")
+            .value) ?? []
+        async let wishesFetch: [WishModel] = (try? client.from("wishes")
             .select()
             .eq("wishlist_id", value: wishlistId)
             .execute()
-            .value
-        if let list = await listFetch?.first { selectedWishlist = list }
-        if let fetched = await wishesFetch { wishes = fetched }
+            .value) ?? []
+        if let list = await listFetch.first { selectedWishlist = list }
+        wishes = await wishesFetch
         await loadReservations()
     }
 
@@ -141,7 +145,7 @@ final class WishlistViewModel {
             reservations = [:]
             return
         }
-        let rows: [WishReservationModel] = (try? await client.from("wish_reservations")
+        let rows: [WishReservationModel] = await (try? client.from("wish_reservations")
             .select()
             .in("wish_id", values: wishIds)
             .execute()

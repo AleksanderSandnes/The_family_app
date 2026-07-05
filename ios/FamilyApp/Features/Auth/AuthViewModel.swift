@@ -31,10 +31,9 @@ final class AuthViewModel {
         // Finalize external (Google OAuth) sign-in: once the redirect lands and the
         // session becomes authenticated, resolve + persist the app user so the gate flips.
         authListener = Task {
-            for await (event, _) in SupabaseClientProvider.client.auth.authStateChanges {
-                if event == .signedIn {
-                    _ = try? await FamilyRepository.shared.completeSignInAfterConfirmation()
-                }
+            for await (event, _) in SupabaseClientProvider.client.auth.authStateChanges
+                where event == .signedIn {
+                _ = try? await FamilyRepository.shared.completeSignInAfterConfirmation()
             }
         }
     }
@@ -43,7 +42,9 @@ final class AuthViewModel {
         authListener?.cancel()
     }
 
-    func clearError() { error = nil }
+    func clearError() {
+        error = nil
+    }
 
     func setError(_ message: String) {
         loading = false

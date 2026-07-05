@@ -30,7 +30,7 @@ final class VoiceRecorder {
             fileURL = url
             let settings: [String: Any] = [
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVSampleRateKey: 44_100,
+                AVSampleRateKey: 44100,
                 AVNumberOfChannelsKey: 1,
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
             ]
@@ -42,8 +42,8 @@ final class VoiceRecorder {
             tickTask = Task { [weak self] in
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .seconds(1))
-                    guard let self, self.isRecording else { break }
-                    self.seconds += 1
+                    guard let self, isRecording else { break }
+                    seconds += 1
                 }
             }
             return true
@@ -89,7 +89,7 @@ struct VoiceNoteView: View {
             HStack(spacing: 2) {
                 ForEach(0..<18, id: \.self) { index in
                     Capsule()
-                        .fill(tint.opacity(index % 3 == 0 ? 0.9 : 0.5))
+                        .fill(tint.opacity(index.isMultiple(of: 3) ? 0.9 : 0.5))
                         .frame(width: 2.5, height: CGFloat([8, 14, 10, 18, 12, 16][index % 6]))
                 }
             }

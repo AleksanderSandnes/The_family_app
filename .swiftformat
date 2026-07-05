@@ -1,0 +1,72 @@
+# SwiftFormat configuration — The Family App (iOS)
+# =============================================================================
+# Lives at the repo ROOT alongside .swiftlint.yml. SwiftFormat is the OWNER of
+# whitespace/layout concerns (indentation, wrapping, import order, trailing
+# commas); SwiftLint owns semantic/style lint (force-unwrap, naming, dead code).
+# Overlapping rules are disabled on whichever tool is NOT the owner so the two
+# never fight — see the `--disable` list and the notes in .swiftlint.yml.
+#
+# Run:   swiftformat ios/FamilyApp ios/FamilyAppTests            (autofix)
+#        swiftformat --lint ios/FamilyApp ios/FamilyAppTests     (check only)
+# =============================================================================
+
+--swiftversion 5.10       # matches SWIFT_VERSION in ios/project.yml
+--indent 4                # matches the whole existing tree (verified)
+--maxwidth 120            # soft wrap target; pairs with SwiftLint line_length warning:120
+
+# -- Wrapping ----------------------------------------------------------------
+--wraparguments before-first   # multi-line calls/decls put every arg on its own line, closing paren dedented
+--wrapparameters before-first  # same for function parameters (matches existing multi-line VM funcs)
+--wrapcollections before-first # collection literals wrap consistently
+--wrapconditions after-first
+--closingparen balanced
+
+# -- Trailing commas: SwiftFormat OWNS this (SwiftLint's trailing_comma is off) --
+--commas always           # trailing comma on the last multi-line element → cleaner diffs
+
+# -- Import ordering: SwiftFormat OWNS this (SwiftLint's sorted_imports is off) --
+--importgrouping alpha    # alphabetical; testable imports handled by the rule
+
+# -- Self / redundancy -------------------------------------------------------
+--self remove             # drop redundant `self.`; SwiftUI/@Observable code here doesn't need it
+--stripunusedargs closure-only   # don't rewrite protocol-witness signatures, only unused closure args
+--redundanttype inferred  # `let x = Foo()` — agrees with SwiftLint redundant_type_annotation
+
+# -- Formatting details ------------------------------------------------------
+--semicolons never
+--trimwhitespace always
+--emptybraces no-space    # `{}` not `{ }`
+--ranges no-space         # `0..<n` not `0 ..< n`
+# `func < (lhs:rhs:)` WITH a space around the operator — must match SwiftLint's
+# function_name_whitespace rule (which requires the space); `no-space` would make
+# the two tools fight over every operator declaration.
+--operatorfunc spaced
+--decimalgrouping none
+--binarygrouping none
+--hexgrouping none
+--octalgrouping none
+--extensionacl on-declarations
+--patternlet hoist        # hoist `let` out of patterns: `case let .foo(x)` (also controls hoisting)
+--elseposition same-line
+--guardelse auto
+--marktypes never         # don't auto-insert `// MARK:` for every type; MARKs are used intentionally here
+
+# -- noForceUnwrapInTests: OFF — kept consistent with the test-target SwiftLint
+# override (ios/FamilyAppTests/.swiftlint.yml) that allows force-unwrap in tests.
+# We don't want the autofixer rewriting `x!` → `try XCTUnwrap(x)` (which forces
+# methods to `throws`) across the existing 38 test sites.
+--disable noForceUnwrapInTests
+
+# -- Rules explicitly disabled (deferred to SwiftLint or too aggressive) -----
+# organizeDeclarations would re-sort members inside every type — too invasive
+# for an in-flight design overhaul; leave member order to the author.
+--disable organizeDeclarations
+# blankLinesAtStartOfScope/... are fine; but don't let SwiftFormat strip the
+# file-header comments this codebase uses to mirror the Android twin files.
+--disable wrapMultilineStatementBraces
+--enable isEmpty
+--enable blankLinesBetweenScopes
+--enable blankLineAfterImports
+
+# -- Never touch generated / build output ------------------------------------
+--exclude ios/build,ios/DerivedData,.build,ios/.build,Pods,**/*.generated.swift,android,supabase,maestro

@@ -1,7 +1,8 @@
+@testable import FamilyApp
+
 // SessionStore behavior — mirrors SessionManagerTest.kt: identical keys, defaults,
 // sign-in/out semantics.
 import XCTest
-@testable import FamilyApp
 
 @MainActor
 final class SessionStoreTests: XCTestCase {

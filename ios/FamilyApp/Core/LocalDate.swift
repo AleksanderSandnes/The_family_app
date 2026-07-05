@@ -32,14 +32,19 @@ struct LocalDate: Comparable, Hashable, CustomStringConvertible {
 
     static func today(calendar: Calendar = .current) -> LocalDate {
         let parts = calendar.dateComponents([.year, .month, .day], from: Date())
-        return LocalDate(year: parts.year!, month: parts.month!, day: parts.day!)
+        guard let year = parts.year, let month = parts.month, let day = parts.day else {
+            preconditionFailure("Calendar returned incomplete date components for the current date")
+        }
+        return LocalDate(year: year, month: month, day: day)
     }
 
     var isoString: String {
         String(format: "%04d-%02d-%02d", year, month, day)
     }
 
-    var description: String { isoString }
+    var description: String {
+        isoString
+    }
 
     /// Days since 1970-01-01 (Howard Hinnant's days_from_civil).
     var epochDay: Int {
@@ -61,9 +66,9 @@ struct LocalDate: Comparable, Hashable, CustomStringConvertible {
         let y = yoe + era * 400
         let doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
         let mp = (5 * doy + 2) / 153
-        let d = doy - (153 * mp + 2) / 5 + 1
-        let m = mp < 10 ? mp + 3 : mp - 9
-        self.init(year: m <= 2 ? y + 1 : y, month: m, day: d)
+        let day = doy - (153 * mp + 2) / 5 + 1
+        let month = mp < 10 ? mp + 3 : mp - 9
+        self.init(year: month <= 2 ? y + 1 : y, month: month, day: day)
     }
 
     /// Same date in another year; clamps Feb 29 → Feb 28 like java.time's withYear.
@@ -82,7 +87,7 @@ struct LocalDate: Comparable, Hashable, CustomStringConvertible {
 
     /// English formatting like Android's "EEE d MMM" (e.g. "Mon 6 Jul").
     func formattedShort() -> String {
-        let date = Date(timeIntervalSince1970: TimeInterval(epochDay) * 86_400)
+        let date = Date(timeIntervalSince1970: TimeInterval(epochDay) * 86400)
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE d MMM"
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -104,6 +109,6 @@ struct LocalDate: Comparable, Hashable, CustomStringConvertible {
     }
 
     static func isLeap(_ year: Int) -> Bool {
-        (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+        (year.isMultiple(of: 4) && !year.isMultiple(of: 100)) || year.isMultiple(of: 400)
     }
 }

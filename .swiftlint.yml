@@ -1,0 +1,221 @@
+# SwiftLint configuration — The Family App (iOS)
+# =============================================================================
+# Scope: the native iOS SwiftUI target only. SwiftLint is deliberately pointed
+# at `ios/FamilyApp` + `ios/FamilyAppTests`; android/, supabase/, maestro/ are
+# never linted. This file lives at the repo ROOT so a single config serves the
+# Xcode build phase (which `cd`s to the repo root), pre-commit, and CI.
+#
+# Philosophy: strict but low-noise. Every rule turned on/off away from the
+# SwiftLint defaults carries a `#` comment explaining WHY, tuned to what this
+# codebase actually looks like (verified by scanning all ~76 Swift files).
+# =============================================================================
+
+# Only lint the Swift we own. Paths are relative to the current working
+# directory (repo root when invoked by CI / the build phase / pre-commit).
+included:
+  - ios/FamilyApp
+  - ios/FamilyAppTests
+
+# Never descend into build artifacts, generated code, or the non-iOS trees.
+excluded:
+  - ios/build                     # Xcode DerivedData / build output
+  - ios/DerivedData
+  - "**/*.generated.swift"        # any codegen output
+  - Pods                          # CocoaPods (not used today, future-proofing)
+  - .build                        # SwiftPM build dir
+  - ios/.build
+  - maestro                       # E2E flows — not Swift
+  - android                       # Kotlin
+  - supabase                      # SQL / edge functions
+
+# -----------------------------------------------------------------------------
+# Opt-in rules — SwiftLint ships these OFF; we turn on the safe, high-signal
+# ones. Grouped by intent. (Rules that turned out noisy in THIS codebase are
+# listed under `disabled_rules` with a reason.)
+# -----------------------------------------------------------------------------
+opt_in_rules:
+  # -- Safety: no crashing on bad assumptions ---------------------------------
+  - force_unwrapping          # ban `foo!` — surfaces the ~7 existing `URL(string:)!` sites so they get `guard`ed
+  - discouraged_optional_boolean   # `Bool?` is a 3-state trap; prefer a real enum or non-optional default
+  - discouraged_optional_collection # empty collection > `nil` collection; avoids nil/empty double-checks
+  - empty_count               # `isEmpty` is O(1) and clearer than `count == 0`
+  - empty_string              # `isEmpty` over `== ""`
+  - empty_collection_literal  # compare with `isEmpty`, not `== []`
+  - fatal_error_message       # a bare `fatalError()` gives no crash context
+  - legacy_multiple           # `x.isMultiple(of: 2)` over `x % 2 == 0`
+  - array_init                # `Array(seq)` over `seq.map { $0 }`
+  - unavailable_function      # mark not-yet-implemented funcs `@available(*, unavailable)`
+  - overridden_super_call     # don't silently drop a required `super` call
+
+  # -- Modern concurrency / async-await ---------------------------------------
+  - unowned_variable_capture  # prefer `[weak self]` — `unowned` crashes on a freed capture (matches existing `[weak self]` style)
+
+  # -- Naming & clarity -------------------------------------------------------
+  - convenience_type          # a namespace of statics should be a caseless `enum`, not a `struct` (matches `enum Palette`)
+  - explicit_init             # drop redundant `.init(...)`
+  - redundant_type_annotation # `let x = Foo()` not `let x: Foo = Foo()`
+  - toggle_bool               # `flag.toggle()` over `flag = !flag`
+  - prefer_zero_over_explicit_init # `.zero` over `CGSize(width: 0, height: 0)`
+  - static_operator           # operator overloads must be `static`/free — no instance operators
+
+  # -- SwiftUI / structure ----------------------------------------------------
+  # NOTE: multiline_arguments / multiline_parameters are intentionally NOT enabled —
+  # argument/parameter WRAPPING is owned by SwiftFormat (--wraparguments before-first).
+  # Enabling them in SwiftLint too makes the two tools fight over already-wrapped calls
+  # (e.g. multi-arg EdgeInsets), so SwiftFormat wins — same ownership split as
+  # sorted_imports / trailing_comma below.
+  - vertical_parameter_alignment_on_call
+  - closure_end_indentation   # trailing-closure braces line up
+  - closure_spacing           # `{ x }` not `{x}`
+  - literal_expression_end_indentation
+  - modifier_order            # consistent `private static final` ordering
+  - prefer_self_type_over_type_of_self  # `Self` over `type(of: self)`
+  - redundant_nil_coalescing  # `foo ?? nil` is pointless
+  - collection_alignment      # align multi-line collection elements
+
+  # -- Dead code & hygiene ----------------------------------------------------
+  - duplicate_imports         # each module imported once
+  - empty_enum_arguments      # `case .foo` not `case .foo(_, _)`
+  # unused_import / unused_declaration are analyzer-only — declared under
+  # `analyzer_rules` below (listing them here too is redundant and warns).
+  - contains_over_first_not_nil
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - first_where               # `.first(where:)` over `.filter{}.first`
+  - last_where
+  - reduce_into               # `reduce(into:)` avoids intermediate copies
+  - sorted_first_last         # `.min()/.max()` over `.sorted().first/.last`
+  - flatmap_over_map_reduce
+  - yoda_condition            # `if count == 0`, not `if 0 == count`
+
+  # -- Test hygiene -----------------------------------------------------------
+  - empty_xctest_method       # an empty test is a silent gap
+  - private_outlet
+  - prohibited_super_call
+
+# -----------------------------------------------------------------------------
+# Analyzer-only rules. These require `swiftlint analyze` (a compiler build log)
+# and do NOT run during a normal `swiftlint lint`, so they add zero noise to the
+# fast build-phase / pre-commit checks — they are opt-in for a deeper CI pass.
+# -----------------------------------------------------------------------------
+analyzer_rules:
+  - unused_import
+  - unused_declaration
+
+# -----------------------------------------------------------------------------
+# Rules we deliberately turn OFF (all are ON by default) — each with a reason
+# grounded in this codebase, to keep false positives near zero.
+# -----------------------------------------------------------------------------
+disabled_rules:
+  - explicit_acl               # this codebase leans on implicit `internal` — 174 top-level decls, 0 explicit ACL. Requiring it would be ~500+ pure-noise violations for a solo-dev app-target (not a library). Access intent is already expressed via the 500+ `private` members.
+  - explicit_top_level_acl     # same reason: every top-level type would flag. Not worth it for an app target with no public API surface.
+  - explicit_enum_raw_value    # raw values are inferred intentionally in several enums; forcing them adds churn with no safety win here.
+  - sorted_imports             # OWNED BY SWIFTFORMAT (`sortImports`) to avoid two tools fighting over import order. SwiftFormat autofixes it in pre-commit; duplicate_imports (above) still guards the other half.
+  - trailing_comma             # OWNED BY SWIFTFORMAT (`trailingCommas`), which ADDS trailing commas in multi-line literals. SwiftLint's default would flag exactly what SwiftFormat inserts — direct conflict, so SwiftFormat wins.
+  - todo                       # replaced by the custom `todo_without_ticket` rule below, so TODO/FIXME stay warnings without the default rule's separate message.
+
+# -----------------------------------------------------------------------------
+# Tuned thresholds. Defaults are often too tight for SwiftUI `body` builders and
+# too loose on naming; these values reflect the real distribution in the tree.
+# -----------------------------------------------------------------------------
+
+line_length:
+  warning: 120        # only ~13 lines exceed 120 today; keeps lines reviewable
+  error: 200          # hard stop — nothing legitimate needs 200+ columns
+  ignores_comments: true
+  ignores_urls: true
+  ignores_interpolated_strings: true
+
+file_length:
+  warning: 500        # nudge toward splitting; the 3 files over 500 are known screens/VMs
+  error: 900
+  ignore_comment_only_lines: true
+
+type_body_length:
+  warning: 350        # SwiftUI screens + VMs run long; 350 still flags real god-objects
+  error: 700          # only a hard failure past 700; ChatViewModel (~612) stays a warning to fix, not a blocker
+
+function_body_length:
+  warning: 60         # a `body` or `load()` over 60 lines wants extraction
+  error: 120
+
+cyclomatic_complexity:
+  warning: 12         # slightly above default 10 — SwiftUI switch-over-state is common here
+  error: 20
+
+nesting:
+  type_level: 2       # nested helper type is fine; 3-deep is a smell
+  function_level: 3   # SwiftUI closures nest; keep the escape hatch modest
+
+identifier_name:
+  min_length:
+    warning: 2        # 1-char names are usually unclear...
+    error: 1
+  max_length:
+    warning: 50
+    error: 60
+  # ...but these idiomatic short names are always allowed (loop/geometry/db/routing):
+  allowed_symbols: ["_"]
+  excluded:
+    - id
+    - x
+    - y
+    - z
+    - to
+    - db
+    - vm
+    - r
+    - g
+    - b
+    - a
+    - dx
+    - dy
+    - ok
+    - up
+    - lhs
+    - rhs
+
+type_name:
+  min_length:
+    warning: 3
+    error: 2
+  max_length:
+    warning: 45
+    error: 55
+  allowed_symbols: ["_"]
+
+# -----------------------------------------------------------------------------
+# Custom rules — kept CONSERVATIVE (regex-based, high precision) to avoid noise.
+# The codebase currently has ZERO hits for all of these; they are guardrails so
+# regressions get caught, not a cleanup backlog.
+# -----------------------------------------------------------------------------
+custom_rules:
+  todo_without_ticket:
+    name: "TODO / FIXME"
+    regex: "(?i)//\\s*(TODO|FIXME)"
+    message: "Resolve or file a ticket for this TODO/FIXME before merging."
+    severity: warning
+
+  no_print:
+    name: "print() in shipping code"
+    regex: "(^|[^A-Za-z0-9_.])print\\("
+    match_kinds:
+      - identifier
+    message: "Use a logger (os.Logger) instead of print(); print() ships to release and leaks data."
+    severity: warning
+
+  no_dispatch_main_async:
+    name: "DispatchQueue.main.async"
+    regex: "DispatchQueue\\.main\\.async"
+    message: "Prefer async/await + @MainActor over DispatchQueue.main.async (matches the app's concurrency model)."
+    severity: warning
+
+  no_nslog:
+    name: "NSLog"
+    regex: "NSLog\\("
+    message: "Use os.Logger instead of NSLog."
+    severity: warning
+
+# `warning` keeps CI/build green while surfacing issues; escalate to `error`
+# for a hard gate once the team is comfortable.
+reporter: "xcode"

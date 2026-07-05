@@ -1,7 +1,8 @@
+@testable import FamilyApp
+
 // Wishlist pure-logic tests — mirror wishTitle and the MemberWishCard reservation
 // branches in WishlistScreens.kt.
 import XCTest
-@testable import FamilyApp
 
 final class WishlistLogicTests: XCTestCase {
     private func wish(_ text: String, price: String? = nil) -> WishModel {

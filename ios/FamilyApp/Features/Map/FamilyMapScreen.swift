@@ -11,7 +11,9 @@ struct FamilyMapScreen: View {
     @State private var showRationale = false
     @State private var placeNames: [String: String] = [:]
 
-    private var isSolo: Bool { viewModel.locations.isEmpty }
+    private var isSolo: Bool {
+        viewModel.locations.isEmpty
+    }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -47,12 +49,10 @@ struct FamilyMapScreen: View {
                     }
                 } label: {
                     Image(systemName: "location.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Color.appOnPrimary)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.appPrimary)
                         .frame(width: 48, height: 48)
-                        .background(Color.appPrimary)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+                        .glassCircle()
                 }
                 .accessibilityLabel("Center on my location")
 
@@ -89,7 +89,10 @@ struct FamilyMapScreen: View {
             Button("Continue") { viewModel.requestPermission() }
             Button("Not now", role: .cancel) {}
         } message: {
-            Text("Your location is shared only with your family, and only while the map is open. You can turn visibility off anytime in Settings.")
+            Text(
+                "Your location is shared only with your family, and only while the map is open. "
+                    + "You can turn visibility off anytime in Settings."
+            )
         }
     }
 
@@ -149,26 +152,37 @@ private struct MemberLegend: View {
     let placeNames: [String: String]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             ForEach(locations, id: \.userId) { location in
-                HStack(spacing: Spacing.sm) {
+                HStack(spacing: Spacing.md) {
                     if let user = profiles[location.userId] {
-                        InitialAvatar(user: user, size: 28)
+                        InitialAvatar(user: user, size: 34)
                     }
-                    VStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 1) {
                         Text(location.displayName)
-                            .font(.labelMedium.weight(.semibold))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(Color.appOnSurface)
                         Text(legendDetail(for: location))
-                            .font(.labelMedium)
-                            .foregroundStyle(Color.appOnSurfaceVariant)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.appCaption)
                     }
+                    Spacer(minLength: Spacing.sm)
+                    Circle()
+                        .fill(isLive(location) ? Color.appSuccess : Palette.staleDot)
+                        .frame(width: 8, height: 8)
                 }
             }
         }
-        .padding(Spacing.md)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard(cornerRadius: Radius.row)
+    }
+
+    /// "Live" if the location updated within the last 5 minutes.
+    private func isLive(_ location: UserLocationModel) -> Bool {
+        guard let updatedAt = location.updatedAt,
+              let updated = ISO8601DateFormatter().date(from: updatedAt) else { return false }
+        return Date().timeIntervalSince(updated) < 300
     }
 
     private func legendDetail(for location: UserLocationModel) -> String {

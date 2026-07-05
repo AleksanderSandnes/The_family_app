@@ -23,8 +23,8 @@ struct MainTabView: View {
     @State private var wishlistViewModel = WishlistViewModel()
     @State private var familyViewModel = FamilyViewModel()
     @State private var profileViewModel = ProfileViewModel()
-    // Shared between the chat list and open thread — deletes in the thread must
-    // reflect in the list on pop-back (see CLAUDE.md).
+    /// Shared between the chat list and open thread — deletes in the thread must
+    /// reflect in the list on pop-back (see CLAUDE.md).
     @State private var chatViewModel = ChatViewModel()
 
     var body: some View {
@@ -94,19 +94,19 @@ struct MainTabView: View {
         switch route {
         case .shopping:
             ShoppingScreen(viewModel: shoppingViewModel) { homePath.append(.shoppingDetail(listId: $0)) }
-        case .shoppingDetail(let listId):
+        case let .shoppingDetail(listId):
             ShoppingDetailScreen(listId: listId, viewModel: shoppingViewModel)
         case .meal:
             MealScreen(viewModel: mealViewModel) { homePath.append(.mealDetail(planId: $0)) }
-        case .mealDetail(let planId):
+        case let .mealDetail(planId):
             MealDetailScreen(planId: planId, viewModel: mealViewModel)
         case .birthday:
             BirthdayScreen(viewModel: birthdayViewModel)
         case .wishlist:
             WishlistScreen(viewModel: wishlistViewModel) { homePath.append(.wishlistDetail(wishlistId: $0)) }
-        case .wishlistDetail(let wishlistId):
+        case let .wishlistDetail(wishlistId):
             WishlistDetailScreen(wishlistId: wishlistId, viewModel: wishlistViewModel)
-        case .chatDetail(let conversationId):
+        case let .chatDetail(conversationId):
             ConversationScreen(conversationId: conversationId, viewModel: chatViewModel)
                 .onChange(of: chatViewModel.navigateToConversation) { _, newId in
                     // 1:1 promoted to a group — swap the thread.

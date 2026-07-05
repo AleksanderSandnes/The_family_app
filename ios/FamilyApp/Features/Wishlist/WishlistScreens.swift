@@ -51,7 +51,7 @@ struct WishlistScreen: View {
 
             FloatingActionButton(text: "New wishlist", systemImage: "plus") { showAdd = true }
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar("Wishlists")
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
@@ -68,28 +68,33 @@ private struct WishlistRow: View {
     let onTap: () -> Void
 
     var body: some View {
-        ListCard(onTap: onTap) {
-            Image(systemName: IconKeyMap.wishlistSymbol(wishlist.icon))
-                .font(.system(size: 24))
-                .foregroundStyle(Color.appOnPrimaryContainer)
-                .frame(width: 52, height: 52)
-                .background(Color.appPrimaryContainer)
-                .clipShape(Circle())
-            Spacer().frame(width: 14)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(wishlist.name)
-                    .font(.titleMedium)
-                    .foregroundStyle(Color.appOnSurface)
-                if !wishlist.ownerName.isEmpty {
-                    Text("By \(wishlist.ownerName)")
-                        .font(.labelMedium)
-                        .foregroundStyle(Color.appOnSurfaceVariant)
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                FeatureBadge(
+                    systemImage: IconKeyMap.wishlistSymbol(wishlist.icon),
+                    feature: .wishlists,
+                    size: 46,
+                    cornerRadius: 23
+                )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(wishlist.name)
+                        .font(.system(size: 15.5, weight: .semibold))
+                        .foregroundStyle(Color.appOnSurface)
+                    if !wishlist.ownerName.isEmpty {
+                        Text("By \(wishlist.ownerName)")
+                            .font(.caption)
+                            .foregroundStyle(Color.appCaption)
+                    }
                 }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.appCaption)
             }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .foregroundStyle(Color.appOnSurfaceVariant)
+            .padding(Spacing.cardPadding)
+            .glassCard(cornerRadius: Radius.overviewCard)
         }
+        .buttonStyle(PressScaleButtonStyle())
     }
 }
 
@@ -162,10 +167,10 @@ struct WishlistDetailScreen: View {
             if isOwner {
                 PrimaryButton(text: "Add a wish", systemImage: "plus") { showAddWish = true }
                     .padding(Spacing.lg)
-                    .background(Color.appSurface)
+                    .background(.ultraThinMaterial)
             }
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar(viewModel.selectedWishlist?.name ?? "Wishlist")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -257,29 +262,33 @@ private struct OwnerWishRow: View {
     let onToggle: () -> Void
 
     var body: some View {
-        HStack(spacing: Spacing.sm) {
+        HStack(spacing: Spacing.md) {
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 onToggle()
             } label: {
-                Image(systemName: wish.checked ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundStyle(wish.checked ? Color.appPrimary : Color.appOnSurfaceVariant)
+                if wish.checked {
+                    Circle().fill(Color.appPrimary).frame(width: 24, height: 24)
+                        .overlay(Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold)).foregroundStyle(.white))
+                } else {
+                    Circle().strokeBorder(Color(hex: 0x9CA2BC), lineWidth: 1.8)
+                        .frame(width: 24, height: 24)
+                }
             }
             .buttonStyle(.plain)
             .accessibilityLabel(wish.checked ? "Unmark as claimed" : "Mark as claimed")
             WishThumb(url: wish.imageUrl)
             Text(wishTitle(wish))
-                .font(.bodyLarge)
-                .foregroundStyle(wish.checked ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                .font(.system(size: 15.5))
+                .foregroundStyle(wish.checked ? Color(hex: 0xA6ACC4) : Color.appOnSurface)
                 .strikethrough(wish.checked)
                 .frame(maxWidth: .infinity, alignment: .leading)
             WishLinkButton(link: wish.link)
         }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, 10)
-        .background(Color.appSurface)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, 12)
+        .rowSurface(ghost: wish.checked, cornerRadius: Radius.row)
         .accessibilityLabel("\(wish.text), \(wish.checked ? "claimed" : "unclaimed")")
     }
 }
@@ -291,38 +300,49 @@ private struct MemberWishRow: View {
     let onUnreserve: () -> Void
 
     var body: some View {
-        HStack(spacing: Spacing.sm) {
+        HStack(spacing: Spacing.md) {
             WishThumb(url: wish.imageUrl)
             Text(wishTitle(wish))
-                .font(.bodyLarge)
-                .foregroundStyle(Color.appOnSurface)
+                .font(.system(size: 15.5))
+                .foregroundStyle(state == .reservedByOther ? Color(hex: 0x767E9C) : Color.appOnSurface)
                 .frame(maxWidth: .infinity, alignment: .leading)
             WishLinkButton(link: wish.link)
             switch state {
             case .available:
-                Button("Reserve", action: onReserve)
-                    .font(.labelLarge)
-                    .foregroundStyle(Color.appPrimary)
+                // Filled accent capsule (spec 2f).
+                Button(action: onReserve) {
+                    Text("Reserve")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 15)
+                        .frame(height: 32)
+                        .background(Color.appPrimary, in: Capsule())
+                        .shadow(color: Color.appPrimary.opacity(0.3), radius: 8, y: 3)
+                }
+                .buttonStyle(.plain)
             case .reservedByMe:
                 Button(action: onUnreserve) {
                     HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
                         Text("Reserved by you")
                     }
-                    .font(.labelLarge)
+                    .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(Color.appPrimary)
                 }
                 .buttonStyle(.plain)
             case .reservedByOther:
-                Text("Reserved")
-                    .font(.labelLarge)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill").font(.system(size: 11))
+                    Text("Reserved")
+                }
+                .font(.system(size: 12.5))
+                .foregroundStyle(Color.appCaption)
             }
         }
         .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, 10)
-        .background(Color.appSurface)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
+        .padding(.vertical, 12)
+        .rowSurface(ghost: state == .reservedByOther, cornerRadius: Radius.row)
     }
 }
 
@@ -335,45 +355,31 @@ private struct NewWishlistSheet: View {
     @State private var name = ""
     @State private var selectedIcon = "card_giftcard"
 
-    private let columns = Array(repeating: GridItem(.flexible()), count: 4)
+    private var canCreate: Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            Text("New wishlist")
-                .font(.titleLarge)
-                .foregroundStyle(Color.appOnSurface)
-                .padding(.top, Spacing.xxl)
-            FamilyTextField(label: "Wishlist name", text: $name, systemImage: "gift")
-            SectionHeader(text: "Icon")
-            LazyVGrid(columns: columns, spacing: Spacing.md) {
-                ForEach(IconOptions.wishlist, id: \.self) { key in
-                    Button {
-                        selectedIcon = key
-                    } label: {
-                        Image(systemName: IconKeyMap.wishlistSymbol(key))
-                            .font(.system(size: 22))
-                            .foregroundStyle(
-                                key == selectedIcon ? Color.appOnPrimary : Color.appPrimary
-                            )
-                            .frame(width: 56, height: 56)
-                            .background(
-                                key == selectedIcon ? Color.appPrimary : Color.appPrimaryContainer
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
-                    }
-                }
-            }
-            Spacer()
-            PrimaryButton(text: "Create", enabled: !name.trimmingCharacters(in: .whitespaces).isEmpty) {
+            SheetHeader(title: "New wishlist", confirmTitle: "Create", confirmEnabled: canCreate) {
+                dismiss()
+            } onConfirm: {
                 onCreate(name.trimmingCharacters(in: .whitespaces), selectedIcon)
                 dismiss()
             }
+            GlassField(systemImage: "gift", placeholder: "Wishlist name", text: $name)
+            SectionHeader(text: "Icon")
+            IconGrid(
+                options: IconOptions.wishlist,
+                selected: selectedIcon,
+                symbolFor: IconKeyMap.wishlistSymbol
+            ) { selectedIcon = $0 }
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.lg)
-        .presentationDetents([.large])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
+        .glassSheet(detents: [.medium])
     }
 }
 
@@ -388,62 +394,62 @@ private struct AddWishSheet: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var imageData: Data?
 
+    private var canAdd: Bool {
+        !text.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("Add a wish")
-                    .font(.titleLarge)
-                    .foregroundStyle(Color.appOnSurface)
-                    .padding(.top, Spacing.xxl)
-                FamilyTextField(label: "What do you wish for?", text: $text, systemImage: "gift")
-                FamilyTextField(
-                    label: "Link (optional)",
-                    text: $link,
-                    systemImage: "link",
-                    keyboardType: .URL,
-                    autocapitalization: .never
-                )
-                FamilyTextField(label: "Price (optional)", text: $price, systemImage: "tag")
-
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    HStack(spacing: Spacing.sm) {
-                        Image(systemName: "photo")
-                        Text(imageData == nil ? "Add photo (optional)" : "Photo selected")
-                    }
-                    .font(.bodyMedium)
-                    .foregroundStyle(Color.appPrimary)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
-                            .strokeBorder(Color.appPrimary.opacity(0.4), lineWidth: 1)
-                    )
-                }
-                if let imageData, let image = UIImage(data: imageData) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 140)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
-                }
-
-                PrimaryButton(text: "Add", enabled: !text.trimmingCharacters(in: .whitespaces).isEmpty) {
-                    onConfirm(WishDraft(
-                        text: text.trimmingCharacters(in: .whitespaces),
-                        link: link.isEmpty ? nil : link,
-                        price: price.isEmpty ? nil : price,
-                        imageData: imageData
-                    ))
-                    dismiss()
-                }
-                .padding(.top, Spacing.sm)
+        VStack(spacing: 0) {
+            SheetHeader(title: "Add a wish", confirmTitle: "Add", confirmEnabled: canAdd) {
+                dismiss()
+            } onConfirm: {
+                onConfirm(WishDraft(
+                    text: text.trimmingCharacters(in: .whitespaces),
+                    link: link.isEmpty ? nil : link,
+                    price: price.isEmpty ? nil : price,
+                    imageData: imageData
+                ))
+                dismiss()
             }
             .padding(.horizontal, Spacing.screenEdge)
-            .padding(.bottom, Spacing.lg)
+            .padding(.vertical, Spacing.lg)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.md) {
+                    GlassField(systemImage: "gift", placeholder: "What do you wish for?", text: $text)
+                    GlassField(systemImage: "link", placeholder: "Link (optional)", text: $link)
+                    GlassField(systemImage: "tag", placeholder: "Price (optional)", text: $price)
+
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        HStack(spacing: Spacing.sm) {
+                            Image(systemName: "photo")
+                            Text(imageData == nil ? "Add photo (optional)" : "Photo selected")
+                        }
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Color.appPrimary)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
+                                .strokeBorder(
+                                    Color.appPrimary.opacity(0.4),
+                                    style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])
+                                )
+                        )
+                    }
+                    if let imageData, let image = UIImage(data: imageData) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 140)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+                    }
+                }
+                .padding(.horizontal, Spacing.screenEdge)
+                .padding(.bottom, Spacing.lg)
+            }
         }
-        .presentationDetents([.large])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
+        .glassSheet(detents: [.medium, .large])
         .onChange(of: photoItem) { _, item in
             Task {
                 imageData = try? await item?.loadTransferable(type: Data.self)

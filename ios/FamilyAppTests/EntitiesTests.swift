@@ -1,7 +1,8 @@
+@testable import FamilyApp
+
 // Decoding tests for Entities.swift — verify the snake_case CodingKeys match the
 // Postgres columns exactly (mirrors EntitiesTest.kt).
 import XCTest
-@testable import FamilyApp
 
 final class EntitiesTests: XCTestCase {
     private let decoder = JSONDecoder()
@@ -108,7 +109,7 @@ final class EntitiesTests: XCTestCase {
         var wishlist = WishlistModel()
         wishlist.ownerName = "should-not-serialize"
         let data = try JSONEncoder().encode(wishlist)
-        let json = String(decoding: data, as: UTF8.self)
+        let json = try XCTUnwrap(String(bytes: data, encoding: .utf8))
         XCTAssertFalse(json.contains("should-not-serialize"))
         XCTAssertFalse(json.contains("ownerName"))
     }

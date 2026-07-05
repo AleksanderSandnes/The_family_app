@@ -22,7 +22,9 @@ final class MealViewModel {
     private(set) var days: [MealPlanDayModel] = []
 
     private let repo = FamilyRepository.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    private var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
 
     private let plansObserver = RealtimeObserver()
     private var subscribedFamilyId: String?
@@ -117,18 +119,18 @@ final class MealViewModel {
     }
 
     private func reloadPlanDetail(_ planId: String) async {
-        async let planFetch: [MealPlanModel]? = try? client.from("meal_plans")
+        async let planFetch: [MealPlanModel] = (try? client.from("meal_plans")
             .select()
             .eq("id", value: planId)
             .execute()
-            .value
-        async let daysFetch: [MealPlanDayModel]? = try? client.from("meal_plan_days")
+            .value) ?? []
+        async let daysFetch: [MealPlanDayModel] = (try? client.from("meal_plan_days")
             .select()
             .eq("meal_plan_id", value: planId)
             .execute()
-            .value
-        if let plan = await planFetch?.first { selectedPlan = plan }
-        if let fetched = await daysFetch { days = fetched.sorted { $0.date < $1.date } }
+            .value) ?? []
+        if let plan = await planFetch.first { selectedPlan = plan }
+        days = await daysFetch.sorted { $0.date < $1.date }
     }
 
     // MARK: - Mutations
@@ -244,15 +246,18 @@ final class MealViewModel {
 /// ISO week number for a LocalDate — parity with Calendar.WEEK_OF_YEAR on Android.
 func isoWeekNumber(of date: LocalDate) -> Int {
     var calendar = Calendar(identifier: .iso8601)
-    calendar.timeZone = TimeZone(identifier: "UTC")!
-    let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86_400)
+    guard let utc = TimeZone(identifier: "UTC") else {
+        preconditionFailure("UTC time zone is always available")
+    }
+    calendar.timeZone = utc
+    let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
     return calendar.component(.weekOfYear, from: instant)
 }
 
 /// "dd MMM" English — mirrors MEAL_DATE_FMT ("05 Jul"); falls back to the raw string.
 func formatMealDate(_ stored: String) -> String {
     guard let date = LocalDate(iso: stored) else { return stored }
-    let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86_400)
+    let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
     let formatter = DateFormatter()
     formatter.dateFormat = "dd MMM"
     formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -276,7 +281,7 @@ extension LocalDate {
     /// Full weekday name in the device locale — parity with Android's
     /// dayOfWeek.getDisplayName(FULL, Locale.getDefault()) used for meal_plan_days.day.
     func fullDayName(locale: Locale = .current) -> String {
-        let instant = Date(timeIntervalSince1970: TimeInterval(epochDay) * 86_400)
+        let instant = Date(timeIntervalSince1970: TimeInterval(epochDay) * 86400)
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
         formatter.locale = locale

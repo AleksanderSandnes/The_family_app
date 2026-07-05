@@ -1,10 +1,11 @@
-// Map pure-logic tests — mirror formatLastSeen in FamilyMapScreen.kt.
-import XCTest
 @testable import FamilyApp
 
+// Map pure-logic tests — mirror formatLastSeen in FamilyMapScreen.kt.
+import XCTest
+
 final class MapLogicTests: XCTestCase {
-    // Fixed "now": 2026-07-05T12:00:00Z
-    private let now: Int64 = 1_783_252_800_000
+    /// Fixed "now": 2026-07-05T12:00:00Z
+    private let now: Int64 = 1783252800000
 
     func testJustNowIncludesClockSkewFutures() {
         XCTAssertEqual(formatLastSeen("2026-07-05T11:59:31Z", nowMs: now), "Just now")

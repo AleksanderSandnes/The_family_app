@@ -1,0 +1,52 @@
+name: Swift Lint
+
+# Lint gate for the native iOS Swift code (ios/ tree only).
+# Runs on pushes to the long-lived branches, and on PRs that target them.
+# (Per project rule: pushes only ever land on test / main / master.)
+on:
+  push:
+    branches: [test, main, master]
+    paths:
+      - "ios/**"
+      - ".swiftlint.yml"
+      - ".swiftformat"
+      - ".github/workflows/swift-lint.yml"
+  pull_request:
+    branches: [test, main, master]
+    paths:
+      - "ios/**"
+      - ".swiftlint.yml"
+      - ".swiftformat"
+      - ".github/workflows/swift-lint.yml"
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: swift-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: SwiftLint + SwiftFormat
+    # macOS runner: SwiftLint/SwiftFormat are native macOS tools.
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install tools
+        run: brew install swiftlint swiftformat
+
+      # SwiftLint — HARD gate, --strict so EVERY violation (warning or error) fails
+      # the job. No `--config` flag: run from the repo root so SwiftLint auto-merges
+      # the root .swiftlint.yml with the nested ios/FamilyAppTests/.swiftlint.yml
+      # override (passing --config disables that nested discovery).
+      - name: SwiftLint (strict)
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+      # SwiftFormat — HARD gate. --lint never writes; a non-empty diff fails the job.
+      - name: SwiftFormat (check only — never writes)
+        run: swiftformat --lint ios/FamilyApp ios/FamilyAppTests --config .swiftformat

@@ -1,7 +1,8 @@
+@testable import FamilyApp
+
 // Small core helpers: ThemeMode mapping, isoNow format, ARGB color decoding.
 import SwiftUI
 import XCTest
-@testable import FamilyApp
 
 final class CoreHelpersTests: XCTestCase {
     func testThemeModeRawValuesMatchAndroid() {

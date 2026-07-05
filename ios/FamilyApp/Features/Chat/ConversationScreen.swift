@@ -27,8 +27,13 @@ struct ConversationScreen: View {
     @State private var viewerImage: ViewerImage?
     @State private var recorder = VoiceRecorder()
 
-    private var myId: String? { viewModel.currentUserId }
-    private var isGroup: Bool { viewModel.currentParticipants.count > 2 }
+    private var myId: String? {
+        viewModel.currentUserId
+    }
+
+    private var isGroup: Bool {
+        viewModel.currentParticipants.count > 2
+    }
 
     private var title: String {
         guard let conversation = viewModel.conversation else { return "Chat" }
@@ -59,7 +64,7 @@ struct ConversationScreen: View {
             }
             inputBar
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar(title)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -197,9 +202,10 @@ struct ConversationScreen: View {
                 LazyVStack(spacing: 4) {
                     ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
                         let previous = index > 0 ? viewModel.messages[index - 1] : nil
-                        if previous == nil || gapExceedsTenMinutes(
-                            earlierIso: previous!.sentAt, laterIso: message.sentAt
-                        ) {
+                        let showTimeLabel = previous.map {
+                            gapExceedsTenMinutes(earlierIso: $0.sentAt, laterIso: message.sentAt)
+                        } ?? true
+                        if showTimeLabel {
                             Text(messageTimeLabel(message.sentAt))
                                 .font(.labelMedium)
                                 .foregroundStyle(Color.appOnSurfaceVariant)
@@ -291,14 +297,12 @@ struct ConversationScreen: View {
                     .accessibilityLabel("Attach")
 
                     TextField("Message…", text: $draft, axis: .vertical)
-                        .font(.bodyLarge)
+                        .font(.system(size: 16))
+                        .tint(Color.appPrimary)
                         .lineLimit(1...4)
                         .padding(.horizontal, Spacing.lg)
-                        .padding(.vertical, 10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .strokeBorder(Color.appOnSurface.opacity(0.3), lineWidth: 1)
-                        )
+                        .padding(.vertical, 11)
+                        .glassCard(cornerRadius: 22)
                         .onChange(of: draft) { _, text in
                             viewModel.setTyping(!text.isEmpty)
                         }
@@ -324,7 +328,7 @@ struct ConversationScreen: View {
             }
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.sm)
-            .background(Color.appSurface)
+            .background(.ultraThinMaterial)
         }
     }
 
@@ -405,12 +409,12 @@ private struct MessageRow: View {
                     if !reactions.isEmpty {
                         HStack(spacing: 4) {
                             ForEach(reactions.sorted(by: { $0.key < $1.key }), id: \.key) { emoji, users in
-                                Text(users.count > 1 ? "\(emoji)\(users.count)" : emoji)
-                                    .font(.labelMedium)
-                                    .padding(.horizontal, 6)
+                                Text(users.count > 1 ? "\(emoji) \(users.count)" : emoji)
+                                    .font(.system(size: 12))
+                                    .padding(.horizontal, 7)
                                     .padding(.vertical, 2)
-                                    .background(Color.appSurfaceVariant)
-                                    .clipShape(Capsule())
+                                    .background(Color(light: .white, dark: Palette.inkSurfaceVariant), in: Capsule())
+                                    .shadow(color: Color(hex: 0x141A3C).opacity(0.15), radius: 5, y: 2)
                                     .onTapGesture { onReact(emoji) }
                             }
                         }
@@ -455,7 +459,7 @@ private struct MessageRow: View {
         }
     }
 
-    @ViewBuilder private var bubble: some View {
+    private var bubble: some View {
         VStack(alignment: .leading, spacing: 4) {
             if let quoted {
                 HStack(spacing: 6) {
@@ -496,124 +500,20 @@ private struct MessageRow: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 9)
+        // Outgoing = brand-gradient identity surface; incoming = frosted glass (spec F).
         .background {
             if isMine {
-                // BrandGradient outgoing bubbles — identity surface (design rule).
                 RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Gradients.brand)
-            } else {
-                RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color.appSurface)
             }
         }
+        .glassEffect(
+            isMine ? .identity : .regular,
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
+        .shadow(
+            color: (isMine ? Palette.indigo600 : Color(hex: 0x141A3C)).opacity(isMine ? 0.3 : 0.07),
+            radius: isMine ? 10 : 6, x: 0, y: isMine ? 4 : 3
+        )
     }
-}
-
-private struct TypingIndicatorRow: View {
-    @State private var phase = 0
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(0..<3, id: \.self) { index in
-                Circle()
-                    .fill(Color.appOnSurfaceVariant)
-                    .frame(width: 7, height: 7)
-                    .opacity(phase == index ? 1 : 0.35)
-            }
-            Text("typing…")
-                .font(.labelMedium)
-                .foregroundStyle(Color.appOnSurfaceVariant)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, 4)
-        .task {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(350))
-                phase = (phase + 1) % 3
-            }
-        }
-    }
-}
-
-// MARK: - Shared sheets / viewer
-
-private struct MemberListSheet: View {
-    let title: String
-    let members: [UserModel]
-    var destructive = false
-    let onPick: (UserModel) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text(title)
-                .font(.titleLarge)
-                .foregroundStyle(Color.appOnSurface)
-                .padding(.top, Spacing.xxl)
-            ScrollView {
-                VStack(spacing: Spacing.xs) {
-                    ForEach(members) { member in
-                        Button {
-                            onPick(member)
-                        } label: {
-                            HStack(spacing: Spacing.md) {
-                                InitialAvatar(user: member, size: 40)
-                                Text(member.name)
-                                    .font(.bodyLarge)
-                                    .foregroundStyle(destructive ? Color.appError : Color.appOnSurface)
-                                Spacer()
-                            }
-                            .padding(.vertical, Spacing.sm)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            Spacer()
-        }
-        .padding(.horizontal, Spacing.screenEdge)
-        .presentationDetents([.medium])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
-    }
-}
-
-/// Full-screen image viewer with pinch zoom — the iOS twin of ImageViewerDialog.
-struct ImageViewer: View {
-    let url: String
-    let onClose: () -> Void
-
-    @State private var scale: CGFloat = 1
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-            if let imageURL = URL(string: url) {
-                LazyImage(url: imageURL) { phase in
-                    if let image = phase.image {
-                        image.resizable().scaledToFit()
-                    } else {
-                        ProgressView().tint(.white)
-                    }
-                }
-                .scaleEffect(scale)
-                .gesture(
-                    MagnifyGesture()
-                        .onChanged { value in scale = max(1, value.magnification) }
-                        .onEnded { _ in withAnimation { scale = 1 } }
-                )
-            }
-            Button(action: onClose) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 30))
-                    .foregroundStyle(.white.opacity(0.9))
-            }
-            .padding(Spacing.xl)
-            .accessibilityLabel("Close")
-        }
-    }
-}
-
-struct ViewerImage: Identifiable {
-    let url: String
-    var id: String { url }
 }

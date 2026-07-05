@@ -36,14 +36,14 @@ final class DeepLinkRouter {
 
     func handle(_ url: URL) {
         switch DeepLink.parse(url) {
-        case .auth(let url):
+        case let .auth(url):
             // Feed the PKCE callback to supabase-swift; the auth flow observes
             // authStateChanges and finalizes the app session.
             let client = SupabaseClientProvider.client
             Task { try? await client.auth.handle(url) }
-        case .chat(let conversationId):
+        case let .chat(conversationId):
             pendingConversationId = conversationId
-        case .join(let code):
+        case let .join(code):
             FamilyRepository.shared.setPendingJoinCode(code)
         case nil:
             break

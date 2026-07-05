@@ -14,7 +14,9 @@ let leadTimeOptions: [(label: String, days: Int)] = [
 
 struct SettingsScreen: View {
     private let repo = FamilyRepository.shared
-    private var session: SessionStore { SessionStore.shared }
+    private var session: SessionStore {
+        SessionStore.shared
+    }
 
     @State private var showSaved = false
 
@@ -75,7 +77,7 @@ struct SettingsScreen: View {
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.sm)
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar("Settings")
         .overlay(alignment: .bottom) {
             if showSaved {
@@ -102,16 +104,15 @@ struct SettingsScreen: View {
 
     private func requestNotificationPermission() {
         Task {
-            let granted = (try? await UNUserNotificationCenter.current()
+            let granted = await (try? UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
             await repo.setNotificationsEnabled(granted)
         }
     }
 
-    private func settingsCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    private func settingsCard(@ViewBuilder content: () -> some View) -> some View {
         VStack(spacing: 0) { content() }
-            .background(Color.appSurface)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+            .glassCard(cornerRadius: Radius.overviewCard)
     }
 
     private var leadTimeSelector: some View {
@@ -127,13 +128,17 @@ struct SettingsScreen: View {
                         flashSaved()
                     } label: {
                         Text(option.label)
-                            .font(.labelMedium)
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                            .background(selected ? Color.appPrimaryContainer : Color.appSurfaceVariant)
-                            .foregroundStyle(
-                                selected ? Color.appOnPrimaryContainer : Color.appOnSurfaceVariant
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+                            .font(.system(size: 12.5, weight: selected ? .bold : .medium))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background {
+                                if selected {
+                                    Capsule().fill(Color.appPrimary)
+                                        .shadow(color: Color.appPrimary.opacity(0.3), radius: 8, y: 3)
+                                } else {
+                                    Capsule().fill(Color.appSurface.opacity(0.55))
+                                }
+                            }
+                            .foregroundStyle(selected ? Color.white : Color.appOnSurfaceVariant)
                     }
                 }
             }
@@ -143,22 +148,21 @@ struct SettingsScreen: View {
 
     private var aboutSection: some View {
         HStack(spacing: Spacing.md) {
-            Image(systemName: "info.circle.fill")
-                .font(.system(size: 22))
-                .foregroundStyle(Color.appOnPrimaryContainer)
-                .frame(width: 48, height: 48)
-                .background(Color.appPrimaryContainer)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Gradients.brand)
+                .frame(width: 44, height: 44)
+                .overlay(Image(systemName: "person.3.fill")
+                    .font(.system(size: 18, weight: .medium)).foregroundStyle(.white))
             VStack(alignment: .leading, spacing: 1) {
                 Text("The Family App")
-                    .font(.titleMedium)
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.appOnSurface)
                 Text("v\(appVersion) (build \(appBuild))")
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Color.appCaption)
                 Text("Your family, together")
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Color.appCaption)
             }
             Spacer()
         }
@@ -193,17 +197,22 @@ private struct ThemeSelector: View {
                     Button {
                         onSelect(mode)
                     } label: {
-                        VStack(spacing: 4) {
+                        VStack(spacing: 5) {
                             Image(systemName: icon(for: mode))
+                                .font(.system(size: 18))
                             Text(mode.label)
-                                .font(.labelMedium)
+                                .font(.system(size: 12, weight: isSelected ? .bold : .medium))
                         }
                         .frame(maxWidth: .infinity, minHeight: 60)
-                        .background(isSelected ? Color.appPrimaryContainer : Color.appSurfaceVariant)
-                        .foregroundStyle(
-                            isSelected ? Color.appOnPrimaryContainer : Color.appOnSurfaceVariant
+                        .background(
+                            RoundedRectangle(cornerRadius: Radius.badgeLarge, style: .continuous)
+                                .fill(isSelected ? Color.appPrimary.opacity(0.1) : Color.appSurface.opacity(0.55))
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Radius.badgeLarge, style: .continuous)
+                                .strokeBorder(isSelected ? Color.appPrimary.opacity(0.5) : .clear, lineWidth: 1.5)
+                        )
+                        .foregroundStyle(isSelected ? Color.appPrimary : Color.appOnSurfaceVariant)
                     }
                 }
             }

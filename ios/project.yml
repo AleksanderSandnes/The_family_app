@@ -4,7 +4,7 @@ name: FamilyApp
 options:
   bundleIdPrefix: com.sandnes
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "26.0"
   createIntermediateGroups: true
 
 configFiles:
@@ -28,6 +28,21 @@ targets:
     platform: iOS
     sources:
       - FamilyApp
+    # SwiftLint runs on every build (report-only warnings). It degrades
+    # gracefully if the binary is missing (see ../LINTING.md). Config lives at
+    # the repo root (.swiftlint.yml); the script cd's up from $SRCROOT (= ios/).
+    # NOTE: re-run `cd ios && xcodegen generate` after editing this manifest.
+    preBuildScripts:
+      - name: SwiftLint
+        basedOnDependencyAnalysis: false
+        script: |
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          if which swiftlint >/dev/null; then
+            # Report-only: never fail the build on lint violations (see ../LINTING.md).
+            cd "$SRCROOT/.." && swiftlint lint --quiet || true
+          else
+            echo "warning: SwiftLint not installed — run 'brew install swiftlint' (see ios/LINTING.md)"
+          fi
     dependencies:
       - package: Supabase
         product: Supabase

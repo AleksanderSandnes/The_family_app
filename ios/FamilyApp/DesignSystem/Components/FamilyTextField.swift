@@ -6,12 +6,12 @@ struct FamilyTextField: View {
     let label: String
     @Binding var text: String
     var systemImage: String?
-    var isPassword: Bool = false
+    var isPassword = false
     var keyboardType: UIKeyboardType = .default
     var textContentType: UITextContentType?
     var autocapitalization: TextInputAutocapitalization = .sentences
     var supportingText: String?
-    var isError: Bool = false
+    var isError = false
 
     @State private var revealed = false
     @FocusState private var focused: Bool
@@ -24,7 +24,7 @@ struct FamilyTextField: View {
                         .foregroundStyle(focused ? Color.appPrimary : Color.appOnSurfaceVariant)
                 }
                 Group {
-                    if isPassword && !revealed {
+                    if isPassword, !revealed {
                         SecureField(label, text: $text)
                     } else {
                         TextField(label, text: $text)

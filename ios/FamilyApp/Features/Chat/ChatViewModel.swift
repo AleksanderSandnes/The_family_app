@@ -19,26 +19,34 @@ private let userIdPreviewLength = 8
 final class ChatViewModel {
     // MARK: List state
 
-    private(set) var conversations: [ConversationWithPreview] = []
+    // `internal(set)` (plain `var`) so the `+Media`/`+Members` extensions in sibling
+    // files can mutate it; still no external writers.
+    var conversations: [ConversationWithPreview] = []
     private(set) var isLoading = false
     private(set) var familyMembers: [UserModel] = []
     private(set) var userProfiles: [String: UserModel] = [:]
 
-    var totalUnread: Int { conversations.reduce(0) { $0 + $1.unreadCount } }
+    var totalUnread: Int {
+        conversations.reduce(0) { $0 + $1.unreadCount }
+    }
 
     // MARK: Thread state
 
     private(set) var currentConversationId: String?
-    private(set) var conversation: ConversationModel?
-    private(set) var messages: [MessageModel] = []
-    private(set) var replyTo: MessageModel?
+    // `conversation`, `messages` and `replyTo` are mutated by the `+Media`/`+Members`
+    // extensions in sibling files, so their setters must be internal (plain `var`).
+    var conversation: ConversationModel?
+    var messages: [MessageModel] = []
+    var replyTo: MessageModel?
     private(set) var currentParticipants: [UserModel] = []
     /// Latest read timestamp among OTHER participants — drives "Seen".
     private(set) var otherLastRead: String?
     /// Other users currently typing in the open conversation.
     private(set) var typingUsers: Set<String> = []
     /// messageId → (emoji → [userId])
-    private(set) var reactions: [String: [String: [String]]] = [:]
+    /// `internal(set)` (plain `var`) so `toggleReaction` in the `+Reactions` sibling file
+    /// can mutate it; still no external writers.
+    var reactions: [String: [String: [String]]] = [:]
 
     /// One-shot navigation target (existing 1:1 found / group promoted).
     var navigateToConversation: String?
@@ -46,10 +54,16 @@ final class ChatViewModel {
     var conversationDeleted = false
     var errorMessage: String?
 
-    var currentUserId: String? { repo.session.currentUserId }
+    var currentUserId: String? {
+        repo.session.currentUserId
+    }
 
-    private let repo = FamilyRepository.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    // Internal (not private) so the `+Media`/`+Members` extensions in sibling files
+    // can reach them.
+    let repo = FamilyRepository.shared
+    var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
 
     private let messagesObserver = RealtimeObserver()
     private var reactionsChannel: RealtimeChannelV2?
@@ -92,7 +106,7 @@ final class ChatViewModel {
         await loadConversations()
     }
 
-    private func loadConversations() async {
+    func loadConversations() async {
         guard let userId = repo.session.currentUserId else {
             conversations = []
             return
@@ -103,11 +117,13 @@ final class ChatViewModel {
         if let user = await repo.getUser(userId), let familyId = user.familyId {
             let members = await repo.getFamilyMembers(familyId: familyId)
             familyMembers = members
-            for member in members { userProfiles[member.id] = member }
+            for member in members {
+                userProfiles[member.id] = member
+            }
         }
 
         // RLS scopes this to conversations the user participates in.
-        let convs: [ConversationModel] = (try? await client.from("conversations")
+        let convs: [ConversationModel] = await (try? client.from("conversations")
             .select()
             .execute()
             .value) ?? []
@@ -147,7 +163,7 @@ final class ChatViewModel {
     }
 
     private func loadParticipantsMap(conversationIds: [String]) async -> [String: [UserModel]] {
-        let allRows: [ConversationParticipantModel] = (try? await client
+        let allRows: [ConversationParticipantModel] = await (try? client
             .from("conversation_participants")
             .select()
             .in("conversation_id", values: conversationIds)
@@ -156,12 +172,14 @@ final class ChatViewModel {
 
         let missingIds = Set(allRows.map(\.userId)).subtracting(userProfiles.keys)
         if !missingIds.isEmpty {
-            let fresh: [UserModel] = (try? await client.from("users")
+            let fresh: [UserModel] = await (try? client.from("users")
                 .select()
                 .in("id", values: Array(missingIds))
                 .execute()
                 .value) ?? []
-            for user in fresh { userProfiles[user.id] = user }
+            for user in fresh {
+                userProfiles[user.id] = user
+            }
         }
 
         return Dictionary(grouping: allRows, by: \.conversationId)
@@ -217,7 +235,7 @@ final class ChatViewModel {
 
     func loadConversation(_ conversationId: String) {
         Task {
-            let rows: [ConversationModel] = (try? await client.from("conversations")
+            let rows: [ConversationModel] = await (try? client.from("conversations")
                 .select()
                 .eq("id", value: conversationId)
                 .execute()
@@ -225,7 +243,7 @@ final class ChatViewModel {
             conversation = rows.first
             await loadMessages(conversationId)
 
-            let participantRows: [ConversationParticipantModel] = (try? await client
+            let participantRows: [ConversationParticipantModel] = await (try? client
                 .from("conversation_participants")
                 .select()
                 .eq("conversation_id", value: conversationId)
@@ -235,12 +253,14 @@ final class ChatViewModel {
 
             let missing = Set(participantIds).subtracting(userProfiles.keys)
             if !missing.isEmpty {
-                let fresh: [UserModel] = (try? await client.from("users")
+                let fresh: [UserModel] = await (try? client.from("users")
                     .select()
                     .in("id", values: Array(missing))
                     .execute()
                     .value) ?? []
-                for user in fresh { userProfiles[user.id] = user }
+                for user in fresh {
+                    userProfiles[user.id] = user
+                }
             }
             currentParticipants = participantIds.compactMap { userProfiles[$0] }
 
@@ -254,7 +274,9 @@ final class ChatViewModel {
                let familyId = user.familyId, familyMembers.isEmpty {
                 let members = await repo.getFamilyMembers(familyId: familyId)
                 familyMembers = members
-                for member in members { userProfiles[member.id] = member }
+                for member in members {
+                    userProfiles[member.id] = member
+                }
             }
 
             subscribeToMessages(conversationId)
@@ -265,7 +287,7 @@ final class ChatViewModel {
         }
     }
 
-    private func loadMessages(_ conversationId: String) async {
+    func loadMessages(_ conversationId: String) async {
         if let fetched: [MessageModel] = try? await client.from("messages")
             .select()
             .eq("conversation_id", value: conversationId)
@@ -294,14 +316,14 @@ final class ChatViewModel {
             filter: "conversation_id=eq.\(conversationId)"
         ) { [weak self] in
             guard let self else { return }
-            let rows: [ConversationParticipantModel] = (try? await self.client
+            let rows: [ConversationParticipantModel] = await (try? client
                 .from("conversation_participants")
                 .select()
                 .eq("conversation_id", value: conversationId)
                 .execute()
                 .value) ?? []
-            let myId = self.repo.session.currentUserId
-            self.otherLastRead = rows
+            let myId = repo.session.currentUserId
+            otherLastRead = rows
                 .filter { $0.userId != myId }
                 .compactMap(\.lastReadAt)
                 .max()
@@ -323,13 +345,12 @@ final class ChatViewModel {
             await channel.subscribe()
             for await message in stream {
                 guard let self else { break }
-                guard
-                    let payload = message["payload"]?.objectValue,
-                    let userId = payload["userId"]?.stringValue,
-                    let typing = payload["typing"]?.boolValue,
-                    userId != self.repo.session.currentUserId
+                guard let payload = message["payload"]?.objectValue,
+                      let userId = payload["userId"]?.stringValue,
+                      let typing = payload["typing"]?.boolValue,
+                      userId != repo.session.currentUserId
                 else { continue }
-                self.applyTypingSignal(userId: userId, typing: typing)
+                applyTypingSignal(userId: userId, typing: typing)
             }
         }
     }
@@ -397,332 +418,5 @@ final class ChatViewModel {
                 await self?.loadReactions(conversationId)
             }
         })
-    }
-
-    func toggleReaction(messageId: String, conversationId: String, emoji: String) {
-        Task {
-            guard let userId = repo.session.currentUserId else { return }
-            let myCurrentEmoji = reactions[messageId]?.first { $0.value.contains(userId) }?.key
-
-            // Optimistic update so the UI reflects the change immediately.
-            var messageReactions = reactions[messageId] ?? [:]
-            if let myCurrentEmoji {
-                let remaining = (messageReactions[myCurrentEmoji] ?? []).filter { $0 != userId }
-                if remaining.isEmpty {
-                    messageReactions[myCurrentEmoji] = nil
-                } else {
-                    messageReactions[myCurrentEmoji] = remaining
-                }
-            }
-            if myCurrentEmoji != emoji {
-                messageReactions[emoji, default: []].append(userId)
-            }
-            if messageReactions.isEmpty {
-                reactions[messageId] = nil
-            } else {
-                reactions[messageId] = messageReactions
-            }
-
-            if myCurrentEmoji == emoji {
-                try? await repo.removeReaction(messageId: messageId)
-            } else {
-                try? await repo.addReaction(
-                    messageId: messageId, conversationId: conversationId, emoji: emoji
-                )
-            }
-        }
-    }
-
-    // MARK: - Sending
-
-    func setReplyTo(_ message: MessageModel) { replyTo = message }
-
-    func clearReplyTo() { replyTo = nil }
-
-    func send(conversationId: String, text: String) {
-        Task {
-            guard let userId = repo.session.currentUserId else { return }
-            let pendingReplyTo = replyTo
-            replyTo = nil
-
-            var temp = MessageModel()
-            temp.id = "temp-\(UUID().uuidString)"
-            temp.conversationId = conversationId
-            temp.userFrom = userId
-            temp.text = text
-            temp.replyToId = pendingReplyTo?.id
-            temp.sentAt = isoNow()
-            messages.append(temp)
-
-            var payload: [String: AnyJSON] = [
-                "conversation_id": .string(conversationId),
-                "user_from": .string(userId),
-                "text": .string(text),
-            ]
-            if let pendingReplyTo { payload["reply_to_id"] = .string(pendingReplyTo.id) }
-            do {
-                try await client.from("messages").insert(payload).execute()
-            } catch {
-                errorMessage = "Failed to send message"
-                messages.removeAll { $0.id == temp.id }
-            }
-            await loadMessages(conversationId)
-
-            // Update the list preview for our own sent message.
-            if let last = messages.last {
-                conversations = conversations.map { preview in
-                    guard preview.conversation.id == conversationId else { return preview }
-                    var preview = preview
-                    preview.lastMessage = last
-                    preview.lastSenderName = "You"
-                    return preview
-                }
-            }
-        }
-    }
-
-    func sendImage(conversationId: String, data: Data, filename: String) {
-        Task {
-            guard let userId = repo.session.currentUserId else { return }
-            do {
-                let url = try await StorageService.uploadChatMedia(
-                    conversationId: conversationId, data: data, filename: filename
-                )
-                try await client.from("messages").insert([
-                    "conversation_id": AnyJSON.string(conversationId),
-                    "user_from": .string(userId),
-                    "text": .string(""),
-                    "message_type": .string("image"),
-                    "media_url": .string(url),
-                ]).execute()
-                await loadMessages(conversationId)
-            } catch {
-                errorMessage = "Failed to send image"
-            }
-        }
-    }
-
-    func sendVoice(conversationId: String, data: Data, filename: String) {
-        Task {
-            guard let userId = repo.session.currentUserId else { return }
-            do {
-                let url = try await StorageService.uploadChatMedia(
-                    conversationId: conversationId, data: data, filename: filename
-                )
-                try await client.from("messages").insert([
-                    "conversation_id": AnyJSON.string(conversationId),
-                    "user_from": .string(userId),
-                    "text": .string(""),
-                    "message_type": .string("voice"),
-                    "media_url": .string(url),
-                ]).execute()
-                await loadMessages(conversationId)
-            } catch {
-                errorMessage = "Failed to send voice message"
-            }
-        }
-    }
-
-    // MARK: - Conversation management
-
-    private func findExistingOneOnOne(userId: String, otherId: String) async -> String? {
-        if let existing = conversations.first(where: { preview in
-            guard let userTo = preview.conversation.userTo else { return false }
-            let from = preview.conversation.userFrom
-            return (from == userId && userTo == otherId) || (from == otherId && userTo == userId)
-        }) {
-            return existing.conversation.id
-        }
-
-        let myConvIds = Set(conversations.map(\.conversation.id))
-        guard !myConvIds.isEmpty else { return nil }
-        let otherRows: [ConversationParticipantModel] = (try? await client
-            .from("conversation_participants")
-            .select()
-            .eq("user_id", value: otherId)
-            .execute()
-            .value) ?? []
-        let sharedIds = otherRows.map(\.conversationId).filter { myConvIds.contains($0) }
-        guard !sharedIds.isEmpty else { return nil }
-        let allRows: [ConversationParticipantModel] = (try? await client
-            .from("conversation_participants")
-            .select()
-            .in("conversation_id", values: sharedIds)
-            .execute()
-            .value) ?? []
-        return Dictionary(grouping: allRows, by: \.conversationId)
-            .first { $0.value.count == 2 }?
-            .key
-    }
-
-    func createConversation(name: String, memberIds: [String]) {
-        Task {
-            guard let userId = repo.session.currentUserId,
-                  let user = await repo.getUser(userId) else { return }
-
-            if memberIds.count == 1,
-               let existing = await findExistingOneOnOne(userId: userId, otherId: memberIds[0]) {
-                navigateToConversation = existing
-                return
-            }
-
-            do {
-                var payload: [String: AnyJSON] = [
-                    "user_from": .string(userId),
-                    "name": .string(name.trimmingCharacters(in: .whitespaces)),
-                ]
-                if let familyId = user.familyId { payload["family_id"] = .string(familyId) }
-                let conv: ConversationModel = try await client.from("conversations")
-                    .insert(payload)
-                    .select()
-                    .single()
-                    .execute()
-                    .value
-
-                for participantId in ([userId] + memberIds).uniqued() {
-                    try? await client.from("conversation_participants").insert([
-                        "conversation_id": AnyJSON.string(conv.id),
-                        "user_id": .string(participantId),
-                    ]).execute()
-                }
-            } catch {
-                errorMessage = "Failed to create conversation"
-            }
-            await loadConversations()
-        }
-    }
-
-    func addMember(conversationId: String, newUserId: String) {
-        Task {
-            guard let userId = repo.session.currentUserId,
-                  let user = await repo.getUser(userId) else { return }
-            let participants = currentParticipants
-
-            do {
-                if participants.count <= 2 {
-                    // Promoting a 1:1 → create a fresh group with everyone.
-                    let allIds = (participants.map(\.id) + [newUserId]).uniqued()
-                    var payload: [String: AnyJSON] = [
-                        "user_from": .string(userId),
-                        "name": .string(""),
-                    ]
-                    if let familyId = user.familyId { payload["family_id"] = .string(familyId) }
-                    let conv: ConversationModel = try await client.from("conversations")
-                        .insert(payload)
-                        .select()
-                        .single()
-                        .execute()
-                        .value
-                    for participantId in allIds {
-                        try await client.from("conversation_participants").insert([
-                            "conversation_id": AnyJSON.string(conv.id),
-                            "user_id": .string(participantId),
-                        ]).execute()
-                    }
-                    navigateToConversation = conv.id
-                } else {
-                    try await client.from("conversation_participants").insert([
-                        "conversation_id": AnyJSON.string(conversationId),
-                        "user_id": .string(newUserId),
-                    ]).execute()
-                    let addedName = userProfiles[newUserId]?.name ?? "A member"
-                    try? await client.from("messages").insert([
-                        "conversation_id": AnyJSON.string(conversationId),
-                        "user_from": .string(userId),
-                        "text": .string("\(addedName) was added to the group"),
-                        "message_type": .string("system"),
-                    ]).execute()
-                    loadConversation(conversationId)
-                }
-            } catch {
-                errorMessage = "Failed to add member"
-            }
-            await loadConversations()
-        }
-    }
-
-    func removeMember(conversationId: String, targetUserId: String) {
-        Task {
-            guard let userId = repo.session.currentUserId else { return }
-            try? await client.from("conversation_participants")
-                .delete()
-                .eq("conversation_id", value: conversationId)
-                .eq("user_id", value: targetUserId)
-                .execute()
-            if targetUserId != userId {
-                loadConversation(conversationId)
-            }
-            await loadConversations()
-        }
-    }
-
-    func renameConversation(id: String, name: String) {
-        Task {
-            try? await client.from("conversations")
-                .update(["name": AnyJSON.string(name.trimmingCharacters(in: .whitespaces))])
-                .eq("id", value: id)
-                .execute()
-            conversation?.name = name.trimmingCharacters(in: .whitespaces)
-            await loadConversations()
-        }
-    }
-
-    func uploadGroupImage(conversationId: String, data: Data) {
-        Task {
-            do {
-                let compressed = ImageUtils.compressWithOrientation(data) ?? data
-                let bucket = client.storage.from("group-images")
-                let path = "\(conversationId)/image.jpg"
-                try await bucket.upload(path, data: compressed, options: FileOptions(upsert: true))
-                let url = try bucket.getPublicURL(path: path).absoluteString
-                    + "?t=\(Int(Date().timeIntervalSince1970 * 1000))"
-                try await client.from("conversations")
-                    .update(["image_uri": AnyJSON.string(url)])
-                    .eq("id", value: conversationId)
-                    .execute()
-                conversation?.imageUri = url
-                await loadConversations()
-            } catch {
-                errorMessage = "Failed to update image"
-            }
-        }
-    }
-
-    func removeImage(conversationId: String) {
-        Task {
-            _ = try? await client.storage.from("group-images")
-                .remove(paths: ["\(conversationId)/image.jpg"])
-            try? await client.from("conversations")
-                .update(["image_uri": AnyJSON.null])
-                .eq("id", value: conversationId)
-                .execute()
-            conversation?.imageUri = nil
-            await loadConversations()
-        }
-    }
-
-    func deleteConversation(_ conversationId: String) {
-        Task {
-            do {
-                _ = try? await client.storage.from("group-images")
-                    .remove(paths: ["\(conversationId)/image.jpg"])
-                try await client.from("conversations")
-                    .delete()
-                    .eq("id", value: conversationId)
-                    .execute()
-                conversations.removeAll { $0.conversation.id == conversationId }
-                conversationDeleted = true
-                await loadConversations()
-            } catch {
-                errorMessage = "Failed to delete conversation"
-            }
-        }
-    }
-}
-
-private extension Array where Element: Hashable {
-    func uniqued() -> [Element] {
-        var seen = Set<Element>()
-        return filter { seen.insert($0).inserted }
     }
 }

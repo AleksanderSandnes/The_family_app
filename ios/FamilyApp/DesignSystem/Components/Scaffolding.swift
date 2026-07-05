@@ -4,11 +4,12 @@ import SwiftUI
 
 extension View {
     /// Standard top bar for every detail/feature screen — inline title on the
-    /// navigation stack (back button comes free from NavigationStack).
+    /// navigation stack (back button comes free from NavigationStack). On iOS 26 the
+    /// nav bar renders as system Liquid Glass; we let it float rather than forcing an
+    /// opaque fill, so content scrolls under a frosted bar.
     func featureTopBar(_ title: String) -> some View {
         navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.appBackground, for: .navigationBar)
     }
 
     /// Calls `action` when the app returns to the foreground AND on first appear —

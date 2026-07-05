@@ -28,9 +28,9 @@ struct FamilyScreen: View {
                 noFamilyContent
             }
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .navigationTitle("Family")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             if viewModel.family != nil {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -86,7 +86,9 @@ struct FamilyScreen: View {
             }
             Button("Cancel", role: .cancel) { memberToRemove = nil }
         } message: {
-            Text("\(memberToRemove?.name ?? "This member") will be removed from the family. They can rejoin later with the invite code.")
+            Text(
+                "\(memberToRemove?.name ?? "This member") will be removed from the family. They can rejoin later with the invite code."
+            )
         }
         .sheet(isPresented: $showCreate) {
             CreateFamilySheet { name, code in
@@ -120,7 +122,8 @@ struct FamilyScreen: View {
             EmptyState(
                 systemImage: "figure.2.and.child.holdinghands",
                 title: "Bring your family together",
-                subtitle: "Create a family space or join one with an invite code to share calendars, shopping lists, wishlists, and more."
+                subtitle: "Create a family space or join one with an invite code to share "
+                    + "calendars, shopping lists, wishlists, and more."
             )
             ErrorBanner(message: viewModel.error)
             PrimaryButton(text: "Create a Family", systemImage: "person.3.fill") {
@@ -149,16 +152,14 @@ struct FamilyScreen: View {
             VStack(alignment: .leading, spacing: Spacing.cardGap) {
                 headerCard(family)
 
-                Text("Members")
-                    .font(.titleMedium)
-                    .foregroundStyle(Color.appOnBackground)
+                SectionHeader(text: "Members")
                     .padding(.top, Spacing.sm)
 
                 ForEach(viewModel.members) { member in
                     let memberIsAdmin = member.id == family.adminId
                     MemberCard(member: member, isAdmin: memberIsAdmin)
                         .contextMenu {
-                            if isAdmin && !memberIsAdmin && member.id != viewModel.currentUser?.id {
+                            if isAdmin, !memberIsAdmin, member.id != viewModel.currentUser?.id {
                                 Button("Remove from family", role: .destructive) {
                                     memberToRemove = member
                                 }
@@ -178,13 +179,13 @@ struct FamilyScreen: View {
 
     private func headerCard(_ family: FamilyModel) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(family.name)
-                .font(.headlineMedium)
-                .foregroundStyle(Color.appOnSurface)
             AvatarStack(members: viewModel.members)
+            Text(family.name)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(Color.appOnSurface)
             Text("\(viewModel.members.count) member\(viewModel.members.count == 1 ? "" : "s")")
-                .font(.bodyMedium)
-                .foregroundStyle(Color.appOnSurfaceVariant)
+                .font(.caption)
+                .foregroundStyle(Color.appCaption)
 
             if !family.joinCode.isEmpty {
                 CopyableCodeField(code: family.joinCode)
@@ -210,24 +211,20 @@ struct FamilyScreen: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.xl)
-        .background(Color.appSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .shadow(color: .black.opacity(0.06), radius: Elevation.resting, y: 1)
+        .glassCard(cornerRadius: Radius.bigCard)
     }
 
     private func shareLabel(_ text: String, systemImage: String) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.appPrimary)
             Text(text)
-                .font(.titleMedium)
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.appOnSurface)
         }
-        .frame(maxWidth: .infinity, minHeight: 48)
-        .overlay(
-            RoundedRectangle(cornerRadius: Radius.button, style: .continuous)
-                .strokeBorder(Color.appOutline, lineWidth: 1)
-        )
+        .frame(maxWidth: .infinity, minHeight: 46)
+        .glassCard(cornerRadius: Radius.badgeLarge)
     }
 }
 
@@ -271,12 +268,14 @@ private struct CopyableCodeField: View {
             }
         } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Invite Code")
-                        .font(.labelMedium)
-                        .foregroundStyle(Color.appOnSurfaceVariant)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("INVITE CODE")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .tracking(0.7)
+                        .foregroundStyle(Color.appCaption)
                     Text(code)
-                        .font(.titleLarge.weight(.bold))
+                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .tracking(2)
                         .foregroundStyle(Color.appOnSurface)
                         .textSelection(.enabled)
                 }
@@ -285,8 +284,10 @@ private struct CopyableCodeField: View {
                     .foregroundStyle(Color.appPrimary)
             }
             .padding(Spacing.lg)
-            .background(Color.appSurfaceVariant)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
+            .background(
+                Color.appPrimary.opacity(0.09),
+                in: RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Family invite code: \(code)")
@@ -299,24 +300,23 @@ private struct MemberCard: View {
 
     var body: some View {
         HStack(spacing: Spacing.md) {
-            InitialAvatar(user: member, size: 44)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(member.name)
-                    .font(.titleMedium)
-                    .foregroundStyle(Color.appOnSurface)
-                Text(isAdmin ? "Admin" : "Member")
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
-            }
+            InitialAvatar(user: member, size: 42)
+            Text(member.name)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.appOnSurface)
             Spacer()
             if isAdmin {
-                Image(systemName: "crown.fill")
-                    .foregroundStyle(Palette.amber500)
+                Text("Admin")
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundStyle(Color.appPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.appPrimary.opacity(0.12), in: Capsule())
             }
         }
-        .padding(Spacing.lg)
-        .background(Color.appSurface)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, 12)
+        .glassCard(cornerRadius: Radius.row)
         .accessibilityLabel("\(member.name), \(isAdmin ? "Admin" : "Member")")
     }
 }
@@ -328,20 +328,28 @@ private struct CreateFamilySheet: View {
     @State private var name = ""
     @State private var code = generateJoinCode()
 
+    private var canCreate: Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Create a family")
-                .font(.titleLarge)
-                .foregroundStyle(Color.appOnSurface)
-                .padding(.top, Spacing.xxl)
-            FamilyTextField(label: "Family name", text: $name, systemImage: "person.3")
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            SheetHeader(title: "Create a family", confirmTitle: "Create", confirmEnabled: canCreate) {
+                dismiss()
+            } onConfirm: {
+                onCreate(name.trimmingCharacters(in: .whitespaces), code)
+                dismiss()
+            }
+            GlassField(systemImage: "person.3", placeholder: "Family name", text: $name)
             HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Invite code")
-                        .font(.labelMedium)
-                        .foregroundStyle(Color.appOnSurfaceVariant)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("INVITE CODE")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .tracking(0.7)
+                        .foregroundStyle(Color.appCaption)
                     Text(code)
-                        .font(.titleLarge.weight(.bold))
+                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .tracking(2)
                         .foregroundStyle(Color.appOnSurface)
                 }
                 Spacer()
@@ -354,19 +362,16 @@ private struct CreateFamilySheet: View {
                 .accessibilityLabel("Generate new code")
             }
             .padding(Spacing.lg)
-            .background(Color.appSurfaceVariant)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
-            Spacer()
-            PrimaryButton(text: "Create", enabled: !name.trimmingCharacters(in: .whitespaces).isEmpty) {
-                onCreate(name.trimmingCharacters(in: .whitespaces), code)
-                dismiss()
-            }
+            .background(
+                Color.appPrimary.opacity(0.09),
+                in: RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
+            )
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.lg)
-        .presentationDetents([.medium])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
+        .glassSheet(detents: [.medium])
     }
 }
 
@@ -374,11 +379,17 @@ private struct QrSheet: View {
     let family: FamilyModel
 
     var body: some View {
-        VStack(spacing: Spacing.md) {
-            Text("Scan to join")
-                .font(.titleLarge)
-                .foregroundStyle(Color.appOnSurface)
-                .padding(.top, Spacing.xxl)
+        VStack(spacing: Spacing.lg) {
+            VStack(spacing: 4) {
+                Text("Scan to join")
+                    .font(.pushedTitle)
+                    .foregroundStyle(Color.appOnSurface)
+                Text("Point a camera at the code to join the family")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.appCaption)
+            }
+            .padding(.top, Spacing.xl)
+
             if let qr = generateQrImage(
                 content: DeepLinkURL.invite(code: family.joinCode).absoluteString
             ) {
@@ -386,17 +397,20 @@ private struct QrSheet: View {
                     .resizable()
                     .interpolation(.none)
                     .scaledToFit()
-                    .frame(width: 220, height: 220)
+                    .frame(width: 224, height: 224)
+                    .padding(Spacing.xl)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+                    .shadow(color: Color(hex: 0x141A3C).opacity(0.12), radius: 15, y: 8)
                     .accessibilityLabel("Family invite QR code")
             }
             Text(family.joinCode)
-                .font(.titleMedium)
+                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                .tracking(3)
                 .foregroundStyle(Color.appOnSurface)
-            Spacer()
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
-        .presentationDetents([.medium])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
+        .padding(.horizontal, Spacing.screenEdge)
+        .glassSheet(detents: [.medium])
     }
 }

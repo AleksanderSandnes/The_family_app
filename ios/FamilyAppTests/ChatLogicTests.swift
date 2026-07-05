@@ -1,11 +1,12 @@
+@testable import FamilyApp
+
 // Chat pure-logic tests — mirror ChatTimeFormattersTest.kt plus the display-name /
 // preview resolution rules from ConversationRow.
 import XCTest
-@testable import FamilyApp
 
 final class ChatTimeFormattersTests: XCTestCase {
-    // Fixed "now": 2026-07-05T12:00:00Z
-    private let now: Int64 = 1_783_252_800_000
+    /// Fixed "now": 2026-07-05T12:00:00Z
+    private let now: Int64 = 1783252800000
 
     func testRelativeTimeBuckets() {
         XCTAssertEqual(relativeTime("2026-07-05T11:59:30Z", nowMs: now), "now")

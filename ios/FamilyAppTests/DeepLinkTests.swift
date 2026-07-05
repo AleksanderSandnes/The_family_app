@@ -1,6 +1,7 @@
+@testable import FamilyApp
+
 // DeepLink.parse — familyapp://auth, familyapp://chat/{id}, familyapp://join?code=.
 import XCTest
-@testable import FamilyApp
 
 final class DeepLinkTests: XCTestCase {
     func testAuthLinkParses() {

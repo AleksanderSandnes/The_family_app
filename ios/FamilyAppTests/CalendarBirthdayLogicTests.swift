@@ -1,7 +1,8 @@
+@testable import FamilyApp
+
 // Calendar + birthday pure-logic tests — mirror the grid/label rules in
 // CalendarScreen.kt and BirthdayScreen.kt.
 import XCTest
-@testable import FamilyApp
 
 final class YearMonthTests: XCTestCase {
     func testPlusMonthsRollsOverYears() {

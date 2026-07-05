@@ -82,12 +82,39 @@ enum Palette {
     // Hero gradient dark endpoints (Color.kt private values)
     static let heroDarkStart = Color(hex: 0x3730A3)
     static let heroDarkEnd = Color(hex: 0x6D28D9)
+
+    // ── Liquid Glass (direction 1c) ──────────────────────────────────────────
+    // Single accent — quieted indigo. Used for all interactive elements.
+    static let accent = Color(hex: 0x4F55E6)
+    static let accentDark = Color(hex: 0xA5ABFF) // brightened accent for dark text/icons
+    static let accentActiveTab = Color(hex: 0xC9CDFF) // active tab glyph in dark
+
+    // Ambient canvas bases (the three radial washes render over these)
+    static let ambientBaseLight = Color(hex: 0xEFF1F8)
+    static let ambientBaseDark = Color(hex: 0x0B0D16)
+
+    // Text ramp
+    static let inkLight = Color(hex: 0x16192A)
+    static let inkDark = Color(hex: 0xECEEF8)
+    static let secondaryLight = Color(hex: 0x5F6780)
+    static let secondaryDark = Color(hex: 0x98A0BC)
+    static let captionLight = Color(hex: 0x8B92AC)
+    static let captionDark = Color(hex: 0x6A7290)
+
+    // Status
+    static let destructive = Color(hex: 0xE11D48) // menu rows, leave/sign-out, delete
+    static let liveGreen = Color(hex: 0x10B981) // today / live / done
+    static let liveGreenText = Color(hex: 0x059669) // "All done" text
+    static let weekAmberText = Color(hex: 0xB45309) // "this week" urgency text
+    static let staleDot = Color(hex: 0xCBD2E0) // map stale dot
+    static let mapBase = Color(hex: 0xE7ECE3) // family-map flat base
 }
 
 /// Semantic scheme — mirrors LightColors/DarkColors in Theme.kt. Use these at call
 /// sites, never raw palette values (same rule as MaterialTheme.colorScheme.*).
 extension Color {
-    static let appPrimary = Color(light: Palette.indigo600, dark: Palette.indigo300)
+    // Accent — the single interactive colour (quieted indigo). Brightens in dark.
+    static let appPrimary = Color(light: Palette.accent, dark: Palette.accentDark)
     static let appOnPrimary = Color(light: .white, dark: Palette.ink)
     static let appPrimaryContainer = Color(light: Palette.indigo100, dark: Palette.indigo700)
     static let appOnPrimaryContainer = Color(light: Palette.indigo700, dark: Palette.indigo100)
@@ -100,29 +127,22 @@ extension Color {
         light: Palette.violet600, dark: Palette.violetContainerLight
     )
     static let appTertiary = Palette.pink500
-    static let appBackground = Color(light: Palette.canvas, dark: Palette.ink)
-    static let appOnBackground = Color(light: Palette.slate900, dark: Palette.inkText)
+    // Ambient canvas base — the radial washes are drawn on top by `.ambientBackground()`.
+    static let appBackground = Color(light: Palette.ambientBaseLight, dark: Palette.ambientBaseDark)
+    static let appOnBackground = Color(light: Palette.inkLight, dark: Palette.inkDark)
     static let appSurface = Color(light: Palette.surfaceLight, dark: Palette.inkSurface)
-    static let appOnSurface = Color(light: Palette.slate900, dark: Palette.inkText)
+    static let appOnSurface = Color(light: Palette.inkLight, dark: Palette.inkDark)
     static let appSurfaceVariant = Color(light: Palette.slate100, dark: Palette.inkSurfaceVariant)
-    // Slate600 (not Slate500) clears WCAG AA 4.5:1 on the light canvas for body text.
-    static let appOnSurfaceVariant = Color(light: Palette.slate600, dark: Palette.inkTextMuted)
+    /// Secondary text — spec ramp (#5F6780 / #98A0BC).
+    static let appOnSurfaceVariant = Color(light: Palette.secondaryLight, dark: Palette.secondaryDark)
+    // Caption / tertiary text (#8B92AC / #6A7290).
+    static let appCaption = Color(light: Palette.captionLight, dark: Palette.captionDark)
     static let appOutline = Color(light: Palette.slate200, dark: Palette.inkBorder)
     static let appOutlineVariant = Color(light: Palette.slate100, dark: Palette.inkSurfaceVariant)
-    static let appError = Palette.rose500
+    static let appError = Palette.destructive
 
     // Semantic status roles
-    static let appSuccess = Palette.emerald500
+    static let appSuccess = Palette.liveGreen
     static let appWarning = Palette.amber500
-    static let appDanger = Palette.rose500
-
-    // Feature-accent palette — one stable identity color per domain.
-    static let featureShopping = Palette.indigo500
-    static let featureMeals = Palette.amber500
-    static let featureCalendar = Palette.emerald500
-    static let featureBirthdays = Palette.pink500
-    static let featureWishlists = Palette.violet500
-    static let featureMap = Palette.teal500
-    static let featureChat = Palette.indigo500
-    static let featureFamily = Palette.violet600
+    static let appDanger = Palette.destructive
 }

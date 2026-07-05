@@ -1,7 +1,8 @@
+@testable import FamilyApp
+
 // Home/date pure-logic tests — mirror HomeGreetingUtilsTest.kt, BirthdayDateUtilsTest.kt
 // and the eventWhen/birthdayWhen formatting rules in HomeViewModel.kt.
 import XCTest
-@testable import FamilyApp
 
 final class LocalDateTests: XCTestCase {
     func testParsesIsoAndPrefixes() {

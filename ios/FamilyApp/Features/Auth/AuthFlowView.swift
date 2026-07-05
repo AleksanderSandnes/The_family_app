@@ -63,7 +63,7 @@ struct LoginScreen: View {
             }
             .accessibilityLabel("Sign in button")
 
-            SecondaryButton(text: "Continue with Google", systemImage: "globe") {
+            GlassButton(text: "Continue with Google", systemImage: "globe") {
                 viewModel.signInWithGoogle()
             }
             .accessibilityLabel("Continue with Google button")
@@ -90,7 +90,10 @@ struct RegisterScreen: View {
     @State private var step = 1
     @State private var form = RegistrationForm()
 
-    private var title: String { step == 1 ? "Create your account" : "About you" }
+    private var title: String {
+        step == 1 ? "Create your account" : "About you"
+    }
+
     private var subtitle: String {
         step == 1
             ? "Start with your login details."
@@ -215,49 +218,76 @@ struct AuthScaffold<Content: View>: View {
 
     var body: some View {
         ZStack {
-            Gradients.hero(dark: colorScheme == .dark)
-                .ignoresSafeArea()
+            // Full-identity hero gradient (linear-gradient(160deg,#5457E8,#6D3AE0,#7C3AED))
+            LinearGradient(
+                stops: [
+                    .init(color: Color(hex: 0x5457E8), location: 0),
+                    .init(color: Color(hex: 0x6D3AE0), location: 0.55),
+                    .init(color: Color(hex: 0x7C3AED), location: 1),
+                ],
+                startPoint: UnitPoint(x: 0.15, y: 0),
+                endPoint: UnitPoint(x: 0.85, y: 1)
+            )
+            .ignoresSafeArea()
+            // Faint bokeh
+            .overlay(alignment: .topTrailing) {
+                Circle().fill(.white.opacity(0.09)).frame(width: 260, height: 260)
+                    .offset(x: 90, y: -60).blur(radius: 4)
+            }
+            .overlay(alignment: .bottomLeading) {
+                Circle().fill(.white.opacity(0.06)).frame(width: 220, height: 220)
+                    .offset(x: -70, y: 40).blur(radius: 4)
+            }
+
             ScrollView {
                 VStack(spacing: 0) {
-                    // Brand header
+                    // Glass app-icon tile
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Color.white.opacity(0.18))
-                        .frame(width: 72, height: 72)
+                        .fill(Color.white.opacity(0.2))
+                        .frame(width: 70, height: 70)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.4), lineWidth: 1)
+                        )
                         .overlay(
                             Image(systemName: "person.3.fill")
-                                .font(.system(size: 30))
+                                .font(.system(size: 30, weight: .medium))
                                 .foregroundStyle(.white)
                         )
+                        .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
                     Text("The Family App")
-                        .font(.headlineMedium)
+                        .font(.system(size: 23, weight: .bold))
                         .foregroundStyle(.white)
-                        .padding(.top, 14)
+                        .padding(.top, 16)
                     Text("One home for everything you share")
-                        .font(.bodyMedium)
+                        .font(.system(size: 13.5))
                         .foregroundStyle(.white.opacity(0.8))
+                        .padding(.top, 2)
 
-                    // Form card
+                    // Floating frosted glass form card
                     VStack(alignment: .leading, spacing: Spacing.md) {
                         Text(title)
-                            .font(.headlineSmall.weight(.bold))
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundStyle(Color.appOnSurface)
                         Text(subtitle)
-                            .font(.bodyMedium)
+                            .font(.system(size: 13))
                             .foregroundStyle(Color.appOnSurfaceVariant)
                         content()
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Spacing.xxl)
                     .padding(.vertical, Spacing.xxxl)
-                    .background(Color.appSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                    .glassEffect(
+                        .regular.tint(.white.opacity(0.5)),
+                        in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    )
+                    .shadow(color: Color(hex: 0x0A0C28).opacity(0.3), radius: 30, y: 20)
                     .padding(.top, Spacing.xxxl)
                     .opacity(visible ? 1 : 0)
                     .offset(y: visible ? 0 : 24)
                 }
                 .frame(maxWidth: 480)
-                .padding(.horizontal, Spacing.xxl)
+                .padding(.horizontal, Spacing.xl)
                 .padding(.vertical, 48)
                 .frame(maxWidth: .infinity)
             }
@@ -361,8 +391,8 @@ struct BirthdayPickerField: View {
 
     var body: some View {
         Button {
-            selection = Self.isoFormat.date(from: isoDate)
-                ?? Calendar.current.date(byAdding: .year, value: -30, to: .now)!
+            let fallback = Calendar.current.date(byAdding: .year, value: -30, to: .now) ?? .now
+            selection = Self.isoFormat.date(from: isoDate) ?? fallback
             showPicker = true
         } label: {
             HStack(spacing: Spacing.md) {
@@ -427,11 +457,11 @@ struct AuthFooter: View {
 
 // MARK: - Helpers
 
-private extension Binding where Value == String {
+extension Binding where Value == String {
     /// Clears the view model error on every edit — mirrors the Android onValueChange
     /// pattern of `viewModel.clearError()` alongside the state update.
     @MainActor
-    func clearingError(_ viewModel: AuthViewModel) -> Binding<String> {
+    fileprivate func clearingError(_ viewModel: AuthViewModel) -> Binding<String> {
         Binding(
             get: { wrappedValue },
             set: { newValue in

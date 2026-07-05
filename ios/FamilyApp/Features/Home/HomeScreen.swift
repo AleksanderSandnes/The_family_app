@@ -7,26 +7,58 @@ private struct Feature: Identifiable {
     let title: String
     let subtitle: String
     let systemImage: String
-    let color: Color
+    let accent: FeatureAccent
     /// nil = Calendar, which is a bottom tab rather than a pushed route.
     let route: Route?
 
-    var id: String { title }
+    var id: String {
+        title
+    }
 }
 
 private let features: [Feature] = [
-    Feature(title: "Shopping", subtitle: "Shared lists", systemImage: "cart.fill",
-            color: Palette.indigo500, route: .shopping),
-    Feature(title: "Meals", subtitle: "Plan the week", systemImage: "fork.knife",
-            color: Palette.amber500, route: .meal),
-    Feature(title: "Calendar", subtitle: "Family events", systemImage: "calendar",
-            color: Palette.teal500, route: nil),
-    Feature(title: "Birthdays", subtitle: "Never miss one", systemImage: "birthday.cake.fill",
-            color: Palette.pink500, route: .birthday),
-    Feature(title: "Wishlists", subtitle: "Gift ideas", systemImage: "gift.fill",
-            color: Palette.violet500, route: .wishlist),
-    Feature(title: "Family Map", subtitle: "See where everyone is", systemImage: "map.fill",
-            color: Palette.emerald500, route: .familyMap),
+    Feature(
+        title: "Shopping",
+        subtitle: "Shared lists",
+        systemImage: "cart.fill",
+        accent: .shopping,
+        route: .shopping
+    ),
+    Feature(
+        title: "Meals",
+        subtitle: "Plan the week",
+        systemImage: "fork.knife",
+        accent: .meals,
+        route: .meal
+    ),
+    Feature(
+        title: "Calendar",
+        subtitle: "Family events",
+        systemImage: "calendar",
+        accent: .calendar,
+        route: nil
+    ),
+    Feature(
+        title: "Birthdays",
+        subtitle: "Never miss one",
+        systemImage: "birthday.cake.fill",
+        accent: .birthdays,
+        route: .birthday
+    ),
+    Feature(
+        title: "Wishlists",
+        subtitle: "Gift ideas",
+        systemImage: "gift.fill",
+        accent: .wishlists,
+        route: .wishlist
+    ),
+    Feature(
+        title: "Family Map",
+        subtitle: "See where everyone is",
+        systemImage: "map.fill",
+        accent: .map,
+        route: .familyMap
+    ),
 ]
 
 struct HomeScreen: View {
@@ -72,33 +104,51 @@ struct HomeScreen: View {
             .padding(.horizontal, Spacing.screenEdge)
             .padding(.vertical, Spacing.xl)
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .refreshable { viewModel.refresh() }
         .resumeEffect { viewModel.refresh() }
     }
 
     @ViewBuilder private var summarySection: some View {
         let state = viewModel.state
-        VStack(spacing: Spacing.cardGap) {
+        VStack(spacing: 9) {
             if let tonight = state.tonightMeal {
-                SummaryCard(systemImage: "fork.knife", accent: Palette.amber500,
-                            label: "TONIGHT", value: tonight, detail: nil) { onOpen(.meal) }
+                SummaryCard(
+                    systemImage: "fork.knife",
+                    feature: .meals,
+                    label: "TONIGHT",
+                    value: tonight,
+                    detail: nil
+                ) { onOpen(.meal) }
             }
             if let eventTitle = state.nextEventTitle {
-                SummaryCard(systemImage: "calendar", accent: Palette.teal500,
-                            label: "NEXT EVENT", value: eventTitle, detail: state.nextEventWhen) {
+                SummaryCard(
+                    systemImage: "calendar",
+                    feature: .calendar,
+                    label: "NEXT EVENT",
+                    value: eventTitle,
+                    detail: state.nextEventWhen
+                ) {
                     onOpenCalendarTab()
                 }
             }
             if state.shoppingRemaining > 0 {
-                SummaryCard(systemImage: "cart.fill", accent: Palette.indigo500,
-                            label: "SHOPPING", value: "\(state.shoppingRemaining) left to buy",
-                            detail: nil) { onOpen(.shopping) }
+                SummaryCard(
+                    systemImage: "cart.fill",
+                    feature: .shopping,
+                    label: "SHOPPING",
+                    value: "\(state.shoppingRemaining) left to buy",
+                    detail: nil
+                ) { onOpen(.shopping) }
             }
             if let birthdayName = state.nextBirthdayName {
-                SummaryCard(systemImage: "birthday.cake.fill", accent: Palette.pink500,
-                            label: "NEXT BIRTHDAY", value: birthdayName,
-                            detail: state.nextBirthdayWhen) { onOpen(.birthday) }
+                SummaryCard(
+                    systemImage: "birthday.cake.fill",
+                    feature: .birthdays,
+                    label: "NEXT BIRTHDAY",
+                    value: birthdayName,
+                    detail: state.nextBirthdayWhen
+                ) { onOpen(.birthday) }
             }
         }
     }
@@ -108,7 +158,7 @@ struct HomeScreen: View {
 
 private struct SummaryCard: View {
     let systemImage: String
-    let accent: Color
+    let feature: FeatureAccent
     let label: String
     let value: String
     let detail: String?
@@ -116,49 +166,29 @@ private struct SummaryCard: View {
 
     var body: some View {
         ListCard(onTap: onTap) {
-            IconBadge(systemImage: systemImage, color: accent)
+            FeatureBadge(systemImage: systemImage, feature: feature)
             Spacer().frame(width: 14)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.eyebrow)
+                    .tracking(0.7)
+                    .foregroundStyle(feature.stroke)
                 Text(value)
-                    .font(.titleMedium)
+                    .font(.cardTitle)
                     .foregroundStyle(Color.appOnSurface)
                     .lineLimit(1)
                 if let detail {
                     Text(detail)
-                        .font(.labelMedium)
-                        .foregroundStyle(Color.appOnSurfaceVariant)
+                        .font(.caption)
+                        .foregroundStyle(Color.appCaption)
                         .lineLimit(1)
                 }
             }
             Spacer()
             Image(systemName: "chevron.right")
-                .foregroundStyle(Color.appOnSurfaceVariant)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.appCaption)
         }
-    }
-}
-
-/// 44pt gradient icon square used by summary cards and feature tiles.
-struct IconBadge: View {
-    let systemImage: String
-    let color: Color
-    var size: CGFloat = 44
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(LinearGradient(
-                colors: [color, color.opacity(0.7)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ))
-            .frame(width: size, height: size)
-            .overlay(
-                Image(systemName: systemImage)
-                    .font(.system(size: size * 0.5))
-                    .foregroundStyle(.white)
-            )
     }
 }
 
@@ -172,15 +202,15 @@ private struct HomeHeader: View {
             HStack(alignment: .center, spacing: Spacing.md) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(greetingLine)
-                        .font(.headlineMedium)
+                        .font(.greeting)
                         .foregroundStyle(Color.appOnBackground)
                     Text("Here's everything your family shares.")
-                        .font(.bodyMedium)
+                        .font(.caption)
                         .foregroundStyle(Color.appOnSurfaceVariant)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if let user = state.user {
-                    InitialAvatar(user: user, size: 48)
+                    InitialAvatar(user: user, size: 44)
                 }
             }
 
@@ -234,18 +264,31 @@ private struct FamilyCard: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(family.name)
-                        .font(.titleLarge.weight(.bold))
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.white)
                     Text("\(memberCount) member\(memberCount == 1 ? "" : "s")")
-                        .font(.bodyMedium)
+                        .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.85))
                 }
                 Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
             }
             .padding(Spacing.xl)
             .background(Gradients.hero(dark: dark))
-            .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-            .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            // Identity surface — inset shine + hairline + coloured drop shadow (spec 2a).
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
+            )
+            .shadow(
+                color: (dark ? Color.black : Palette.indigo600).opacity(dark ? 0.4 : 0.28),
+                radius: dark ? 17 : 15,
+                x: 0,
+                y: dark ? 12 : 10
+            )
         }
         .buttonStyle(PressScaleButtonStyle())
     }
@@ -282,23 +325,21 @@ private struct FeatureTile: View {
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 0) {
-                IconBadge(systemImage: feature.systemImage, color: feature.color)
+                FeatureBadge(systemImage: feature.systemImage, feature: feature.accent, size: 36)
                 Spacer(minLength: Spacing.sm)
                 Text(feature.title)
-                    .font(.titleMedium)
+                    .font(.cardTitle)
                     .foregroundStyle(Color.appOnSurface)
                     .lineLimit(1)
                 Text(feature.subtitle)
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.appCaption)
                     .lineLimit(1)
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .aspectRatio(1.15, contentMode: .fit)
-            .background(Color.appSurface)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-            .shadow(color: .black.opacity(0.06), radius: Elevation.resting, y: 1)
+            .glassCard(cornerRadius: Radius.row)
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel("\(feature.title) feature")

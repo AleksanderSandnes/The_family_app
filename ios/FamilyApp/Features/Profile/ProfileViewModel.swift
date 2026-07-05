@@ -18,7 +18,9 @@ final class ProfileViewModel {
         refresh()
     }
 
-    func clearError() { error = nil }
+    func clearError() {
+        error = nil
+    }
 
     func refresh() {
         Task {
@@ -120,7 +122,7 @@ final class ProfileViewModel {
 func formatBirthday(_ raw: String?) -> String {
     guard let raw, !raw.isEmpty else { return "—" }
     guard let date = LocalDate(iso: raw) else { return raw }
-    let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86_400)
+    let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
     let formatter = DateFormatter()
     formatter.dateFormat = "MMMM d, yyyy"
     formatter.locale = Locale(identifier: "en_US_POSIX")

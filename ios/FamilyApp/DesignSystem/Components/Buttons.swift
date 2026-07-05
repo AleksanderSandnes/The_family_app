@@ -5,14 +5,16 @@ import SwiftUI
 /// Primary gradient call-to-action button with built-in loading state.
 struct PrimaryButton: View {
     let text: String
-    var enabled: Bool = true
-    var loading: Bool = false
+    var enabled = true
+    var loading = false
     var systemImage: String?
     let action: () -> Void
 
     @GestureState private var pressed = false
 
-    private var active: Bool { enabled && !loading }
+    private var active: Bool {
+        enabled && !loading
+    }
 
     var body: some View {
         Button(action: action) {
@@ -32,10 +34,12 @@ struct PrimaryButton: View {
                     .foregroundStyle(.white)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .background(Gradients.brand)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.button, style: .continuous))
-            // Disabled = the SAME brand fill at 38% opacity — never a flat dead-gray.
+            .frame(maxWidth: .infinity, minHeight: 54)
+            // Solid accent (Liquid Glass 1c) — the brand gradient is reserved for
+            // identity surfaces only. Accent glow underneath.
+            .background(Color.appPrimary, in: RoundedRectangle(cornerRadius: 27, style: .continuous))
+            .shadow(color: Color.appPrimary.opacity(active ? 0.35 : 0), radius: 11, x: 0, y: 8)
+            // Disabled = the SAME accent at 38% opacity — never a flat dead-gray.
             .opacity(active ? 1 : 0.38)
         }
         .buttonStyle(PressScaleButtonStyle())

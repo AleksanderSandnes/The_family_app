@@ -18,6 +18,8 @@ enum NotificationCategory {
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
+        // System-required signature: UIApplicationDelegate dictates the optional dictionary.
+        // swiftlint:disable:next discouraged_optional_collection
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         // Firebase only activates when GoogleService-Info.plist is bundled (gitignored;

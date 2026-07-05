@@ -1,7 +1,8 @@
+@testable import FamilyApp
+
 // Cross-platform avatar-color parity: FamilyRepository.palette must pick the same
 // color as the Kotlin implementation (Java String.hashCode + same 8-color table).
 import XCTest
-@testable import FamilyApp
 
 @MainActor
 final class AvatarPaletteTests: XCTestCase {

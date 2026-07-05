@@ -1,6 +1,7 @@
+@testable import FamilyApp
+
 // Family/profile/settings pure-logic tests.
 import XCTest
-@testable import FamilyApp
 
 final class FamilyLogicTests: XCTestCase {
     func testGenerateJoinCodeShape() {

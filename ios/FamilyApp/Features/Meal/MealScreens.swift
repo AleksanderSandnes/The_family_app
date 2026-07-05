@@ -29,19 +29,19 @@ struct MealScreen: View {
                                 plan: plan,
                                 progress: viewModel.planProgress[plan.id]
                             ) { onOpen(plan.id) }
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(
-                                top: 6, leading: Spacing.screenEdge,
-                                bottom: 6, trailing: Spacing.screenEdge
-                            ))
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    viewModel.deletePlan(plan)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(
+                                    top: 6, leading: Spacing.screenEdge,
+                                    bottom: 6, trailing: Spacing.screenEdge
+                                ))
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        viewModel.deletePlan(plan)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
-                            }
                         }
                     }
                     .listStyle(.plain)
@@ -55,7 +55,7 @@ struct MealScreen: View {
                 showCreate = true
             }
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar("Meal planner")
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showCreate) {
@@ -72,32 +72,51 @@ private struct MealPlanRow: View {
     let progress: MealProgress?
     let onTap: () -> Void
 
+    private var fraction: Double {
+        guard let progress, progress.total > 0 else { return 0 }
+        return Double(progress.planned) / Double(progress.total)
+    }
+
+    private var nothingPlanned: Bool {
+        (progress?.planned ?? 0) == 0
+    }
+
     var body: some View {
         let name = plan.name.isEmpty ? "Meal plan" : plan.name
         let dateRange = "\(formatMealDate(plan.fromDate)) – \(formatMealDate(plan.toDate))"
-        ListCard(onTap: onTap) {
-            Image(systemName: IconKeyMap.mealSymbol(plan.icon))
-                .font(.system(size: 18))
-                .foregroundStyle(Color.appOnPrimaryContainer)
-                .frame(width: 40, height: 40)
-                .background(Color.appPrimaryContainer)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            Spacer().frame(width: 14)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(name)
-                    .font(.titleMedium)
-                    .foregroundStyle(Color.appOnSurface)
-                Text(dateRange)
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
-                Text(mealPlanLabel(progress: progress, fromIso: plan.fromDate, toIso: plan.toDate))
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+        Button(action: onTap) {
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    FeatureBadge(
+                        systemImage: IconKeyMap.mealSymbol(plan.icon),
+                        feature: .meals,
+                        size: 44,
+                        cornerRadius: Radius.badgeLarge
+                    )
+                    .opacity(nothingPlanned ? 0.7 : 1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(name)
+                            .font(.system(size: 15.5, weight: .semibold))
+                            .foregroundStyle(nothingPlanned ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                        Text(
+                            "\(dateRange) · \(mealPlanLabel(progress: progress, fromIso: plan.fromDate, toIso: plan.toDate))"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(Color.appCaption)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.appCaption)
+                }
+                if !nothingPlanned {
+                    GlassProgressBar(value: fraction, tint: FeatureAccent.meals.stroke, height: 4)
+                }
             }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .foregroundStyle(Color.appOnSurfaceVariant)
+            .padding(Spacing.cardPadding)
+            .rowSurface(ghost: nothingPlanned, cornerRadius: Radius.overviewCard)
         }
+        .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel(
             "\(name), \(dateRange), \(mealPlanLabel(progress: progress, fromIso: plan.fromDate, toIso: plan.toDate))"
         )
@@ -114,7 +133,6 @@ private struct CreatePlanSheet: View {
     @State private var fromDate: Date?
     @State private var toDate: Date?
     @State private var selectedIcon = "restaurant"
-    @State private var showIconPicker = false
 
     private static let isoFormat: DateFormatter = {
         let formatter = DateFormatter()
@@ -129,78 +147,49 @@ private struct CreatePlanSheet: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                Text("Create a meal plan")
-                    .font(.titleLarge)
-                    .foregroundStyle(Color.appOnSurface)
-                    .padding(.top, Spacing.xxl)
+        VStack(spacing: 0) {
+            SheetHeader(title: "New plan", confirmTitle: "Create", confirmEnabled: canConfirm) {
+                dismiss()
+            } onConfirm: {
+                guard let fromDate, let toDate else { return }
+                onCreate(
+                    name.trimmingCharacters(in: .whitespaces),
+                    Self.isoFormat.string(from: fromDate),
+                    Self.isoFormat.string(from: toDate),
+                    selectedIcon
+                )
+                dismiss()
+            }
+            .padding(.horizontal, Spacing.screenEdge)
+            .padding(.vertical, Spacing.lg)
 
-                HStack(spacing: Spacing.md) {
-                    Button {
-                        withAnimation { showIconPicker.toggle() }
-                    } label: {
-                        Image(systemName: IconKeyMap.mealSymbol(selectedIcon))
-                            .font(.system(size: 22))
-                            .foregroundStyle(Color.appOnPrimaryContainer)
-                            .frame(width: 48, height: 48)
-                            .background(Color.appPrimaryContainer)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .accessibilityLabel("Change icon")
-                    FamilyTextField(label: "Plan name", text: $name)
-                }
-
-                if showIconPicker {
-                    let columns = Array(repeating: GridItem(.flexible()), count: 4)
-                    LazyVGrid(columns: columns, spacing: Spacing.md) {
-                        ForEach(IconOptions.meal, id: \.self) { key in
-                            Button {
-                                selectedIcon = key
-                                withAnimation { showIconPicker = false }
-                            } label: {
-                                Image(systemName: IconKeyMap.mealSymbol(key))
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(
-                                        key == selectedIcon ? Color.appOnPrimary : Color.appPrimary
-                                    )
-                                    .frame(width: 56, height: 56)
-                                    .background(
-                                        key == selectedIcon
-                                            ? Color.appPrimary : Color.appPrimaryContainer
-                                    )
-                                    .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
-                            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.lg) {
+                    GlassField(
+                        systemImage: IconKeyMap.mealSymbol(selectedIcon),
+                        placeholder: "Plan name",
+                        text: $name
+                    )
+                    SectionHeader(text: "Icon")
+                    IconGrid(
+                        options: IconOptions.meal,
+                        selected: selectedIcon,
+                        symbolFor: IconKeyMap.mealSymbol
+                    ) { selectedIcon = $0 }
+                    HStack(spacing: Spacing.sm) {
+                        PlanDatePicker(label: "Start date", selection: $fromDate) { picked in
+                            if let to = toDate, to < picked { toDate = picked }
+                        }
+                        PlanDatePicker(label: "End date", selection: $toDate) { picked in
+                            if let from = fromDate, picked < from { toDate = from }
                         }
                     }
                 }
-
-                HStack(spacing: Spacing.sm) {
-                    PlanDatePicker(label: "Start date", selection: $fromDate) { picked in
-                        if let to = toDate, to < picked { toDate = picked }
-                    }
-                    PlanDatePicker(label: "End date", selection: $toDate) { picked in
-                        if let from = fromDate, picked < from { toDate = from }
-                    }
-                }
-
-                PrimaryButton(text: "Create", enabled: canConfirm) {
-                    guard let fromDate, let toDate else { return }
-                    onCreate(
-                        name.trimmingCharacters(in: .whitespaces),
-                        Self.isoFormat.string(from: fromDate),
-                        Self.isoFormat.string(from: toDate),
-                        selectedIcon
-                    )
-                    dismiss()
-                }
+                .padding(.horizontal, Spacing.screenEdge)
+                .padding(.bottom, Spacing.lg)
             }
-            .padding(.horizontal, Spacing.screenEdge)
-            .padding(.bottom, Spacing.lg)
         }
-        .presentationDetents([.large])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
+        .glassSheet(detents: [.medium, .large])
     }
 }
 
@@ -269,27 +258,30 @@ struct MealDetailScreen: View {
                 if let plan = viewModel.selectedPlan {
                     planHeader(plan)
                 }
-                ForEach(viewModel.days) { day in
-                    MealDayRow(
-                        day: day,
-                        isEditing: editingDayId == day.id,
-                        draft: $draft,
-                        onStartEdit: {
-                            editingDayId = day.id
-                            draft = day.food
-                        },
-                        onSave: {
-                            viewModel.setFood(day, food: draft)
-                            editingDayId = nil
-                        },
-                        onCancel: { editingDayId = nil }
-                    )
-                    Divider().opacity(0.5)
+                VStack(spacing: 8) {
+                    ForEach(viewModel.days) { day in
+                        MealDayRow(
+                            day: day,
+                            isEditing: editingDayId == day.id,
+                            draft: $draft,
+                            onStartEdit: {
+                                editingDayId = day.id
+                                draft = day.food
+                            },
+                            onSave: {
+                                viewModel.setFood(day, food: draft)
+                                editingDayId = nil
+                            },
+                            onCancel: { editingDayId = nil }
+                        )
+                    }
                 }
+                .padding(.horizontal, Spacing.screenEdge)
+                .padding(.top, 6)
             }
             .padding(.bottom, Spacing.xl)
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar(planTitle)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -339,25 +331,27 @@ struct MealDetailScreen: View {
 
     private func planHeader(_ plan: MealPlanModel) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: IconKeyMap.mealSymbol(plan.icon))
-                .font(.system(size: 18))
-                .foregroundStyle(Color.appOnPrimaryContainer)
-                .frame(width: 40, height: 40)
-                .background(Color.appPrimaryContainer)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            VStack(alignment: .leading, spacing: 1) {
+            FeatureBadge(
+                systemImage: IconKeyMap.mealSymbol(plan.icon),
+                feature: .meals,
+                size: 44,
+                cornerRadius: Radius.badgeLarge
+            )
+            VStack(alignment: .leading, spacing: 2) {
                 Text(planTitle)
-                    .font(.titleMedium)
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Color.appOnSurface)
                 Text("\(formatMealDate(plan.fromDate)) – \(formatMealDate(plan.toDate))")
-                    .font(.bodyMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.caption)
+                    .foregroundStyle(Color.appCaption)
             }
             Spacer()
         }
+        .padding(Spacing.lg)
+        .glassCard(cornerRadius: Radius.bigCard)
         .padding(.horizontal, Spacing.screenEdge)
-        .padding(.vertical, Spacing.lg)
-        .background(Color.appSurfaceVariant.opacity(0.5))
+        .padding(.top, 8)
+        .padding(.bottom, 6)
     }
 }
 
@@ -371,59 +365,67 @@ private struct MealDayRow: View {
 
     @FocusState private var focused: Bool
 
+    private var empty: Bool {
+        day.food.isEmpty && !isEditing
+    }
+
     var body: some View {
-        HStack(alignment: .center, spacing: Spacing.sm) {
+        HStack(alignment: .center, spacing: Spacing.md) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(day.day)
-                    .font(.titleMedium)
-                    .foregroundStyle(Color.appOnSurface)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(empty ? Color.appOnSurfaceVariant : Color.appOnSurface)
                 Text(formatMealDate(day.date))
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Color.appCaption)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(width: 96, alignment: .leading)
 
             if isEditing {
                 VStack(alignment: .trailing, spacing: Spacing.xs) {
                     TextField("What's for \(day.day)?", text: $draft)
-                        .font(.bodyLarge)
+                        .font(.system(size: 15.5))
+                        .tint(Color.appPrimary)
                         .padding(.horizontal, Spacing.md)
-                        .frame(minHeight: 44)
+                        .frame(minHeight: 42)
+                        .background(
+                            Color.appSurface.opacity(0.75),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(Color.appPrimary, lineWidth: 1)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(Color.appPrimary.opacity(0.55), lineWidth: 1.5)
                         )
                         .focused($focused)
                         .onSubmit(onSave)
                         .onAppear { focused = true }
-                    HStack {
+                    HStack(spacing: Spacing.lg) {
                         Button("Cancel", action: onCancel)
-                            .font(.labelLarge)
-                            .foregroundStyle(Color.appOnSurfaceVariant)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.appCaption)
                         Button("Save", action: onSave)
-                            .font(.labelLarge)
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Color.appPrimary)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
             } else {
-                Text(day.food.isEmpty ? "Tap to add meal" : day.food)
-                    .font(.bodyLarge)
-                    .foregroundStyle(
-                        day.food.isEmpty ? Color.appOnSurfaceVariant : Color.appOnSurface
-                    )
+                Text(day.food.isEmpty ? "No plan yet" : day.food)
+                    .font(.system(size: 15.5))
+                    .foregroundStyle(day.food.isEmpty ? Color.appCaption : Color.appOnSurface)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture(perform: onStartEdit)
                 Button(action: onStartEdit) {
                     Image(systemName: "pencil")
-                        .foregroundStyle(Color.appOnSurfaceVariant)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.appPrimary)
                 }
                 .accessibilityLabel("Edit \(day.day) meal")
             }
         }
-        .padding(.horizontal, Spacing.screenEdge)
-        .padding(.vertical, 14)
-        .background(Color.appSurface)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, 12)
+        .rowSurface(ghost: empty, cornerRadius: Radius.row)
     }
 }

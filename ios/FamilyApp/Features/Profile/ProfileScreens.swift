@@ -23,16 +23,24 @@ struct ProfileScreen: View {
                 heroCard
 
                 VStack(spacing: 0) {
-                    InfoRow(systemImage: "envelope.fill", label: "Email",
-                            value: displayValue(viewModel.user?.email))
-                    InfoRow(systemImage: "phone.fill", label: "Mobile",
-                            value: displayValue(viewModel.user?.mobile))
-                    InfoRow(systemImage: "birthday.cake.fill", label: "Birthday",
-                            value: formatBirthday(viewModel.user?.birthday))
+                    InfoRow(
+                        systemImage: "envelope.fill",
+                        label: "Email",
+                        value: displayValue(viewModel.user?.email)
+                    )
+                    InfoRow(
+                        systemImage: "phone.fill",
+                        label: "Mobile",
+                        value: displayValue(viewModel.user?.mobile)
+                    )
+                    InfoRow(
+                        systemImage: "birthday.cake.fill",
+                        label: "Birthday",
+                        value: formatBirthday(viewModel.user?.birthday)
+                    )
                 }
                 .padding(6)
-                .background(Color.appSurface)
-                .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+                .glassCard(cornerRadius: Radius.overviewCard)
 
                 ActionRow(systemImage: "pencil", label: "Edit profile", onTap: onEdit)
                 ActionRow(systemImage: "gearshape.fill", label: "Settings", onTap: onSettings)
@@ -44,9 +52,9 @@ struct ProfileScreen: View {
             }
             .padding(Spacing.screenEdge)
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .navigationTitle("Profile")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .resumeEffect { viewModel.refresh() }
         .confirmationDialog("Profile photo", isPresented: $showAvatarPicker, titleVisibility: .visible) {
             Button("Take photo") { showCamera = true }
@@ -89,15 +97,30 @@ struct ProfileScreen: View {
             .buttonStyle(.plain)
             .disabled(viewModel.isUploading)
 
-            Text(viewModel.user?.name ?? "")
-                .font(.headlineSmall.weight(.bold))
-                .foregroundStyle(.white)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(viewModel.user?.name ?? "")
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(viewModel.user?.email ?? "")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .lineLimit(1)
+            }
             Spacer()
         }
         .padding(Spacing.xxl)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Gradients.hero(dark: colorScheme == .dark))
-        .clipShape(RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.bigCard, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.bigCard, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5)
+        )
+        .shadow(
+            color: (colorScheme == .dark ? Color.black : Palette.indigo600).opacity(0.28),
+            radius: 16,
+            y: 10
+        )
     }
 
     private var avatarView: some View {
@@ -162,11 +185,11 @@ private struct InfoRow: View {
                 .foregroundStyle(Color.appPrimary)
                 .frame(width: 24)
             Text(label)
-                .font(.bodyMedium)
+                .font(.system(size: 14))
                 .foregroundStyle(Color.appOnSurfaceVariant)
             Spacer()
             Text(value)
-                .font(.titleMedium)
+                .font(.system(size: 14.5, weight: .semibold))
                 .foregroundStyle(Color.appOnSurface)
                 .lineLimit(1)
         }
@@ -186,15 +209,15 @@ private struct ActionRow: View {
                     .foregroundStyle(Color.appPrimary)
                     .frame(width: 24)
                 Text(label)
-                    .font(.titleMedium)
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.appOnSurface)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.appCaption)
             }
             .padding(18)
-            .background(Color.appSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .glassCard(cornerRadius: Radius.row)
         }
         .buttonStyle(PressScaleButtonStyle())
     }
@@ -219,15 +242,29 @@ struct ProfileEditScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
-                Text("Personal information")
-                    .font(.titleMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
-                FamilyTextField(label: "Full name *", text: $name, systemImage: "person",
-                                autocapitalization: .words)
-                FamilyTextField(label: "Email *", text: $email, systemImage: "envelope",
-                                keyboardType: .emailAddress, autocapitalization: .never)
-                FamilyTextField(label: "Mobile *", text: $mobile, systemImage: "phone",
-                                keyboardType: .phonePad)
+                Text("PERSONAL INFORMATION")
+                    .font(.sectionLabel)
+                    .tracking(0.6)
+                    .foregroundStyle(Color.appCaption)
+                FamilyTextField(
+                    label: "Full name *",
+                    text: $name,
+                    systemImage: "person",
+                    autocapitalization: .words
+                )
+                FamilyTextField(
+                    label: "Email *",
+                    text: $email,
+                    systemImage: "envelope",
+                    keyboardType: .emailAddress,
+                    autocapitalization: .never
+                )
+                FamilyTextField(
+                    label: "Mobile *",
+                    text: $mobile,
+                    systemImage: "phone",
+                    keyboardType: .phonePad
+                )
                 BirthdayPickerField(isoDate: $birthday, label: "Birthday *")
                 PrimaryButton(text: "Save changes", enabled: saveEnabled) {
                     viewModel.save(name: name, email: email, birthday: birthday, mobile: mobile)
@@ -237,7 +274,7 @@ struct ProfileEditScreen: View {
             }
             .padding(Spacing.lg)
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar("Edit profile")
         .onAppear {
             guard !seeded, let user = viewModel.user else { return }

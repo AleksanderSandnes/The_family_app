@@ -1,7 +1,8 @@
+@testable import FamilyApp
+
 // Shopping + meal pure-logic tests — mirror the label/date rules in
 // ShoppingScreens.kt / MealScreens.kt / MealViewModel.kt.
 import XCTest
-@testable import FamilyApp
 
 final class ShoppingLogicTests: XCTestCase {
     func testProgressLabelNoItems() {

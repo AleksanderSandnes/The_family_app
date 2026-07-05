@@ -15,12 +15,18 @@ final class FamilyViewModel {
     private(set) var isUploading = false
 
     /// Invite code captured from a deep link; FamilyScreen opens the join flow with it.
-    var pendingJoinCode: String? { repo.pendingJoinCode }
+    var pendingJoinCode: String? {
+        repo.pendingJoinCode
+    }
 
-    func consumePendingJoinCode() -> String? { repo.consumePendingJoinCode() }
+    func consumePendingJoinCode() -> String? {
+        repo.consumePendingJoinCode()
+    }
 
     private let repo = FamilyRepository.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    private var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
 
     init() {
         refresh()
@@ -48,7 +54,9 @@ final class FamilyViewModel {
         }
     }
 
-    func clearError() { error = nil }
+    func clearError() {
+        error = nil
+    }
 
     func createFamily(name: String, code: String) {
         Task {

@@ -29,19 +29,19 @@ struct ShoppingScreen: View {
                                 list: list,
                                 progress: viewModel.listProgress[list.id]
                             ) { onOpenList(list.id) }
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(
-                                top: 6, leading: Spacing.screenEdge,
-                                bottom: 6, trailing: Spacing.screenEdge
-                            ))
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    viewModel.deleteList(list)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(
+                                    top: 6, leading: Spacing.screenEdge,
+                                    bottom: 6, trailing: Spacing.screenEdge
+                                ))
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteList(list)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
-                            }
                         }
                     }
                     .listStyle(.plain)
@@ -53,7 +53,7 @@ struct ShoppingScreen: View {
 
             FloatingActionButton(text: "New list", systemImage: "plus") { showAdd = true }
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar("Shopping lists")
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
@@ -70,24 +70,68 @@ private struct ShoppingListRow: View {
     let progress: ListProgress?
     let onTap: () -> Void
 
+    private var fraction: Double {
+        guard let progress, progress.total > 0 else { return 0 }
+        return Double(progress.bought) / Double(progress.total)
+    }
+
+    private var allDone: Bool {
+        guard let progress else { return false }
+        return progress.total > 0 && progress.bought == progress.total
+    }
+
     var body: some View {
-        ListCard(onTap: onTap) {
-            Image(systemName: IconKeyMap.shoppingSymbol(list.icon))
-                .font(.system(size: 20))
-                .foregroundStyle(Color.appPrimary)
-                .frame(width: 44, height: 44)
-            Spacer().frame(width: Spacing.sm)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(list.title)
-                    .font(.titleMedium)
-                    .foregroundStyle(Color.appOnSurface)
-                Text(shoppingProgressLabel(progress))
-                    .font(.labelMedium)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+        Button(action: onTap) {
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    if allDone {
+                        RoundedRectangle(cornerRadius: Radius.badgeLarge, style: .continuous)
+                            .fill(Color.appSuccess.opacity(0.13))
+                            .frame(width: 44, height: 44)
+                            .overlay(Image(systemName: "checkmark")
+                                .font(.system(size: 19, weight: .bold))
+                                .foregroundStyle(Color.appSuccess))
+                    } else {
+                        FeatureBadge(
+                            systemImage: IconKeyMap.shoppingSymbol(list.icon),
+                            feature: .shopping,
+                            size: 44,
+                            cornerRadius: Radius.badgeLarge
+                        )
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(list.title)
+                            .font(.system(size: 15.5, weight: .semibold))
+                            .foregroundStyle(allDone ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                        Text(shoppingProgressLabel(progress))
+                            .font(.caption)
+                            .foregroundStyle(allDone ? Color.appSuccess : Color.appCaption)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.appCaption)
+                }
+                if !allDone, progress != nil {
+                    GlassProgressBar(value: fraction, tint: .appPrimary, height: 4)
+                }
             }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .foregroundStyle(Color.appOnSurfaceVariant)
+            .padding(Spacing.cardPadding)
+            .modifier(ListRowSurface(ghost: allDone))
+        }
+        .buttonStyle(PressScaleButtonStyle())
+    }
+}
+
+/// Glass for active surfaces, dashed ghost for completed ones (spec 2d).
+private struct ListRowSurface: ViewModifier {
+    let ghost: Bool
+    var cornerRadius: CGFloat = Radius.overviewCard
+    func body(content: Content) -> some View {
+        if ghost {
+            content.ghostSurface(cornerRadius: cornerRadius)
+        } else {
+            content.glassCard(cornerRadius: cornerRadius)
         }
     }
 }
@@ -104,9 +148,17 @@ struct ShoppingDetailScreen: View {
     @State private var showCompleted = true
     @State private var renameText = ""
 
-    private var active: [ShoppingItemModel] { viewModel.items.filter { !$0.checked } }
-    private var completed: [ShoppingItemModel] { viewModel.items.filter(\.checked) }
-    private var remaining: Int { active.count }
+    private var active: [ShoppingItemModel] {
+        viewModel.items.filter { !$0.checked }
+    }
+
+    private var completed: [ShoppingItemModel] {
+        viewModel.items.filter(\.checked)
+    }
+
+    private var remaining: Int {
+        active.count
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -157,18 +209,17 @@ struct ShoppingDetailScreen: View {
 
             addItemBar
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .featureTopBar(viewModel.selectedList?.title ?? "List")
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if !viewModel.items.isEmpty {
                     Text("\(remaining) left")
-                        .font(.labelMedium.weight(.semibold))
-                        .padding(.horizontal, Spacing.sm)
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .background(Color.appPrimaryContainer)
-                        .foregroundStyle(Color.appOnPrimaryContainer)
-                        .clipShape(Capsule())
+                        .background(Color.appPrimary.opacity(0.12), in: Capsule())
+                        .foregroundStyle(Color.appPrimary)
                 }
                 Menu {
                     Button("Rename list") {
@@ -212,27 +263,28 @@ struct ShoppingDetailScreen: View {
     }
 
     private var addItemBar: some View {
-        HStack(spacing: Spacing.sm) {
+        HStack(spacing: 10) {
             TextField("Add item…", text: $newItemText)
-                .font(.bodyLarge)
+                .font(.system(size: 16))
+                .tint(Color.appPrimary)
                 .padding(.horizontal, Spacing.lg)
-                .frame(minHeight: 48)
-                .overlay(
-                    Capsule().strokeBorder(Color.appOnSurface.opacity(0.45), lineWidth: 1)
-                )
+                .frame(height: 46)
+                .glassCard(cornerRadius: 23)
                 .onSubmit(addItem)
             Button(action: addItem) {
-                Image(systemName: "paperplane.fill")
-                    .foregroundStyle(
-                        newItemText.isEmpty ? Color.appOnSurfaceVariant : Color.appPrimary
-                    )
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 46, height: 46)
+                    .background(Color.appPrimary.opacity(newItemText.isEmpty ? 0.4 : 1), in: Circle())
+                    .shadow(color: Color.appPrimary.opacity(newItemText.isEmpty ? 0 : 0.35), radius: 8, y: 3)
             }
             .disabled(newItemText.isEmpty)
             .accessibilityLabel("Add item")
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
-        .background(Color.appSurface)
+        .background(.ultraThinMaterial)
     }
 
     private func addItem() {
@@ -243,8 +295,8 @@ struct ShoppingDetailScreen: View {
     }
 }
 
-private extension View {
-    func shoppingRowStyle() -> some View {
+extension View {
+    fileprivate func shoppingRowStyle() -> some View {
         listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(
@@ -262,20 +314,27 @@ private struct ShoppingItemRow: View {
     @FocusState private var editFocused: Bool
 
     var body: some View {
-        HStack(spacing: Spacing.sm) {
+        HStack(spacing: Spacing.md) {
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 viewModel.toggle(item)
             } label: {
-                Image(systemName: item.checked ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundStyle(item.checked ? Color.appPrimary : Color.appOnSurfaceVariant)
+                if item.checked {
+                    Circle().fill(Color.appPrimary)
+                        .frame(width: 24, height: 24)
+                        .overlay(Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold)).foregroundStyle(.white))
+                } else {
+                    Circle().strokeBorder(Color(hex: 0x9CA2BC), lineWidth: 1.8)
+                        .frame(width: 24, height: 24)
+                }
             }
             .buttonStyle(.plain)
 
             if isEditing {
                 TextField("Item", text: $editText)
-                    .font(.bodyLarge)
+                    .font(.system(size: 15.5))
+                    .tint(Color.appPrimary)
                     .focused($editFocused)
                     .onSubmit(commitEdit)
                     .onChange(of: editFocused) { _, focused in
@@ -283,8 +342,8 @@ private struct ShoppingItemRow: View {
                     }
             } else {
                 Text(item.item)
-                    .font(.bodyLarge)
-                    .foregroundStyle(item.checked ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                    .font(.system(size: 15.5))
+                    .foregroundStyle(item.checked ? Color(hex: 0xA6ACC4) : Color.appOnSurface)
                     .strikethrough(item.checked)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
@@ -295,10 +354,9 @@ private struct ShoppingItemRow: View {
                     }
             }
         }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, 10)
-        .background(Color.appSurface)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, 12)
+        .modifier(ListRowSurface(ghost: item.checked, cornerRadius: Radius.row))
     }
 
     private func commitEdit() {
@@ -319,12 +377,14 @@ private struct CompletedHeader: View {
     var body: some View {
         Button(action: onToggle) {
             HStack {
-                Text("Completed (\(count))")
-                    .font(.labelLarge)
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                Text("Completed (\(count))".uppercased())
+                    .font(.sectionLabel)
+                    .tracking(0.6)
+                    .foregroundStyle(Color.appCaption)
                 Spacer()
                 Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.appCaption)
             }
             .padding(.horizontal, Spacing.sm)
             .padding(.vertical, 6)
@@ -336,28 +396,18 @@ private struct CompletedHeader: View {
 
 // MARK: - Shared pieces (also used by meals)
 
-/// Extended floating action button — parity with Android's AppFab.
+/// Extended floating action button — Liquid Glass FAB (solid accent capsule + glow),
+/// positioned above the floating tab bar. Shared by shopping, meals, etc.
 struct FloatingActionButton: View {
     let text: String
-    let systemImage: String
+    var systemImage = "plus"
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: systemImage)
-                Text(text)
-                    .font(.titleMedium)
-            }
-            .foregroundStyle(Color.appOnPrimary)
-            .padding(.horizontal, Spacing.xl)
-            .frame(minHeight: 56)
-            .background(Color.appPrimary)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.button, style: .continuous))
-            .shadow(color: .black.opacity(0.2), radius: Elevation.raised, y: 3)
-        }
-        .padding(Spacing.screenEdge)
-        .accessibilityLabel(text)
+        GlassFAB(label: text, systemImage: systemImage, action: action)
+            .padding(.trailing, 16)
+            .padding(.bottom, 90)
+            .accessibilityLabel(text)
     }
 }
 
@@ -369,38 +419,28 @@ struct IconPickerSheet: View {
     let symbolFor: (String) -> String
     let onPick: (String) -> Void
 
-    private let columns = Array(repeating: GridItem(.flexible()), count: 4)
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
-            Text(title)
-                .font(.titleLarge)
-                .foregroundStyle(Color.appOnSurface)
-                .padding(.top, Spacing.xxl)
-            LazyVGrid(columns: columns, spacing: Spacing.md) {
-                ForEach(options, id: \.self) { key in
-                    Button {
-                        onPick(key)
-                    } label: {
-                        Image(systemName: symbolFor(key))
-                            .font(.system(size: 22))
-                            .foregroundStyle(
-                                key == selected ? Color.appOnPrimary : Color.appPrimary
-                            )
-                            .frame(width: 56, height: 56)
-                            .background(
-                                key == selected ? Color.appPrimary : Color.appPrimaryContainer
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
-                    }
+            ZStack {
+                Text(title)
+                    .font(.pushedTitle)
+                    .foregroundStyle(Color.appOnSurface)
+                HStack {
+                    Button("Cancel") { dismiss() }
+                        .font(.system(size: 17))
+                        .foregroundStyle(Color.appPrimary)
+                    Spacer()
                 }
             }
-            .padding(.horizontal, Spacing.screenEdge)
-            Spacer()
+            IconGrid(options: options, selected: selected, symbolFor: symbolFor, onPick: onPick)
+            Spacer(minLength: 0)
         }
-        .presentationDetents([.medium])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
+        .padding(.bottom, Spacing.lg)
+        .glassSheet(detents: [.medium])
     }
 }
 
@@ -412,44 +452,30 @@ private struct NewListSheet: View {
     @State private var title = ""
     @State private var selectedIcon = "shopping_cart"
 
-    private let columns = Array(repeating: GridItem(.flexible()), count: 4)
+    private var canCreate: Bool {
+        !title.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            Text("New shopping list")
-                .font(.titleLarge)
-                .foregroundStyle(Color.appOnSurface)
-                .padding(.top, Spacing.xxl)
-            FamilyTextField(label: "List name", text: $title, systemImage: "cart")
-            SectionHeader(text: "Icon")
-            LazyVGrid(columns: columns, spacing: Spacing.md) {
-                ForEach(IconOptions.shopping, id: \.self) { key in
-                    Button {
-                        selectedIcon = key
-                    } label: {
-                        Image(systemName: IconKeyMap.shoppingSymbol(key))
-                            .font(.system(size: 22))
-                            .foregroundStyle(
-                                key == selectedIcon ? Color.appOnPrimary : Color.appPrimary
-                            )
-                            .frame(width: 56, height: 56)
-                            .background(
-                                key == selectedIcon ? Color.appPrimary : Color.appPrimaryContainer
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
-                    }
-                }
-            }
-            Spacer()
-            PrimaryButton(text: "Create", enabled: !title.trimmingCharacters(in: .whitespaces).isEmpty) {
+            SheetHeader(title: "New list", confirmTitle: "Create", confirmEnabled: canCreate) {
+                dismiss()
+            } onConfirm: {
                 onCreate(title.trimmingCharacters(in: .whitespaces), selectedIcon)
                 dismiss()
             }
+            GlassField(systemImage: "cart", placeholder: "List name", text: $title)
+            SectionHeader(text: "Icon")
+            IconGrid(
+                options: IconOptions.shopping,
+                selected: selectedIcon,
+                symbolFor: IconKeyMap.shoppingSymbol
+            ) { selectedIcon = $0 }
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.lg)
-        .presentationDetents([.large])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
+        .glassSheet(detents: [.medium])
     }
 }

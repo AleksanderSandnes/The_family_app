@@ -27,10 +27,16 @@ enum Tab: Hashable {
 
 enum DeepLinkURL {
     static func invite(code: String) -> URL {
-        URL(string: "familyapp://join?code=\(code)")!
+        guard let url = URL(string: "familyapp://join?code=\(code)") else {
+            preconditionFailure("Invalid invite deep-link URL for code: \(code)")
+        }
+        return url
     }
 
     static func chat(conversationId: String) -> URL {
-        URL(string: "familyapp://chat/\(conversationId)")!
+        guard let url = URL(string: "familyapp://chat/\(conversationId)") else {
+            preconditionFailure("Invalid chat deep-link URL for conversation: \(conversationId)")
+        }
+        return url
     }
 }

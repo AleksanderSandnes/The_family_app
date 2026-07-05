@@ -22,21 +22,20 @@ struct ListCard<Content: View>: View {
         HStack(spacing: 0) { content() }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Spacing.cardPadding)
-            .background(Color.appSurface)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
-            .shadow(color: .black.opacity(0.06), radius: Elevation.resting, y: 1)
+            .glassCard(cornerRadius: Radius.row)
     }
 }
 
-/// Muted uppercase section label (settings groups, list sections).
+/// Muted uppercase section label (settings groups, list sections). 12/700, tracked.
 struct SectionHeader: View {
     let text: String
 
     var body: some View {
         Text(text.uppercased())
-            .font(.labelMedium.weight(.semibold))
-            .foregroundStyle(Color.appOnSurfaceVariant)
-            .padding(.horizontal, Spacing.xs)
+            .font(.sectionLabel)
+            .tracking(0.6)
+            .foregroundStyle(Color.appCaption)
+            .padding(.horizontal, 6) // indents to ~22px with the 16px screen edge
             .padding(.vertical, Spacing.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
     }

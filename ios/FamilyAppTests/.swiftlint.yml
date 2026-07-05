@@ -1,0 +1,10 @@
+# SwiftLint overrides for the TEST target only.
+# SwiftLint auto-merges this with the root .swiftlint.yml for files under
+# ios/FamilyAppTests/. We relax a few rules that are idiomatic in XCTest code so
+# the root config can stay strict for production code without drowning tests in
+# noise. (38 of the codebase's ~49 force-unwraps live in fixtures/assertions.)
+disabled_rules:
+  - force_unwrapping        # `try XCTUnwrap` aside, `let x = decode()!` in a test fails loudly and readably — that's fine in tests
+  - function_body_length    # table-driven test methods legitimately run long
+  - type_body_length        # a test case class accumulates many `func test...`
+  - file_length             # ...and many cases per file

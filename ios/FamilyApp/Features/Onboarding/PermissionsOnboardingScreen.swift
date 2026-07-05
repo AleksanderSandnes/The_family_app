@@ -10,7 +10,9 @@ private struct PermissionCard: Identifiable {
     let title: String
     let subtitle: String
 
-    var id: String { title }
+    var id: String {
+        title
+    }
 }
 
 private let permissionCards: [PermissionCard] = [
@@ -53,11 +55,14 @@ struct PermissionsOnboardingScreen: View {
                     Text("Before we start")
                         .font(.headlineMedium)
                         .foregroundStyle(Color.appOnBackground)
-                    Text("The Family App works best with a couple of permissions. You stay in control — everything can be changed later in Settings.")
-                        .font(.bodyMedium)
-                        .foregroundStyle(Color.appOnSurfaceVariant)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, Spacing.lg)
+                    Text(
+                        "The Family App works best with a couple of permissions. You stay in control — "
+                            + "everything can be changed later in Settings."
+                    )
+                    .font(.bodyMedium)
+                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.lg)
 
                     VStack(spacing: Spacing.cardGap) {
                         ForEach(permissionCards) { card in

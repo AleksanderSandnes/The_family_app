@@ -26,7 +26,9 @@ final class ShoppingViewModel {
     private(set) var listProgress: [String: ListProgress] = [:]
 
     private let repo = FamilyRepository.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    private var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
 
     private let listsObserver = RealtimeObserver()
     private let itemsObserver = RealtimeObserver()
@@ -72,14 +74,14 @@ final class ShoppingViewModel {
 
         let result: [ShoppingListModel]
         if let familyId {
-            let fetched: [ShoppingListModel] = (try? await client.from("shopping_lists")
+            let fetched: [ShoppingListModel] = await (try? client.from("shopping_lists")
                 .select()
                 .or("owner_user_id.eq.\(userId),family_id.eq.\(familyId)")
                 .execute()
                 .value) ?? lists
             result = fetched.filter { $0.familyId == nil || $0.familyId == familyId }
         } else {
-            let fetched: [ShoppingListModel] = (try? await client.from("shopping_lists")
+            let fetched: [ShoppingListModel] = await (try? client.from("shopping_lists")
                 .select()
                 .eq("owner_user_id", value: userId)
                 .execute()
@@ -134,18 +136,18 @@ final class ShoppingViewModel {
 
     /// Pure data reload for the detail screen — no subscribe.
     private func reloadItems(listId: String) async {
-        async let listFetch: [ShoppingListModel]? = try? client.from("shopping_lists")
+        async let listFetch: [ShoppingListModel] = (try? client.from("shopping_lists")
             .select()
             .eq("id", value: listId)
             .execute()
-            .value
-        async let itemsFetch: [ShoppingItemModel]? = try? client.from("shopping_items")
+            .value) ?? []
+        async let itemsFetch: [ShoppingItemModel] = (try? client.from("shopping_items")
             .select()
             .eq("list_id", value: listId)
             .execute()
-            .value
-        if let list = await listFetch?.first { selectedList = list }
-        if let fetched = await itemsFetch { items = fetched }
+            .value) ?? []
+        if let list = await listFetch.first { selectedList = list }
+        items = await itemsFetch
     }
 
     /// Subscribe to the items channel at most once per listId.

@@ -12,7 +12,10 @@ final class BirthdayViewModel {
     private(set) var isLoading = false
 
     private let repo = FamilyRepository.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    private var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
+
     private let observer = RealtimeObserver()
     private var subscribedFamilyId: String?
     private var familyChangedTask: Task<Void, Never>?
@@ -47,14 +50,14 @@ final class BirthdayViewModel {
 
         let result: [BirthdayModel]
         if let familyId = user.familyId {
-            let fetched: [BirthdayModel] = (try? await client.from("birthdays")
+            let fetched: [BirthdayModel] = await (try? client.from("birthdays")
                 .select()
                 .or("made_by_user_id.eq.\(userId),family_id.eq.\(familyId)")
                 .execute()
                 .value) ?? birthdays
             result = fetched.filter { $0.familyId == nil || $0.familyId == familyId }
         } else {
-            result = (try? await client.from("birthdays")
+            result = await (try? client.from("birthdays")
                 .select()
                 .eq("made_by_user_id", value: userId)
                 .execute()

@@ -12,11 +12,17 @@ struct YearMonth: Hashable, Comparable {
         YearMonth(year: date.year, month: date.month)
     }
 
-    static func now() -> YearMonth { .of(.today()) }
+    static func now() -> YearMonth {
+        .of(.today())
+    }
 
-    var lengthOfMonth: Int { LocalDate.daysIn(month: month, year: year) }
+    var lengthOfMonth: Int {
+        LocalDate.daysIn(month: month, year: year)
+    }
 
-    func atDay(_ day: Int) -> LocalDate { LocalDate(year: year, month: month, day: day) }
+    func atDay(_ day: Int) -> LocalDate {
+        LocalDate(year: year, month: month, day: day)
+    }
 
     func plusMonths(_ count: Int) -> YearMonth {
         let zeroBased = year * 12 + (month - 1) + count
@@ -26,8 +32,20 @@ struct YearMonth: Hashable, Comparable {
 
     /// "MMMM yyyy" English — mirrors MONTH_YEAR_FMT.
     var formatted: String {
-        let months = ["January", "February", "March", "April", "May", "June", "July",
-                      "August", "September", "October", "November", "December"]
+        let months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
         return "\(months[month - 1]) \(year)"
     }
 
@@ -66,7 +84,10 @@ final class CalendarViewModel {
     }
 
     private let repo = FamilyRepository.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    private var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
+
     private let observer = RealtimeObserver()
     private var subscribedFamilyId: String?
     private var familyChangedTask: Task<Void, Never>?
@@ -100,14 +121,14 @@ final class CalendarViewModel {
 
         let result: [CalendarEventModel]
         if let familyId = user.familyId {
-            let fetched: [CalendarEventModel] = (try? await client.from("calendar_events")
+            let fetched: [CalendarEventModel] = await (try? client.from("calendar_events")
                 .select()
                 .or("user_id.eq.\(userId),family_id.eq.\(familyId)")
                 .execute()
                 .value) ?? events
             result = fetched.filter { $0.familyId == nil || $0.familyId == familyId }
         } else {
-            let fetched: [CalendarEventModel] = (try? await client.from("calendar_events")
+            let fetched: [CalendarEventModel] = await (try? client.from("calendar_events")
                 .select()
                 .eq("user_id", value: userId)
                 .execute()
@@ -136,9 +157,13 @@ final class CalendarViewModel {
         displayedMonth = .of(date)
     }
 
-    func nextMonth() { displayedMonth = displayedMonth.plusMonths(1) }
+    func nextMonth() {
+        displayedMonth = displayedMonth.plusMonths(1)
+    }
 
-    func prevMonth() { displayedMonth = displayedMonth.plusMonths(-1) }
+    func prevMonth() {
+        displayedMonth = displayedMonth.plusMonths(-1)
+    }
 
     // MARK: - Mutations
 
@@ -216,7 +241,9 @@ func monthCells(_ month: YearMonth) -> [LocalDate?] {
     for day in 1...month.lengthOfMonth {
         cells.append(month.atDay(day))
     }
-    while cells.count % 7 != 0 { cells.append(nil) }
+    while !cells.count.isMultiple(of: 7) {
+        cells.append(nil)
+    }
     return cells
 }
 
@@ -246,7 +273,7 @@ func eventTimeLabel(_ event: CalendarEventModel) -> String {
 
 /// "EEEE, d MMMM" English — mirrors SECTION_DATE_FMT.
 func sectionDateLabel(_ date: LocalDate) -> String {
-    let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86_400)
+    let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
     let formatter = DateFormatter()
     formatter.dateFormat = "EEEE, d MMMM"
     formatter.locale = Locale(identifier: "en_US_POSIX")

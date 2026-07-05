@@ -11,7 +11,7 @@ struct ChatScreen: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             Group {
-                if viewModel.isLoading && viewModel.conversations.isEmpty {
+                if viewModel.isLoading, viewModel.conversations.isEmpty {
                     LoadingState().frame(maxHeight: .infinity, alignment: .top)
                 } else if viewModel.conversations.isEmpty {
                     EmptyState(
@@ -26,9 +26,9 @@ struct ChatScreen: View {
                                 preview: preview,
                                 currentUserId: viewModel.currentUserId ?? ""
                             ) { onOpen(preview.conversation.id) }
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
                         }
                     }
                     .listStyle(.plain)
@@ -37,24 +37,20 @@ struct ChatScreen: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            Button {
-                showMemberPicker = true
-            } label: {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color.appOnPrimary)
-                    .frame(width: 56, height: 56)
-                    .background(Color.appPrimary)
-                    .clipShape(Circle())
-                    .shadow(color: .black.opacity(0.2), radius: Elevation.raised, y: 3)
-            }
-            .padding(Spacing.screenEdge)
-            .accessibilityLabel("New conversation")
         }
-        .background(Color.appBackground)
+        .ambientBackground()
         .navigationTitle("Chats")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showMemberPicker = true
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .accessibilityLabel("New conversation")
+                }
+            }
+        }
         .onChange(of: viewModel.navigateToConversation) { _, newId in
             guard let newId else { return }
             viewModel.navigateToConversation = nil
@@ -96,16 +92,14 @@ private struct ConversationRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack {
                         Text(displayName)
-                            .font(.titleMedium.weight(isUnread ? .bold : .regular))
+                            .font(.system(size: 15.5, weight: isUnread ? .bold : .medium))
                             .foregroundStyle(Color.appOnSurface)
                             .lineLimit(1)
                         Spacer()
                         if let last = preview.lastMessage {
                             Text(relativeTime(last.sentAt))
-                                .font(.labelMedium)
-                                .foregroundStyle(
-                                    isUnread ? Color.appPrimary : Color.appOnSurface.opacity(0.5)
-                                )
+                                .font(.system(size: 12, weight: isUnread ? .semibold : .regular))
+                                .foregroundStyle(isUnread ? Color.appPrimary : Color.appCaption)
                         }
                     }
                     HStack {
@@ -113,20 +107,18 @@ private struct ConversationRow: View {
                             lastMessage: preview.lastMessage,
                             lastSenderName: preview.lastSenderName
                         ))
-                        .font(.bodyMedium.weight(isUnread ? .medium : .regular))
-                        .foregroundStyle(
-                            isUnread ? Color.appOnSurface : Color.appOnSurface.opacity(0.55)
-                        )
+                        .font(.system(size: 13, weight: isUnread ? .medium : .regular))
+                        .foregroundStyle(isUnread ? Color.appOnSurface : Color.appCaption)
                         .lineLimit(1)
                         Spacer()
                         if isUnread {
                             Text(preview.unreadCount > 99 ? "99+" : "\(preview.unreadCount)")
-                                .font(.labelMedium.weight(.semibold))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(Color.appPrimary)
-                                .foregroundStyle(Color.appOnPrimary)
-                                .clipShape(Capsule())
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(minWidth: 20)
+                                .padding(.horizontal, 6)
+                                .frame(height: 20)
+                                .background(Color.appPrimary, in: Capsule())
                                 .accessibilityLabel("\(preview.unreadCount) unread messages")
                         }
                     }
@@ -134,8 +126,7 @@ private struct ConversationRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(Color.appSurface)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
+            .glassCard(cornerRadius: Radius.row)
         }
         .buttonStyle(.plain)
     }
@@ -157,23 +148,34 @@ struct NewConversationSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("New conversation")
-                .font(.titleLarge)
-                .foregroundStyle(Color.appOnSurface)
-                .padding(.top, Spacing.xxl)
-            if selected.count > 1 {
-                FamilyTextField(label: "Group name (optional)", text: $name)
-            }
+        VStack(spacing: 0) {
+            SheetHeader(
+                title: "New conversation",
+                confirmTitle: selected.count > 1 ? "Create group" : "Start chat",
+                confirmEnabled: !selected.isEmpty,
+                onCancel: { dismiss() },
+                onConfirm: {
+                    onCreate(name, Array(selected))
+                    dismiss()
+                }
+            )
+            .padding(.horizontal, Spacing.screenEdge)
+            .padding(.vertical, Spacing.lg)
+
             if candidates.isEmpty {
                 EmptyState(
                     systemImage: "person.2",
                     title: "No family members",
                     subtitle: "Invite your family first to start chatting."
                 )
+                Spacer()
             } else {
                 ScrollView {
-                    VStack(spacing: Spacing.xs) {
+                    VStack(spacing: Spacing.sm) {
+                        if selected.count > 1 {
+                            GlassField(placeholder: "Group name (optional)", text: $name)
+                                .padding(.bottom, Spacing.xs)
+                        }
                         ForEach(candidates) { member in
                             MemberSelectRow(member: member, selected: selected.contains(member.id)) {
                                 if selected.contains(member.id) {
@@ -184,19 +186,12 @@ struct NewConversationSheet: View {
                             }
                         }
                     }
+                    .padding(.horizontal, Spacing.screenEdge)
+                    .padding(.bottom, Spacing.lg)
                 }
             }
-            Spacer()
-            PrimaryButton(text: selected.count > 1 ? "Create group" : "Start chat", enabled: !selected.isEmpty) {
-                onCreate(name, Array(selected))
-                dismiss()
-            }
         }
-        .padding(.horizontal, Spacing.screenEdge)
-        .padding(.bottom, Spacing.lg)
-        .presentationDetents([.large])
-        .presentationCornerRadius(Radius.sheet)
-        .background(Color.appBackground)
+        .glassSheet(detents: [.large, .medium])
     }
 }
 
@@ -210,14 +205,16 @@ struct MemberSelectRow: View {
             HStack(spacing: Spacing.md) {
                 InitialAvatar(user: member, size: 40)
                 Text(member.name)
-                    .font(.bodyLarge)
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Color.appOnSurface)
                 Spacer()
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(selected ? Color.appPrimary : Color.appOnSurfaceVariant)
+                    .foregroundStyle(selected ? Color.appPrimary : Color.appCaption)
             }
-            .padding(.vertical, Spacing.sm)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, 12)
+            .rowSurface(ghost: false, cornerRadius: Radius.row)
         }
         .buttonStyle(.plain)
     }

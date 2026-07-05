@@ -29,6 +29,18 @@ enum Radius {
     static let field: CGFloat = 16
     static let button: CGFloat = 18
     static let sheet: CGFloat = 28
+
+    // ── Liquid Glass scale (1c) ───────────────────────────────────────────────
+    static let badge: CGFloat = 12 // icon badges (12–14)
+    static let badgeLarge: CGFloat = 14
+    static let row: CGFloat = 20 // list rows / grid tiles / bubbles
+    static let overviewCard: CGFloat = 22 // overview cards
+    static let bigCard: CGFloat = 26 // family card, month grid, hero, meal-week header
+    static let tabBar: CGFloat = 33 // floating tab bar
+    static let fab: CGFloat = 26 // extended FAB (h52)
+    static let segment: CGFloat = 14 // segmented control track
+    static let segmentThumb: CGFloat = 11
+    static let menu: CGFloat = 18 // ⋯ popover menus
 }
 
 /// Two-level elevation scale (shadow radii for resting surfaces and raised elements).
@@ -39,6 +51,6 @@ enum Elevation {
 
 /// Motion duration tokens (seconds — SwiftUI convention).
 enum Motion {
-    static let slide: Double = 0.30
-    static let fade: Double = 0.20
+    static let slide = 0.30
+    static let fade = 0.20
 }

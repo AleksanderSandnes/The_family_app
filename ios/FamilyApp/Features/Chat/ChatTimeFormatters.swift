@@ -2,9 +2,9 @@
 // unit-tested; `now` is injectable for tests.
 import Foundation
 
-private let minuteMs: Int64 = 60_000
-private let hourMs: Int64 = 3_600_000
-private let dayMs: Int64 = 86_400_000
+private let minuteMs: Int64 = 60000
+private let hourMs: Int64 = 3600000
+private let dayMs: Int64 = 86400000
 private let presenceActiveNowMinutes: Int64 = 2
 private let messageGroupGapMs: Int64 = 10 * minuteMs
 

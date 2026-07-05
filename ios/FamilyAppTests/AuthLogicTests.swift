@@ -1,6 +1,7 @@
+@testable import FamilyApp
+
 // Auth pure-logic tests — mirror the Android AuthViewModel validation/mapping rules.
 import XCTest
-@testable import FamilyApp
 
 final class AuthLogicTests: XCTestCase {
     // MARK: passwordStrength (mirrors passwordStrength in AuthScreens.kt)
@@ -51,7 +52,9 @@ final class AuthLogicTests: XCTestCase {
 
     private struct FakeError: LocalizedError {
         let message: String
-        var errorDescription: String? { message }
+        var errorDescription: String? {
+            message
+        }
     }
 
     private func map(_ raw: String, isLogin: Bool = true) -> String {

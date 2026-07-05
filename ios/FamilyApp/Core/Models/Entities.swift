@@ -3,20 +3,20 @@
 import Foundation
 
 struct UserModel: Codable, Identifiable, Hashable {
-    var id: String = ""
+    var id = ""
     var authId: String?
-    var name: String = ""
-    var email: String = ""
-    var birthday: String = ""
-    var mobile: String = ""
+    var name = ""
+    var email = ""
+    var birthday = ""
+    var mobile = ""
     var familyId: String?
-    var avatarColor: Int = 0
+    var avatarColor = 0
     var avatarUrl: String?
     var lastActiveAt: String?
     // Server mirror of the client notification settings, so server-side push
     // (daily reminders) can honour each user's preference.
-    var notificationsEnabled: Bool = true
-    var notifyDaysBefore: Int = 1
+    var notificationsEnabled = true
+    var notifyDaysBefore = 1
 
     enum CodingKeys: String, CodingKey {
         case id, name, email, birthday, mobile
@@ -31,9 +31,9 @@ struct UserModel: Codable, Identifiable, Hashable {
 }
 
 struct FamilyModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var name: String = ""
-    var joinCode: String = ""
+    var id = ""
+    var name = ""
+    var joinCode = ""
     var adminId: String?
     var photoUrl: String?
 
@@ -46,11 +46,11 @@ struct FamilyModel: Codable, Identifiable, Hashable {
 }
 
 struct ShoppingListModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var title: String = ""
-    var ownerUserId: String = ""
+    var id = ""
+    var title = ""
+    var ownerUserId = ""
     var familyId: String?
-    var icon: String = "shopping_cart"
+    var icon = "shopping_cart"
 
     enum CodingKeys: String, CodingKey {
         case id, title, icon
@@ -60,10 +60,10 @@ struct ShoppingListModel: Codable, Identifiable, Hashable {
 }
 
 struct ShoppingItemModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var listId: String = ""
-    var item: String = ""
-    var checked: Bool = false
+    var id = ""
+    var listId = ""
+    var item = ""
+    var checked = false
 
     enum CodingKeys: String, CodingKey {
         case id, item, checked
@@ -72,13 +72,13 @@ struct ShoppingItemModel: Codable, Identifiable, Hashable {
 }
 
 struct MealPlanModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var familyId: String = ""
-    var fromDate: String = ""
-    var toDate: String = ""
-    var week: Int = 0
-    var name: String = ""
-    var icon: String = "restaurant"
+    var id = ""
+    var familyId = ""
+    var fromDate = ""
+    var toDate = ""
+    var week = 0
+    var name = ""
+    var icon = "restaurant"
 
     enum CodingKeys: String, CodingKey {
         case id, week, name, icon
@@ -89,11 +89,11 @@ struct MealPlanModel: Codable, Identifiable, Hashable {
 }
 
 struct MealPlanDayModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var mealPlanId: String = ""
-    var day: String = ""
-    var date: String = ""
-    var food: String = ""
+    var id = ""
+    var mealPlanId = ""
+    var day = ""
+    var date = ""
+    var food = ""
 
     enum CodingKeys: String, CodingKey {
         case id, day, date, food
@@ -102,16 +102,16 @@ struct MealPlanDayModel: Codable, Identifiable, Hashable {
 }
 
 struct CalendarEventModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var userId: String = ""
+    var id = ""
+    var userId = ""
     var familyId: String?
-    var dateFrom: String = ""
-    var dateTo: String = ""
-    var timeFrom: String = ""
-    var timeTo: String = ""
-    var activity: String = ""
-    var allDay: Bool = false
-    var icon: String = "schedule"
+    var dateFrom = ""
+    var dateTo = ""
+    var timeFrom = ""
+    var timeTo = ""
+    var activity = ""
+    var allDay = false
+    var icon = "schedule"
 
     enum CodingKeys: String, CodingKey {
         case id, activity, icon
@@ -126,12 +126,12 @@ struct CalendarEventModel: Codable, Identifiable, Hashable {
 }
 
 struct BirthdayModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var name: String = ""
-    var date: String = ""
+    var id = ""
+    var name = ""
+    var date = ""
     var familyId: String?
     var userId: String?
-    var madeByUserId: String = ""
+    var madeByUserId = ""
 
     enum CodingKeys: String, CodingKey {
         case id, name, date
@@ -142,13 +142,13 @@ struct BirthdayModel: Codable, Identifiable, Hashable {
 }
 
 struct WishlistModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var ownerUserId: String = ""
+    var id = ""
+    var ownerUserId = ""
     var familyId: String?
-    var name: String = ""
-    var icon: String = "card_giftcard"
-    // Not a DB column (Kotlin @Transient) — resolved client-side from family members.
-    var ownerName: String = ""
+    var name = ""
+    var icon = "card_giftcard"
+    /// Not a DB column (Kotlin @Transient) — resolved client-side from family members.
+    var ownerName = ""
 
     enum CodingKeys: String, CodingKey {
         case id, name, icon
@@ -158,11 +158,11 @@ struct WishlistModel: Codable, Identifiable, Hashable {
 }
 
 struct WishModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var wishlistId: String = ""
-    var userId: String = ""
-    var text: String = ""
-    var checked: Bool = false
+    var id = ""
+    var wishlistId = ""
+    var userId = ""
+    var text = ""
+    var checked = false
     var link: String?
     var price: String?
     var imageUrl: String?
@@ -176,10 +176,10 @@ struct WishModel: Codable, Identifiable, Hashable {
 }
 
 struct WishReservationModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var wishId: String = ""
-    var reservedBy: String = ""
-    var createdAt: String = ""
+    var id = ""
+    var wishId = ""
+    var reservedBy = ""
+    var createdAt = ""
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -190,10 +190,10 @@ struct WishReservationModel: Codable, Identifiable, Hashable {
 }
 
 struct ConversationModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var userFrom: String = ""
+    var id = ""
+    var userFrom = ""
     var userTo: String?
-    var name: String = ""
+    var name = ""
     var familyId: String?
     var imageUri: String?
 
@@ -207,12 +207,12 @@ struct ConversationModel: Codable, Identifiable, Hashable {
 }
 
 struct UserLocationModel: Codable, Hashable {
-    var userId: String = ""
+    var userId = ""
     var familyId: String?
     var lat: Double = 0
     var lng: Double = 0
-    var displayName: String = ""
-    var visible: Bool = false
+    var displayName = ""
+    var visible = false
     var updatedAt: String?
 
     enum CodingKeys: String, CodingKey {
@@ -225,10 +225,10 @@ struct UserLocationModel: Codable, Hashable {
 }
 
 struct ConversationParticipantModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var conversationId: String = ""
-    var userId: String = ""
-    var joinedAt: String = ""
+    var id = ""
+    var conversationId = ""
+    var userId = ""
+    var joinedAt = ""
     var lastReadAt: String?
 
     enum CodingKeys: String, CodingKey {
@@ -241,13 +241,13 @@ struct ConversationParticipantModel: Codable, Identifiable, Hashable {
 }
 
 struct MessageModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var conversationId: String = ""
-    var userFrom: String = ""
-    var text: String = ""
-    var sentAt: String = ""
+    var id = ""
+    var conversationId = ""
+    var userFrom = ""
+    var text = ""
+    var sentAt = ""
     var replyToId: String?
-    var messageType: String = "text"
+    var messageType = "text"
     var mediaUrl: String?
 
     enum CodingKeys: String, CodingKey {
@@ -262,12 +262,12 @@ struct MessageModel: Codable, Identifiable, Hashable {
 }
 
 struct MessageReactionModel: Codable, Identifiable, Hashable {
-    var id: String = ""
-    var messageId: String = ""
-    var conversationId: String = ""
-    var userId: String = ""
-    var emoji: String = ""
-    var createdAt: String = ""
+    var id = ""
+    var messageId = ""
+    var conversationId = ""
+    var userId = ""
+    var emoji = ""
+    var createdAt = ""
 
     enum CodingKeys: String, CodingKey {
         case id, emoji
@@ -286,5 +286,7 @@ struct ConversationWithPreview: Identifiable, Hashable {
     var unreadCount: Int
     var participants: [UserModel]
 
-    var id: String { conversation.id }
+    var id: String {
+        conversation.id
+    }
 }

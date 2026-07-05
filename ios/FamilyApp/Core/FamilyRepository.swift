@@ -22,7 +22,11 @@ final class FamilyRepository {
     static let shared = FamilyRepository()
 
     let session = SessionStore.shared
-    private var client: SupabaseClient { SupabaseClientProvider.client }
+    /// Internal (not private) so the `+Settings` / `+Chat` extensions in sibling files
+    /// can reach it.
+    var client: SupabaseClient {
+        SupabaseClientProvider.client
+    }
 
     private init() {}
 
@@ -54,7 +58,9 @@ final class FamilyRepository {
     /// once the user is signed in.
     private(set) var pendingJoinCode: String?
 
-    func setPendingJoinCode(_ code: String) { pendingJoinCode = code }
+    func setPendingJoinCode(_ code: String) {
+        pendingJoinCode = code
+    }
 
     func consumePendingJoinCode() -> String? {
         defer { pendingJoinCode = nil }
@@ -70,48 +76,6 @@ final class FamilyRepository {
             .update(["last_active_at": AnyJSON.string(isoNow())])
             .eq("id", value: userId)
             .execute()
-    }
-
-    // MARK: - Settings mirrors (server copy of notification prefs)
-
-    func setThemeMode(_ mode: ThemeMode) { session.setThemeMode(mode) }
-
-    func setNotificationsEnabled(_ enabled: Bool) async {
-        session.setNotificationsEnabled(enabled)
-        await updateUserNotificationPrefs(enabled: enabled, days: nil)
-    }
-
-    func setNotifyDaysBefore(_ days: Int) async {
-        session.setNotifyDaysBefore(days)
-        await updateUserNotificationPrefs(enabled: nil, days: days)
-    }
-
-    func setLocationVisible(_ visible: Bool) { session.setLocationVisible(visible) }
-
-    func setPermissionsRequested() { session.setPermissionsRequested() }
-
-    /// Mirrors the client notification settings onto the user's row so the server-side
-    /// daily-reminders function can honour them. UserDefaults stays the UI source of truth.
-    private func updateUserNotificationPrefs(enabled: Bool?, days: Int?) async {
-        guard let userId = session.currentUserId else { return }
-        var values: [String: AnyJSON] = [:]
-        if let enabled { values["notifications_enabled"] = .bool(enabled) }
-        if let days { values["notify_days_before"] = .integer(days) }
-        guard !values.isEmpty else { return }
-        do {
-            try await client.from("users").update(values).eq("id", value: userId).execute()
-            invalidateUserCache()
-        } catch {
-            // Best-effort mirror, same as Android's runCatching.
-        }
-    }
-
-    /// Pushes the current stored notification settings to the server once after sign-in.
-    func syncNotificationPrefsToServer() async {
-        await updateUserNotificationPrefs(
-            enabled: session.notificationsEnabled,
-            days: session.notifyDaysBefore
-        )
     }
 
     // MARK: - Push tokens (FCM) — wired up fully in the push phase
@@ -148,11 +112,10 @@ final class FamilyRepository {
     /// Removes this device's push token. Must run while still authenticated (RLS), so it
     /// is called from `signOut()` before the auth session is torn down.
     func unregisterPushToken() async {
-        let token: String?
-        if let lastPushToken {
-            token = lastPushToken
+        let token: String? = if let lastPushToken {
+            lastPushToken
         } else {
-            token = await pushTokenProvider?()
+            await pushTokenProvider?()
         }
         guard let token else { return }
         try? await client.from("device_push_tokens")
@@ -174,7 +137,7 @@ final class FamilyRepository {
 
     func getUser(_ userId: String) async -> UserModel? {
         if userId == cachedUserId, let cachedUser { return cachedUser }
-        let rows: [UserModel] = (try? await client.from("users")
+        let rows: [UserModel] = await (try? client.from("users")
             .select()
             .eq("id", value: userId)
             .execute()
@@ -191,7 +154,7 @@ final class FamilyRepository {
     }
 
     func getFamilyMembers(familyId: String) async -> [UserModel] {
-        (try? await client.from("users")
+        await (try? client.from("users")
             .select()
             .eq("family_id", value: familyId)
             .execute()
@@ -199,7 +162,7 @@ final class FamilyRepository {
     }
 
     func getFamily(familyId: String) async -> FamilyModel? {
-        let rows: [FamilyModel] = (try? await client.from("families")
+        let rows: [FamilyModel] = await (try? client.from("families")
             .select()
             .eq("id", value: familyId)
             .execute()
@@ -454,61 +417,6 @@ final class FamilyRepository {
         emitFamilyChanged()
     }
 
-    // MARK: - Chat helpers shared across screens
-
-    func getLastMessage(conversationId: String) async -> MessageModel? {
-        let rows: [MessageModel] = (try? await client.from("messages")
-            .select()
-            .eq("conversation_id", value: conversationId)
-            .order("sent_at", ascending: false)
-            .limit(1)
-            .execute()
-            .value) ?? []
-        return rows.first
-    }
-
-    func markConversationRead(conversationId: String) async {
-        guard let userId = session.currentUserId else { return }
-        try? await client.from("conversation_participants")
-            .update(["last_read_at": AnyJSON.string(isoNow())])
-            .eq("conversation_id", value: conversationId)
-            .eq("user_id", value: userId)
-            .execute()
-    }
-
-    func sendMessage(conversationId: String, text: String) async throws {
-        guard let userId = session.currentUserId else { throw RepositoryError.notAuthenticated }
-        try await client.from("messages")
-            .insert([
-                "conversation_id": AnyJSON.string(conversationId),
-                "user_from": .string(userId),
-                "text": .string(text),
-                "message_type": .string("text"),
-            ])
-            .execute()
-    }
-
-    func addReaction(messageId: String, conversationId: String, emoji: String) async throws {
-        guard let userId = session.currentUserId else { throw RepositoryError.notAuthenticated }
-        try await client.from("message_reactions")
-            .upsert([
-                "message_id": AnyJSON.string(messageId),
-                "conversation_id": .string(conversationId),
-                "user_id": .string(userId),
-                "emoji": .string(emoji),
-            ])
-            .execute()
-    }
-
-    func removeReaction(messageId: String) async throws {
-        guard let userId = session.currentUserId else { throw RepositoryError.notAuthenticated }
-        try await client.from("message_reactions")
-            .delete()
-            .eq("message_id", value: messageId)
-            .eq("user_id", value: userId)
-            .execute()
-    }
-
     // MARK: - Avatar palette (parity with Android)
 
     /// Same ARGB palette as FamilyRepository.kt.
@@ -525,9 +433,9 @@ final class FamilyRepository {
 
     /// Java String.hashCode — matches Kotlin so both platforms pick the same avatar
     /// color for the same name.
-    static func javaHashCode(_ s: String) -> Int32 {
+    static func javaHashCode(_ text: String) -> Int32 {
         var hash: Int32 = 0
-        for unit in s.utf16 {
+        for unit in text.utf16 {
             hash = 31 &* hash &+ Int32(unit)
         }
         return hash
