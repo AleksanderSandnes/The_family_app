@@ -20,6 +20,7 @@ struct MainTabView: View {
     @State private var mealViewModel = MealViewModel()
     @State private var calendarViewModel = CalendarViewModel()
     @State private var birthdayViewModel = BirthdayViewModel()
+    @State private var wishlistViewModel = WishlistViewModel()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -92,9 +93,9 @@ struct MainTabView: View {
         case .birthday:
             BirthdayScreen(viewModel: birthdayViewModel)
         case .wishlist:
-            PlaceholderScreen(title: "Wishlists")
+            WishlistScreen(viewModel: wishlistViewModel) { homePath.append(.wishlistDetail(wishlistId: $0)) }
         case .wishlistDetail(let wishlistId):
-            PlaceholderScreen(title: "Wishlist \(wishlistId)")
+            WishlistDetailScreen(wishlistId: wishlistId, viewModel: wishlistViewModel)
         case .chatDetail(let conversationId):
             PlaceholderScreen(title: "Conversation \(conversationId)")
         case .profileEdit:

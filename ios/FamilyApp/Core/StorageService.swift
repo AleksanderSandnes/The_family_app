@@ -30,9 +30,11 @@ enum StorageService {
         try await upload(bucket: "group-images", path: "\(try authUid())/\(filename)", data: data)
     }
 
+    /// wish-images allows any authenticated write; Android's path convention is the APP
+    /// user id (public.users.id) + timestamp — kept identical for cross-platform parity.
     @discardableResult
-    static func uploadWishImage(data: Data, filename: String) async throws -> String {
-        try await upload(bucket: "wish-images", path: "\(try authUid())/\(filename)", data: data)
+    static func uploadWishImage(data: Data, appUserId: String, filename: String) async throws -> String {
+        try await upload(bucket: "wish-images", path: "\(appUserId)/\(filename)", data: data)
     }
 
     @discardableResult

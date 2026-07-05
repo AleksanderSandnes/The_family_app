@@ -59,6 +59,10 @@ enum IconKeyMap {
     static func calendarSymbol(_ key: String) -> String {
         symbol(key, fallback: "clock.fill")
     }
+
+    static func wishlistSymbol(_ key: String) -> String {
+        symbol(key, fallback: "gift.fill")
+    }
 }
 
 /// Icon-picker option lists — same keys and order as the Android dialogs.
@@ -78,6 +82,11 @@ enum IconOptions {
         "schedule", "cake", "people", "work", "school", "restaurant", "flight",
         "local_hospital", "celebration", "shopping_cart", "music_note", "fitness_center",
         "wb_sunny", "favorite", "star", "emoji_events",
+    ]
+
+    static let wishlist: [String] = [
+        "card_giftcard", "star", "favorite", "celebration", "flight", "home",
+        "restaurant", "fitness_center", "shopping_cart", "pets", "local_hospital", "cake",
     ]
 }
 
