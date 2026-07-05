@@ -37,6 +37,11 @@ enum IconKeyMap {
         "card_giftcard": "gift.fill",
         // Calendar options
         "schedule": "clock.fill",
+        "work": "briefcase.fill",
+        "school": "graduationcap.fill",
+        "music_note": "music.note",
+        "wb_sunny": "sun.max.fill",
+        "emoji_events": "trophy.fill",
     ]
 
     static func symbol(_ key: String, fallback: String) -> String {
@@ -49,6 +54,10 @@ enum IconKeyMap {
 
     static func mealSymbol(_ key: String) -> String {
         symbol(key, fallback: "fork.knife")
+    }
+
+    static func calendarSymbol(_ key: String) -> String {
+        symbol(key, fallback: "clock.fill")
     }
 }
 
@@ -64,4 +73,22 @@ enum IconOptions {
         "local_pizza", "ramen_dining", "set_meal", "fastfood", "cake", "local_cafe",
         "outdoor_grill", "kitchen", "egg", "local_bar",
     ]
+
+    static let calendar: [String] = [
+        "schedule", "cake", "people", "work", "school", "restaurant", "flight",
+        "local_hospital", "celebration", "shopping_cart", "music_note", "fitness_center",
+        "wb_sunny", "favorite", "star", "emoji_events",
+    ]
+}
+
+/// Icon key → stable index 0–5 used to color event dots/containers — mirrors
+/// ICON_COLOR_INDEX in CalendarScreen.kt.
+func calendarIconColorIndex(_ key: String) -> Int {
+    let map: [String: Int] = [
+        "schedule": 0, "cake": 1, "people": 2, "work": 3, "school": 4, "restaurant": 5,
+        "flight": 0, "local_hospital": 1, "celebration": 2, "shopping_cart": 3,
+        "music_note": 4, "fitness_center": 5, "wb_sunny": 0, "favorite": 1, "star": 2,
+        "emoji_events": 3,
+    ]
+    return map[key] ?? 0
 }

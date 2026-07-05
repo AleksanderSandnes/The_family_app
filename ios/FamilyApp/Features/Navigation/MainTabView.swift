@@ -18,6 +18,8 @@ struct MainTabView: View {
     @State private var homeViewModel = HomeViewModel()
     @State private var shoppingViewModel = ShoppingViewModel()
     @State private var mealViewModel = MealViewModel()
+    @State private var calendarViewModel = CalendarViewModel()
+    @State private var birthdayViewModel = BirthdayViewModel()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -34,7 +36,7 @@ struct MainTabView: View {
             .tag(Tab.home)
 
             NavigationStack(path: $calendarPath) {
-                PlaceholderScreen(title: "Calendar")
+                CalendarScreen(viewModel: calendarViewModel)
                     .navigationDestination(for: Route.self) { destination(for: $0) }
             }
             .tabItem { Label("Calendar", systemImage: "calendar") }
@@ -88,7 +90,7 @@ struct MainTabView: View {
         case .mealDetail(let planId):
             MealDetailScreen(planId: planId, viewModel: mealViewModel)
         case .birthday:
-            PlaceholderScreen(title: "Birthdays")
+            BirthdayScreen(viewModel: birthdayViewModel)
         case .wishlist:
             PlaceholderScreen(title: "Wishlists")
         case .wishlistDetail(let wishlistId):
