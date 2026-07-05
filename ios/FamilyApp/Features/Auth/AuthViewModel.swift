@@ -39,7 +39,7 @@ final class AuthViewModel {
         }
     }
 
-    deinit {
+    isolated deinit {
         authListener?.cancel()
     }
 

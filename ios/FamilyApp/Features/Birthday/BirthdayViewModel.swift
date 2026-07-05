@@ -27,7 +27,7 @@ final class BirthdayViewModel {
         }
     }
 
-    deinit {
+    isolated deinit {
         familyChangedTask?.cancel()
     }
 

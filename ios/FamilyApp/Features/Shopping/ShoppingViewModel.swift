@@ -44,7 +44,7 @@ final class ShoppingViewModel {
         }
     }
 
-    deinit {
+    isolated deinit {
         familyChangedTask?.cancel()
     }
 

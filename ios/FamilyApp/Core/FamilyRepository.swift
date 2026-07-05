@@ -174,12 +174,12 @@ final class FamilyRepository {
 
     func getUser(_ userId: String) async -> UserModel? {
         if userId == cachedUserId, let cachedUser { return cachedUser }
-        let fetched: UserModel? = try? await client.from("users")
+        let rows: [UserModel] = (try? await client.from("users")
             .select()
             .eq("id", value: userId)
             .execute()
-            .value
-            .first
+            .value) ?? []
+        let fetched = rows.first
         // Only cache a successful, non-nil fetch. Caching nil (e.g. on a transient
         // network/RLS failure) would poison the cache for the whole session — every
         // feature would then read the user as "no family" and create unscoped rows.
@@ -199,12 +199,12 @@ final class FamilyRepository {
     }
 
     func getFamily(familyId: String) async -> FamilyModel? {
-        try? await client.from("families")
+        let rows: [FamilyModel] = (try? await client.from("families")
             .select()
             .eq("id", value: familyId)
             .execute()
-            .value
-            .first
+            .value) ?? []
+        return rows.first
     }
 
     // MARK: - Auth
@@ -457,14 +457,14 @@ final class FamilyRepository {
     // MARK: - Chat helpers shared across screens
 
     func getLastMessage(conversationId: String) async -> MessageModel? {
-        try? await client.from("messages")
+        let rows: [MessageModel] = (try? await client.from("messages")
             .select()
             .eq("conversation_id", value: conversationId)
             .order("sent_at", ascending: false)
             .limit(1)
             .execute()
-            .value
-            .first
+            .value) ?? []
+        return rows.first
     }
 
     func markConversationRead(conversationId: String) async {

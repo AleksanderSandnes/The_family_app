@@ -49,7 +49,7 @@ final class RealtimeObserver {
         channel = nil
     }
 
-    deinit {
+    isolated deinit {
         task?.cancel()
         if let channel {
             let client = SupabaseClientProvider.client

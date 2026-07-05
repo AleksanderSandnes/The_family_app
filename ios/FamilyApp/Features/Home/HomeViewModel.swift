@@ -52,7 +52,7 @@ final class HomeViewModel {
         }
     }
 
-    deinit {
+    isolated deinit {
         familyChangedTask?.cancel()
     }
 

@@ -73,7 +73,7 @@ final class ChatViewModel {
         }
     }
 
-    deinit {
+    isolated deinit {
         familyChangedTask?.cancel()
         typingTask?.cancel()
         messagesTask?.cancel()
@@ -217,12 +217,12 @@ final class ChatViewModel {
 
     func loadConversation(_ conversationId: String) {
         Task {
-            conversation = try? await client.from("conversations")
+            let rows: [ConversationModel] = (try? await client.from("conversations")
                 .select()
                 .eq("id", value: conversationId)
                 .execute()
-                .value
-                .first
+                .value) ?? []
+            conversation = rows.first
             await loadMessages(conversationId)
 
             let participantRows: [ConversationParticipantModel] = (try? await client

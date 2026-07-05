@@ -38,7 +38,7 @@ final class MealViewModel {
         }
     }
 
-    deinit {
+    isolated deinit {
         familyChangedTask?.cancel()
     }
 

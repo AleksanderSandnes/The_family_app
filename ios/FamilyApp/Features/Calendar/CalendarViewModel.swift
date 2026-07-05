@@ -81,7 +81,7 @@ final class CalendarViewModel {
         }
     }
 
-    deinit {
+    isolated deinit {
         familyChangedTask?.cancel()
     }
 

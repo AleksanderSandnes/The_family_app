@@ -50,11 +50,15 @@ targets:
       testTargets:
         - FamilyAppTests
       gatherCoverageData: true
-    entitlements:
-      path: FamilyApp/FamilyApp.entitlements
-      properties:
-        # Xcode flips this to `production` automatically for App Store builds.
-        aps-environment: development
+    # NOTE: the aps-environment (Push Notifications) entitlement is disabled for local
+    # dev builds because a FREE personal Apple team cannot provision it. Restore this
+    # block once enrolled in the paid Apple Developer Program (and add
+    # FamilyApp/Resources/GoogleService-Info.plist) to enable push:
+    # entitlements:
+    #   path: FamilyApp/FamilyApp.entitlements
+    #   properties:
+    #     # Xcode flips this to `production` automatically for App Store builds.
+    #     aps-environment: development
     info:
       path: FamilyApp/Info.plist
       properties:
@@ -90,3 +94,4 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sandnes.familyapp.tests
         SWIFT_VERSION: "5.10"
+        GENERATE_INFOPLIST_FILE: YES
