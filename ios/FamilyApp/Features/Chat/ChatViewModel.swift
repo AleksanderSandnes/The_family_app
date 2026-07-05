@@ -80,7 +80,7 @@ final class ChatViewModel {
     init() {
         Task { await loadConversations() }
         familyChangedTask = Task { [weak self] in
-            guard let stream = await self?.repo.familyChanged() else { return }
+            guard let stream = self?.repo.familyChanged() else { return }
             for await _ in stream {
                 await self?.loadConversations()
             }
@@ -196,7 +196,7 @@ final class ChatViewModel {
             observer.start(
                 table: "messages",
                 scope: "notify-\(convId)",
-                filter: "conversation_id=eq.\(convId)"
+                filter: .eq("conversation_id", value: convId)
             ) { [weak self] in
                 await self?.onConversationActivity(convId: convId, userId: userId)
             }
@@ -302,7 +302,7 @@ final class ChatViewModel {
         messagesObserver.start(
             table: "messages",
             scope: "messages-\(conversationId)",
-            filter: "conversation_id=eq.\(conversationId)"
+            filter: .eq("conversation_id", value: conversationId)
         ) { [weak self] in
             await self?.loadMessages(conversationId)
         }
@@ -313,7 +313,7 @@ final class ChatViewModel {
         participantsObserver.start(
             table: "conversation_participants",
             scope: "participants-\(conversationId)",
-            filter: "conversation_id=eq.\(conversationId)"
+            filter: .eq("conversation_id", value: conversationId)
         ) { [weak self] in
             guard let self else { return }
             let rows: [ConversationParticipantModel] = await (try? client
@@ -342,7 +342,11 @@ final class ChatViewModel {
         typingChannel = channel
         let stream = channel.broadcastStream(event: "typing")
         typingTask = Task { [weak self] in
-            await channel.subscribe()
+            do {
+                try await channel.subscribeWithError()
+            } catch {
+                return
+            }
             for await message in stream {
                 guard let self else { break }
                 guard let payload = message["payload"]?.objectValue,
@@ -410,10 +414,14 @@ final class ChatViewModel {
             AnyAction.self,
             schema: "public",
             table: "message_reactions",
-            filter: "conversation_id=eq.\(conversationId)"
+            filter: .eq("conversation_id", value: conversationId)
         )
         reactionTasks.append(Task { [weak self] in
-            await channel.subscribe()
+            do {
+                try await channel.subscribeWithError()
+            } catch {
+                return
+            }
             for await _ in changes {
                 await self?.loadReactions(conversationId)
             }

@@ -23,7 +23,7 @@ final class BirthdayViewModel {
     init() {
         Task { await load() }
         familyChangedTask = Task { [weak self] in
-            guard let stream = await self?.repo.familyChanged() else { return }
+            guard let stream = self?.repo.familyChanged() else { return }
             for await _ in stream {
                 await self?.load()
             }
@@ -78,7 +78,7 @@ final class BirthdayViewModel {
         observer.start(
             table: "birthdays",
             scope: familyId,
-            filter: "family_id=eq.\(familyId)"
+            filter: .eq("family_id", value: familyId)
         ) { [weak self] in
             await self?.reload()
         }
@@ -104,7 +104,7 @@ final class BirthdayViewModel {
                 "made_by_user_id": .string(userId),
             ]
             if let familyId = user.familyId { payload["family_id"] = .string(familyId) }
-            try? await client.from("birthdays").insert(payload).execute()
+            _ = try? await client.from("birthdays").insert(payload).execute()
             await reload()
         }
     }
@@ -119,7 +119,7 @@ final class BirthdayViewModel {
                 }
                 return existing
             }
-            try? await client.from("birthdays")
+            _ = try? await client.from("birthdays")
                 .update(["name": AnyJSON.string(name), "date": .string(date)])
                 .eq("id", value: id)
                 .execute()
@@ -130,7 +130,7 @@ final class BirthdayViewModel {
     func delete(_ birthday: BirthdayModel) {
         Task {
             birthdays.removeAll { $0.id == birthday.id }
-            try? await client.from("birthdays").delete().eq("id", value: birthday.id).execute()
+            _ = try? await client.from("birthdays").delete().eq("id", value: birthday.id).execute()
             await reload()
         }
     }

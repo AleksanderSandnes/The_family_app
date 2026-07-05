@@ -98,12 +98,12 @@ struct FamilyMapScreen: View {
 
     /// Reverse-geocodes shared locations to short place names, cached by user id.
     private func reverseGeocode() async {
-        let geocoder = CLGeocoder()
         for location in viewModel.locations where placeNames[location.userId] == nil {
-            let place = try? await geocoder.reverseGeocodeLocation(
-                CLLocation(latitude: location.lat, longitude: location.lng)
-            ).first
-            if let name = place?.locality ?? place?.subAdministrativeArea {
+            guard let request = MKReverseGeocodingRequest(
+                location: CLLocation(latitude: location.lat, longitude: location.lng)
+            ) else { continue }
+            let address = try? await request.mapItems.first?.addressRepresentations
+            if let name = address?.cityName ?? address?.regionName {
                 placeNames[location.userId] = name
             }
         }

@@ -60,7 +60,7 @@ extension ChatViewModel {
                     .value
 
                 for participantId in ([userId] + memberIds).uniqued() {
-                    try? await client.from("conversation_participants").insert([
+                    _ = try? await client.from("conversation_participants").insert([
                         "conversation_id": AnyJSON.string(conv.id),
                         "user_id": .string(participantId),
                     ]).execute()
@@ -106,7 +106,7 @@ extension ChatViewModel {
                         "user_id": .string(newUserId),
                     ]).execute()
                     let addedName = userProfiles[newUserId]?.name ?? "A member"
-                    try? await client.from("messages").insert([
+                    _ = try? await client.from("messages").insert([
                         "conversation_id": AnyJSON.string(conversationId),
                         "user_from": .string(userId),
                         "text": .string("\(addedName) was added to the group"),
@@ -124,7 +124,7 @@ extension ChatViewModel {
     func removeMember(conversationId: String, targetUserId: String) {
         Task {
             guard let userId = repo.session.currentUserId else { return }
-            try? await client.from("conversation_participants")
+            _ = try? await client.from("conversation_participants")
                 .delete()
                 .eq("conversation_id", value: conversationId)
                 .eq("user_id", value: targetUserId)
@@ -138,7 +138,7 @@ extension ChatViewModel {
 
     func renameConversation(id: String, name: String) {
         Task {
-            try? await client.from("conversations")
+            _ = try? await client.from("conversations")
                 .update(["name": AnyJSON.string(name.trimmingCharacters(in: .whitespaces))])
                 .eq("id", value: id)
                 .execute()
@@ -172,7 +172,7 @@ extension ChatViewModel {
         Task {
             _ = try? await client.storage.from("group-images")
                 .remove(paths: ["\(conversationId)/image.jpg"])
-            try? await client.from("conversations")
+            _ = try? await client.from("conversations")
                 .update(["image_uri": AnyJSON.null])
                 .eq("id", value: conversationId)
                 .execute()

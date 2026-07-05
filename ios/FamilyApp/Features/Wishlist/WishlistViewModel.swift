@@ -106,7 +106,7 @@ final class WishlistViewModel {
             wishlistsObserver.start(
                 table: "wishlists",
                 scope: familyId,
-                filter: "family_id=eq.\(familyId)"
+                filter: .eq("family_id", value: familyId)
             ) { [weak self] in
                 await self?.loadWishlists()
             }
@@ -159,7 +159,7 @@ final class WishlistViewModel {
         wishesObserver.start(
             table: "wishes",
             scope: wishlistId,
-            filter: "wishlist_id=eq.\(wishlistId)"
+            filter: .eq("wishlist_id", value: wishlistId)
         ) { [weak self] in
             await self?.reloadDetail(wishlistId)
         }
@@ -174,7 +174,7 @@ final class WishlistViewModel {
             temp.wishId = wish.id
             temp.reservedBy = userId
             reservations[wish.id] = temp
-            try? await client.from("wish_reservations")
+            _ = try? await client.from("wish_reservations")
                 .insert(["wish_id": AnyJSON.string(wish.id), "reserved_by": .string(userId)])
                 .execute()
             await loadReservations()
@@ -185,7 +185,7 @@ final class WishlistViewModel {
         Task {
             guard let userId = repo.session.currentUserId else { return }
             reservations[wish.id] = nil
-            try? await client.from("wish_reservations")
+            _ = try? await client.from("wish_reservations")
                 .delete()
                 .eq("wish_id", value: wish.id)
                 .eq("reserved_by", value: userId)
@@ -214,7 +214,7 @@ final class WishlistViewModel {
                 "icon": .string(icon),
             ]
             if let familyId = user?.familyId { payload["family_id"] = .string(familyId) }
-            try? await client.from("wishlists").insert(payload).execute()
+            _ = try? await client.from("wishlists").insert(payload).execute()
             await loadWishlists()
         }
     }
@@ -222,7 +222,7 @@ final class WishlistViewModel {
     func deleteWishlist(_ wishlist: WishlistModel) {
         Task {
             wishlists.removeAll { $0.id == wishlist.id }
-            try? await client.from("wishlists").delete().eq("id", value: wishlist.id).execute()
+            _ = try? await client.from("wishlists").delete().eq("id", value: wishlist.id).execute()
             await loadWishlists()
         }
     }
@@ -235,7 +235,7 @@ final class WishlistViewModel {
                 return list
             }
             selectedWishlist?.name = newName
-            try? await client.from("wishlists")
+            _ = try? await client.from("wishlists")
                 .update(["name": AnyJSON.string(newName)])
                 .eq("id", value: wishlistId)
                 .execute()
@@ -251,7 +251,7 @@ final class WishlistViewModel {
                 return list
             }
             selectedWishlist?.icon = newIcon
-            try? await client.from("wishlists")
+            _ = try? await client.from("wishlists")
                 .update(["icon": AnyJSON.string(newIcon)])
                 .eq("id", value: wishlistId)
                 .execute()
@@ -292,7 +292,7 @@ final class WishlistViewModel {
             if let cleanLink, !cleanLink.isEmpty { payload["link"] = .string(cleanLink) }
             if let cleanPrice, !cleanPrice.isEmpty { payload["price"] = .string(cleanPrice) }
             if let imageUrl { payload["image_url"] = .string(imageUrl) }
-            try? await client.from("wishes").insert(payload).execute()
+            _ = try? await client.from("wishes").insert(payload).execute()
             await reloadDetail(wishlistId)
         }
     }
@@ -304,7 +304,7 @@ final class WishlistViewModel {
                 if existing.id == wish.id { existing.checked = !wish.checked }
                 return existing
             }
-            try? await client.from("wishes")
+            _ = try? await client.from("wishes")
                 .update(["checked": AnyJSON.bool(!wish.checked)])
                 .eq("id", value: wish.id)
                 .execute()
@@ -315,7 +315,7 @@ final class WishlistViewModel {
     func deleteWish(_ wish: WishModel) {
         Task {
             wishes.removeAll { $0.id == wish.id }
-            try? await client.from("wishes").delete().eq("id", value: wish.id).execute()
+            _ = try? await client.from("wishes").delete().eq("id", value: wish.id).execute()
             await reloadDetail(wish.wishlistId)
         }
     }

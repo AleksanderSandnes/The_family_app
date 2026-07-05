@@ -18,7 +18,7 @@ extension FamilyRepository {
 
     func markConversationRead(conversationId: String) async {
         guard let userId = session.currentUserId else { return }
-        try? await client.from("conversation_participants")
+        _ = try? await client.from("conversation_participants")
             .update(["last_read_at": AnyJSON.string(isoNow())])
             .eq("conversation_id", value: conversationId)
             .eq("user_id", value: userId)

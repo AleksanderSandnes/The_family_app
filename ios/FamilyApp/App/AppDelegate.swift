@@ -126,7 +126,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         guard !trimmed.isEmpty else { return }
         let userId = await MainActor.run { SessionStore.shared.currentUserId }
         guard let userId else { return }
-        try? await SupabaseClientProvider.client.from("messages").insert([
+        _ = try? await SupabaseClientProvider.client.from("messages").insert([
             "conversation_id": AnyJSON.string(conversationId),
             "user_from": .string(userId),
             "text": .string(trimmed),

@@ -18,9 +18,7 @@ final class VoiceRecorder {
 
     func start() async -> Bool {
         let session = AVAudioSession.sharedInstance()
-        let granted = await withCheckedContinuation { continuation in
-            session.requestRecordPermission { continuation.resume(returning: $0) }
-        }
+        let granted = await AVAudioApplication.requestRecordPermission()
         guard granted else { return false }
         do {
             try session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)

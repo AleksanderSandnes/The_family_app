@@ -16,7 +16,7 @@ final class RealtimeObserver {
     func start(
         table: String,
         scope: String,
-        filter: String? = nil,
+        filter: RealtimePostgresFilter? = nil,
         onChange: @escaping @MainActor () async -> Void
     ) {
         stop()
@@ -31,7 +31,11 @@ final class RealtimeObserver {
             filter: filter
         )
         task = Task {
-            await channel.subscribe()
+            do {
+                try await channel.subscribeWithError()
+            } catch {
+                return
+            }
             for await _ in changes {
                 guard !Task.isCancelled else { break }
                 await onChange()

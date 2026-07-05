@@ -48,7 +48,7 @@ final class HomeViewModel {
     init() {
         refresh()
         familyChangedTask = Task { [weak self] in
-            guard let stream = await self?.repo.familyChanged() else { return }
+            guard let stream = self?.repo.familyChanged() else { return }
             for await _ in stream {
                 self?.refresh()
             }

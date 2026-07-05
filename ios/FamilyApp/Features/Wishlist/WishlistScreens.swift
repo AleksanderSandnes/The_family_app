@@ -418,7 +418,7 @@ private struct AddWishSheet: View {
             PhotosPicker(selection: $photoItem, matching: .images) {
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "photo")
-                    Text(imageData == nil ? L("Add photo (optional)") : L("Photo selected"))
+                    Text(LocalizedStringKey(imageData == nil ? "Add photo (optional)" : "Photo selected"))
                 }
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.appPrimary)

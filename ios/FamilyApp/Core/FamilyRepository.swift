@@ -72,7 +72,7 @@ final class FamilyRepository {
     /// Bumps the current user's last_active_at — called when the app foregrounds.
     func touchLastActive() async {
         guard let userId = session.currentUserId else { return }
-        try? await client.from("users")
+        _ = try? await client.from("users")
             .update(["last_active_at": AnyJSON.string(isoNow())])
             .eq("id", value: userId)
             .execute()
@@ -96,7 +96,7 @@ final class FamilyRepository {
     func registerPushToken(_ token: String) async {
         guard let userId = session.currentUserId else { return }
         lastPushToken = token
-        try? await client.from("device_push_tokens")
+        _ = try? await client.from("device_push_tokens")
             .upsert(
                 [
                     "user_id": AnyJSON.string(userId),
@@ -118,7 +118,7 @@ final class FamilyRepository {
             await pushTokenProvider?()
         }
         guard let token else { return }
-        try? await client.from("device_push_tokens")
+        _ = try? await client.from("device_push_tokens")
             .delete()
             .eq("token", value: token)
             .execute()
@@ -306,7 +306,7 @@ final class FamilyRepository {
     func leaveFamily(userId: String) async {
         guard let user = await getUser(userId) else { return }
         guard let familyId = user.familyId else {
-            try? await client.from("users")
+            _ = try? await client.from("users")
                 .update(["family_id": AnyJSON.null])
                 .eq("id", value: userId)
                 .execute()
@@ -380,7 +380,7 @@ final class FamilyRepository {
     }
 
     func updateProfile(userId: String, update: ProfileUpdate) async {
-        try? await client.from("users")
+        _ = try? await client.from("users")
             .update([
                 "name": AnyJSON.string(update.name),
                 "email": .string(update.email),

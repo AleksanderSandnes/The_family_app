@@ -86,7 +86,7 @@ final class CalendarViewModel {
     init() {
         Task { await loadEvents() }
         familyChangedTask = Task { [weak self] in
-            guard let stream = await self?.repo.familyChanged() else { return }
+            guard let stream = self?.repo.familyChanged() else { return }
             for await _ in stream {
                 await self?.loadEvents()
             }
@@ -134,7 +134,7 @@ final class CalendarViewModel {
             observer.start(
                 table: "calendar_events",
                 scope: familyId,
-                filter: "family_id=eq.\(familyId)"
+                filter: .eq("family_id", value: familyId)
             ) { [weak self] in
                 await self?.loadEvents()
             }
@@ -188,7 +188,7 @@ final class CalendarViewModel {
                 "icon": .string(draft.icon),
             ]
             if let familyId = user.familyId { payload["family_id"] = .string(familyId) }
-            try? await client.from("calendar_events").insert(payload).execute()
+            _ = try? await client.from("calendar_events").insert(payload).execute()
             await loadEvents()
         }
     }
@@ -196,7 +196,7 @@ final class CalendarViewModel {
     func updateEvent(_ event: CalendarEventModel) {
         Task {
             events = events.map { $0.id == event.id ? event : $0 }
-            try? await client.from("calendar_events")
+            _ = try? await client.from("calendar_events")
                 .update([
                     "activity": AnyJSON.string(event.activity),
                     "all_day": .bool(event.allDay),
@@ -215,7 +215,7 @@ final class CalendarViewModel {
     func delete(_ event: CalendarEventModel) {
         Task {
             events.removeAll { $0.id == event.id }
-            try? await client.from("calendar_events").delete().eq("id", value: event.id).execute()
+            _ = try? await client.from("calendar_events").delete().eq("id", value: event.id).execute()
             await loadEvents()
         }
     }

@@ -56,7 +56,7 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
         observer.start(
             table: "user_locations",
             scope: familyId,
-            filter: "family_id=eq.\(familyId)"
+            filter: .eq("family_id", value: familyId)
         ) { [weak self] in
             await self?.loadLocations()
         }
@@ -100,7 +100,7 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
     func clearOwnLocation() {
         Task {
             guard let userId = repo.session.currentUserId else { return }
-            try? await client.from("user_locations")
+            _ = try? await client.from("user_locations")
                 .update(["visible": AnyJSON.bool(false)])
                 .eq("user_id", value: userId)
                 .execute()
@@ -111,7 +111,7 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
         guard let userId = repo.session.currentUserId,
               let user = await repo.getUser(userId) else { return }
         let visible = repo.session.locationVisible
-        try? await client.from("user_locations").upsert([
+        _ = try? await client.from("user_locations").upsert([
             "user_id": AnyJSON.string(userId),
             "family_id": user.familyId.map { AnyJSON.string($0) } ?? .null,
             "lat": .double(lat),

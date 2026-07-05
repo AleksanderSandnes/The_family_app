@@ -40,7 +40,7 @@ final class DeepLinkRouter {
             // Feed the PKCE callback to supabase-swift; the auth flow observes
             // authStateChanges and finalizes the app session.
             let client = SupabaseClientProvider.client
-            Task { try? await client.auth.handle(url) }
+            client.auth.handle(url)
         case let .chat(conversationId):
             pendingConversationId = conversationId
         case let .join(code):

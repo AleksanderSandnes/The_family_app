@@ -33,7 +33,7 @@ final class MealViewModel {
     init() {
         Task { await loadForCurrentFamily() }
         familyChangedTask = Task { [weak self] in
-            guard let stream = await self?.repo.familyChanged() else { return }
+            guard let stream = self?.repo.familyChanged() else { return }
             for await _ in stream {
                 await self?.loadForCurrentFamily()
             }
@@ -106,7 +106,7 @@ final class MealViewModel {
         plansObserver.start(
             table: "meal_plans",
             scope: familyId,
-            filter: "family_id=eq.\(familyId)"
+            filter: .eq("family_id", value: familyId)
         ) { [weak self] in
             await self?.loadPlansOnly(familyId: familyId)
         }
@@ -194,7 +194,7 @@ final class MealViewModel {
             selectedPlan = updated
             plans = plans.map { $0.id == plan.id ? updated : $0 }
             Self.cache = plans
-            try? await client.from("meal_plans")
+            _ = try? await client.from("meal_plans")
                 .update(["name": AnyJSON.string(newName)])
                 .eq("id", value: plan.id)
                 .execute()
@@ -208,7 +208,7 @@ final class MealViewModel {
             selectedPlan = updated
             plans = plans.map { $0.id == plan.id ? updated : $0 }
             Self.cache = plans
-            try? await client.from("meal_plans")
+            _ = try? await client.from("meal_plans")
                 .update(["icon": AnyJSON.string(newIcon)])
                 .eq("id", value: plan.id)
                 .execute()
@@ -218,7 +218,7 @@ final class MealViewModel {
     func deletePlan(_ plan: MealPlanModel) {
         Task {
             plans.removeAll { $0.id == plan.id }
-            try? await client.from("meal_plans").delete().eq("id", value: plan.id).execute()
+            _ = try? await client.from("meal_plans").delete().eq("id", value: plan.id).execute()
             if let familyId = await currentFamilyId() {
                 await loadPlansOnly(familyId: familyId)
             }
@@ -232,7 +232,7 @@ final class MealViewModel {
                 if existing.id == day.id { existing.food = food }
                 return existing
             }
-            try? await client.from("meal_plan_days")
+            _ = try? await client.from("meal_plan_days")
                 .update(["food": AnyJSON.string(food)])
                 .eq("id", value: day.id)
                 .execute()
