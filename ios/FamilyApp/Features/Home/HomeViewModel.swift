@@ -105,9 +105,9 @@ final class HomeViewModel {
         return await HomeSummary(
             tonightMeal: loadTonightMeal(familyId: familyId, today: today),
             nextEventTitle: event?.activity,
-            nextEventWhen: event.map { eventWhen($0, today: today) },
+            nextEventWhen: event.map { eventWhen($0, today: today, locale: appLocale) },
             nextBirthdayName: birthday?.model.name,
-            nextBirthdayWhen: birthday.map { birthdayWhen($0.model, next: $0.next, today: today) },
+            nextBirthdayWhen: birthday.map { birthdayWhen($0.model, next: $0.next, today: today, locale: appLocale) },
             shoppingRemaining: loadShoppingRemaining(familyId: familyId)
         )
     }
@@ -193,27 +193,36 @@ final class HomeViewModel {
 
 // MARK: - Pure formatting helpers (unit-tested, mirror HomeViewModel.kt)
 
-func eventWhen(_ event: CalendarEventModel, today: LocalDate) -> String {
+func eventWhen(
+    _ event: CalendarEventModel,
+    today: LocalDate,
+    locale: Locale = Locale(identifier: "en_US_POSIX")
+) -> String {
     guard let from = LocalDate(iso: event.dateFrom) else { return event.dateFrom }
     let datePart: String = if from == today {
-        "Today"
+        L("Today", locale: locale)
     } else if from == today.addingDays(1) {
-        "Tomorrow"
+        L("Tomorrow", locale: locale)
     } else {
-        from.formattedShort()
+        from.formattedShort(locale: locale)
     }
     return (event.allDay || event.timeFrom.isEmpty) ? datePart : "\(datePart) · \(event.timeFrom)"
 }
 
-func birthdayWhen(_ birthday: BirthdayModel, next: LocalDate, today: LocalDate) -> String {
+func birthdayWhen(
+    _ birthday: BirthdayModel,
+    next: LocalDate,
+    today: LocalDate,
+    locale: Locale = Locale(identifier: "en_US_POSIX")
+) -> String {
     let days = today.daysUntil(next)
     let whenText = switch days {
-    case 0: "Today!"
-    case 1: "Tomorrow"
-    default: "in \(days) days"
+    case 0: L("Today!", locale: locale)
+    case 1: L("Tomorrow", locale: locale)
+    default: L("in \(days) days", locale: locale)
     }
     if let age = turnsAge(birthday.date, today: today) {
-        return "Turns \(age) · \(whenText)"
+        return "\(L("Turns \(age)", locale: locale)) · \(whenText)"
     }
     return whenText
 }

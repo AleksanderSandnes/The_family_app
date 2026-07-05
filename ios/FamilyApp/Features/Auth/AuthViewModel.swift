@@ -48,7 +48,13 @@ final class AuthViewModel {
 
     func setError(_ message: String) {
         loading = false
-        error = message
+        error = localized(message)
+    }
+
+    /// Localizes a runtime message whose English text doubles as its `.strings` key,
+    /// so validation + mapped auth errors surface in the in-app language.
+    private func localized(_ message: String) -> String {
+        L(String.LocalizationValue(message), locale: appLocale)
     }
 
     func login(email: String, password: String) {
@@ -61,7 +67,7 @@ final class AuthViewModel {
                 loading = false
             } catch {
                 loading = false
-                self.error = friendlyAuthError(error, isLogin: true)
+                self.error = localized(friendlyAuthError(error, isLogin: true))
             }
         }
     }
@@ -90,7 +96,7 @@ final class AuthViewModel {
                 loading = false
             } catch {
                 loading = false
-                self.error = friendlyAuthError(error, isLogin: false)
+                self.error = localized(friendlyAuthError(error, isLogin: false))
             }
         }
     }
@@ -105,7 +111,7 @@ final class AuthViewModel {
                 loading = false
             } catch {
                 loading = false
-                self.error = friendlyAuthError(error, isLogin: true)
+                self.error = localized(friendlyAuthError(error, isLogin: true))
             }
         }
     }

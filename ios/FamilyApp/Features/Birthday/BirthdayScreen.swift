@@ -19,9 +19,9 @@ struct BirthdayScreen: View {
                 } else if sorted.isEmpty {
                     EmptyState(
                         systemImage: "birthday.cake.fill",
-                        title: "No birthdays",
-                        subtitle: "Add family birthdays so you never miss a celebration.",
-                        actionLabel: "Add birthday"
+                        title: L("No birthdays"),
+                        subtitle: L("Add family birthdays so you never miss a celebration."),
+                        actionLabel: L("Add birthday")
                     ) { showAdd = true }
                 } else {
                     List {
@@ -49,21 +49,21 @@ struct BirthdayScreen: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            FloatingActionButton(text: "Add birthday", systemImage: "plus") { showAdd = true }
+            FloatingActionButton(text: L("Add birthday"), systemImage: "plus") { showAdd = true }
         }
         .ambientBackground()
-        .featureTopBar("Birthdays")
+        .featureTopBar(L("Birthdays"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
-            BirthdaySheet(title: "Add birthday", confirmLabel: "Add") { name, date in
+            BirthdaySheet(title: L("Add birthday"), confirmLabel: L("Add")) { name, date in
                 viewModel.add(name: name, date: date)
                 showAdd = false
             }
         }
         .sheet(item: $editing) { birthday in
             BirthdaySheet(
-                title: "Edit birthday",
-                confirmLabel: "Save",
+                title: L("Edit birthday"),
+                confirmLabel: L("Save"),
                 initialName: birthday.name,
                 initialDate: birthday.date
             ) { name, date in
@@ -171,8 +171,8 @@ private struct BirthdayCard: View {
     private func formatFullDate(_ date: LocalDate) -> String {
         let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM d, yyyy"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateStyle = .long
+        formatter.locale = appLocale
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter.string(from: instant)
     }
@@ -201,14 +201,13 @@ private struct BirthdaySheet: View {
                 onConfirm(name.trimmingCharacters(in: .whitespaces), date)
                 dismiss()
             }
-            GlassField(systemImage: "person", placeholder: "Name", text: $name)
-            BirthdayPickerField(isoDate: $date, label: "Birthday *")
-            Spacer(minLength: 0)
+            GlassField(systemImage: "person", placeholder: L("Name"), text: $name)
+            BirthdayPickerField(isoDate: $date, label: L("Birthday *"))
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
-        .padding(.bottom, Spacing.lg)
-        .glassSheet(detents: [.medium])
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
         .onAppear {
             name = initialName
             date = initialDate

@@ -56,8 +56,8 @@ struct PermissionsOnboardingScreen: View {
                         .font(.headlineMedium)
                         .foregroundStyle(Color.appOnBackground)
                     Text(
-                        "The Family App works best with a couple of permissions. You stay in control — "
-                            + "everything can be changed later in Settings."
+                        // swiftlint:disable:next line_length
+                        "The Family App works best with a couple of permissions. You stay in control — everything can be changed later in Settings."
                     )
                     .font(.bodyMedium)
                     .foregroundStyle(Color.appOnSurfaceVariant)
@@ -74,10 +74,10 @@ struct PermissionsOnboardingScreen: View {
                                     .background(Color.appPrimaryContainer)
                                     .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(card.title)
+                                    Text(LocalizedStringKey(card.title))
                                         .font(.titleMedium)
                                         .foregroundStyle(Color.appOnSurface)
-                                    Text(card.subtitle)
+                                    Text(LocalizedStringKey(card.subtitle))
                                         .font(.bodyMedium)
                                         .foregroundStyle(Color.appOnSurfaceVariant)
                                 }
@@ -93,7 +93,7 @@ struct PermissionsOnboardingScreen: View {
             }
 
             VStack(spacing: Spacing.sm) {
-                PrimaryButton(text: "Allow permissions", loading: requesting) {
+                PrimaryButton(text: L("Allow permissions"), loading: requesting) {
                     requestPermissions()
                 }
                 Button("Maybe later") { onComplete() }

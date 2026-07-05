@@ -9,6 +9,15 @@ private enum CalendarViewMode: String, CaseIterable {
     case month = "Month"
     case week = "Week"
     case agenda = "Agenda"
+
+    /// Localized segment title (localizes against the in-app language via the environment).
+    var titleKey: LocalizedStringKey {
+        switch self {
+        case .month: "Month"
+        case .week: "Week"
+        case .agenda: "Agenda"
+        }
+    }
 }
 
 struct CalendarScreen: View {
@@ -26,7 +35,7 @@ struct CalendarScreen: View {
         VStack(spacing: 0) {
             Picker("View", selection: $viewMode) {
                 ForEach(CalendarViewMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.titleKey).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
@@ -105,7 +114,7 @@ struct CalendarScreen: View {
     }
 
     @ViewBuilder private var selectedDayList: some View {
-        Text(sectionDateLabel(viewModel.selectedDate).uppercased())
+        Text(sectionDateLabel(viewModel.selectedDate, locale: appLocale).uppercased())
             .font(.sectionLabel)
             .tracking(0.6)
             .foregroundStyle(Color.appCaption)
@@ -118,7 +127,7 @@ struct CalendarScreen: View {
         if viewModel.isLoading {
             LoadingState().frame(maxHeight: .infinity, alignment: .top)
         } else if dayEvents.isEmpty {
-            EmptyState(systemImage: "calendar", title: "No events", subtitle: "Tap + to add an event.")
+            EmptyState(systemImage: "calendar", title: L("No events"), subtitle: L("Tap + to add an event."))
                 .frame(maxHeight: .infinity)
         } else {
             List {
@@ -162,7 +171,7 @@ private struct MonthCalendarSection: View {
                         .accessibilityLabel("Previous month")
                 }
                 Spacer()
-                Text(displayedMonth.formatted)
+                Text(displayedMonth.formatted(locale: appLocale))
                     .font(.titleMedium)
                     .foregroundStyle(Color.appOnSurface)
                 Spacer()
@@ -203,7 +212,7 @@ private struct WeekdayHeader: View {
     var body: some View {
         HStack(spacing: 0) {
             ForEach(weekdayLabels, id: \.self) { label in
-                Text(label)
+                Text(LocalizedStringKey(label))
                     .font(.labelMedium)
                     .foregroundStyle(Color.appOnSurfaceVariant)
                     .frame(maxWidth: .infinity)
@@ -307,7 +316,7 @@ private struct DayCell: View {
     private var accessibilityText: String {
         guard let date else { return "" }
         let count = eventIcons.count
-        return "\(sectionDateLabel(date)). \(count) \(count == 1 ? "event" : "events")"
+        return "\(sectionDateLabel(date, locale: appLocale)). \(count == 1 ? L("1 event") : L("\(count) events"))"
     }
 }
 
@@ -339,8 +348,8 @@ private struct AgendaList: View {
         if upcoming.isEmpty {
             EmptyState(
                 systemImage: "calendar",
-                title: "Nothing coming up",
-                subtitle: "Tap + to add an event."
+                title: L("Nothing coming up"),
+                subtitle: L("Tap + to add an event.")
             )
             .frame(maxHeight: .infinity)
         } else {
@@ -364,7 +373,7 @@ private struct AgendaList: View {
                                 }
                         }
                     } header: {
-                        Text(date.map(sectionDateLabel) ?? "Upcoming")
+                        Text(date.map { sectionDateLabel($0, locale: appLocale) } ?? L("Upcoming"))
                             .font(.labelLarge.weight(.semibold))
                             .foregroundStyle(Color.appOnSurfaceVariant)
                     }
@@ -386,7 +395,7 @@ private struct EventCard: View {
 
     var body: some View {
         let feature = features[calendarIconColorIndex(event.icon) % features.count]
-        let timeLabel = eventTimeLabel(event)
+        let timeLabel = eventTimeLabel(event, locale: appLocale)
         Button(action: onEdit) {
             HStack(spacing: Spacing.md) {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)

@@ -87,7 +87,7 @@ struct FamilyScreen: View {
             Button("Cancel", role: .cancel) { memberToRemove = nil }
         } message: {
             Text(
-                "\(memberToRemove?.name ?? "This member") will be removed from the family. They can rejoin later with the invite code."
+                "\(memberToRemove?.name ?? L("This member")) will be removed from the family. They can rejoin later with the invite code."
             )
         }
         .sheet(isPresented: $showCreate) {
@@ -121,15 +121,17 @@ struct FamilyScreen: View {
         VStack(spacing: Spacing.md) {
             EmptyState(
                 systemImage: "figure.2.and.child.holdinghands",
-                title: "Bring your family together",
-                subtitle: "Create a family space or join one with an invite code to share "
-                    + "calendars, shopping lists, wishlists, and more."
+                title: L("Bring your family together"),
+                subtitle: L(
+                    // swiftlint:disable:next line_length
+                    "Create a family space or join one with an invite code to share calendars, shopping lists, wishlists, and more."
+                )
             )
             ErrorBanner(message: viewModel.error)
-            PrimaryButton(text: "Create a Family", systemImage: "person.3.fill") {
+            PrimaryButton(text: L("Create a Family"), systemImage: "person.3.fill") {
                 showCreate = true
             }
-            SecondaryButton(text: "Join with Invite Code", systemImage: "person.badge.plus") {
+            SecondaryButton(text: L("Join with Invite Code"), systemImage: "person.badge.plus") {
                 joinCodeText = ""
                 showJoin = true
             }
@@ -152,7 +154,7 @@ struct FamilyScreen: View {
             VStack(alignment: .leading, spacing: Spacing.cardGap) {
                 headerCard(family)
 
-                SectionHeader(text: "Members")
+                SectionHeader(text: L("Members"))
                     .padding(.top, Spacing.sm)
 
                 ForEach(viewModel.members) { member in
@@ -167,7 +169,7 @@ struct FamilyScreen: View {
                         }
                 }
 
-                DestructiveButton(text: "Leave family", systemImage: "rectangle.portrait.and.arrow.right") {
+                DestructiveButton(text: L("Leave family"), systemImage: "rectangle.portrait.and.arrow.right") {
                     showLeaveConfirm = true
                 }
                 .padding(.top, Spacing.sm)
@@ -183,20 +185,24 @@ struct FamilyScreen: View {
             Text(family.name)
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color.appOnSurface)
-            Text("\(viewModel.members.count) member\(viewModel.members.count == 1 ? "" : "s")")
+            Text("\(viewModel.members.count) members")
                 .font(.caption)
                 .foregroundStyle(Color.appCaption)
 
             if !family.joinCode.isEmpty {
                 CopyableCodeField(code: family.joinCode)
                     .padding(.top, Spacing.sm)
-                ShareLink(item: inviteMessage(familyName: family.name, joinCode: family.joinCode)) {
-                    shareLabel("Share invite", systemImage: "square.and.arrow.up")
+                ShareLink(item: inviteMessage(
+                    familyName: family.name,
+                    joinCode: family.joinCode,
+                    locale: appLocale
+                )) {
+                    shareLabel(L("Share invite"), systemImage: "square.and.arrow.up")
                 }
                 Button {
                     showQr = true
                 } label: {
-                    shareLabel("Show QR code", systemImage: "qrcode")
+                    shareLabel(L("Show QR code"), systemImage: "qrcode")
                 }
             }
             if viewModel.isUploading {
@@ -317,7 +323,7 @@ private struct MemberCard: View {
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, 12)
         .glassCard(cornerRadius: Radius.row)
-        .accessibilityLabel("\(member.name), \(isAdmin ? "Admin" : "Member")")
+        .accessibilityLabel("\(member.name), \(isAdmin ? L("Admin") : L("Member"))")
     }
 }
 
@@ -334,13 +340,13 @@ private struct CreateFamilySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            SheetHeader(title: "Create a family", confirmTitle: "Create", confirmEnabled: canCreate) {
+            SheetHeader(title: L("Create a family"), confirmTitle: L("Create"), confirmEnabled: canCreate) {
                 dismiss()
             } onConfirm: {
                 onCreate(name.trimmingCharacters(in: .whitespaces), code)
                 dismiss()
             }
-            GlassField(systemImage: "person.3", placeholder: "Family name", text: $name)
+            GlassField(systemImage: "person.3", placeholder: L("Family name"), text: $name)
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("INVITE CODE")
@@ -366,12 +372,11 @@ private struct CreateFamilySheet: View {
                 Color.appPrimary.opacity(0.09),
                 in: RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
             )
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
-        .padding(.bottom, Spacing.lg)
-        .glassSheet(detents: [.medium])
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }
 
@@ -407,10 +412,10 @@ private struct QrSheet: View {
                 .font(.system(size: 16, weight: .bold, design: .monospaced))
                 .tracking(3)
                 .foregroundStyle(Color.appOnSurface)
-            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, Spacing.screenEdge)
-        .glassSheet(detents: [.medium])
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }

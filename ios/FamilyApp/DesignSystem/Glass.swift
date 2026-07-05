@@ -6,10 +6,13 @@ import SwiftUI
 
 extension View {
     /// Content card / list row / grid tile — recipe A. The workhorse surface.
+    /// `contentShape` pins the hit region to the card — the iOS 26 glass effect
+    /// otherwise leaves a wrapping Button's tap target misaligned.
     func glassCard(cornerRadius: CGFloat = Radius.card) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         return glassEffect(.regular, in: shape)
             .shadow(color: Color(hex: 0x141A3C).opacity(0.06), radius: 9, x: 0, y: 6)
+            .contentShape(shape)
     }
 
     /// Accent-tinted glass card — for selected / active surfaces.
@@ -17,6 +20,7 @@ extension View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         return glassEffect(.regular.tint(tint), in: shape)
             .shadow(color: tint.opacity(0.2), radius: 9, x: 0, y: 6)
+            .contentShape(shape)
     }
 
     /// Nav / chrome pill or floating control — recipe B. Interactive (reacts to touch).
@@ -54,6 +58,7 @@ extension View {
                 style: StrokeStyle(lineWidth: 1, dash: [4, 3])
             )
         )
+        .contentShape(shape)
     }
 }
 

@@ -15,8 +15,14 @@ supabase/.temp/
 # iOS
 ios/*.xcodeproj
 ios/*.xcworkspace
+# XcodeGen-generated from project.yml (info.path / entitlements) — regenerated on build
+ios/FamilyApp/Info.plist
+ios/FamilyApp/FamilyApp.entitlements
 xcuserdata/
 DerivedData/
 ios/Config/Secrets.xcconfig
 ios/FamilyApp/Resources/GoogleService-Info.plist
+
+# sourcekit-lsp build server config (machine-specific absolute paths)
+buildServer.json
 .DS_Store

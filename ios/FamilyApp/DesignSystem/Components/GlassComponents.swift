@@ -41,27 +41,31 @@ struct SheetHeader: View {
     let onConfirm: () -> Void
 
     var body: some View {
-        ZStack {
+        // Flex sides (Cancel / centred title / confirm capsule) so a wide confirm label
+        // like "Create group" stays on one line and never overlaps the title.
+        HStack(spacing: 8) {
+            Button("Cancel", action: onCancel)
+                .font(.system(size: 17))
+                .foregroundStyle(Color.appPrimary)
+            Spacer(minLength: 8)
             Text(title)
                 .font(.pushedTitle)
                 .foregroundStyle(Color.appOnSurface)
-            HStack {
-                Button("Cancel", action: onCancel)
-                    .font(.system(size: 17))
-                    .foregroundStyle(Color.appPrimary)
-                Spacer()
-                Button(action: onConfirm) {
-                    Text(confirmTitle)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .frame(height: 34)
-                        .background(Color.appPrimary, in: Capsule())
-                        .shadow(color: Color.appPrimary.opacity(0.35), radius: 6, y: 4)
-                        .opacity(confirmEnabled ? 1 : 0.4)
-                }
-                .disabled(!confirmEnabled)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Button(action: onConfirm) {
+                Text(confirmTitle)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 16)
+                    .frame(height: 34)
+                    .background(Color.appPrimary, in: Capsule())
+                    .shadow(color: Color.appPrimary.opacity(0.35), radius: 6, y: 4)
+                    .opacity(confirmEnabled ? 1 : 0.4)
             }
+            .disabled(!confirmEnabled)
         }
         .padding(.horizontal, 4)
     }
@@ -209,6 +213,43 @@ extension View {
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(Radius.sheet)
             .presentationBackground(.regularMaterial)
+    }
+
+    /// Content-hugging frosted sheet: measures its content and sizes the detent to it,
+    /// leaving only a small natural gap. Scrolls only if the content would overflow the
+    /// screen (SwiftUI clamps an over-tall `.height` detent and the ScrollView takes over).
+    /// Apply to a sheet's root content — a VStack with its own padding and NO trailing Spacer.
+    func huggingSheet() -> some View {
+        modifier(HuggingSheetModifier())
+    }
+}
+
+private struct SheetContentHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct HuggingSheetModifier: ViewModifier {
+    @State private var contentHeight: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        ScrollView {
+            content
+                .frame(maxWidth: .infinity)
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: SheetContentHeightKey.self, value: proxy.size.height)
+                    }
+                )
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .onPreferenceChange(SheetContentHeightKey.self) { contentHeight = $0 }
+        .presentationDetents(contentHeight > 0 ? [.height(contentHeight)] : [.medium])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(Radius.sheet)
+        .presentationBackground(.regularMaterial)
     }
 }
 

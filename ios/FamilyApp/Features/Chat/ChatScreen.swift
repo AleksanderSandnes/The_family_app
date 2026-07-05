@@ -16,8 +16,8 @@ struct ChatScreen: View {
                 } else if viewModel.conversations.isEmpty {
                     EmptyState(
                         systemImage: "bubble.left.and.bubble.right.fill",
-                        title: "No conversations yet",
-                        subtitle: "No conversations yet. Start chatting with your family!"
+                        title: L("No conversations yet"),
+                        subtitle: L("No conversations yet. Start chatting with your family!")
                     )
                 } else {
                     List {
@@ -79,7 +79,8 @@ private struct ConversationRow: View {
         let isOneOnOne = preview.participants.count == 2 || conv.userTo != nil
         let other = preview.participants.first { $0.id != currentUserId }
         let displayName = conversationDisplayName(
-            conversation: conv, participants: preview.participants, currentUserId: currentUserId
+            conversation: conv, participants: preview.participants,
+            currentUserId: currentUserId, locale: appLocale
         )
         let avatarUrl = conv.imageUri ?? (isOneOnOne ? other?.avatarUrl : nil)
         let avatarColor = Color(argb: (isOneOnOne ? other?.avatarColor : nil).flatMap {
@@ -97,7 +98,7 @@ private struct ConversationRow: View {
                             .lineLimit(1)
                         Spacer()
                         if let last = preview.lastMessage {
-                            Text(relativeTime(last.sentAt))
+                            Text(relativeTime(last.sentAt, locale: appLocale))
                                 .font(.system(size: 12, weight: isUnread ? .semibold : .regular))
                                 .foregroundStyle(isUnread ? Color.appPrimary : Color.appCaption)
                         }
@@ -105,7 +106,8 @@ private struct ConversationRow: View {
                     HStack {
                         Text(conversationPreviewText(
                             lastMessage: preview.lastMessage,
-                            lastSenderName: preview.lastSenderName
+                            lastSenderName: preview.lastSenderName,
+                            locale: appLocale
                         ))
                         .font(.system(size: 13, weight: isUnread ? .medium : .regular))
                         .foregroundStyle(isUnread ? Color.appOnSurface : Color.appCaption)
@@ -148,10 +150,10 @@ struct NewConversationSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             SheetHeader(
-                title: "New conversation",
-                confirmTitle: selected.count > 1 ? "Create group" : "Start chat",
+                title: L("New conversation"),
+                confirmTitle: selected.count > 1 ? L("Create group") : L("Start chat"),
                 confirmEnabled: !selected.isEmpty,
                 onCancel: { dismiss() },
                 onConfirm: {
@@ -159,39 +161,34 @@ struct NewConversationSheet: View {
                     dismiss()
                 }
             )
-            .padding(.horizontal, Spacing.screenEdge)
-            .padding(.vertical, Spacing.lg)
+            .padding(.bottom, Spacing.sm)
 
             if candidates.isEmpty {
                 EmptyState(
                     systemImage: "person.2",
-                    title: "No family members",
-                    subtitle: "Invite your family first to start chatting."
+                    title: L("No family members"),
+                    subtitle: L("Invite your family first to start chatting.")
                 )
-                Spacer()
             } else {
-                ScrollView {
-                    VStack(spacing: Spacing.sm) {
-                        if selected.count > 1 {
-                            GlassField(placeholder: "Group name (optional)", text: $name)
-                                .padding(.bottom, Spacing.xs)
-                        }
-                        ForEach(candidates) { member in
-                            MemberSelectRow(member: member, selected: selected.contains(member.id)) {
-                                if selected.contains(member.id) {
-                                    selected.remove(member.id)
-                                } else {
-                                    selected.insert(member.id)
-                                }
-                            }
+                if selected.count > 1 {
+                    GlassField(placeholder: L("Group name (optional)"), text: $name)
+                        .padding(.bottom, Spacing.xs)
+                }
+                ForEach(candidates) { member in
+                    MemberSelectRow(member: member, selected: selected.contains(member.id)) {
+                        if selected.contains(member.id) {
+                            selected.remove(member.id)
+                        } else {
+                            selected.insert(member.id)
                         }
                     }
-                    .padding(.horizontal, Spacing.screenEdge)
-                    .padding(.bottom, Spacing.lg)
                 }
             }
         }
-        .glassSheet(detents: [.large, .medium])
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }
 

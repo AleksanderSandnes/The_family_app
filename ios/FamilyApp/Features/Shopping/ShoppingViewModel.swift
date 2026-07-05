@@ -293,8 +293,11 @@ final class ShoppingViewModel {
 }
 
 /// Progress label shown on list cards — mirrors shoppingProgressLabel in ShoppingScreens.kt.
-func shoppingProgressLabel(_ progress: ListProgress?) -> String {
-    guard let progress, progress.total > 0 else { return "No items yet" }
-    if progress.bought == progress.total { return "All bought" }
-    return "\(progress.bought) of \(progress.total) bought"
+func shoppingProgressLabel(
+    _ progress: ListProgress?,
+    locale: Locale = Locale(identifier: "en_US_POSIX")
+) -> String {
+    guard let progress, progress.total > 0 else { return L("No items yet", locale: locale) }
+    if progress.bought == progress.total { return L("All bought", locale: locale) }
+    return L("\(progress.bought) of \(progress.total) bought", locale: locale)
 }

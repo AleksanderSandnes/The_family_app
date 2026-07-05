@@ -66,7 +66,7 @@ struct FamilyMapScreen: View {
             }
             .padding(Spacing.screenEdge)
         }
-        .featureTopBar("Family Map")
+        .featureTopBar(L("Family Map"))
         .onAppear {
             switch viewModel.authorizationStatus {
             case .notDetermined:
@@ -90,8 +90,8 @@ struct FamilyMapScreen: View {
             Button("Not now", role: .cancel) {}
         } message: {
             Text(
-                "Your location is shared only with your family, and only while the map is open. "
-                    + "You can turn visibility off anytime in Settings."
+                // swiftlint:disable:next line_length
+                "Your location is shared only with your family, and only while the map is open. You can turn visibility off anytime in Settings."
             )
         }
     }
@@ -186,7 +186,7 @@ private struct MemberLegend: View {
     }
 
     private func legendDetail(for location: UserLocationModel) -> String {
-        let lastSeen = formatLastSeen(location.updatedAt)
+        let lastSeen = formatLastSeen(location.updatedAt, locale: appLocale)
         if let place = placeNames[location.userId] {
             return "\(place) · \(lastSeen)"
         }

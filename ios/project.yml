@@ -6,6 +6,13 @@ options:
   deploymentTarget:
     iOS: "26.0"
   createIntermediateGroups: true
+  developmentLanguage: en
+# The app ships English + Norwegian Bokmål localizations; the in-app language picker
+# overrides the system language via the root \.locale environment.
+knownRegions:
+  - en
+  - nb
+  - Base
 
 configFiles:
   Debug: Config/Shared.xcconfig
@@ -78,6 +85,9 @@ targets:
       path: FamilyApp/Info.plist
       properties:
         CFBundleDisplayName: The Family App
+        CFBundleLocalizations:
+          - en
+          - nb
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

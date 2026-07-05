@@ -82,11 +82,11 @@ struct HomeScreen: View {
                 if viewModel.state.isLoading {
                     LoadingState()
                 } else if viewModel.state.loadError {
-                    ErrorBanner(message: "Couldn't load your data. Pull to refresh.")
+                    ErrorBanner(message: L("Couldn't load your data. Pull to refresh."))
                 } else {
                     if viewModel.state.hasSummary {
                         summarySection
-                        SectionHeader(text: "Quick access")
+                        SectionHeader(text: L("Quick access"))
                     }
                     LazyVGrid(columns: columns, spacing: 14) {
                         ForEach(features) { feature in
@@ -116,7 +116,7 @@ struct HomeScreen: View {
                 SummaryCard(
                     systemImage: "fork.knife",
                     feature: .meals,
-                    label: "TONIGHT",
+                    label: L("TONIGHT"),
                     value: tonight,
                     detail: nil
                 ) { onOpen(.meal) }
@@ -125,7 +125,7 @@ struct HomeScreen: View {
                 SummaryCard(
                     systemImage: "calendar",
                     feature: .calendar,
-                    label: "NEXT EVENT",
+                    label: L("NEXT EVENT"),
                     value: eventTitle,
                     detail: state.nextEventWhen
                 ) {
@@ -136,8 +136,8 @@ struct HomeScreen: View {
                 SummaryCard(
                     systemImage: "cart.fill",
                     feature: .shopping,
-                    label: "SHOPPING",
-                    value: "\(state.shoppingRemaining) left to buy",
+                    label: L("SHOPPING"),
+                    value: L("\(state.shoppingRemaining) left to buy"),
                     detail: nil
                 ) { onOpen(.shopping) }
             }
@@ -145,7 +145,7 @@ struct HomeScreen: View {
                 SummaryCard(
                     systemImage: "birthday.cake.fill",
                     feature: .birthdays,
-                    label: "NEXT BIRTHDAY",
+                    label: L("NEXT BIRTHDAY"),
                     value: birthdayName,
                     detail: state.nextBirthdayWhen
                 ) { onOpen(.birthday) }
@@ -230,7 +230,7 @@ private struct HomeHeader: View {
     }
 
     private var greetingLine: String {
-        let greeting = timeBasedGreeting()
+        let greeting = timeBasedGreeting(locale: appLocale)
         let firstName = state.user?.name.split(separator: " ").first.map(String.init) ?? ""
         return firstName.isEmpty ? greeting : "\(greeting), \(firstName)"
     }
@@ -266,7 +266,7 @@ private struct FamilyCard: View {
                     Text(family.name)
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("\(memberCount) member\(memberCount == 1 ? "" : "s")")
+                    Text(memberCount == 1 ? L("1 member") : L("\(memberCount) members"))
                         .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.85))
                 }
@@ -327,21 +327,23 @@ private struct FeatureTile: View {
             VStack(alignment: .leading, spacing: 0) {
                 FeatureBadge(systemImage: feature.systemImage, feature: feature.accent, size: 36)
                 Spacer(minLength: Spacing.sm)
-                Text(feature.title)
+                Text(LocalizedStringKey(feature.title))
                     .font(.cardTitle)
                     .foregroundStyle(Color.appOnSurface)
                     .lineLimit(1)
-                Text(feature.subtitle)
+                Text(LocalizedStringKey(feature.subtitle))
                     .font(.system(size: 12))
                     .foregroundStyle(Color.appCaption)
                     .lineLimit(1)
             }
             .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .aspectRatio(1.15, contentMode: .fit)
+            .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
             .glassCard(cornerRadius: Radius.row)
+            // Pin the hit region to the visible tile — the glass effect inside a
+            // LazyVGrid otherwise leaves the Button's tap target misaligned.
+            .contentShape(RoundedRectangle(cornerRadius: Radius.row, style: .continuous))
         }
         .buttonStyle(PressScaleButtonStyle())
-        .accessibilityLabel("\(feature.title) feature")
+        .accessibilityLabel(Text("\(Text(LocalizedStringKey(feature.title))) feature"))
     }
 }

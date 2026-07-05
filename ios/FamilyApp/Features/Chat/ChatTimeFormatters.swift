@@ -19,62 +19,83 @@ func parseInstantMs(_ isoString: String) -> Int64? {
     return Int64(date.timeIntervalSince1970 * 1000)
 }
 
-private func dayOfWeekShort(_ epochMs: Int64) -> String {
+/// English-stable default so unit tests (which pass no locale) keep asserting English;
+/// the UI passes the in-app `appLocale` so weekday/month/time names localize.
+private let defaultFormatLocale = Locale(identifier: "en_US_POSIX")
+
+private func dayOfWeekShort(_ epochMs: Int64, locale: Locale) -> String {
     let formatter = DateFormatter()
+    formatter.locale = locale
     formatter.dateFormat = "EEE"
     return formatter.string(from: Date(timeIntervalSince1970: Double(epochMs) / 1000))
 }
 
-private func monthDayShort(_ epochMs: Int64) -> String {
+private func monthDayShort(_ epochMs: Int64, locale: Locale) -> String {
     let formatter = DateFormatter()
+    formatter.locale = locale
     formatter.dateFormat = "MMM d"
     return formatter.string(from: Date(timeIntervalSince1970: Double(epochMs) / 1000))
 }
 
-private func timePart(_ epochMs: Int64) -> String {
+private func timePart(_ epochMs: Int64, locale: Locale) -> String {
     let formatter = DateFormatter()
-    formatter.dateFormat = "h:mm a"
-    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.locale = locale
+    // Locale-appropriate hour:minute (12h "9:30 AM" for en, 24h "09:30" for nb).
+    formatter.setLocalizedDateFormatFromTemplate("jmm")
     return formatter.string(from: Date(timeIntervalSince1970: Double(epochMs) / 1000))
 }
 
 /// Short relative label for the conversation list (e.g. "2m ago", "Yesterday", "Mon").
-func relativeTime(_ isoString: String, nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000)) -> String {
+func relativeTime(
+    _ isoString: String,
+    nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000),
+    locale: Locale = defaultFormatLocale
+) -> String {
     guard let instant = parseInstantMs(isoString) else { return "" }
     let diffMs = nowMs - instant
     let diffMin = diffMs / minuteMs
     let diffH = diffMs / hourMs
     let diffD = diffMs / dayMs
     switch true {
-    case diffMin < 1: return "now"
-    case diffMin < 60: return "\(diffMin)m ago"
-    case diffH < 24: return "\(diffH)h ago"
-    case diffD == 1: return "Yesterday"
-    case diffD < 7: return dayOfWeekShort(instant)
-    default: return monthDayShort(instant)
+    case diffMin < 1: return L("now", locale: locale)
+    case diffMin < 60: return L("\(diffMin)m ago", locale: locale)
+    case diffH < 24: return L("\(diffH)h ago", locale: locale)
+    case diffD == 1: return L("Yesterday", locale: locale)
+    case diffD < 7: return dayOfWeekShort(instant, locale: locale)
+    default: return monthDayShort(instant, locale: locale)
     }
 }
 
 /// Compact message timestamp (e.g. "2:30 PM", "Yesterday 2:30 PM", "Mon 2:30 PM").
-func messageTimeLabel(_ isoString: String, nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000)) -> String {
+func messageTimeLabel(
+    _ isoString: String,
+    nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000),
+    locale: Locale = defaultFormatLocale
+) -> String {
     guard let instant = parseInstantMs(isoString) else { return "" }
     let diffD = (nowMs - instant) / dayMs
-    let time = timePart(instant)
+    let time = timePart(instant, locale: locale)
     switch true {
     case diffD == 0: return time
-    case diffD == 1: return "Yesterday \(time)"
-    case diffD < 7: return "\(dayOfWeekShort(instant)) \(time)"
-    default: return "\(monthDayShort(instant)) \(time)"
+    case diffD == 1: return L("Yesterday \(time)", locale: locale)
+    case diffD < 7: return "\(dayOfWeekShort(instant, locale: locale)) \(time)"
+    default: return "\(monthDayShort(instant, locale: locale)) \(time)"
     }
 }
 
 /// Chat-header presence: "Active now" within 2 minutes, else "Active {relative}".
-func presenceLabel(_ lastActiveIso: String?, nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000)) -> String? {
+func presenceLabel(
+    _ lastActiveIso: String?,
+    nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000),
+    locale: Locale = defaultFormatLocale
+) -> String? {
     guard let lastActiveIso, let instant = parseInstantMs(lastActiveIso) else { return nil }
     let diffMin = (nowMs - instant) / minuteMs
-    return diffMin < presenceActiveNowMinutes
-        ? "Active now"
-        : "Active \(relativeTime(lastActiveIso, nowMs: nowMs))"
+    if diffMin < presenceActiveNowMinutes {
+        return L("Active now", locale: locale)
+    }
+    let relative = relativeTime(lastActiveIso, nowMs: nowMs, locale: locale)
+    return L("Active \(relative)", locale: locale)
 }
 
 /// True when another participant's last_read_at is at or after the message's sent_at.
@@ -98,13 +119,14 @@ func gapExceedsTenMinutes(earlierIso: String, laterIso: String) -> Bool {
 func conversationDisplayName(
     conversation: ConversationModel,
     participants: [UserModel],
-    currentUserId: String
+    currentUserId: String,
+    locale: Locale = defaultFormatLocale
 ) -> String {
     let isOneOnOne = participants.count == 2 || conversation.userTo != nil
     let other = participants.first { $0.id != currentUserId }
     if isOneOnOne {
         if let name = other?.name, !name.isEmpty { return name }
-        return conversation.name.isEmpty ? "Chat" : conversation.name
+        return conversation.name.isEmpty ? L("Chat", locale: locale) : conversation.name
     }
     if !conversation.name.isEmpty { return conversation.name }
     let names = participants
@@ -112,15 +134,19 @@ func conversationDisplayName(
         .prefix(3)
         .compactMap { $0.name.split(separator: " ").first.map(String.init) }
         .joined(separator: ", ")
-    return names.isEmpty ? "Group chat" : names
+    return names.isEmpty ? L("Group chat", locale: locale) : names
 }
 
-func conversationPreviewText(lastMessage: MessageModel?, lastSenderName: String?) -> String {
-    guard let lastMessage else { return "No messages yet" }
+func conversationPreviewText(
+    lastMessage: MessageModel?,
+    lastSenderName: String?,
+    locale: Locale = defaultFormatLocale
+) -> String {
+    guard let lastMessage else { return L("No messages yet", locale: locale) }
     let prefix = lastSenderName.map { "\($0): " } ?? ""
     switch lastMessage.messageType {
-    case "image": return "\(prefix)Photo"
-    case "voice": return "\(prefix)Voice message"
+    case "image": return prefix + L("Photo", locale: locale)
+    case "voice": return prefix + L("Voice message", locale: locale)
     default: return "\(prefix)\(lastMessage.text)"
     }
 }

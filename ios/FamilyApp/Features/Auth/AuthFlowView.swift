@@ -29,10 +29,10 @@ struct LoginScreen: View {
     @State private var showForgotDialog = false
 
     var body: some View {
-        AuthScaffold(title: "Welcome back", subtitle: "Sign in to keep your family in sync.") {
+        AuthScaffold(title: L("Welcome back"), subtitle: L("Sign in to keep your family in sync.")) {
             ErrorBanner(message: viewModel.error)
             FamilyTextField(
-                label: "Email",
+                label: L("Email"),
                 text: $email.clearingError(viewModel),
                 systemImage: "envelope",
                 keyboardType: .emailAddress,
@@ -41,7 +41,7 @@ struct LoginScreen: View {
             )
             .accessibilityLabel("Email address field")
             FamilyTextField(
-                label: "Password",
+                label: L("Password"),
                 text: $password.clearingError(viewModel),
                 systemImage: "lock",
                 isPassword: true,
@@ -55,7 +55,7 @@ struct LoginScreen: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
 
             PrimaryButton(
-                text: "Sign in",
+                text: L("Sign in"),
                 enabled: !email.isEmpty && !password.isEmpty,
                 loading: viewModel.loading
             ) {
@@ -63,12 +63,12 @@ struct LoginScreen: View {
             }
             .accessibilityLabel("Sign in button")
 
-            GlassButton(text: "Continue with Google", systemImage: "globe") {
+            GlassButton(text: L("Continue with Google"), systemImage: "globe") {
                 viewModel.signInWithGoogle()
             }
             .accessibilityLabel("Continue with Google button")
 
-            AuthFooter(prompt: "New to The Family App?", action: "Create account") {
+            AuthFooter(prompt: L("New to The Family App?"), action: L("Create account")) {
                 viewModel.clearError()
                 onNavigateToRegister()
             }
@@ -91,13 +91,13 @@ struct RegisterScreen: View {
     @State private var form = RegistrationForm()
 
     private var title: String {
-        step == 1 ? "Create your account" : "About you"
+        step == 1 ? L("Create your account") : L("About you")
     }
 
     private var subtitle: String {
         step == 1
-            ? "Start with your login details."
-            : "Optional details to help your family recognize you."
+            ? L("Start with your login details.")
+            : L("Optional details to help your family recognize you.")
     }
 
     var body: some View {
@@ -106,7 +106,7 @@ struct RegisterScreen: View {
             ErrorBanner(message: viewModel.error)
             if step == 1 {
                 registrationStep1
-                AuthFooter(prompt: "Already have an account?", action: "Sign in") {
+                AuthFooter(prompt: L("Already have an account?"), action: L("Sign in")) {
                     viewModel.clearError()
                     dismiss()
                 }
@@ -118,14 +118,14 @@ struct RegisterScreen: View {
 
     @ViewBuilder private var registrationStep1: some View {
         FamilyTextField(
-            label: "Full name",
+            label: L("Full name"),
             text: $form.name.clearingError(viewModel),
             systemImage: "person",
             textContentType: .name,
             autocapitalization: .words
         )
         FamilyTextField(
-            label: "Email",
+            label: L("Email"),
             text: $form.email.clearingError(viewModel),
             systemImage: "envelope",
             keyboardType: .emailAddress,
@@ -133,7 +133,7 @@ struct RegisterScreen: View {
             autocapitalization: .never
         )
         FamilyTextField(
-            label: "Password",
+            label: L("Password"),
             text: $form.password.clearingError(viewModel),
             systemImage: "lock",
             isPassword: true,
@@ -141,14 +141,14 @@ struct RegisterScreen: View {
         )
         PasswordStrengthBar(password: form.password)
         FamilyTextField(
-            label: "Confirm password",
+            label: L("Confirm password"),
             text: $form.confirm.clearingError(viewModel),
             systemImage: "lock",
             isPassword: true,
             textContentType: .newPassword
         )
         PrimaryButton(
-            text: "Continue",
+            text: L("Continue"),
             enabled: !form.name.isEmpty && !form.email.isEmpty
                 && !form.password.isEmpty && !form.confirm.isEmpty,
             loading: viewModel.loading
@@ -160,7 +160,7 @@ struct RegisterScreen: View {
 
     @ViewBuilder private var registrationStep2: some View {
         VStack(alignment: .leading, spacing: 2) {
-            BirthdayPickerField(isoDate: $form.birthday)
+            BirthdayPickerField(isoDate: $form.birthday, label: L("Birthday (optional)"))
             Text("Used to track family birthdays")
                 .font(.labelMedium)
                 .foregroundStyle(Color.appOnSurfaceVariant)
@@ -168,7 +168,7 @@ struct RegisterScreen: View {
         }
         VStack(alignment: .leading, spacing: 2) {
             FamilyTextField(
-                label: "Mobile (optional)",
+                label: L("Mobile (optional)"),
                 text: $form.mobile,
                 systemImage: "phone",
                 keyboardType: .phonePad,
@@ -179,11 +179,11 @@ struct RegisterScreen: View {
                 .foregroundStyle(Color.appOnSurfaceVariant)
                 .padding(.leading, Spacing.lg)
         }
-        PrimaryButton(text: "Create account", loading: viewModel.loading) {
+        PrimaryButton(text: L("Create account"), loading: viewModel.loading) {
             viewModel.register(form)
         }
         .accessibilityLabel("Create account button")
-        SecondaryButton(text: "Back") {
+        SecondaryButton(text: L("Back")) {
             step = 1
             viewModel.clearError()
         }
@@ -347,7 +347,7 @@ struct PasswordStrengthBar: View {
                             .frame(height: 4)
                     }
                 }
-                Text(label(for: strength))
+                Text(LocalizedStringKey(label(for: strength)))
                     .font(.labelMedium)
                     .foregroundStyle(color(for: strength))
             }
@@ -395,20 +395,22 @@ struct BirthdayPickerField: View {
             selection = Self.isoFormat.date(from: isoDate) ?? fallback
             showPicker = true
         } label: {
-            HStack(spacing: Spacing.md) {
+            HStack(spacing: 12) {
                 Image(systemName: "birthday.cake")
-                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(Color.appPrimary)
+                    .frame(width: 22)
                 Text(displayText.isEmpty ? label : displayText)
-                    .font(.bodyLarge)
-                    .foregroundStyle(displayText.isEmpty ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                    .font(.system(size: 16))
+                    .foregroundStyle(displayText.isEmpty ? Color.appCaption : Color.appOnSurface)
                 Spacer()
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.appCaption)
             }
-            .padding(.horizontal, Spacing.lg)
-            .frame(minHeight: 56)
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
-                    .strokeBorder(Color.appOnSurface.opacity(0.45), lineWidth: 1)
-            )
+            .padding(.horizontal, 16)
+            .frame(height: 54)
+            .glassCard(cornerRadius: Radius.field)
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showPicker) {
@@ -416,7 +418,7 @@ struct BirthdayPickerField: View {
                 DatePicker("Birthday", selection: $selection, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding(Spacing.lg)
-                PrimaryButton(text: "Done") {
+                PrimaryButton(text: L("Done")) {
                     isoDate = Self.isoFormat.string(from: selection)
                     showPicker = false
                 }
@@ -430,7 +432,7 @@ struct BirthdayPickerField: View {
 
     private var displayText: String {
         guard let date = Self.isoFormat.date(from: isoDate) else { return "" }
-        return date.formatted(.dateTime.month(.wide).day().year())
+        return date.formatted(.dateTime.month(.wide).day().year().locale(appLocale))
     }
 }
 

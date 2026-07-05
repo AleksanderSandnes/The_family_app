@@ -254,27 +254,35 @@ func isoWeekNumber(of date: LocalDate) -> Int {
     return calendar.component(.weekOfYear, from: instant)
 }
 
-/// "dd MMM" English — mirrors MEAL_DATE_FMT ("05 Jul"); falls back to the raw string.
-func formatMealDate(_ stored: String) -> String {
+/// English-stable default so unit tests keep asserting English; the UI passes `appLocale`.
+private let defaultMealLocale = Locale(identifier: "en_US_POSIX")
+
+/// "dd MMM" — mirrors MEAL_DATE_FMT ("05 Jul"); falls back to the raw string.
+func formatMealDate(_ stored: String, locale: Locale = defaultMealLocale) -> String {
     guard let date = LocalDate(iso: stored) else { return stored }
     let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
     let formatter = DateFormatter()
     formatter.dateFormat = "dd MMM"
-    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.locale = locale
     formatter.timeZone = TimeZone(identifier: "UTC")
     return formatter.string(from: instant)
 }
 
 /// Plan card sub-label — mirrors the planLabel logic in MealScreens.kt.
-func mealPlanLabel(progress: MealProgress?, fromIso: String, toIso: String) -> String {
+func mealPlanLabel(
+    progress: MealProgress?,
+    fromIso: String,
+    toIso: String,
+    locale: Locale = defaultMealLocale
+) -> String {
     if let progress, progress.total > 0 {
-        return "\(progress.planned) of \(progress.total) dinners planned"
+        return L("\(progress.planned) of \(progress.total) dinners planned", locale: locale)
     }
     guard let from = LocalDate(iso: fromIso), let to = LocalDate(iso: toIso) else {
-        return "0 days"
+        return L("\(0) days", locale: locale)
     }
     let count = max(from.daysUntil(to) + 1, 0)
-    return "\(count) days"
+    return L("\(count) days", locale: locale)
 }
 
 extension LocalDate {

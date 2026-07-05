@@ -37,7 +37,7 @@ extension ChatViewModel {
             do {
                 try await client.from("messages").insert(payload).execute()
             } catch {
-                errorMessage = "Failed to send message"
+                errorMessage = L("Failed to send message")
                 messages.removeAll { $0.id == temp.id }
             }
             await loadMessages(conversationId)
@@ -48,7 +48,7 @@ extension ChatViewModel {
                     guard preview.conversation.id == conversationId else { return preview }
                     var preview = preview
                     preview.lastMessage = last
-                    preview.lastSenderName = "You"
+                    preview.lastSenderName = L("You")
                     return preview
                 }
             }
@@ -71,7 +71,7 @@ extension ChatViewModel {
                 ]).execute()
                 await loadMessages(conversationId)
             } catch {
-                errorMessage = "Failed to send image"
+                errorMessage = L("Failed to send image")
             }
         }
     }
@@ -92,7 +92,7 @@ extension ChatViewModel {
                 ]).execute()
                 await loadMessages(conversationId)
             } catch {
-                errorMessage = "Failed to send voice message"
+                errorMessage = L("Failed to send voice message")
             }
         }
     }

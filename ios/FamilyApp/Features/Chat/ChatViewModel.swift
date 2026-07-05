@@ -138,7 +138,7 @@ final class ChatViewModel {
             let lastMessage = await repo.getLastMessage(conversationId: conv.id)
             let lastSenderName: String? = if let lastMessage {
                 lastMessage.userFrom == userId
-                    ? "You"
+                    ? L("You")
                     : (userProfiles[lastMessage.userFrom]?.name
                         ?? String(lastMessage.userFrom.prefix(userIdPreviewLength)))
             } else {
@@ -206,7 +206,7 @@ final class ChatViewModel {
     private func onConversationActivity(convId: String, userId: String) async {
         guard let last = await repo.getLastMessage(conversationId: convId),
               last.userFrom != userId else { return }
-        let senderName = userProfiles[last.userFrom]?.name ?? "Family member"
+        let senderName = userProfiles[last.userFrom]?.name ?? L("Family member")
         conversations = conversations.map { preview in
             guard preview.conversation.id == convId else { return preview }
             var preview = preview

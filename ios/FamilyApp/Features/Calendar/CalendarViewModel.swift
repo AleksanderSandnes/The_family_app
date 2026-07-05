@@ -30,23 +30,14 @@ struct YearMonth: Hashable, Comparable {
         return YearMonth(year: newYear, month: zeroBased - newYear * 12 + 1)
     }
 
-    /// "MMMM yyyy" English — mirrors MONTH_YEAR_FMT.
-    var formatted: String {
-        let months = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ]
-        return "\(months[month - 1]) \(year)"
+    /// "MMMM yyyy" in the in-app language — mirrors MONTH_YEAR_FMT.
+    func formatted(locale: Locale = Locale(identifier: "en_US_POSIX")) -> String {
+        let instant = Date(timeIntervalSince1970: TimeInterval(atDay(1).epochDay) * 86400)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "LLLL yyyy"
+        formatter.locale = locale
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: instant)
     }
 
     static func < (lhs: YearMonth, rhs: YearMonth) -> Bool {
@@ -264,19 +255,25 @@ func dateEventIcons(for events: [CalendarEventModel]) -> [LocalDate: [String]] {
 }
 
 /// Concise time label for the event card — mirrors eventTimeLabel.
-func eventTimeLabel(_ event: CalendarEventModel) -> String {
-    if event.allDay { return "All day" }
+func eventTimeLabel(
+    _ event: CalendarEventModel,
+    locale: Locale = Locale(identifier: "en_US_POSIX")
+) -> String {
+    if event.allDay { return L("All day", locale: locale) }
     return [event.timeFrom, event.timeTo]
         .filter { !$0.isEmpty }
         .joined(separator: " – ")
 }
 
-/// "EEEE, d MMMM" English — mirrors SECTION_DATE_FMT.
-func sectionDateLabel(_ date: LocalDate) -> String {
+/// "EEEE, d MMMM" in the in-app language — mirrors SECTION_DATE_FMT.
+func sectionDateLabel(
+    _ date: LocalDate,
+    locale: Locale = Locale(identifier: "en_US_POSIX")
+) -> String {
     let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
     let formatter = DateFormatter()
     formatter.dateFormat = "EEEE, d MMMM"
-    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.locale = locale
     formatter.timeZone = TimeZone(identifier: "UTC")
     return formatter.string(from: instant)
 }

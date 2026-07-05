@@ -84,7 +84,7 @@ struct VoiceNoteView: View {
                     .foregroundStyle(tint)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(player.isPlaying ? "Pause voice message" : "Play voice message")
+            .accessibilityLabel(player.isPlaying ? L("Pause voice message") : L("Play voice message"))
             // Simple waveform placeholder (Android parity).
             HStack(spacing: 2) {
                 ForEach(0..<18, id: \.self) { index in

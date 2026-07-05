@@ -34,6 +34,8 @@ struct FamilyApp: App {
             .environment(root)
             .environment(deepLinks)
             .preferredColorScheme(SessionStore.shared.themeMode.colorScheme)
+            // In-app language: drives every Text/LocalizedStringKey, live.
+            .environment(\.locale, SessionStore.shared.appLanguage.locale)
             .onOpenURL { url in
                 deepLinks.handle(url)
             }

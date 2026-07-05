@@ -18,10 +18,12 @@ struct FamilyTextField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack(spacing: Spacing.md) {
+            HStack(spacing: 12) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .foregroundStyle(focused ? Color.appPrimary : Color.appOnSurfaceVariant)
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Color.appPrimary)
+                        .frame(width: 22)
                 }
                 Group {
                     if isPassword, !revealed {
@@ -30,7 +32,8 @@ struct FamilyTextField: View {
                         TextField(label, text: $text)
                     }
                 }
-                .font(.bodyLarge)
+                .font(.system(size: 16))
+                .tint(Color.appPrimary)
                 .keyboardType(keyboardType)
                 .textContentType(textContentType)
                 .textInputAutocapitalization(isPassword ? .never : autocapitalization)
@@ -42,15 +45,16 @@ struct FamilyTextField: View {
                         revealed.toggle()
                     } label: {
                         Image(systemName: revealed ? "eye.slash" : "eye")
-                            .foregroundStyle(Color.appOnSurfaceVariant)
+                            .foregroundStyle(Color.appCaption)
                     }
                 }
             }
-            .padding(.horizontal, Spacing.lg)
-            .frame(minHeight: 56)
+            .padding(.horizontal, 16)
+            .frame(height: 54)
+            .glassCard(cornerRadius: Radius.field)
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
-                    .strokeBorder(borderColor, lineWidth: focused ? 2 : 1)
+                    .strokeBorder(borderColor, lineWidth: 1.5)
             )
 
             if let supportingText {
@@ -64,7 +68,7 @@ struct FamilyTextField: View {
 
     private var borderColor: Color {
         if isError { return .appError }
-        if focused { return .appPrimary }
-        return Color.appOnSurface.opacity(0.45)
+        if focused { return Color.appPrimary.opacity(0.5) }
+        return .clear
     }
 }

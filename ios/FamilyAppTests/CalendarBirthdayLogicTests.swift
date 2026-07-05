@@ -12,7 +12,7 @@ final class YearMonthTests: XCTestCase {
     }
 
     func testFormatted() {
-        XCTAssertEqual(YearMonth(year: 2026, month: 7).formatted, "July 2026")
+        XCTAssertEqual(YearMonth(year: 2026, month: 7).formatted(), "July 2026")
     }
 
     func testComparable() {

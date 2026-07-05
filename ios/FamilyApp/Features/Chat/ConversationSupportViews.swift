@@ -3,6 +3,30 @@
 import NukeUI
 import SwiftUI
 
+private let quickReactions = ["❤️", "😂", "👍", "😮", "😢", "🙏"]
+
+/// Horizontal quick-reaction bar shown above a message bubble on long-press.
+struct ReactionBar: View {
+    let onPick: (String) -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(quickReactions, id: \.self) { emoji in
+                Button {
+                    onPick(emoji)
+                } label: {
+                    Text(emoji).font(.system(size: 26))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .glassEffect(.regular, in: Capsule())
+        .shadow(color: Color(hex: 0x141A3C).opacity(0.2), radius: 12, y: 6)
+    }
+}
+
 struct TypingIndicatorRow: View {
     @State private var phase = 0
 
@@ -41,7 +65,7 @@ struct MemberListSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(spacing: Spacing.lg) {
+        VStack(spacing: Spacing.sm) {
             ZStack {
                 Text(title)
                     .font(.pushedTitle)
@@ -53,31 +77,29 @@ struct MemberListSheet: View {
                     Spacer()
                 }
             }
-            ScrollView {
-                VStack(spacing: Spacing.sm) {
-                    ForEach(members) { member in
-                        Button {
-                            onPick(member)
-                        } label: {
-                            HStack(spacing: Spacing.md) {
-                                InitialAvatar(user: member, size: 40)
-                                Text(member.name)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(destructive ? Color.appError : Color.appOnSurface)
-                                Spacer()
-                            }
-                            .padding(.horizontal, Spacing.lg)
-                            .padding(.vertical, 12)
-                            .rowSurface(ghost: false, cornerRadius: Radius.row)
-                        }
-                        .buttonStyle(.plain)
+            .padding(.bottom, Spacing.sm)
+            ForEach(members) { member in
+                Button {
+                    onPick(member)
+                } label: {
+                    HStack(spacing: Spacing.md) {
+                        InitialAvatar(user: member, size: 40)
+                        Text(member.name)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(destructive ? Color.appError : Color.appOnSurface)
+                        Spacer()
                     }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, 12)
+                    .rowSurface(ghost: false, cornerRadius: Radius.row)
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
-        .glassSheet(detents: [.medium])
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }
 
@@ -122,4 +144,24 @@ struct ViewerImage: Identifiable {
     var id: String {
         url
     }
+}
+
+// MARK: - Localized helpers (shared with ConversationScreen)
+
+/// Reply/quote preview label: user text verbatim, media kinds localized.
+@MainActor
+func quotedPreviewText(_ message: MessageModel) -> String {
+    switch message.messageType {
+    case "text": message.text
+    case "image": L("Image")
+    case "voice": L("Voice")
+    default: message.messageType.capitalized
+    }
+}
+
+/// Recording timer label, e.g. "Recording 0:07".
+@MainActor
+func recordingLabel(seconds: Int) -> String {
+    let time = String(format: "%d:%02d", seconds / 60, seconds % 60)
+    return L("Recording \(time)", locale: appLocale)
 }

@@ -156,22 +156,26 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }
 
-/// Last-seen label — mirrors formatLastSeen in FamilyMapScreen.kt.
+/// Last-seen label — mirrors formatLastSeen in FamilyMapScreen.kt. Pass `appLocale` so
+/// the relative label and fallback date render in the app language.
 func formatLastSeen(
     _ updatedAt: String?,
-    nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000)
+    nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000),
+    locale: Locale = Locale(identifier: "en_US_POSIX")
 ) -> String {
-    guard let updatedAt else { return "Unknown" }
-    guard let instant = parseInstantMs(updatedAt) else { return "Location shared" }
+    guard let updatedAt else { return L("Unknown", locale: locale) }
+    guard let instant = parseInstantMs(updatedAt) else {
+        return L("Location shared", locale: locale)
+    }
     let seconds = (nowMs - instant) / 1000
     switch true {
-    case seconds < 60: return "Just now" // also handles clock-skew futures
-    case seconds < 3600: return "\(seconds / 60) min ago"
-    case seconds < 86400: return "\(seconds / 3600) hours ago"
+    case seconds < 60: return L("Just now", locale: locale) // also clock-skew futures
+    case seconds < 3600: return L("\(Int(seconds / 60)) min ago", locale: locale)
+    case seconds < 86400: return L("\(Int(seconds / 3600)) hours ago", locale: locale)
     default:
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = locale
         return formatter.string(from: Date(timeIntervalSince1970: Double(instant) / 1000))
     }
 }

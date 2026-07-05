@@ -28,6 +28,7 @@ final class SessionStore {
         static let notifyDaysBefore = "notify_days_before"
         static let locationVisible = "location_visible"
         static let permissionsRequested = "permissions_requested"
+        static let appLanguage = "app_language"
     }
 
     /// The app-internal `public.users.id` — NOT the auth UUID.
@@ -37,6 +38,7 @@ final class SessionStore {
     private(set) var notifyDaysBefore: Int
     private(set) var locationVisible: Bool
     private(set) var permissionsRequested: Bool
+    private(set) var appLanguage: AppLanguage
 
     /// Injectable defaults for tests; production uses the `shared` singleton.
     init(defaults: UserDefaults = .standard) {
@@ -48,6 +50,7 @@ final class SessionStore {
         notifyDaysBefore = defaults.object(forKey: Keys.notifyDaysBefore) as? Int ?? 1
         locationVisible = defaults.bool(forKey: Keys.locationVisible)
         permissionsRequested = defaults.bool(forKey: Keys.permissionsRequested)
+        appLanguage = AppLanguage(rawValue: defaults.string(forKey: Keys.appLanguage) ?? "") ?? .english
     }
 
     func signIn(userId: String) {
@@ -83,5 +86,10 @@ final class SessionStore {
     func setPermissionsRequested() {
         permissionsRequested = true
         defaults.set(true, forKey: Keys.permissionsRequested)
+    }
+
+    func setAppLanguage(_ language: AppLanguage) {
+        appLanguage = language
+        defaults.set(language.rawValue, forKey: Keys.appLanguage)
     }
 }

@@ -34,7 +34,7 @@ final class ProfileViewModel {
 
     func saveAvatar(imageData: Data) {
         guard let compressed = ImageUtils.compressWithOrientation(imageData) else {
-            error = "Could not read the selected photo."
+            error = L("Could not read the selected photo.")
             return
         }
         uploadAvatar(compressed)
@@ -42,7 +42,7 @@ final class ProfileViewModel {
 
     func saveAvatar(image: UIImage) {
         guard let compressed = ImageUtils.compressWithOrientation(image) else {
-            error = "Could not read the captured photo."
+            error = L("Could not read the captured photo.")
             return
         }
         uploadAvatar(compressed)
@@ -67,7 +67,7 @@ final class ProfileViewModel {
                 updated.avatarUrl = cacheBusted
                 user = updated
             } catch {
-                self.error = "Failed to update photo. Please try again."
+                self.error = L("Failed to update photo. Please try again.")
             }
         }
     }
@@ -118,14 +118,15 @@ final class ProfileViewModel {
     }
 }
 
-/// "MMMM d, yyyy" or the raw string / em-dash — mirrors formatBirthday in ProfileScreens.kt.
-func formatBirthday(_ raw: String?) -> String {
+/// Long localized date (en: "December 24, 1990", nb: "24. desember 1990") or the raw
+/// string / em-dash — mirrors formatBirthday in ProfileScreens.kt. Pass `appLocale`.
+func formatBirthday(_ raw: String?, locale: Locale = Locale(identifier: "en_US_POSIX")) -> String {
     guard let raw, !raw.isEmpty else { return "—" }
     guard let date = LocalDate(iso: raw) else { return raw }
     let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
     let formatter = DateFormatter()
-    formatter.dateFormat = "MMMM d, yyyy"
-    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateStyle = .long
+    formatter.locale = locale
     formatter.timeZone = TimeZone(identifier: "UTC")
     return formatter.string(from: instant)
 }

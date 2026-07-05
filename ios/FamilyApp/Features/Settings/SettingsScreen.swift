@@ -23,7 +23,7 @@ struct SettingsScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                SectionHeader(text: "Appearance")
+                SectionHeader(text: L("Appearance"))
                 settingsCard {
                     ThemeSelector(selected: session.themeMode) { mode in
                         repo.setThemeMode(mode)
@@ -31,12 +31,12 @@ struct SettingsScreen: View {
                     }
                 }
 
-                SectionHeader(text: "Notifications")
+                SectionHeader(text: L("Notifications"))
                 settingsCard {
                     ToggleRow(
                         systemImage: "bell.fill",
-                        title: "Notifications",
-                        subtitle: "Family activity and reminders",
+                        title: L("Notifications"),
+                        subtitle: L("Family activity and reminders"),
                         isOn: Binding(
                             get: { session.notificationsEnabled },
                             set: { enabled in
@@ -55,12 +55,12 @@ struct SettingsScreen: View {
                     }
                 }
 
-                SectionHeader(text: "Privacy")
+                SectionHeader(text: L("Privacy"))
                 settingsCard {
                     ToggleRow(
                         systemImage: "location.fill",
-                        title: "Visible on family map",
-                        subtitle: "Share your location with family",
+                        title: L("Visible on family map"),
+                        subtitle: L("Share your location with family"),
                         isOn: Binding(
                             get: { session.locationVisible },
                             set: { visible in
@@ -71,14 +71,19 @@ struct SettingsScreen: View {
                     )
                 }
 
-                SectionHeader(text: "About")
-                settingsCard { aboutSection }
+                SectionHeader(text: L("Language"))
+                settingsCard {
+                    LanguagePicker(selected: session.appLanguage) { language in
+                        session.setAppLanguage(language)
+                        flashSaved()
+                    }
+                }
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.sm)
         }
         .ambientBackground()
-        .featureTopBar("Settings")
+        .featureTopBar(L("Settings"))
         .overlay(alignment: .bottom) {
             if showSaved {
                 Text("Settings saved")
@@ -127,7 +132,7 @@ struct SettingsScreen: View {
                         Task { await repo.setNotifyDaysBefore(option.days) }
                         flashSaved()
                     } label: {
-                        Text(option.label)
+                        Text(LocalizedStringKey(option.label))
                             .font(.system(size: 12.5, weight: selected ? .bold : .medium))
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .background {
@@ -145,36 +150,44 @@ struct SettingsScreen: View {
         }
         .padding(Spacing.lg)
     }
+}
 
-    private var aboutSection: some View {
-        HStack(spacing: Spacing.md) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Gradients.brand)
-                .frame(width: 44, height: 44)
-                .overlay(Image(systemName: "person.3.fill")
-                    .font(.system(size: 18, weight: .medium)).foregroundStyle(.white))
-            VStack(alignment: .leading, spacing: 1) {
-                Text("The Family App")
-                    .font(.system(size: 15, weight: .semibold))
+/// Language dropdown — English / Norsk. Endonyms shown in their own language.
+private struct LanguagePicker: View {
+    let selected: AppLanguage
+    let onSelect: (AppLanguage) -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(AppLanguage.allCases) { language in
+                Button {
+                    onSelect(language)
+                } label: {
+                    if language == selected {
+                        Label(language.displayName, systemImage: "checkmark")
+                    } else {
+                        Text(language.displayName)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "globe")
+                    .foregroundStyle(Color.appPrimary)
+                    .frame(width: 24)
+                Text("Language")
+                    .font(.system(size: 16))
                     .foregroundStyle(Color.appOnSurface)
-                Text("v\(appVersion) (build \(appBuild))")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Color.appCaption)
-                Text("Your family, together")
-                    .font(.system(size: 12.5))
+                Spacer()
+                Text(selected.displayName)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.appPrimary)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color.appCaption)
             }
-            Spacer()
+            .padding(Spacing.lg)
         }
-        .padding(Spacing.lg)
-    }
-
-    private var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
-    }
-
-    private var appBuild: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
     }
 }
 
@@ -200,7 +213,7 @@ private struct ThemeSelector: View {
                         VStack(spacing: 5) {
                             Image(systemName: icon(for: mode))
                                 .font(.system(size: 18))
-                            Text(mode.label)
+                            Text(LocalizedStringKey(mode.label))
                                 .font(.system(size: 12, weight: isSelected ? .bold : .medium))
                         }
                         .frame(maxWidth: .infinity, minHeight: 60)

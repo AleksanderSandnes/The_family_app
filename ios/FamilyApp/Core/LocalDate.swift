@@ -85,12 +85,14 @@ struct LocalDate: Comparable, Hashable, CustomStringConvertible {
         other.epochDay - epochDay
     }
 
-    /// English formatting like Android's "EEE d MMM" (e.g. "Mon 6 Jul").
-    func formattedShort() -> String {
+    /// Short weekday-day-month label like Android's "EEE d MMM" (e.g. "Mon 6 Jul").
+    /// Pass the in-app `appLocale` so weekday/month names localize (nb: "man. 6 juli");
+    /// the default keeps the previous English output for callers that don't opt in yet.
+    func formattedShort(locale: Locale = Locale(identifier: "en_US_POSIX")) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(epochDay) * 86400)
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE d MMM"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = locale
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter.string(from: date)
     }

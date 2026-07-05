@@ -22,7 +22,7 @@ enum IconKeyMap {
         "restaurant_menu": "menucard.fill",
         "lunch_dining": "takeoutbag.and.cup.and.straw.fill",
         "dinner_dining": "fork.knife.circle.fill",
-        "bakery_dining": "croissant.fill",
+        "bakery_dining": "fish.fill",
         "local_pizza": "triangle.lefthalf.filled",
         "ramen_dining": "cup.and.saucer.fill",
         "set_meal": "rectangle.grid.1x2.fill",

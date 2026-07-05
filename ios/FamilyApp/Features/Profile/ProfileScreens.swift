@@ -25,27 +25,27 @@ struct ProfileScreen: View {
                 VStack(spacing: 0) {
                     InfoRow(
                         systemImage: "envelope.fill",
-                        label: "Email",
+                        label: L("Email"),
                         value: displayValue(viewModel.user?.email)
                     )
                     InfoRow(
                         systemImage: "phone.fill",
-                        label: "Mobile",
+                        label: L("Mobile"),
                         value: displayValue(viewModel.user?.mobile)
                     )
                     InfoRow(
                         systemImage: "birthday.cake.fill",
-                        label: "Birthday",
-                        value: formatBirthday(viewModel.user?.birthday)
+                        label: L("Birthday"),
+                        value: formatBirthday(viewModel.user?.birthday, locale: appLocale)
                     )
                 }
                 .padding(6)
                 .glassCard(cornerRadius: Radius.overviewCard)
 
-                ActionRow(systemImage: "pencil", label: "Edit profile", onTap: onEdit)
-                ActionRow(systemImage: "gearshape.fill", label: "Settings", onTap: onSettings)
+                ActionRow(systemImage: "pencil", label: L("Edit profile"), onTap: onEdit)
+                ActionRow(systemImage: "gearshape.fill", label: L("Settings"), onTap: onSettings)
 
-                DestructiveButton(text: "Sign out", systemImage: "rectangle.portrait.and.arrow.right") {
+                DestructiveButton(text: L("Sign out"), systemImage: "rectangle.portrait.and.arrow.right") {
                     viewModel.signOut()
                 }
                 .padding(.top, Spacing.xs)
@@ -247,26 +247,26 @@ struct ProfileEditScreen: View {
                     .tracking(0.6)
                     .foregroundStyle(Color.appCaption)
                 FamilyTextField(
-                    label: "Full name *",
+                    label: L("Full name *"),
                     text: $name,
                     systemImage: "person",
                     autocapitalization: .words
                 )
                 FamilyTextField(
-                    label: "Email *",
+                    label: L("Email *"),
                     text: $email,
                     systemImage: "envelope",
                     keyboardType: .emailAddress,
                     autocapitalization: .never
                 )
                 FamilyTextField(
-                    label: "Mobile *",
+                    label: L("Mobile *"),
                     text: $mobile,
                     systemImage: "phone",
                     keyboardType: .phonePad
                 )
-                BirthdayPickerField(isoDate: $birthday, label: "Birthday *")
-                PrimaryButton(text: "Save changes", enabled: saveEnabled) {
+                BirthdayPickerField(isoDate: $birthday, label: L("Birthday *"))
+                PrimaryButton(text: L("Save changes"), enabled: saveEnabled) {
                     viewModel.save(name: name, email: email, birthday: birthday, mobile: mobile)
                     dismiss()
                 }
@@ -275,7 +275,7 @@ struct ProfileEditScreen: View {
             .padding(Spacing.lg)
         }
         .ambientBackground()
-        .featureTopBar("Edit profile")
+        .featureTopBar(L("Edit profile"))
         .onAppear {
             guard !seeded, let user = viewModel.user else { return }
             seeded = true

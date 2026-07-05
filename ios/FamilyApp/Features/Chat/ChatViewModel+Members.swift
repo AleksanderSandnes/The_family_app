@@ -66,7 +66,7 @@ extension ChatViewModel {
                     ]).execute()
                 }
             } catch {
-                errorMessage = "Failed to create conversation"
+                errorMessage = L("Failed to create conversation")
             }
             await loadConversations()
         }
@@ -115,7 +115,7 @@ extension ChatViewModel {
                     loadConversation(conversationId)
                 }
             } catch {
-                errorMessage = "Failed to add member"
+                errorMessage = L("Failed to add member")
             }
             await loadConversations()
         }
@@ -163,7 +163,7 @@ extension ChatViewModel {
                 conversation?.imageUri = url
                 await loadConversations()
             } catch {
-                errorMessage = "Failed to update image"
+                errorMessage = L("Failed to update image")
             }
         }
     }
@@ -194,7 +194,7 @@ extension ChatViewModel {
                 conversationDeleted = true
                 await loadConversations()
             } catch {
-                errorMessage = "Failed to delete conversation"
+                errorMessage = L("Failed to delete conversation")
             }
         }
     }

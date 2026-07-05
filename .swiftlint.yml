@@ -157,6 +157,7 @@ identifier_name:
   # ...but these idiomatic short names are always allowed (loop/geometry/db/routing):
   allowed_symbols: ["_"]
   excluded:
+    - L                # localization helper: L("key") / L("key", locale:)
     - id
     - x
     - y

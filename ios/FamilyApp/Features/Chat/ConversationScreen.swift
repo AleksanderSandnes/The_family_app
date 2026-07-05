@@ -5,8 +5,6 @@ import NukeUI
 import PhotosUI
 import SwiftUI
 
-private let quickReactions = ["❤️", "😂", "👍", "😮", "😢", "🙏"]
-
 struct ConversationScreen: View {
     let conversationId: String
     let viewModel: ChatViewModel
@@ -36,18 +34,20 @@ struct ConversationScreen: View {
     }
 
     private var title: String {
-        guard let conversation = viewModel.conversation else { return "Chat" }
+        guard let conversation = viewModel.conversation else { return L("Chat") }
         return conversationDisplayName(
             conversation: conversation,
             participants: viewModel.currentParticipants,
-            currentUserId: myId ?? ""
+            currentUserId: myId ?? "",
+            locale: appLocale
         )
     }
 
     private var presence: String? {
         guard !isGroup else { return nil }
         return presenceLabel(
-            viewModel.currentParticipants.first { $0.id != myId }?.lastActiveAt
+            viewModel.currentParticipants.first { $0.id != myId }?.lastActiveAt,
+            locale: appLocale
         )
     }
 
@@ -93,18 +93,18 @@ struct ConversationScreen: View {
                 dismiss()
             }
         }
-        .inputDialog(isPresented: $showRename, title: "Rename group", label: "Name", text: $renameText) {
+        .inputDialog(isPresented: $showRename, title: L("Rename group"), label: L("Name"), text: $renameText) {
             viewModel.renameConversation(id: conversationId, name: renameText)
         }
         .sheet(isPresented: $showAddMember) {
-            MemberListSheet(title: "Add member", members: availableToAdd) { member in
+            MemberListSheet(title: L("Add member"), members: availableToAdd) { member in
                 viewModel.addMember(conversationId: conversationId, newUserId: member.id)
                 showAddMember = false
             }
         }
         .sheet(isPresented: $showRemoveMember) {
             MemberListSheet(
-                title: "Remove member",
+                title: L("Remove member"),
                 members: viewModel.currentParticipants.filter { $0.id != myId },
                 destructive: true
             ) { member in
@@ -113,7 +113,7 @@ struct ConversationScreen: View {
             }
         }
         .sheet(isPresented: $showMembers) {
-            MemberListSheet(title: "Members", members: viewModel.currentParticipants) { _ in }
+            MemberListSheet(title: L("Members"), members: viewModel.currentParticipants) { _ in }
         }
         .alert("Delete conversation?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) { viewModel.deleteConversation(conversationId) }
@@ -206,7 +206,7 @@ struct ConversationScreen: View {
                             gapExceedsTenMinutes(earlierIso: $0.sentAt, laterIso: message.sentAt)
                         } ?? true
                         if showTimeLabel {
-                            Text(messageTimeLabel(message.sentAt))
+                            Text(messageTimeLabel(message.sentAt, locale: appLocale))
                                 .font(.labelMedium)
                                 .foregroundStyle(Color.appOnSurfaceVariant)
                                 .padding(.vertical, Spacing.sm)
@@ -258,7 +258,7 @@ struct ConversationScreen: View {
                         Text("Replying")
                             .font(.labelMedium.weight(.semibold))
                             .foregroundStyle(Color.appPrimary)
-                        Text(quoted.messageType == "text" ? quoted.text : quoted.messageType.capitalized)
+                        Text(quotedPreviewText(quoted))
                             .font(.labelMedium)
                             .foregroundStyle(Color.appOnSurfaceVariant)
                             .lineLimit(1)
@@ -335,7 +335,7 @@ struct ConversationScreen: View {
     private var recordingBar: some View {
         HStack(spacing: Spacing.md) {
             Circle().fill(Color.appError).frame(width: 10, height: 10)
-            Text(String(format: "Recording %d:%02d", recorder.seconds / 60, recorder.seconds % 60))
+            Text(recordingLabel(seconds: recorder.seconds))
                 .font(.bodyMedium)
                 .foregroundStyle(Color.appOnSurface)
             Spacer()
@@ -381,6 +381,7 @@ private struct MessageRow: View {
     let onOpenImage: (String) -> Void
 
     @State private var dragOffset: CGFloat = 0
+    @State private var showReactions = false
 
     var body: some View {
         if message.messageType == "system" {
@@ -406,6 +407,18 @@ private struct MessageRow: View {
                             .foregroundStyle(Color.appOnSurfaceVariant)
                     }
                     bubble
+                        .overlay(alignment: isMine ? .topTrailing : .topLeading) {
+                            if showReactions {
+                                ReactionBar { emoji in
+                                    onReact(emoji)
+                                    withAnimation(.easeOut(duration: 0.15)) { showReactions = false }
+                                }
+                                .transition(.scale(scale: 0.6).combined(with: .opacity))
+                                .offset(y: -50)
+                                .fixedSize()
+                                .zIndex(20)
+                            }
+                        }
                     if !reactions.isEmpty {
                         HStack(spacing: 4) {
                             ForEach(reactions.sorted(by: { $0.key < $1.key }), id: \.key) { emoji, users in
@@ -445,16 +458,12 @@ private struct MessageRow: View {
                         withAnimation(.spring(duration: 0.25)) { dragOffset = 0 }
                     }
             )
-            .contextMenu {
-                ForEach(quickReactions, id: \.self) { emoji in
-                    Button(emoji) { onReact(emoji) }
-                }
-                Divider()
-                Button {
-                    onReply()
-                } label: {
-                    Label("Reply", systemImage: "arrowshape.turn.up.left")
-                }
+            .onTapGesture {
+                if showReactions { withAnimation(.easeOut(duration: 0.15)) { showReactions = false } }
+            }
+            .onLongPressGesture(minimumDuration: 0.3) {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { showReactions.toggle() }
             }
         }
     }
@@ -466,7 +475,7 @@ private struct MessageRow: View {
                     Rectangle()
                         .fill(isMine ? Color.white.opacity(0.6) : Color.appPrimary)
                         .frame(width: 3)
-                    Text(quoted.messageType == "text" ? quoted.text : quoted.messageType.capitalized)
+                    Text(quotedPreviewText(quoted))
                         .font(.labelMedium)
                         .foregroundStyle(isMine ? .white.opacity(0.85) : Color.appOnSurfaceVariant)
                         .lineLimit(2)

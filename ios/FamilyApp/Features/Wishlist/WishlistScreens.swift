@@ -19,9 +19,9 @@ struct WishlistScreen: View {
                 } else if viewModel.wishlists.isEmpty {
                     EmptyState(
                         systemImage: "gift.fill",
-                        title: "No wishlists yet",
-                        subtitle: "Create a wishlist to share with your family",
-                        actionLabel: "New wishlist"
+                        title: L("No wishlists yet"),
+                        subtitle: L("Create a wishlist to share with your family"),
+                        actionLabel: L("New wishlist")
                     ) { showAdd = true }
                 } else {
                     List {
@@ -49,10 +49,10 @@ struct WishlistScreen: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            FloatingActionButton(text: "New wishlist", systemImage: "plus") { showAdd = true }
+            FloatingActionButton(text: L("New wishlist"), systemImage: "plus") { showAdd = true }
         }
         .ambientBackground()
-        .featureTopBar("Wishlists")
+        .featureTopBar(L("Wishlists"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
             NewWishlistSheet { name, icon in
@@ -123,8 +123,8 @@ struct WishlistDetailScreen: View {
             if sortedWishes.isEmpty {
                 EmptyState(
                     systemImage: "gift.fill",
-                    title: "No wishes yet",
-                    subtitle: "Add wishes to this list"
+                    title: L("No wishes yet"),
+                    subtitle: L("Add wishes to this list")
                 )
                 .frame(maxHeight: .infinity)
             } else {
@@ -165,13 +165,13 @@ struct WishlistDetailScreen: View {
 
             // Only the wishlist owner adds wishes; family members view + reserve.
             if isOwner {
-                PrimaryButton(text: "Add a wish", systemImage: "plus") { showAddWish = true }
+                PrimaryButton(text: L("Add a wish"), systemImage: "plus") { showAddWish = true }
                     .padding(Spacing.lg)
                     .background(.ultraThinMaterial)
             }
         }
         .ambientBackground()
-        .featureTopBar(viewModel.selectedWishlist?.name ?? "Wishlist")
+        .featureTopBar(viewModel.selectedWishlist?.name ?? L("Wishlist"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -189,8 +189,8 @@ struct WishlistDetailScreen: View {
         .task(id: wishlistId) { viewModel.loadWishlistDetail(wishlistId) }
         .inputDialog(
             isPresented: $showRename,
-            title: "Rename wishlist",
-            label: "Name",
+            title: L("Rename wishlist"),
+            label: L("Name"),
             text: $renameText
         ) {
             if !renameText.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -202,7 +202,7 @@ struct WishlistDetailScreen: View {
         }
         .sheet(isPresented: $showChangeIcon) {
             IconPickerSheet(
-                title: "Change icon",
+                title: L("Change icon"),
                 options: IconOptions.wishlist,
                 selected: viewModel.selectedWishlist?.icon ?? "card_giftcard",
                 symbolFor: IconKeyMap.wishlistSymbol
@@ -277,7 +277,7 @@ private struct OwnerWishRow: View {
                 }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(wish.checked ? "Unmark as claimed" : "Mark as claimed")
+            .accessibilityLabel(wish.checked ? L("Unmark as claimed") : L("Mark as claimed"))
             WishThumb(url: wish.imageUrl)
             Text(wishTitle(wish))
                 .font(.system(size: 15.5))
@@ -289,7 +289,7 @@ private struct OwnerWishRow: View {
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, 12)
         .rowSurface(ghost: wish.checked, cornerRadius: Radius.row)
-        .accessibilityLabel("\(wish.text), \(wish.checked ? "claimed" : "unclaimed")")
+        .accessibilityLabel("\(wish.text), \(wish.checked ? L("claimed") : L("unclaimed"))")
     }
 }
 
@@ -361,25 +361,24 @@ private struct NewWishlistSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            SheetHeader(title: "New wishlist", confirmTitle: "Create", confirmEnabled: canCreate) {
+            SheetHeader(title: L("New wishlist"), confirmTitle: L("Create"), confirmEnabled: canCreate) {
                 dismiss()
             } onConfirm: {
                 onCreate(name.trimmingCharacters(in: .whitespaces), selectedIcon)
                 dismiss()
             }
-            GlassField(systemImage: "gift", placeholder: "Wishlist name", text: $name)
-            SectionHeader(text: "Icon")
+            GlassField(systemImage: "gift", placeholder: L("Wishlist name"), text: $name)
+            SectionHeader(text: L("Icon"))
             IconGrid(
                 options: IconOptions.wishlist,
                 selected: selectedIcon,
                 symbolFor: IconKeyMap.wishlistSymbol
             ) { selectedIcon = $0 }
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
-        .padding(.bottom, Spacing.lg)
-        .glassSheet(detents: [.medium])
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }
 
@@ -399,8 +398,8 @@ private struct AddWishSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            SheetHeader(title: "Add a wish", confirmTitle: "Add", confirmEnabled: canAdd) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            SheetHeader(title: L("Add a wish"), confirmTitle: L("Add"), confirmEnabled: canAdd) {
                 dismiss()
             } onConfirm: {
                 onConfirm(WishDraft(
@@ -411,45 +410,40 @@ private struct AddWishSheet: View {
                 ))
                 dismiss()
             }
-            .padding(.horizontal, Spacing.screenEdge)
-            .padding(.vertical, Spacing.lg)
+            .padding(.bottom, Spacing.xs)
+            GlassField(systemImage: "gift", placeholder: L("What do you wish for?"), text: $text)
+            GlassField(systemImage: "link", placeholder: L("Link (optional)"), text: $link)
+            GlassField(systemImage: "tag", placeholder: L("Price (optional)"), text: $price)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.md) {
-                    GlassField(systemImage: "gift", placeholder: "What do you wish for?", text: $text)
-                    GlassField(systemImage: "link", placeholder: "Link (optional)", text: $link)
-                    GlassField(systemImage: "tag", placeholder: "Price (optional)", text: $price)
-
-                    PhotosPicker(selection: $photoItem, matching: .images) {
-                        HStack(spacing: Spacing.sm) {
-                            Image(systemName: "photo")
-                            Text(imageData == nil ? "Add photo (optional)" : "Photo selected")
-                        }
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Color.appPrimary)
-                        .frame(maxWidth: .infinity, minHeight: 52)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
-                                .strokeBorder(
-                                    Color.appPrimary.opacity(0.4),
-                                    style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])
-                                )
-                        )
-                    }
-                    if let imageData, let image = UIImage(data: imageData) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(height: 140)
-                            .frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
-                    }
+            PhotosPicker(selection: $photoItem, matching: .images) {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "photo")
+                    Text(imageData == nil ? L("Add photo (optional)") : L("Photo selected"))
                 }
-                .padding(.horizontal, Spacing.screenEdge)
-                .padding(.bottom, Spacing.lg)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color.appPrimary)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
+                        .strokeBorder(
+                            Color.appPrimary.opacity(0.4),
+                            style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])
+                        )
+                )
+            }
+            if let imageData, let image = UIImage(data: imageData) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 140)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
             }
         }
-        .glassSheet(detents: [.medium, .large])
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
         .onChange(of: photoItem) { _, item in
             Task {
                 imageData = try? await item?.loadTransferable(type: Data.self)

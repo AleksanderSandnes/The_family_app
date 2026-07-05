@@ -18,9 +18,9 @@ struct ShoppingScreen: View {
                 } else if viewModel.lists.isEmpty {
                     EmptyState(
                         systemImage: "cart.fill",
-                        title: "No lists yet",
-                        subtitle: "Create a shared shopping list for your family.",
-                        actionLabel: "New list"
+                        title: L("No lists yet"),
+                        subtitle: L("Create a shared shopping list for your family."),
+                        actionLabel: L("New list")
                     ) { showAdd = true }
                 } else {
                     List {
@@ -51,10 +51,10 @@ struct ShoppingScreen: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            FloatingActionButton(text: "New list", systemImage: "plus") { showAdd = true }
+            FloatingActionButton(text: L("New list"), systemImage: "plus") { showAdd = true }
         }
         .ambientBackground()
-        .featureTopBar("Shopping lists")
+        .featureTopBar(L("Shopping lists"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
             NewListSheet { title, icon in
@@ -103,7 +103,7 @@ private struct ShoppingListRow: View {
                         Text(list.title)
                             .font(.system(size: 15.5, weight: .semibold))
                             .foregroundStyle(allDone ? Color.appOnSurfaceVariant : Color.appOnSurface)
-                        Text(shoppingProgressLabel(progress))
+                        Text(shoppingProgressLabel(progress, locale: appLocale))
                             .font(.caption)
                             .foregroundStyle(allDone ? Color.appSuccess : Color.appCaption)
                     }
@@ -165,8 +165,8 @@ struct ShoppingDetailScreen: View {
             if viewModel.items.isEmpty {
                 EmptyState(
                     systemImage: "cart.fill",
-                    title: "Empty list",
-                    subtitle: "Tap the field below to add your first item."
+                    title: L("Empty list"),
+                    subtitle: L("Tap the field below to add your first item.")
                 )
                 .frame(maxHeight: .infinity)
             } else {
@@ -210,7 +210,7 @@ struct ShoppingDetailScreen: View {
             addItemBar
         }
         .ambientBackground()
-        .featureTopBar(viewModel.selectedList?.title ?? "List")
+        .featureTopBar(viewModel.selectedList?.title ?? L("List"))
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if !viewModel.items.isEmpty {
@@ -220,6 +220,7 @@ struct ShoppingDetailScreen: View {
                         .padding(.vertical, 4)
                         .background(Color.appPrimary.opacity(0.12), in: Capsule())
                         .foregroundStyle(Color.appPrimary)
+                        .padding(.leading, 8)
                 }
                 Menu {
                     Button("Rename list") {
@@ -241,8 +242,8 @@ struct ShoppingDetailScreen: View {
         .task(id: listId) { viewModel.loadListDetail(listId) }
         .inputDialog(
             isPresented: $showRename,
-            title: "Rename list",
-            label: "List name",
+            title: L("Rename list"),
+            label: L("List name"),
             text: $renameText
         ) {
             if !renameText.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -251,7 +252,7 @@ struct ShoppingDetailScreen: View {
         }
         .sheet(isPresented: $showChangeIcon) {
             IconPickerSheet(
-                title: "Change icon",
+                title: L("Change icon"),
                 options: IconOptions.shopping,
                 selected: viewModel.selectedList?.icon ?? "shopping_cart",
                 symbolFor: IconKeyMap.shoppingSymbol
@@ -377,7 +378,7 @@ private struct CompletedHeader: View {
     var body: some View {
         Button(action: onToggle) {
             HStack {
-                Text("Completed (\(count))".uppercased())
+                Text(L("Completed (\(count))").uppercased())
                     .font(.sectionLabel)
                     .tracking(0.6)
                     .foregroundStyle(Color.appCaption)
@@ -390,7 +391,7 @@ private struct CompletedHeader: View {
             .padding(.vertical, 6)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(expanded ? "Hide completed items" : "Show completed items")
+        .accessibilityLabel(expanded ? L("Hide completed items") : L("Show completed items"))
     }
 }
 
@@ -406,7 +407,7 @@ struct FloatingActionButton: View {
     var body: some View {
         GlassFAB(label: text, systemImage: systemImage, action: action)
             .padding(.trailing, 16)
-            .padding(.bottom, 90)
+            .padding(.bottom, 24)
             .accessibilityLabel(text)
     }
 }
@@ -435,12 +436,11 @@ struct IconPickerSheet: View {
                 }
             }
             IconGrid(options: options, selected: selected, symbolFor: symbolFor, onPick: onPick)
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
-        .padding(.bottom, Spacing.lg)
-        .glassSheet(detents: [.medium])
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }
 
@@ -458,24 +458,23 @@ private struct NewListSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            SheetHeader(title: "New list", confirmTitle: "Create", confirmEnabled: canCreate) {
+            SheetHeader(title: L("New list"), confirmTitle: L("Create"), confirmEnabled: canCreate) {
                 dismiss()
             } onConfirm: {
                 onCreate(title.trimmingCharacters(in: .whitespaces), selectedIcon)
                 dismiss()
             }
-            GlassField(systemImage: "cart", placeholder: "List name", text: $title)
-            SectionHeader(text: "Icon")
+            GlassField(systemImage: "cart", placeholder: L("List name"), text: $title)
+            SectionHeader(text: L("Icon"))
             IconGrid(
                 options: IconOptions.shopping,
                 selected: selectedIcon,
                 symbolFor: IconKeyMap.shoppingSymbol
             ) { selectedIcon = $0 }
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
-        .padding(.bottom, Spacing.lg)
-        .glassSheet(detents: [.medium])
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }

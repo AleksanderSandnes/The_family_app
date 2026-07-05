@@ -69,52 +69,48 @@ struct EventSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
             SheetHeader(
-                title: existingEvent != nil ? "Edit event" : "New event",
-                confirmTitle: "Save", confirmEnabled: canSave,
+                title: existingEvent != nil ? L("Edit event") : L("New event"),
+                confirmTitle: L("Save"), confirmEnabled: canSave,
                 onCancel: { dismiss() }, onConfirm: save
             )
-            .padding(.horizontal, Spacing.screenEdge)
-            .padding(.vertical, Spacing.lg)
+            GlassField(
+                systemImage: IconKeyMap.calendarSymbol(selectedIcon),
+                placeholder: L("Event name"),
+                text: $activity
+            )
+            SectionHeader(text: L("Icon"))
+            IconGrid(
+                options: IconOptions.calendar,
+                selected: selectedIcon,
+                symbolFor: IconKeyMap.calendarSymbol
+            ) { selectedIcon = $0 }
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.lg) {
-                    GlassField(
-                        systemImage: IconKeyMap.calendarSymbol(selectedIcon),
-                        placeholder: "Event name",
-                        text: $activity
-                    )
-                    SectionHeader(text: "Icon")
-                    IconGrid(
-                        options: IconOptions.calendar,
-                        selected: selectedIcon,
-                        symbolFor: IconKeyMap.calendarSymbol
-                    ) { selectedIcon = $0 }
-
-                    VStack(spacing: 0) {
-                        Toggle("All day", isOn: $allDay)
-                            .font(.system(size: 16))
-                            .tint(Color.appPrimary)
-                            .padding(.vertical, 6)
-                        Divider()
-                        dateTimeRow(label: "Starts", date: $dateFrom, time: $timeFrom) { picked in
-                            if dateTo < picked { dateTo = picked }
-                        }
-                        Divider()
-                        dateTimeRow(label: "Ends", date: $dateTo, time: $timeTo) { picked in
-                            if picked < dateFrom { dateTo = dateFrom }
-                        }
-                    }
-                    .padding(.horizontal, Spacing.lg)
-                    .padding(.vertical, 6)
-                    .glassCard(cornerRadius: Radius.menu)
+            VStack(spacing: 0) {
+                Toggle("All day", isOn: $allDay)
+                    .font(.system(size: 16))
+                    .tint(Color.appPrimary)
+                    .padding(.vertical, 14)
+                Divider()
+                dateTimeRow(label: L("Starts"), date: $dateFrom, time: $timeFrom) { picked in
+                    if dateTo < picked { dateTo = picked }
                 }
-                .padding(.horizontal, Spacing.screenEdge)
-                .padding(.bottom, Spacing.lg)
+                .padding(.vertical, 14)
+                Divider()
+                dateTimeRow(label: L("Ends"), date: $dateTo, time: $timeTo) { picked in
+                    if picked < dateFrom { dateTo = dateFrom }
+                }
+                .padding(.vertical, 14)
             }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, 4)
+            .glassCard(cornerRadius: Radius.menu)
         }
-        .glassSheet(detents: [.large, .medium])
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 
     private func dateTimeRow(
@@ -163,7 +159,7 @@ private struct EventDateButton: View {
                 DatePicker("Date", selection: $draft, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding(Spacing.lg)
-                PrimaryButton(text: "OK") {
+                PrimaryButton(text: L("OK")) {
                     var utc = Calendar(identifier: .gregorian)
                     utc.timeZone = .current
                     let parts = utc.dateComponents([.year, .month, .day], from: draft)
