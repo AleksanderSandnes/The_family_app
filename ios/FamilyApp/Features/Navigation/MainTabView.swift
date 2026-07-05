@@ -23,6 +23,9 @@ struct MainTabView: View {
     @State private var wishlistViewModel = WishlistViewModel()
     @State private var familyViewModel = FamilyViewModel()
     @State private var profileViewModel = ProfileViewModel()
+    // Shared between the chat list and open thread — deletes in the thread must
+    // reflect in the list on pop-back (see CLAUDE.md).
+    @State private var chatViewModel = ChatViewModel()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -46,11 +49,12 @@ struct MainTabView: View {
             .tag(Tab.calendar)
 
             NavigationStack(path: $chatPath) {
-                PlaceholderScreen(title: "Chat")
+                ChatScreen(viewModel: chatViewModel) { chatPath.append(.chatDetail(conversationId: $0)) }
                     .navigationDestination(for: Route.self) { destination(for: $0) }
             }
             .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
             .tag(Tab.chat)
+            .badge(chatViewModel.totalUnread)
 
             NavigationStack(path: $familyPath) {
                 FamilyScreen(viewModel: familyViewModel)
@@ -103,7 +107,13 @@ struct MainTabView: View {
         case .wishlistDetail(let wishlistId):
             WishlistDetailScreen(wishlistId: wishlistId, viewModel: wishlistViewModel)
         case .chatDetail(let conversationId):
-            PlaceholderScreen(title: "Conversation \(conversationId)")
+            ConversationScreen(conversationId: conversationId, viewModel: chatViewModel)
+                .onChange(of: chatViewModel.navigateToConversation) { _, newId in
+                    // 1:1 promoted to a group — swap the thread.
+                    guard let newId else { return }
+                    chatViewModel.navigateToConversation = nil
+                    chatPath = [.chatDetail(conversationId: newId)]
+                }
         case .profileEdit:
             ProfileEditScreen(viewModel: profileViewModel)
         case .settings:
