@@ -33,6 +33,26 @@ struct CalendarScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            ScreenHeader(L("Calendar")) {
+                HStack(spacing: Spacing.sm) {
+                    Button("Today") { viewModel.selectDate(.today()) }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.appPrimary)
+                        .padding(.horizontal, 14)
+                        .frame(height: 36)
+                        .glassCard(cornerRadius: 18)
+                    Button { showAdd = true } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(Color.appPrimary)
+                            .frame(width: 36, height: 36)
+                            .glassCard(cornerRadius: 18)
+                    }
+                    .accessibilityLabel("Add new calendar event")
+                }
+            }
+            .padding(.horizontal, Spacing.screenEdge)
+
             Picker("View", selection: $viewMode) {
                 ForEach(CalendarViewMode.allCases, id: \.self) { mode in
                     Text(mode.titleKey).tag(mode)
@@ -77,19 +97,7 @@ struct CalendarScreen: View {
             }
         }
         .ambientBackground()
-        .navigationTitle("Calendar")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button("Today") { viewModel.selectDate(.today()) }
-                Button {
-                    showAdd = true
-                } label: {
-                    Image(systemName: "plus")
-                        .accessibilityLabel("Add new calendar event")
-                }
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
             EventSheet(existingEvent: nil, initialDate: viewModel.selectedDate) { draft in

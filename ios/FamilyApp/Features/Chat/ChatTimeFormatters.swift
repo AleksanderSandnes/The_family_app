@@ -83,6 +83,20 @@ func messageTimeLabel(
     }
 }
 
+/// Full exact timestamp revealed when a message bubble is tapped
+/// (e.g. "Jul 7, 2026 at 2:30 PM" for en, "7. juli 2026, 14:30" for nb).
+func exactMessageTimestamp(
+    _ isoString: String,
+    locale: Locale = defaultFormatLocale
+) -> String {
+    guard let instant = parseInstantMs(isoString) else { return "" }
+    let formatter = DateFormatter()
+    formatter.locale = locale
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .short
+    return formatter.string(from: Date(timeIntervalSince1970: Double(instant) / 1000))
+}
+
 /// Chat-header presence: "Active now" within 2 minutes, else "Active {relative}".
 func presenceLabel(
     _ lastActiveIso: String?,

@@ -170,25 +170,61 @@ struct NewConversationSheet: View {
                     subtitle: L("Invite your family first to start chatting.")
                 )
             } else {
-                if selected.count > 1 {
-                    GlassField(placeholder: L("Group name (optional)"), text: $name)
-                        .padding(.bottom, Spacing.xs)
-                }
-                ForEach(candidates) { member in
-                    MemberSelectRow(member: member, selected: selected.contains(member.id)) {
-                        if selected.contains(member.id) {
-                            selected.remove(member.id)
-                        } else {
-                            selected.insert(member.id)
+                SectionHeader(text: L("Family members"))
+                VStack(spacing: 0) {
+                    ForEach(Array(candidates.enumerated()), id: \.element.id) { index, member in
+                        MemberSelectRow(member: member, selected: selected.contains(member.id)) {
+                            if selected.contains(member.id) {
+                                selected.remove(member.id)
+                            } else {
+                                selected.insert(member.id)
+                            }
+                        }
+                        if index < candidates.count - 1 {
+                            Divider().padding(.leading, 68)
                         }
                     }
                 }
+                .glassCard(cornerRadius: Radius.row)
+
+                HStack(spacing: 6) {
+                    Text(L("Group name").uppercased())
+                        .font(.sectionLabel)
+                        .tracking(0.6)
+                        .foregroundStyle(Color.appCaption)
+                    Text("· \(L("appears with 2+ people"))")
+                        .font(.caption)
+                        .foregroundStyle(Color.appCaption)
+                }
+                .padding(.horizontal, 6)
+                .padding(.top, Spacing.sm)
+
+                groupNameField
             }
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.xl)
         .huggingSheet()
+    }
+
+    private var groupNameField: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "person.2")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(Color.appPrimary)
+                .frame(width: 22)
+            TextField(L("Group name"), text: $name)
+                .font(.system(size: 16))
+                .foregroundStyle(Color.appOnSurface)
+                .tint(Color.appPrimary)
+            Text(L("optional"))
+                .font(.system(size: 14))
+                .foregroundStyle(Color.appCaption)
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 54)
+        .glassCard(cornerRadius: Radius.field)
     }
 }
 
@@ -211,7 +247,7 @@ struct MemberSelectRow: View {
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, 12)
-            .rowSurface(ghost: false, cornerRadius: Radius.row)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

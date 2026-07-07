@@ -172,10 +172,10 @@ private struct CreatePlanSheet: View {
                 symbolFor: IconKeyMap.mealSymbol
             ) { selectedIcon = $0 }
             HStack(spacing: Spacing.sm) {
-                PlanDatePicker(label: L("Start date"), selection: $fromDate) { picked in
+                PlanDatePicker(label: L("Starts"), selection: $fromDate) { picked in
                     if let to = toDate, to < picked { toDate = picked }
                 }
-                PlanDatePicker(label: L("End date"), selection: $toDate) { picked in
+                PlanDatePicker(label: L("Ends"), selection: $toDate) { picked in
                     if let from = fromDate, picked < from { toDate = from }
                 }
             }
@@ -201,12 +201,25 @@ private struct PlanDatePicker: View {
             draft = selection ?? Date()
             showPicker = true
         } label: {
-            Text(selection.map { formatMealDate(isoString(from: $0), locale: appLocale) } ?? label)
-                .font(.bodyMedium)
-                .foregroundStyle(selection == nil ? Color.appOnSurfaceVariant : Color.appOnSurface)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .background(Color.appSurfaceVariant)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.appPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label.uppercased())
+                        .font(.sectionLabel)
+                        .tracking(0.5)
+                        .foregroundStyle(Color.appCaption)
+                    Text(selection.map { formatMealDate(isoString(from: $0), locale: appLocale) } ?? L("Select"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(selection == nil ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, Spacing.md)
+            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+            .background(Color.appPrimary.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
         }
         .sheet(isPresented: $showPicker) {
             VStack(spacing: Spacing.lg) {

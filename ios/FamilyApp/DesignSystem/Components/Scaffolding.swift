@@ -32,6 +32,31 @@ private struct ResumeEffectModifier: ViewModifier {
     }
 }
 
+/// Large screen header with trailing controls aligned to the title baseline —
+/// used by tab-root screens (Family, Calendar) so the title text and the top-right
+/// buttons sit on one line, matching the design spec (the system large-title bar
+/// floats trailing items in the chrome above the title instead).
+struct ScreenHeader<Trailing: View>: View {
+    let title: String
+    @ViewBuilder var trailing: () -> Trailing
+
+    init(_ title: String, @ViewBuilder trailing: @escaping () -> Trailing) {
+        self.title = title
+        self.trailing = trailing
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: Spacing.sm) {
+            Text(title)
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(Color.appOnSurface)
+            Spacer(minLength: Spacing.sm)
+            trailing()
+        }
+        .padding(.vertical, Spacing.xs)
+    }
+}
+
 /// Single or dual-field text-input alert — mirrors InputDialog in Scaffolding.kt.
 /// Usage: `.inputDialog(isPresented:title:label:text:onConfirm:)`.
 extension View {

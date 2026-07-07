@@ -259,11 +259,13 @@ private struct HuggingSheetModifier: ViewModifier {
 struct GlassButton: View {
     let text: String
     var systemImage: String?
+    /// Solid near-white fill (used on the purple auth hero) instead of translucent glass.
+    var whiter = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Spacing.sm) {
+            let content = HStack(spacing: Spacing.sm) {
                 if let systemImage {
                     Image(systemName: systemImage)
                         .font(.system(size: 17, weight: .semibold))
@@ -273,7 +275,16 @@ struct GlassButton: View {
             }
             .foregroundStyle(Color.appOnSurface)
             .frame(maxWidth: .infinity, minHeight: 54)
-            .glassCard(cornerRadius: 27)
+            if whiter {
+                content
+                    .background(
+                        RoundedRectangle(cornerRadius: 27, style: .continuous)
+                            .fill(Color(light: .white, dark: Palette.inkSurfaceVariant))
+                            .shadow(color: Color(hex: 0x141A3C).opacity(0.06), radius: 6, y: 2)
+                    )
+            } else {
+                content.glassCard(cornerRadius: 27)
+            }
         }
         .buttonStyle(PressScaleButtonStyle())
     }

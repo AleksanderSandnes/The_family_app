@@ -223,14 +223,20 @@ struct ShoppingDetailScreen: View {
                         .padding(.leading, 8)
                 }
                 Menu {
-                    Button("Rename list") {
+                    Button {
                         renameText = viewModel.selectedList?.title ?? ""
                         showRename = true
+                    } label: {
+                        Label(L("Rename list"), systemImage: "pencil")
                     }
-                    Button("Change icon") { showChangeIcon = true }
+                    Button { showChangeIcon = true } label: {
+                        Label(L("Change icon"), systemImage: "star")
+                    }
                     if !completed.isEmpty {
-                        Button("Clear completed", role: .destructive) {
+                        Button(role: .destructive) {
                             viewModel.clearCompleted(listId: listId)
+                        } label: {
+                            Label("\(L("Clear completed")) (\(completed.count))", systemImage: "trash")
                         }
                     }
                 } label: {

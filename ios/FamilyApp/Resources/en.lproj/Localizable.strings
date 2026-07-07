@@ -332,3 +332,17 @@
 "Profile pictures and photo sharing in chat. Asked when you first use them." = "Profile pictures and photo sharing in chat. Asked when you first use them.";
 "Allow permissions" = "Allow permissions";
 "Maybe later" = "Maybe later";
+
+/* Design-spec polish pass (chat, wishlist, family, meal, new-conversation). */
+"Family members" = "Family members";
+"Group name" = "Group name";
+"appears with 2+ people" = "appears with 2+ people";
+"optional" = "optional";
+"Replying to" = "Replying to";
+"Saving…" = "Saving…";
+"Saved" = "Saved";
+"Couldn’t save" = "Couldn’t save";
+"Save image" = "Save image";
+"Select" = "Select";
+"Reservations are hidden from" = "Reservations are hidden from";
+"QR code" = "QR code";

@@ -29,22 +29,7 @@ struct FamilyScreen: View {
             }
         }
         .ambientBackground()
-        .navigationTitle("Family")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            if viewModel.family != nil {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        PhotosPicker(selection: $photoItem, matching: .images) {
-                            Text("Change family photo")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .accessibilityLabel("More options")
-                    }
-                }
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .resumeEffect {
             viewModel.refresh()
             // An invite deep link routes here — open the join flow pre-filled.
@@ -152,6 +137,18 @@ struct FamilyScreen: View {
     private func familyContent(_ family: FamilyModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.cardGap) {
+                ScreenHeader(L("Family")) {
+                    Menu {
+                        PhotosPicker(selection: $photoItem, matching: .images) {
+                            Text("Change family photo")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.system(size: 24))
+                            .accessibilityLabel("More options")
+                    }
+                }
+
                 headerCard(family)
 
                 SectionHeader(text: L("Members"))
@@ -180,29 +177,35 @@ struct FamilyScreen: View {
     }
 
     private func headerCard(_ family: FamilyModel) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            AvatarStack(members: viewModel.members)
-            Text(family.name)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color.appOnSurface)
-            Text("\(viewModel.members.count) members")
-                .font(.caption)
-                .foregroundStyle(Color.appCaption)
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            HStack(spacing: Spacing.md) {
+                AvatarStack(members: viewModel.members)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(family.name)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Color.appOnSurface)
+                    Text("\(viewModel.members.count) members")
+                        .font(.caption)
+                        .foregroundStyle(Color.appCaption)
+                }
+                Spacer(minLength: 0)
+            }
 
             if !family.joinCode.isEmpty {
                 CopyableCodeField(code: family.joinCode)
-                    .padding(.top, Spacing.sm)
-                ShareLink(item: inviteMessage(
-                    familyName: family.name,
-                    joinCode: family.joinCode,
-                    locale: appLocale
-                )) {
-                    shareLabel(L("Share invite"), systemImage: "square.and.arrow.up")
-                }
-                Button {
-                    showQr = true
-                } label: {
-                    shareLabel(L("Show QR code"), systemImage: "qrcode")
+                HStack(spacing: Spacing.sm) {
+                    ShareLink(item: inviteMessage(
+                        familyName: family.name,
+                        joinCode: family.joinCode,
+                        locale: appLocale
+                    )) {
+                        shareLabel(L("Share invite"), systemImage: "square.and.arrow.up")
+                    }
+                    Button {
+                        showQr = true
+                    } label: {
+                        shareLabel(L("QR code"), systemImage: "qrcode")
+                    }
                 }
             }
             if viewModel.isUploading {

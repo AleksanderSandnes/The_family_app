@@ -11,6 +11,10 @@ import SwiftUI
 final class VoiceRecorder {
     private(set) var isRecording = false
     private(set) var seconds = 0
+    /// Rolling normalised (0…1) mic levels, newest last — drives the live waveform.
+    private(set) var levels: [CGFloat] = Array(repeating: 0.06, count: waveformBarCount)
+
+    static let waveformBarCount = 34
 
     private var recorder: AVAudioRecorder?
     private var fileURL: URL?
@@ -33,15 +37,24 @@ final class VoiceRecorder {
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
             ]
             let recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder.isMeteringEnabled = true
             recorder.record()
             self.recorder = recorder
             isRecording = true
             seconds = 0
+            levels = Array(repeating: 0.06, count: Self.waveformBarCount)
             tickTask = Task { [weak self] in
+                var elapsedMs = 0
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(1))
-                    guard let self, isRecording else { break }
-                    seconds += 1
+                    try? await Task.sleep(for: .milliseconds(60))
+                    guard let self, isRecording, let recorder = self.recorder else { break }
+                    recorder.updateMeters()
+                    // Average power is dB in −160…0; map a useful −55…0 window to 0…1.
+                    let power = recorder.averagePower(forChannel: 0)
+                    let norm = max(0.06, min(1, CGFloat((power + 55) / 55)))
+                    levels = Array(levels.dropFirst()) + [norm]
+                    elapsedMs += 60
+                    seconds = elapsedMs / 1000
                 }
             }
             return true
@@ -62,6 +75,43 @@ final class VoiceRecorder {
         }
         guard send, let fileURL, let data = try? Data(contentsOf: fileURL) else { return nil }
         return (data, fileURL.lastPathComponent)
+    }
+}
+
+/// Live mic waveform shown in the recording bar — bars react to input level.
+struct LiveWaveform: View {
+    let levels: [CGFloat]
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            let count = max(levels.count, 1)
+            let spacing: CGFloat = 3
+            let barWidth = max(2, (geo.size.width - spacing * CGFloat(count - 1)) / CGFloat(count))
+            HStack(alignment: .center, spacing: spacing) {
+                ForEach(Array(levels.enumerated()), id: \.offset) { _, level in
+                    Capsule()
+                        .fill(tint.opacity(0.35 + level * 0.65))
+                        .frame(width: barWidth, height: max(3, level * geo.size.height))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .animation(.easeOut(duration: 0.08), value: levels)
+        }
+        .frame(height: 30)
+    }
+}
+
+/// Pulsing red dot indicating an active recording.
+struct RecordingPulse: View {
+    @State private var on = false
+    var body: some View {
+        Circle()
+            .fill(Color.appError)
+            .frame(width: 10, height: 10)
+            .opacity(on ? 0.35 : 1)
+            .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: on)
+            .onAppear { on = true }
     }
 }
 

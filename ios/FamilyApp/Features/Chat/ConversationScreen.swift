@@ -24,6 +24,8 @@ struct ConversationScreen: View {
     @State private var showMessageCamera = false
     @State private var viewerImage: ViewerImage?
     @State private var recorder = VoiceRecorder()
+    @State private var showPhotoPicker = false
+    @State private var reactionTargetId: String?
 
     private var myId: String? {
         viewModel.currentUserId
@@ -54,6 +56,13 @@ struct ConversationScreen: View {
     private var availableToAdd: [UserModel] {
         let currentIds = Set(viewModel.currentParticipants.map(\.id))
         return viewModel.familyMembers.filter { !currentIds.contains($0.id) }
+    }
+
+    private func senderName(for userId: String) -> String {
+        if userId == myId { return L("You") }
+        return viewModel.userProfiles[userId]?.name
+            ?? viewModel.currentParticipants.first { $0.id == userId }?.name
+            ?? L("Unknown")
     }
 
     var body: some View {
@@ -136,6 +145,10 @@ struct ConversationScreen: View {
         .fullScreenCover(item: $viewerImage) { item in
             ImageViewer(url: item.url) { viewerImage = nil }
         }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $messagePhotoItem, matching: .images)
+        .overlayPreferenceValue(BubbleBoundsKey.self) { anchors in
+            reactionOverlay(anchors: anchors)
+        }
         .onChange(of: groupPhotoItem) { _, item in
             guard let item else { return }
             Task {
@@ -162,32 +175,51 @@ struct ConversationScreen: View {
     }
 
     private var optionsMenu: some View {
-        Menu {
+        // Precomputed in this main-actor context; PhotosPicker's label closure is nonisolated.
+        let changeImageLabel = L("Change image")
+        return Menu {
             if isGroup {
-                Button("Rename") {
+                Button {
                     renameText = viewModel.conversation?.name ?? ""
                     showRename = true
+                } label: {
+                    Label(L("Rename group"), systemImage: "pencil")
                 }
             }
             PhotosPicker(selection: $groupPhotoItem, matching: .images) {
-                Text("Change image")
+                Label(changeImageLabel, systemImage: "photo")
             }
             if viewModel.conversation?.imageUri != nil {
-                Button("Remove image", role: .destructive) {
+                Button(role: .destructive) {
                     viewModel.removeImage(conversationId: conversationId)
+                } label: {
+                    Label(L("Remove image"), systemImage: "photo.badge.minus")
                 }
             }
             if !availableToAdd.isEmpty {
-                Button(isGroup ? "Add member" : "Add member (creates group)") {
+                Button {
                     showAddMember = true
+                } label: {
+                    Label(
+                        isGroup ? L("Add member") : L("Add member (creates group)"),
+                        systemImage: "person.badge.plus"
+                    )
                 }
             }
             if isGroup {
-                Button("Remove member", role: .destructive) { showRemoveMember = true }
-                Button("Members") { showMembers = true }
+                Button { showMembers = true } label: {
+                    Label(L("Members"), systemImage: "person.2")
+                }
             }
             Divider()
-            Button("Delete conversation", role: .destructive) { showDeleteConfirm = true }
+            if isGroup {
+                Button(role: .destructive) { showRemoveMember = true } label: {
+                    Label(L("Remove member"), systemImage: "person.badge.minus")
+                }
+            }
+            Button(role: .destructive) { showDeleteConfirm = true } label: {
+                Label(L("Delete conversation"), systemImage: "trash")
+            }
         } label: {
             Image(systemName: "ellipsis.circle")
                 .accessibilityLabel("Options")
@@ -219,10 +251,14 @@ struct ConversationScreen: View {
                             quoted: message.replyToId.flatMap { id in
                                 viewModel.messages.first { $0.id == id }
                             },
+                            quotedSenderName: message.replyToId.flatMap { id in
+                                viewModel.messages.first { $0.id == id }
+                            }.map { senderName(for: $0.userFrom) },
                             reactions: viewModel.reactions[message.id] ?? [:],
                             seen: message.userFrom == myId
                                 && message.id == viewModel.messages.last(where: { $0.userFrom == myId })?.id
                                 && messageSeen(otherLastRead: viewModel.otherLastRead, sentAt: message.sentAt),
+                            isReactionTarget: reactionTargetId == message.id,
                             onReact: { emoji in
                                 viewModel.toggleReaction(
                                     messageId: message.id,
@@ -231,7 +267,12 @@ struct ConversationScreen: View {
                                 )
                             },
                             onReply: { viewModel.setReplyTo(message) },
-                            onOpenImage: { viewerImage = ViewerImage(url: $0) }
+                            onOpenImage: { viewerImage = ViewerImage(url: $0) },
+                            onLongPress: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    reactionTargetId = message.id
+                                }
+                            }
                         )
                         .id(message.id)
                     }
@@ -239,9 +280,41 @@ struct ConversationScreen: View {
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.sm)
             }
+            .defaultScrollAnchor(.bottom)
             .onChange(of: viewModel.messages.count) {
                 if let lastId = viewModel.messages.last?.id {
                     proxy.scrollTo(lastId, anchor: .bottom)
+                }
+            }
+            .onChange(of: conversationId) {
+                if let lastId = viewModel.messages.last?.id {
+                    proxy.scrollTo(lastId, anchor: .bottom)
+                }
+            }
+        }
+    }
+
+    /// Full-screen reaction picker rendered above a tap-to-dismiss scrim.
+    @ViewBuilder
+    private func reactionOverlay(anchors: [String: Anchor<CGRect>]) -> some View {
+        if let id = reactionTargetId, let anchor = anchors[id] {
+            GeometryReader { geo in
+                let rect = geo[anchor]
+                let barY = max(60, rect.minY - 30)
+                ZStack(alignment: .topLeading) {
+                    Color.black.opacity(0.001)
+                        .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation(.easeOut(duration: 0.15)) { reactionTargetId = nil }
+                        }
+                    ReactionBar { emoji in
+                        viewModel.toggleReaction(messageId: id, conversationId: conversationId, emoji: emoji)
+                        withAnimation(.easeOut(duration: 0.15)) { reactionTargetId = nil }
+                    }
+                    .fixedSize()
+                    .position(x: min(max(rect.midX, 180), geo.size.width - 180), y: barY)
+                    .transition(.scale(scale: 0.7).combined(with: .opacity))
                 }
             }
         }
@@ -255,7 +328,7 @@ struct ConversationScreen: View {
                 HStack(spacing: 10) {
                     Rectangle().fill(Color.appPrimary).frame(width: 3, height: 36)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("Replying")
+                        Text("\(L("Replying to")) \(senderName(for: quoted.userFrom))")
                             .font(.labelMedium.weight(.semibold))
                             .foregroundStyle(Color.appPrimary)
                         Text(quotedPreviewText(quoted))
@@ -284,10 +357,12 @@ struct ConversationScreen: View {
                         Button {
                             showMessageCamera = true
                         } label: {
-                            Label("Camera", systemImage: "camera")
+                            Label(L("Camera"), systemImage: "camera")
                         }
-                        PhotosPicker(selection: $messagePhotoItem, matching: .images) {
-                            Label("Photo library", systemImage: "photo")
+                        Button {
+                            showPhotoPicker = true
+                        } label: {
+                            Label(L("Photo library"), systemImage: "photo")
                         }
                     } label: {
                         Image(systemName: "plus.circle.fill")
@@ -334,13 +409,26 @@ struct ConversationScreen: View {
 
     private var recordingBar: some View {
         HStack(spacing: Spacing.md) {
-            Circle().fill(Color.appError).frame(width: 10, height: 10)
-            Text(recordingLabel(seconds: recorder.seconds))
-                .font(.bodyMedium)
-                .foregroundStyle(Color.appOnSurface)
-            Spacer()
-            Button("Cancel") { _ = recorder.stop(send: false) }
-                .foregroundStyle(Color.appOnSurfaceVariant)
+            Button { _ = recorder.stop(send: false) } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.appError)
+            }
+            .accessibilityLabel("Cancel recording")
+
+            HStack(spacing: Spacing.sm) {
+                RecordingPulse()
+                Text(recordingLabel(seconds: recorder.seconds))
+                    .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Color.appOnSurface)
+                LiveWaveform(levels: recorder.levels, tint: Color.appPrimary)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, Spacing.lg)
+            .frame(height: 52)
+            .frame(maxWidth: .infinity)
+            .background(Color.appSurfaceVariant, in: Capsule())
+
             Button {
                 if let result = recorder.stop(send: true) {
                     viewModel.sendVoice(
@@ -350,7 +438,8 @@ struct ConversationScreen: View {
                     )
                 }
             } label: {
-                Image(systemName: "paperplane.fill")
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 34))
                     .foregroundStyle(Color.appPrimary)
             }
             .accessibilityLabel("Send voice message")
@@ -366,6 +455,17 @@ struct ConversationScreen: View {
     }
 }
 
+// MARK: - Reaction anchor
+
+/// Reports the bounds of the bubble currently targeted for a reaction, so the
+/// screen-level overlay can position the reaction bar above it.
+private struct BubbleBoundsKey: PreferenceKey {
+    static let defaultValue: [String: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
+        value.merge(nextValue()) { _, new in new }
+    }
+}
+
 // MARK: - Message row
 
 private struct MessageRow: View {
@@ -374,14 +474,17 @@ private struct MessageRow: View {
     let isGroup: Bool
     let sender: UserModel?
     let quoted: MessageModel?
+    let quotedSenderName: String?
     let reactions: [String: [String]]
     let seen: Bool
+    let isReactionTarget: Bool
     let onReact: (String) -> Void
     let onReply: () -> Void
     let onOpenImage: (String) -> Void
+    let onLongPress: () -> Void
 
     @State private var dragOffset: CGFloat = 0
-    @State private var showReactions = false
+    @State private var showTimestamp = false
 
     var body: some View {
         if message.messageType == "system" {
@@ -407,25 +510,16 @@ private struct MessageRow: View {
                             .foregroundStyle(Color.appOnSurfaceVariant)
                     }
                     bubble
-                        .overlay(alignment: isMine ? .topTrailing : .topLeading) {
-                            if showReactions {
-                                ReactionBar { emoji in
-                                    onReact(emoji)
-                                    withAnimation(.easeOut(duration: 0.15)) { showReactions = false }
-                                }
-                                .transition(.scale(scale: 0.6).combined(with: .opacity))
-                                .offset(y: -50)
-                                .fixedSize()
-                                .zIndex(20)
-                            }
+                        .anchorPreference(key: BubbleBoundsKey.self, value: .bounds) { anchor in
+                            isReactionTarget ? [message.id: anchor] : [:]
                         }
                     if !reactions.isEmpty {
                         HStack(spacing: 4) {
                             ForEach(reactions.sorted(by: { $0.key < $1.key }), id: \.key) { emoji, users in
                                 Text(users.count > 1 ? "\(emoji) \(users.count)" : emoji)
-                                    .font(.system(size: 12))
-                                    .padding(.horizontal, 7)
-                                    .padding(.vertical, 2)
+                                    .font(.system(size: 16))
+                                    .padding(.horizontal, 9)
+                                    .padding(.vertical, 3)
                                     .background(Color(light: .white, dark: Palette.inkSurfaceVariant), in: Capsule())
                                     .shadow(color: Color(hex: 0x141A3C).opacity(0.15), radius: 5, y: 2)
                                     .onTapGesture { onReact(emoji) }
@@ -436,6 +530,12 @@ private struct MessageRow: View {
                         Text("Seen")
                             .font(.labelMedium)
                             .foregroundStyle(Color.appOnSurfaceVariant)
+                    }
+                    if showTimestamp {
+                        Text(exactMessageTimestamp(message.sentAt, locale: appLocale))
+                            .font(.labelMedium)
+                            .foregroundStyle(Color.appOnSurfaceVariant)
+                            .padding(.top, 1)
                     }
                 }
                 if !isMine { Spacer(minLength: 48) }
@@ -459,11 +559,11 @@ private struct MessageRow: View {
                     }
             )
             .onTapGesture {
-                if showReactions { withAnimation(.easeOut(duration: 0.15)) { showReactions = false } }
+                withAnimation(.easeOut(duration: 0.15)) { showTimestamp.toggle() }
             }
             .onLongPressGesture(minimumDuration: 0.3) {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { showReactions.toggle() }
+                onLongPress()
             }
         }
     }
@@ -475,10 +575,17 @@ private struct MessageRow: View {
                     Rectangle()
                         .fill(isMine ? Color.white.opacity(0.6) : Color.appPrimary)
                         .frame(width: 3)
-                    Text(quotedPreviewText(quoted))
-                        .font(.labelMedium)
-                        .foregroundStyle(isMine ? .white.opacity(0.85) : Color.appOnSurfaceVariant)
-                        .lineLimit(2)
+                    VStack(alignment: .leading, spacing: 1) {
+                        if let quotedSenderName {
+                            Text(quotedSenderName)
+                                .font(.labelMedium.weight(.semibold))
+                                .foregroundStyle(isMine ? .white.opacity(0.95) : Color.appPrimary)
+                        }
+                        Text(quotedPreviewText(quoted))
+                            .font(.labelMedium)
+                            .foregroundStyle(isMine ? .white.opacity(0.85) : Color.appOnSurfaceVariant)
+                            .lineLimit(2)
+                    }
                 }
                 .padding(6)
                 .background((isMine ? Color.white : Color.appOnSurface).opacity(0.12))

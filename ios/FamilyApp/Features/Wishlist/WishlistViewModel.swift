@@ -134,6 +134,13 @@ final class WishlistViewModel {
             .execute()
             .value) ?? []
         if let list = await listFetch.first { selectedWishlist = list }
+        // Enrich owner name (for the "reservations hidden from …" member-view subtitle).
+        if let ownerId = selectedWishlist?.ownerUserId {
+            if ownerNameCache[ownerId] == nil {
+                ownerNameCache[ownerId] = await fetchUserName(ownerId) ?? ""
+            }
+            selectedWishlist?.ownerName = ownerNameCache[ownerId] ?? ""
+        }
         wishes = await wishesFetch
         await loadReservations()
     }

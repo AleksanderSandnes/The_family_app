@@ -37,7 +37,8 @@ struct LoginScreen: View {
                 systemImage: "envelope",
                 keyboardType: .emailAddress,
                 textContentType: .emailAddress,
-                autocapitalization: .never
+                autocapitalization: .never,
+                whiteField: true
             )
             .accessibilityLabel("Email address field")
             FamilyTextField(
@@ -45,12 +46,13 @@ struct LoginScreen: View {
                 text: $password.clearingError(viewModel),
                 systemImage: "lock",
                 isPassword: true,
-                textContentType: .password
+                textContentType: .password,
+                whiteField: true
             )
             .accessibilityLabel("Password field")
 
             Button("Forgot password?") { showForgotDialog = true }
-                .font(.labelMedium)
+                .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(Color.appPrimary)
                 .frame(maxWidth: .infinity, alignment: .trailing)
 
@@ -63,7 +65,7 @@ struct LoginScreen: View {
             }
             .accessibilityLabel("Sign in button")
 
-            GlassButton(text: L("Continue with Google"), systemImage: "globe") {
+            GlassButton(text: L("Continue with Google"), systemImage: "globe", whiter: true) {
                 viewModel.signInWithGoogle()
             }
             .accessibilityLabel("Continue with Google button")
@@ -122,7 +124,8 @@ struct RegisterScreen: View {
             text: $form.name.clearingError(viewModel),
             systemImage: "person",
             textContentType: .name,
-            autocapitalization: .words
+            autocapitalization: .words,
+            whiteField: true
         )
         FamilyTextField(
             label: L("Email"),
@@ -130,14 +133,16 @@ struct RegisterScreen: View {
             systemImage: "envelope",
             keyboardType: .emailAddress,
             textContentType: .emailAddress,
-            autocapitalization: .never
+            autocapitalization: .never,
+            whiteField: true
         )
         FamilyTextField(
             label: L("Password"),
             text: $form.password.clearingError(viewModel),
             systemImage: "lock",
             isPassword: true,
-            textContentType: .newPassword
+            textContentType: .newPassword,
+            whiteField: true
         )
         PasswordStrengthBar(password: form.password)
         FamilyTextField(
@@ -145,7 +150,8 @@ struct RegisterScreen: View {
             text: $form.confirm.clearingError(viewModel),
             systemImage: "lock",
             isPassword: true,
-            textContentType: .newPassword
+            textContentType: .newPassword,
+            whiteField: true
         )
         PrimaryButton(
             text: L("Continue"),
@@ -172,7 +178,8 @@ struct RegisterScreen: View {
                 text: $form.mobile,
                 systemImage: "phone",
                 keyboardType: .phonePad,
-                textContentType: .telephoneNumber
+                textContentType: .telephoneNumber,
+                whiteField: true
             )
             Text("For family contact info")
                 .font(.labelMedium)
@@ -277,9 +284,9 @@ struct AuthScaffold<Content: View>: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Spacing.xxl)
                     .padding(.vertical, Spacing.xxxl)
-                    .glassEffect(
-                        .regular.tint(.white.opacity(0.5)),
-                        in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .background(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .fill(Color(light: Color(hex: 0xF7F6FC), dark: Palette.inkSurface))
                     )
                     .shadow(color: Color(hex: 0x0A0C28).opacity(0.3), radius: 30, y: 20)
                     .padding(.top, Spacing.xxxl)

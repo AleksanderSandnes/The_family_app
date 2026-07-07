@@ -120,6 +120,14 @@ struct WishlistDetailScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if !isOwner, let owner = viewModel.selectedWishlist?.ownerName, !owner.isEmpty {
+                Text("\(L("Reservations are hidden from")) \(owner) 🤫")
+                    .font(.caption)
+                    .foregroundStyle(Color.appCaption)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, Spacing.sm)
+                    .padding(.bottom, Spacing.xs)
+            }
             if sortedWishes.isEmpty {
                 EmptyState(
                     systemImage: "gift.fill",
@@ -302,10 +310,17 @@ private struct MemberWishRow: View {
     var body: some View {
         HStack(spacing: Spacing.md) {
             WishThumb(url: wish.imageUrl)
-            Text(wishTitle(wish))
-                .font(.system(size: 15.5))
-                .foregroundStyle(state == .reservedByOther ? Color(hex: 0x767E9C) : Color.appOnSurface)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(wish.text)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(state == .reservedByOther ? Color(hex: 0x767E9C) : Color.appOnSurface)
+                if let price = wish.price?.trimmingCharacters(in: .whitespaces), !price.isEmpty {
+                    Text(price)
+                        .font(.caption)
+                        .foregroundStyle(Color.appCaption)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             WishLinkButton(link: wish.link)
             switch state {
             case .available:
