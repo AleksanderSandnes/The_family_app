@@ -9,7 +9,21 @@ struct ChatScreen: View {
     @State private var showMemberPicker = false
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        VStack(spacing: 0) {
+            ScreenHeader(L("Chats")) {
+                Button {
+                    showMemberPicker = true
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.appPrimary)
+                        .frame(width: 36, height: 36)
+                        .glassCard(cornerRadius: 18)
+                        .accessibilityLabel("New conversation")
+                }
+            }
+            .padding(.horizontal, Spacing.screenEdge)
+
             Group {
                 if viewModel.isLoading, viewModel.conversations.isEmpty {
                     LoadingState().frame(maxHeight: .infinity, alignment: .top)
@@ -39,18 +53,7 @@ struct ChatScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .ambientBackground()
-        .navigationTitle("Chats")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showMemberPicker = true
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                        .accessibilityLabel("New conversation")
-                }
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .onChange(of: viewModel.navigateToConversation) { _, newId in
             guard let newId else { return }
             viewModel.navigateToConversation = nil
