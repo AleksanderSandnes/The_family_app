@@ -57,6 +57,8 @@
 "1 event" = "1 event";
 "%lld events" = "%lld events";
 "All day" = "All day";
+"Private" = "Private";
+"Color" = "Color";
 "Edit event" = "Edit event";
 "New event" = "New event";
 "Save" = "Save";

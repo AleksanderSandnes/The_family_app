@@ -11,6 +11,8 @@ struct EventSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var activity: String
     @State private var allDay: Bool
+    @State private var isPrivate: Bool
+    @State private var color: Int?
     @State private var selectedIcon: String
     @State private var showIconPicker = false
     @State private var dateFrom: LocalDate
@@ -28,6 +30,8 @@ struct EventSheet: View {
         self.onSave = onSave
         _activity = State(initialValue: existingEvent?.activity ?? "")
         _allDay = State(initialValue: existingEvent?.allDay ?? false)
+        _isPrivate = State(initialValue: existingEvent?.isPrivate ?? false)
+        _color = State(initialValue: existingEvent?.color)
         _selectedIcon = State(initialValue: existingEvent?.icon ?? "schedule")
         let from = existingEvent.flatMap { LocalDate(iso: $0.dateFrom) } ?? initialDate
         let to = existingEvent.flatMap { LocalDate(iso: $0.dateTo) } ?? initialDate
@@ -63,7 +67,9 @@ struct EventSheet: View {
             dateTo: dateTo.isoString,
             timeFrom: allDay ? "" : Self.timeString(timeFrom),
             timeTo: allDay ? "" : Self.timeString(timeTo),
-            icon: selectedIcon
+            icon: selectedIcon,
+            isPrivate: isPrivate,
+            color: color
         ))
         dismiss()
     }
@@ -87,7 +93,15 @@ struct EventSheet: View {
                 symbolFor: IconKeyMap.calendarSymbol
             ) { selectedIcon = $0 }
 
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
+
             VStack(spacing: 0) {
+                Toggle(L("Private"), isOn: $isPrivate)
+                    .font(.system(size: 16))
+                    .tint(Color.appPrimary)
+                    .padding(.vertical, 14)
+                Divider()
                 Toggle("All day", isOn: $allDay)
                     .font(.system(size: 16))
                     .tint(Color.appPrimary)
@@ -129,6 +143,45 @@ struct EventSheet: View {
                 DatePicker("", selection: time, displayedComponents: .hourAndMinute)
                     .labelsHidden()
             }
+        }
+    }
+}
+
+/// On-brand horizontal swatch picker for the event's colour.
+private struct EventColorPicker: View {
+    @Binding var selection: Int?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(calendarEventColorPalette, id: \.self) { hex in
+                    let swatch = Color(hex: UInt32(truncatingIfNeeded: hex))
+                    let isSelected = selection == hex
+                    Button { selection = hex } label: {
+                        Circle()
+                            .fill(swatch)
+                            .frame(width: 30, height: 30)
+                            .overlay {
+                                if isSelected {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .overlay {
+                                Circle()
+                                    .strokeBorder(swatch, lineWidth: isSelected ? 2 : 0)
+                                    .padding(-3)
+                            }
+                            .scaleEffect(isSelected ? 1.08 : 1)
+                            .animation(.snappy(duration: 0.15), value: isSelected)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Event colour")
+                }
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 2)
         }
     }
 }

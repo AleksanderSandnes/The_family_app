@@ -54,6 +54,8 @@ struct EventDraft {
     var timeFrom: String
     var timeTo: String
     var icon = "schedule"
+    var isPrivate = false
+    var color: Int?
 }
 
 @Observable
@@ -175,6 +177,8 @@ final class CalendarViewModel {
             temp.timeFrom = draft.allDay ? "" : draft.timeFrom
             temp.timeTo = draft.allDay ? "" : draft.timeTo
             temp.icon = draft.icon
+            temp.isPrivate = draft.isPrivate
+            temp.color = draft.color
             events.append(temp)
 
             var payload: [String: AnyJSON] = [
@@ -186,6 +190,8 @@ final class CalendarViewModel {
                 "time_from": .string(draft.allDay ? "" : draft.timeFrom),
                 "time_to": .string(draft.allDay ? "" : draft.timeTo),
                 "icon": .string(draft.icon),
+                "is_private": .bool(draft.isPrivate),
+                "color": draft.color.map { AnyJSON.double(Double($0)) } ?? .null,
             ]
             if let familyId = user.familyId { payload["family_id"] = .string(familyId) }
             _ = try? await client.from("calendar_events").insert(payload).execute()
@@ -205,6 +211,8 @@ final class CalendarViewModel {
                     "time_from": .string(event.timeFrom),
                     "time_to": .string(event.timeTo),
                     "icon": .string(event.icon),
+                    "is_private": .bool(event.isPrivate),
+                    "color": event.color.map { AnyJSON.double(Double($0)) } ?? .null,
                 ])
                 .eq("id", value: event.id)
                 .execute()
@@ -236,22 +244,6 @@ func monthCells(_ month: YearMonth) -> [LocalDate?] {
         cells.append(nil)
     }
     return cells
-}
-
-/// Maps each date to the icon keys of events covering it (multi-day capped at 60 days).
-func dateEventIcons(for events: [CalendarEventModel]) -> [LocalDate: [String]] {
-    var map: [LocalDate: [String]] = [:]
-    for event in events {
-        guard let from = LocalDate(iso: event.dateFrom) else { continue }
-        let to = LocalDate(iso: event.dateTo) ?? from
-        var day = from
-        while !(to < day) {
-            map[day, default: []].append(event.icon)
-            day = day.addingDays(1)
-            if from.daysUntil(day) > 60 { break }
-        }
-    }
-    return map
 }
 
 /// Concise time label for the event card — mirrors eventTimeLabel.

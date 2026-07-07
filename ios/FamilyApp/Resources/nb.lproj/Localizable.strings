@@ -56,6 +56,8 @@
 "1 event" = "1 hendelse";
 "%lld events" = "%lld hendelser";
 "All day" = "Hele dagen";
+"Private" = "Privat";
+"Color" = "Farge";
 "Edit event" = "Rediger hendelse";
 "New event" = "Ny hendelse";
 "Save" = "Lagre";

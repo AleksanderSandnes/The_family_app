@@ -128,9 +128,11 @@ struct CalendarEventModel: Codable, Identifiable, Hashable {
     var activity = ""
     var allDay = false
     var icon = "schedule"
+    var isPrivate = false
+    var color: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, activity, icon
+        case id, activity, icon, color
         case userId = "user_id"
         case familyId = "family_id"
         case dateFrom = "date_from"
@@ -138,6 +140,7 @@ struct CalendarEventModel: Codable, Identifiable, Hashable {
         case timeFrom = "time_from"
         case timeTo = "time_to"
         case allDay = "all_day"
+        case isPrivate = "is_private"
     }
 }
 
