@@ -278,9 +278,13 @@ final class FamilyRepository {
         return family.id
     }
 
-    /// Auto-creates the user's own birthday entry when creating/joining a family.
+    /// Creates OR updates the user's own shared birthday event, named "{name}'s birthday".
+    /// Called on family create/join and whenever the birthday is changed in the profile, so
+    /// the family always sees an up-to-date entry. Repeats yearly — the birthday screen always
+    /// projects the next occurrence from this single stored date.
     private func syncUserBirthday(userId: String, familyId: String) async {
         guard let user = await getUser(userId), !user.birthday.isEmpty else { return }
+        let title = "\(user.name)'s birthday"
         do {
             let existing: [BirthdayModel] = try await client.from("birthdays")
                 .select()
@@ -288,16 +292,25 @@ final class FamilyRepository {
                 .eq("family_id", value: familyId)
                 .execute()
                 .value
-            guard existing.isEmpty else { return }
-            try await client.from("birthdays")
-                .insert([
-                    "name": AnyJSON.string(user.name),
-                    "date": .string(user.birthday),
-                    "family_id": .string(familyId),
-                    "user_id": .string(userId),
-                    "made_by_user_id": .string(userId),
-                ])
-                .execute()
+            if let row = existing.first {
+                try await client.from("birthdays")
+                    .update([
+                        "name": AnyJSON.string(title),
+                        "date": .string(user.birthday),
+                    ])
+                    .eq("id", value: row.id)
+                    .execute()
+            } else {
+                try await client.from("birthdays")
+                    .insert([
+                        "name": AnyJSON.string(title),
+                        "date": .string(user.birthday),
+                        "family_id": .string(familyId),
+                        "user_id": .string(userId),
+                        "made_by_user_id": .string(userId),
+                    ])
+                    .execute()
+            }
         } catch {
             // Best-effort, same as Android.
         }
@@ -391,6 +404,10 @@ final class FamilyRepository {
             .eq("id", value: userId)
             .execute()
         invalidateUserCache()
+        // Keep the shared birthday event in sync with the just-saved birthday/name.
+        if let user = await getUser(userId), let familyId = user.familyId {
+            await syncUserBirthday(userId: userId, familyId: familyId)
+        }
     }
 
     func removeFamilyMember(memberId: String) async throws {
