@@ -162,6 +162,11 @@ struct RegisterScreen: View {
             advanceToStep2()
         }
         .accessibilityLabel("Continue to next step button")
+
+        GlassButton(text: L("Continue with Google"), systemImage: "globe", whiter: true) {
+            viewModel.signInWithGoogle()
+        }
+        .accessibilityLabel("Continue with Google button")
     }
 
     @ViewBuilder private var registrationStep2: some View {

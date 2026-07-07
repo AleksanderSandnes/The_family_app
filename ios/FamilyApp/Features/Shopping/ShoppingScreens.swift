@@ -19,9 +19,8 @@ struct ShoppingScreen: View {
                     EmptyState(
                         systemImage: "cart.fill",
                         title: L("No lists yet"),
-                        subtitle: L("Create a shared shopping list for your family."),
-                        actionLabel: L("New list")
-                    ) { showAdd = true }
+                        subtitle: L("Create a shared shopping list for your family.")
+                    )
                 } else {
                     List {
                         ForEach(viewModel.lists) { list in

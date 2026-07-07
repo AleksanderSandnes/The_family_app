@@ -15,6 +15,7 @@ struct FamilyScreen: View {
     @State private var joinCodeText = ""
     @State private var showQr = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var showPhotoPicker = false
 
     private var isAdmin: Bool {
         viewModel.family != nil && viewModel.family?.adminId == viewModel.currentUser?.id
@@ -30,6 +31,7 @@ struct FamilyScreen: View {
         }
         .ambientBackground()
         .toolbar(.hidden, for: .navigationBar)
+        .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
         .resumeEffect {
             viewModel.refresh()
             // An invite deep link routes here — open the join flow pre-filled.
@@ -139,7 +141,8 @@ struct FamilyScreen: View {
             VStack(alignment: .leading, spacing: Spacing.cardGap) {
                 ScreenHeader(L("Family")) {
                     Menu {
-                        PhotosPicker(selection: $photoItem, matching: .images) {
+                        // PhotosPicker inside a Menu is a no-op on iOS — trigger it via state instead.
+                        Button { showPhotoPicker = true } label: {
                             Label(L("Change family photo"), systemImage: "photo")
                         }
                     } label: {

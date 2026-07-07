@@ -25,6 +25,7 @@ struct ConversationScreen: View {
     @State private var viewerImage: ViewerImage?
     @State private var recorder = VoiceRecorder()
     @State private var showPhotoPicker = false
+    @State private var showGroupPhotoPicker = false
     @State private var reactionTargetId: String?
 
     private var myId: String? {
@@ -146,6 +147,7 @@ struct ConversationScreen: View {
             ImageViewer(url: item.url) { viewerImage = nil }
         }
         .photosPicker(isPresented: $showPhotoPicker, selection: $messagePhotoItem, matching: .images)
+        .photosPicker(isPresented: $showGroupPhotoPicker, selection: $groupPhotoItem, matching: .images)
         .overlayPreferenceValue(BubbleBoundsKey.self) { anchors in
             reactionOverlay(anchors: anchors)
         }
@@ -175,9 +177,7 @@ struct ConversationScreen: View {
     }
 
     private var optionsMenu: some View {
-        // Precomputed in this main-actor context; PhotosPicker's label closure is nonisolated.
-        let changeImageLabel = L("Change image")
-        return Menu {
+        Menu {
             if isGroup {
                 Button {
                     renameText = viewModel.conversation?.name ?? ""
@@ -186,8 +186,8 @@ struct ConversationScreen: View {
                     Label(L("Rename group"), systemImage: "pencil")
                 }
             }
-            PhotosPicker(selection: $groupPhotoItem, matching: .images) {
-                Label(changeImageLabel, systemImage: "photo")
+            Button { showGroupPhotoPicker = true } label: {
+                Label(L("Change image"), systemImage: "photo")
             }
             if viewModel.conversation?.imageUri != nil {
                 Button(role: .destructive) {

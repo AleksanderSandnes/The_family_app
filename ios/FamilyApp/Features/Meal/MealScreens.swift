@@ -19,9 +19,8 @@ struct MealScreen: View {
                     EmptyState(
                         systemImage: "fork.knife",
                         title: L("No meal plans yet"),
-                        subtitle: L("Plan your family's meals for the week ahead."),
-                        actionLabel: L("Create a meal plan")
-                    ) { showCreate = true }
+                        subtitle: L("Plan your family's meals for the week ahead.")
+                    )
                 } else {
                     List {
                         ForEach(viewModel.plans) { plan in

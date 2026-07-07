@@ -20,9 +20,8 @@ struct BirthdayScreen: View {
                     EmptyState(
                         systemImage: "birthday.cake.fill",
                         title: L("No birthdays"),
-                        subtitle: L("Add family birthdays so you never miss a celebration."),
-                        actionLabel: L("Add birthday")
-                    ) { showAdd = true }
+                        subtitle: L("Add family birthdays so you never miss a celebration.")
+                    )
                 } else {
                     List {
                         ForEach(sorted) { birthday in
@@ -85,8 +84,6 @@ private struct BirthdayCard: View {
         let daysUntil = next.map { today.daysUntil($0) }
         let displayDate = next.map(formatFullDate) ?? birthday.date
         let isToday = daysUntil == 0
-        let thisWeek = (daysUntil ?? 999) >= 1 && (daysUntil ?? 999) <= 7
-        let later = !isToday && !thisWeek
 
         Button(action: onEdit) {
             HStack(spacing: 12) {
@@ -96,18 +93,16 @@ private struct BirthdayCard: View {
                     size: 46,
                     cornerRadius: 23
                 )
-                .saturation(later ? 0.35 : 1)
-                .opacity(later ? 0.85 : 1)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(birthday.name)
                         .font(.system(size: 15.5, weight: .semibold))
-                        .foregroundStyle(later ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                        .foregroundStyle(Color.appOnSurface)
                     HStack(spacing: 5) {
                         Text(displayDate)
                             .foregroundStyle(Color.appCaption)
                         if let age {
                             Text("· turning \(age)")
-                                .foregroundStyle(later ? Color.appCaption : FeatureAccent.birthdays.stroke)
+                                .foregroundStyle(FeatureAccent.birthdays.stroke)
                         }
                     }
                     .font(.system(size: 12.5, weight: .medium))
@@ -118,7 +113,7 @@ private struct BirthdayCard: View {
                 }
             }
             .padding(Spacing.cardPadding)
-            .modifier(BirthdaySurface(isToday: isToday, later: later))
+            .modifier(BirthdaySurface(isToday: isToday))
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel("\(birthday.name)'s birthday, \(displayDate)")
@@ -149,10 +144,9 @@ private struct BirthdayCard: View {
         }
     }
 
-    /// Urgency-driven surface: today = glass + green ring, this week = glass, later = ghost.
+    /// Today = glass + green ring; all other (future/this week) = solid glass card.
     private struct BirthdaySurface: ViewModifier {
         let isToday: Bool
-        let later: Bool
         func body(content: Content) -> some View {
             if isToday {
                 content
@@ -163,7 +157,7 @@ private struct BirthdayCard: View {
                     )
                     .shadow(color: Color.appSuccess.opacity(0.18), radius: 12, y: 8)
             } else {
-                content.rowSurface(ghost: later, cornerRadius: Radius.overviewCard)
+                content.rowSurface(ghost: false, cornerRadius: Radius.overviewCard)
             }
         }
     }

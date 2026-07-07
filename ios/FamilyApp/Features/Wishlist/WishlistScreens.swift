@@ -20,9 +20,8 @@ struct WishlistScreen: View {
                     EmptyState(
                         systemImage: "gift.fill",
                         title: L("No wishlists yet"),
-                        subtitle: L("Create a wishlist to share with your family"),
-                        actionLabel: L("New wishlist")
-                    ) { showAdd = true }
+                        subtitle: L("Create a wishlist to share with your family")
+                    )
                 } else {
                     List {
                         ForEach(viewModel.wishlists) { wishlist in
