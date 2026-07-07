@@ -193,7 +193,7 @@ private struct BirthdaySheet: View {
     var initialName = ""
     var initialDate = ""
     var initialIcon = "cake"
-    var initialColor: Int?
+    var initialColor: Int? = calendarEventColorPalette.first
     let onConfirm: (String, String, String, Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss

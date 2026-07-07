@@ -134,7 +134,7 @@ private struct CreatePlanSheet: View {
     @State private var fromDate: Date?
     @State private var toDate: Date?
     @State private var selectedIcon = "restaurant"
-    @State private var color: Int?
+    @State private var color: Int? = calendarEventColorPalette.first
 
     private static let isoFormat: DateFormatter = {
         let formatter = DateFormatter()

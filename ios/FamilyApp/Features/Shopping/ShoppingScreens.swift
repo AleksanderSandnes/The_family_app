@@ -473,7 +473,7 @@ private struct NewListSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
     @State private var selectedIcon = "shopping_cart"
-    @State private var color: Int?
+    @State private var color: Int? = calendarEventColorPalette.first
 
     private var canCreate: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty

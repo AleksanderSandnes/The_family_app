@@ -31,7 +31,8 @@ struct EventSheet: View {
         _activity = State(initialValue: existingEvent?.activity ?? "")
         _allDay = State(initialValue: existingEvent?.allDay ?? false)
         _isPrivate = State(initialValue: existingEvent?.isPrivate ?? false)
-        _color = State(initialValue: existingEvent?.color)
+        // New events default to the first palette colour; edits keep their stored colour.
+        _color = State(initialValue: existingEvent.map(\.color) ?? calendarEventColorPalette.first)
         _selectedIcon = State(initialValue: existingEvent?.icon ?? "schedule")
         let from = existingEvent.flatMap { LocalDate(iso: $0.dateFrom) } ?? initialDate
         let to = existingEvent.flatMap { LocalDate(iso: $0.dateTo) } ?? initialDate
