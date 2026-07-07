@@ -270,17 +270,24 @@ final class ChatViewModel {
     }
 
     private func onConversationActivity(convId: String, userId: String) async {
-        guard let last = await repo.getLastMessage(conversationId: convId),
-              last.userFrom != userId else { return }
-        let senderName = userProfiles[last.userFrom]?.name ?? L("Family member")
+        let last = await repo.getLastMessage(conversationId: convId)
+        // Recompute the badge from last_read_at rather than blindly incrementing: a reconnect
+        // (e.g. returning from the photo picker) or a re-delivered event must not inflate the
+        // count or resurrect an already-read conversation, and my own messages never count.
+        let unread = currentConversationId == convId
+            ? 0
+            : (await unreadCounts(conversationIds: [convId], userId: userId)[convId] ?? 0)
         conversations = conversations.map { preview in
             guard preview.conversation.id == convId else { return preview }
             var preview = preview
-            preview.lastMessage = last
-            preview.lastSenderName = senderName
-            if currentConversationId != convId {
-                preview.unreadCount += 1
+            if let last {
+                preview.lastMessage = last
+                // Store only another person's name; "You" is localized at render time.
+                preview.lastSenderName = last.userFrom == userId
+                    ? nil
+                    : (userProfiles[last.userFrom]?.name ?? L("Family member"))
             }
+            preview.unreadCount = unread
             return preview
         }
     }
