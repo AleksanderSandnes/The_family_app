@@ -294,20 +294,19 @@ final class FamilyRepository {
     }
 
     func joinFamily(code: String, userId: String) async throws -> String {
-        let families: [FamilyModel] = try await client.from("families")
-            .select()
-            .eq("join_code", value: code.trimmingCharacters(in: .whitespacesAndNewlines))
+        // Join is validated and family_id is set inside the join_family() RPC
+        // (SECURITY DEFINER). Direct users.family_id writes are blocked by an RLS
+        // trigger, so a user can't self-join an arbitrary family. A nil result means
+        // the code didn't match any family.
+        let familyId: String? = try await client
+            .rpc("join_family", params: ["p_code": code.trimmingCharacters(in: .whitespacesAndNewlines)])
             .execute()
             .value
-        guard let family = families.first else { throw RepositoryError.joinCodeIncorrect }
-        try await client.from("users")
-            .update(["family_id": AnyJSON.string(family.id)])
-            .eq("id", value: userId)
-            .execute()
-        await syncUserBirthday(userId: userId, familyId: family.id)
+        guard let familyId else { throw RepositoryError.joinCodeIncorrect }
+        await syncUserBirthday(userId: userId, familyId: familyId)
         invalidateUserCache()
         emitFamilyChanged()
-        return family.id
+        return familyId
     }
 
     /// Creates OR updates the user's own shared birthday event, named "{name}'s birthday".
