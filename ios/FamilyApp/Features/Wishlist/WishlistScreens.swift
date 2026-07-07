@@ -183,11 +183,15 @@ struct WishlistDetailScreen: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Rename wishlist") {
+                    Button {
                         renameText = viewModel.selectedWishlist?.name ?? ""
                         showRename = true
+                    } label: {
+                        Label(L("Rename wishlist"), systemImage: "pencil")
                     }
-                    Button("Change icon") { showChangeIcon = true }
+                    Button { showChangeIcon = true } label: {
+                        Label(L("Change icon"), systemImage: "star")
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .accessibilityLabel("More options")

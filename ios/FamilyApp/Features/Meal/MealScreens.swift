@@ -288,11 +288,15 @@ struct MealDetailScreen: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Rename") {
+                    Button {
                         renameText = viewModel.selectedPlan?.name ?? ""
                         showRename = true
+                    } label: {
+                        Label(L("Rename plan"), systemImage: "pencil")
                     }
-                    Button("Change icon") { showIconPicker = true }
+                    Button { showIconPicker = true } label: {
+                        Label(L("Change icon"), systemImage: "star")
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .accessibilityLabel("More options")

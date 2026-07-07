@@ -187,19 +187,12 @@ struct NewConversationSheet: View {
                 }
                 .glassCard(cornerRadius: Radius.row)
 
-                HStack(spacing: 6) {
-                    Text(L("Group name").uppercased())
-                        .font(.sectionLabel)
-                        .tracking(0.6)
-                        .foregroundStyle(Color.appCaption)
-                    Text("· \(L("appears with 2+ people"))")
-                        .font(.caption)
-                        .foregroundStyle(Color.appCaption)
+                // Group name only applies to a group — shown once 2+ people are selected.
+                if selected.count > 1 {
+                    SectionHeader(text: L("Group name"))
+                        .padding(.top, Spacing.xs)
+                    groupNameField
                 }
-                .padding(.horizontal, 6)
-                .padding(.top, Spacing.sm)
-
-                groupNameField
             }
         }
         .padding(.horizontal, Spacing.screenEdge)

@@ -140,7 +140,7 @@ struct FamilyScreen: View {
                 ScreenHeader(L("Family")) {
                     Menu {
                         PhotosPicker(selection: $photoItem, matching: .images) {
-                            Text("Change family photo")
+                            Label(L("Change family photo"), systemImage: "photo")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -159,8 +159,10 @@ struct FamilyScreen: View {
                     MemberCard(member: member, isAdmin: memberIsAdmin)
                         .contextMenu {
                             if isAdmin, !memberIsAdmin, member.id != viewModel.currentUser?.id {
-                                Button("Remove from family", role: .destructive) {
+                                Button(role: .destructive) {
                                     memberToRemove = member
+                                } label: {
+                                    Label(L("Remove from family"), systemImage: "person.badge.minus")
                                 }
                             }
                         }
