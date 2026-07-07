@@ -379,7 +379,7 @@ private struct NewWishlistSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var selectedIcon = "card_giftcard"
-    @State private var color: Int?
+    @State private var color: Int? = calendarEventColorPalette.first
 
     private var canCreate: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
