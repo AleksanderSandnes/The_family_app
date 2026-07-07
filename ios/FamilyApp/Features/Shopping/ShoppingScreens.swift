@@ -56,8 +56,8 @@ struct ShoppingScreen: View {
         .featureTopBar(L("Shopping lists"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
-            NewListSheet { title, icon in
-                viewModel.addList(title: title, icon: icon)
+            NewListSheet { title, icon, color in
+                viewModel.addList(title: title, icon: icon, color: color)
                 showAdd = false
             }
         }
@@ -95,7 +95,8 @@ private struct ShoppingListRow: View {
                             systemImage: IconKeyMap.shoppingSymbol(list.icon),
                             feature: .shopping,
                             size: 44,
-                            cornerRadius: Radius.badgeLarge
+                            cornerRadius: Radius.badgeLarge,
+                            colorOverride: hexColor(list.color)
                         )
                     }
                     VStack(alignment: .leading, spacing: 2) {
@@ -260,11 +261,14 @@ struct ShoppingDetailScreen: View {
                 title: L("Change icon"),
                 options: IconOptions.shopping,
                 selected: viewModel.selectedList?.icon ?? "shopping_cart",
-                symbolFor: IconKeyMap.shoppingSymbol
-            ) { icon in
-                viewModel.changeListIcon(listId: listId, icon: icon)
-                showChangeIcon = false
-            }
+                symbolFor: IconKeyMap.shoppingSymbol,
+                onPick: { icon in
+                    viewModel.changeListIcon(listId: listId, icon: icon)
+                    showChangeIcon = false
+                },
+                initialColor: viewModel.selectedList?.color,
+                onColorPick: { color in viewModel.changeListColor(listId: listId, color: color) }
+            )
         }
     }
 
@@ -424,11 +428,15 @@ struct IconPickerSheet: View {
     let selected: String
     let symbolFor: (String) -> String
     let onPick: (String) -> Void
+    /// When `onColorPick` is provided, a colour picker is shown too and applied live.
+    var initialColor: Int?
+    var onColorPick: ((Int?) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
+    @State private var color: Int?
 
     var body: some View {
-        VStack(spacing: Spacing.lg) {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
             ZStack {
                 Text(title)
                     .font(.pushedTitle)
@@ -440,22 +448,32 @@ struct IconPickerSheet: View {
                     Spacer()
                 }
             }
+            .frame(maxWidth: .infinity)
             IconGrid(options: options, selected: selected, symbolFor: symbolFor, onPick: onPick)
+            if onColorPick != nil {
+                SectionHeader(text: L("Color"))
+                EventColorPicker(selection: Binding(
+                    get: { color },
+                    set: { color = $0; onColorPick?($0) }
+                ))
+            }
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.xl)
         .huggingSheet()
+        .onAppear { color = initialColor }
     }
 }
 
 /// New-list sheet with name + icon picker — mirrors NewListDialog.
 private struct NewListSheet: View {
-    let onCreate: (String, String) -> Void
+    let onCreate: (String, String, Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
     @State private var selectedIcon = "shopping_cart"
+    @State private var color: Int?
 
     private var canCreate: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty
@@ -466,7 +484,7 @@ private struct NewListSheet: View {
             SheetHeader(title: L("New list"), confirmTitle: L("Create"), confirmEnabled: canCreate) {
                 dismiss()
             } onConfirm: {
-                onCreate(title.trimmingCharacters(in: .whitespaces), selectedIcon)
+                onCreate(title.trimmingCharacters(in: .whitespaces), selectedIcon, color)
                 dismiss()
             }
             GlassField(systemImage: "cart", placeholder: L("List name"), text: $title)
@@ -476,6 +494,8 @@ private struct NewListSheet: View {
                 selected: selectedIcon,
                 symbolFor: IconKeyMap.shoppingSymbol
             ) { selectedIcon = $0 }
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)

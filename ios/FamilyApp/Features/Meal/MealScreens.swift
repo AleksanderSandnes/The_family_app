@@ -58,8 +58,8 @@ struct MealScreen: View {
         .featureTopBar(L("Meal planner"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showCreate) {
-            CreatePlanSheet { name, fromIso, toIso, icon in
-                viewModel.createPlan(name: name, fromIso: fromIso, toIso: toIso, icon: icon)
+            CreatePlanSheet { name, fromIso, toIso, icon, color in
+                viewModel.createPlan(name: name, fromIso: fromIso, toIso: toIso, icon: icon, color: color)
                 showCreate = false
             }
         }
@@ -90,13 +90,13 @@ private struct MealPlanRow: View {
                         systemImage: IconKeyMap.mealSymbol(plan.icon),
                         feature: .meals,
                         size: 44,
-                        cornerRadius: Radius.badgeLarge
+                        cornerRadius: Radius.badgeLarge,
+                        colorOverride: hexColor(plan.color)
                     )
-                    .opacity(nothingPlanned ? 0.7 : 1)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name)
                             .font(.system(size: 15.5, weight: .semibold))
-                            .foregroundStyle(nothingPlanned ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                            .foregroundStyle(Color.appOnSurface)
                         Text(
                             "\(dateRange) · \(mealPlanLabel(progress: progress, fromIso: plan.fromDate, toIso: plan.toDate, locale: appLocale))"
                         )
@@ -113,7 +113,9 @@ private struct MealPlanRow: View {
                 }
             }
             .padding(Spacing.cardPadding)
-            .rowSurface(ghost: nothingPlanned, cornerRadius: Radius.overviewCard)
+            // Meal plans are always shown active — never dashed/greyed, even when empty
+            // or fully planned.
+            .rowSurface(ghost: false, cornerRadius: Radius.overviewCard)
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel(
@@ -125,13 +127,14 @@ private struct MealPlanRow: View {
 // MARK: - Create plan
 
 private struct CreatePlanSheet: View {
-    let onCreate: (_ name: String, _ fromIso: String, _ toIso: String, _ icon: String) -> Void
+    let onCreate: (_ name: String, _ fromIso: String, _ toIso: String, _ icon: String, _ color: Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var fromDate: Date?
     @State private var toDate: Date?
     @State private var selectedIcon = "restaurant"
+    @State private var color: Int?
 
     private static let isoFormat: DateFormatter = {
         let formatter = DateFormatter()
@@ -155,7 +158,8 @@ private struct CreatePlanSheet: View {
                     name.trimmingCharacters(in: .whitespaces),
                     Self.isoFormat.string(from: fromDate),
                     Self.isoFormat.string(from: toDate),
-                    selectedIcon
+                    selectedIcon,
+                    color
                 )
                 dismiss()
             }
@@ -170,6 +174,8 @@ private struct CreatePlanSheet: View {
                 selected: selectedIcon,
                 symbolFor: IconKeyMap.mealSymbol
             ) { selectedIcon = $0 }
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
             HStack(spacing: Spacing.sm) {
                 PlanDatePicker(label: L("Starts"), selection: $fromDate) { picked in
                     if let to = toDate, to < picked { toDate = picked }
@@ -319,13 +325,20 @@ struct MealDetailScreen: View {
                 title: L("Change icon"),
                 options: IconOptions.meal,
                 selected: viewModel.selectedPlan?.icon ?? "restaurant",
-                symbolFor: IconKeyMap.mealSymbol
-            ) { icon in
-                if let plan = viewModel.selectedPlan {
-                    viewModel.setPlanIcon(plan, newIcon: icon)
+                symbolFor: IconKeyMap.mealSymbol,
+                onPick: { icon in
+                    if let plan = viewModel.selectedPlan {
+                        viewModel.setPlanIcon(plan, newIcon: icon)
+                    }
+                    showIconPicker = false
+                },
+                initialColor: viewModel.selectedPlan?.color,
+                onColorPick: { color in
+                    if let plan = viewModel.selectedPlan {
+                        viewModel.setPlanColor(plan, color: color)
+                    }
                 }
-                showIconPicker = false
-            }
+            )
         }
     }
 

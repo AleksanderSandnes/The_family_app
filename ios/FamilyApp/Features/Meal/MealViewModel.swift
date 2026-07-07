@@ -135,7 +135,7 @@ final class MealViewModel {
 
     // MARK: - Mutations
 
-    func createPlan(name: String, fromIso: String, toIso: String, icon: String) {
+    func createPlan(name: String, fromIso: String, toIso: String, icon: String, color: Int?) {
         Task {
             guard let userId = repo.session.currentUserId,
                   let familyId = await repo.getUser(userId)?.familyId,
@@ -149,6 +149,7 @@ final class MealViewModel {
             temp.familyId = familyId
             temp.name = name
             temp.icon = icon
+            temp.color = color
             temp.fromDate = fromIso
             temp.toDate = toIso
             temp.week = week
@@ -163,6 +164,7 @@ final class MealViewModel {
                         "from_date": .string(fromIso),
                         "to_date": .string(toIso),
                         "week": .integer(week),
+                        "color": color.map { AnyJSON.integer($0) } ?? .null,
                     ])
                     .select()
                     .single()
@@ -210,6 +212,20 @@ final class MealViewModel {
             Self.cache = plans
             _ = try? await client.from("meal_plans")
                 .update(["icon": AnyJSON.string(newIcon)])
+                .eq("id", value: plan.id)
+                .execute()
+        }
+    }
+
+    func setPlanColor(_ plan: MealPlanModel, color: Int?) {
+        Task {
+            var updated = plan
+            updated.color = color
+            selectedPlan = updated
+            plans = plans.map { $0.id == plan.id ? updated : $0 }
+            Self.cache = plans
+            _ = try? await client.from("meal_plans")
+                .update(["color": color.map { AnyJSON.integer($0) } ?? .null])
                 .eq("id", value: plan.id)
                 .execute()
         }

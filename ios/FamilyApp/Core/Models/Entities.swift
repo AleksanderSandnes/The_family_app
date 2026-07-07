@@ -67,9 +67,10 @@ struct ShoppingListModel: Codable, Identifiable, Hashable {
     var ownerUserId = ""
     var familyId: String?
     var icon = "shopping_cart"
+    var color: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, icon
+        case id, title, icon, color
         case ownerUserId = "owner_user_id"
         case familyId = "family_id"
     }
@@ -95,9 +96,10 @@ struct MealPlanModel: Codable, Identifiable, Hashable {
     var week = 0
     var name = ""
     var icon = "restaurant"
+    var color: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, week, name, icon
+        case id, week, name, icon, color
         case familyId = "family_id"
         case fromDate = "from_date"
         case toDate = "to_date"
@@ -168,11 +170,12 @@ struct WishlistModel: Codable, Identifiable, Hashable {
     var familyId: String?
     var name = ""
     var icon = "card_giftcard"
+    var color: Int?
     /// Not a DB column (Kotlin @Transient) — resolved client-side from family members.
     var ownerName = ""
 
     enum CodingKeys: String, CodingKey {
-        case id, name, icon
+        case id, name, icon, color
         case ownerUserId = "owner_user_id"
         case familyId = "family_id"
     }

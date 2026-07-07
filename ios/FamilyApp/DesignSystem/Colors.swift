@@ -4,6 +4,11 @@
 import SwiftUI
 import UIKit
 
+/// A user-picked colour stored as an 0xRRGGBB int → SwiftUI Color (nil passes through).
+func hexColor(_ value: Int?) -> Color? {
+    value.map { Color(hex: UInt32(truncatingIfNeeded: $0)) }
+}
+
 extension Color {
     init(hex: UInt32) {
         self.init(
