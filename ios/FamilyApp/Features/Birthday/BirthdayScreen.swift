@@ -25,7 +25,10 @@ struct BirthdayScreen: View {
                 } else {
                     List {
                         ForEach(sorted) { birthday in
-                            BirthdayCard(birthday: birthday, today: today) { editing = birthday }
+                            BirthdayCard(birthday: birthday, today: today) {
+                                // Only the creator may edit (auto-birthdays belong to the person).
+                                if birthday.madeByUserId == viewModel.currentUserId { editing = birthday }
+                            }
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(
@@ -54,8 +57,8 @@ struct BirthdayScreen: View {
         .featureTopBar(L("Birthdays"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
-            BirthdaySheet(title: L("Add birthday"), confirmLabel: L("Add")) { name, date in
-                viewModel.add(name: name, date: date)
+            BirthdaySheet(title: L("Add birthday"), confirmLabel: L("Add")) { name, date, icon, color in
+                viewModel.add(name: name, date: date, icon: icon, color: color)
                 showAdd = false
             }
         }
@@ -64,9 +67,11 @@ struct BirthdayScreen: View {
                 title: L("Edit birthday"),
                 confirmLabel: L("Save"),
                 initialName: birthday.name,
-                initialDate: birthday.date
-            ) { name, date in
-                viewModel.update(id: birthday.id, name: name, date: date)
+                initialDate: birthday.date,
+                initialIcon: birthday.icon,
+                initialColor: birthday.color
+            ) { name, date, icon, color in
+                viewModel.update(id: birthday.id, name: name, date: date, icon: icon, color: color)
                 editing = nil
             }
         }
@@ -85,15 +90,18 @@ private struct BirthdayCard: View {
         // Show the actual date of birth (year included), not the next occurrence.
         let displayDate = LocalDate(iso: birthday.date).map(formatFullDate) ?? birthday.date
         let isToday = daysUntil == 0
+        let accent = birthdayAccent(birthday)
 
         Button(action: onEdit) {
             HStack(spacing: 12) {
-                FeatureBadge(
-                    systemImage: "birthday.cake.fill",
-                    feature: .birthdays,
-                    size: 46,
-                    cornerRadius: 23
-                )
+                Circle()
+                    .fill(accent.opacity(0.16))
+                    .frame(width: 46, height: 46)
+                    .overlay(
+                        Image(systemName: IconKeyMap.calendarSymbol(birthday.icon))
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(accent)
+                    )
                 VStack(alignment: .leading, spacing: 3) {
                     Text(birthday.name)
                         .font(.system(size: 15.5, weight: .semibold))
@@ -173,16 +181,26 @@ private struct BirthdayCard: View {
     }
 }
 
+/// A birthday's badge colour — the user-picked colour, else the birthdays accent.
+func birthdayAccent(_ birthday: BirthdayModel) -> Color {
+    if let hex = birthday.color { return Color(hex: UInt32(truncatingIfNeeded: hex)) }
+    return FeatureAccent.birthdays.stroke
+}
+
 private struct BirthdaySheet: View {
     let title: String
     let confirmLabel: String
     var initialName = ""
     var initialDate = ""
-    let onConfirm: (String, String) -> Void
+    var initialIcon = "cake"
+    var initialColor: Int?
+    let onConfirm: (String, String, String, Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var date = ""
+    @State private var icon = "cake"
+    @State private var color: Int?
 
     private var canConfirm: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !date.isEmpty
@@ -193,11 +211,21 @@ private struct BirthdaySheet: View {
             SheetHeader(title: title, confirmTitle: confirmLabel, confirmEnabled: canConfirm) {
                 dismiss()
             } onConfirm: {
-                onConfirm(name.trimmingCharacters(in: .whitespaces), date)
+                onConfirm(name.trimmingCharacters(in: .whitespaces), date, icon, color)
                 dismiss()
             }
             GlassField(systemImage: "person", placeholder: L("Name"), text: $name)
             BirthdayPickerField(isoDate: $date, label: L("Birthday *"))
+
+            SectionHeader(text: L("Icon"))
+            IconGrid(
+                options: IconOptions.calendar,
+                selected: icon,
+                symbolFor: IconKeyMap.calendarSymbol
+            ) { icon = $0 }
+
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
@@ -206,6 +234,8 @@ private struct BirthdaySheet: View {
         .onAppear {
             name = initialName
             date = initialDate
+            icon = initialIcon
+            color = initialColor
         }
     }
 }

@@ -151,9 +151,11 @@ struct BirthdayModel: Codable, Identifiable, Hashable {
     var familyId: String?
     var userId: String?
     var madeByUserId = ""
+    var icon = "cake"
+    var color: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, date
+        case id, name, date, icon, color
         case familyId = "family_id"
         case userId = "user_id"
         case madeByUserId = "made_by_user_id"

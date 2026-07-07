@@ -147,8 +147,8 @@ struct EventSheet: View {
     }
 }
 
-/// On-brand horizontal swatch picker for the event's colour.
-private struct EventColorPicker: View {
+/// On-brand horizontal swatch picker for an event/birthday colour (shared across features).
+struct EventColorPicker: View {
     @Binding var selection: Int?
 
     var body: some View {
