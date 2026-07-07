@@ -360,18 +360,17 @@ class FamilyRepository
         ): Result<String> =
             runCatching {
                 val client = SupabaseManager.client
-                val family =
+                // Join is validated and family_id is set inside the join_family() RPC
+                // (SECURITY DEFINER). Direct users.family_id writes are blocked by an RLS
+                // trigger, so a user can't self-join an arbitrary family. A null result
+                // means the code didn't match any family.
+                val familyId =
                     client.postgrest
-                        .from("families")
-                        .select { filter { eq("join_code", code.trim()) } }
-                        .decodeList<FamilyModel>()
-                        .firstOrNull()
+                        .rpc("join_family", buildJsonObject { put("p_code", code.trim()) })
+                        .decodeAsOrNull<String>()
                         ?: error("Join code is incorrect.")
-                client.postgrest.from("users").update({
-                    set("family_id", family.id)
-                }) { filter { eq("id", userId) } }
-                syncUserBirthday(userId, family.id)
-                family.id
+                syncUserBirthday(userId, familyId)
+                familyId
             }.also {
                 if (it.isSuccess) {
                     invalidateUserCache()
