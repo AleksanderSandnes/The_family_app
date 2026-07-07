@@ -180,20 +180,23 @@ struct WishlistDetailScreen: View {
         .ambientBackground()
         .featureTopBar(viewModel.selectedWishlist?.name ?? L("Wishlist"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        renameText = viewModel.selectedWishlist?.name ?? ""
-                        showRename = true
+            // Only the wishlist's creator (owner) can rename it or change its icon.
+            if isOwner {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            renameText = viewModel.selectedWishlist?.name ?? ""
+                            showRename = true
+                        } label: {
+                            Label(L("Rename wishlist"), systemImage: "pencil")
+                        }
+                        Button { showChangeIcon = true } label: {
+                            Label(L("Change icon"), systemImage: "star")
+                        }
                     } label: {
-                        Label(L("Rename wishlist"), systemImage: "pencil")
+                        Image(systemName: "ellipsis.circle")
+                            .accessibilityLabel("More options")
                     }
-                    Button { showChangeIcon = true } label: {
-                        Label(L("Change icon"), systemImage: "star")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .accessibilityLabel("More options")
                 }
             }
         }
