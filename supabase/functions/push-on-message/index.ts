@@ -17,12 +17,15 @@ Deno.serve(async (req) => {
 
     const supabase = serviceClient();
 
-    const [{ data: conversation }, { data: participants }, { data: sender }] = await Promise.all([
-      supabase.from("conversations").select("id, name, image_uri").eq("id", msg.conversation_id)
-        .maybeSingle(),
-      supabase.from("conversation_participants").select("user_id").eq("conversation_id", msg.conversation_id),
-      supabase.from("users").select("name").eq("id", msg.user_from).maybeSingle(),
-    ]);
+    const [{ data: conversation }, { data: participants }, { data: sender }, { data: senderTokenRows }] =
+      await Promise.all([
+        supabase.from("conversations").select("id, name, image_uri").eq("id", msg.conversation_id)
+          .maybeSingle(),
+        supabase.from("conversation_participants").select("user_id").eq("conversation_id", msg.conversation_id),
+        supabase.from("users").select("name").eq("id", msg.user_from).maybeSingle(),
+        // The sender's own device tokens — never push a message back to the device that sent it.
+        supabase.from("device_push_tokens").select("token").eq("user_id", msg.user_from),
+      ]);
 
     const recipientIds = (participants ?? [])
       .map((p) => p.user_id)
@@ -43,7 +46,19 @@ Deno.serve(async (req) => {
       .from("device_push_tokens")
       .select("token, platform")
       .in("user_id", enabledIds);
-    const targets = (tokenRows ?? []).map((t) => ({ token: t.token, platform: t.platform }));
+
+    // A single physical device can carry a recipient's token row (two accounts signed in on
+    // one phone, or a rotated token), which would deliver the sender a banner for their own
+    // message. Drop the sender's tokens, and dedup so a token shared by multiple recipients
+    // is only pushed once.
+    const senderTokens = new Set((senderTokenRows ?? []).map((t) => t.token));
+    const seen = new Set<string>();
+    const targets: { token: string; platform: string | null }[] = [];
+    for (const t of tokenRows ?? []) {
+      if (senderTokens.has(t.token) || seen.has(t.token)) continue;
+      seen.add(t.token);
+      targets.push({ token: t.token, platform: t.platform });
+    }
     if (targets.length === 0) return new Response("no tokens", { status: 200 });
 
     const preview = msg.message_type === "image"
