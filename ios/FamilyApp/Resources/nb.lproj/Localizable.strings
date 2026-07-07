@@ -355,6 +355,26 @@
 "Not set" = "Ikke angitt";
 "Set" = "Angi";
 
+/* Family relation options (stored value stays English; localized on display). */
+"Mom" = "Mamma";
+"Dad" = "Pappa";
+"Son" = "Sønn";
+"Daughter" = "Datter";
+"Sister" = "Søster";
+"Brother" = "Bror";
+"Wife" = "Kone";
+"Husband" = "Ektemann";
+"Fiancé" = "Forlovede";
+"Partner" = "Partner";
+"Grandmother" = "Bestemor";
+"Grandfather" = "Bestefar";
+"Grandchild" = "Barnebarn";
+"Aunt" = "Tante";
+"Uncle" = "Onkel";
+"Cousin" = "Søskenbarn";
+"Friend" = "Venn";
+"Other" = "Annet";
+
 /* Google profile completion + location sharing. */
 "Complete your profile" = "Fullfør profilen din";
 "Add your phone and birthday so your family can reach you and celebrate you." = "Legg til telefon og bursdag så familien kan nå deg og feire deg.";

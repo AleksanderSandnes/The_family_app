@@ -54,6 +54,21 @@ func L(_ key: String.LocalizationValue) -> String {
     L(key, locale: SessionStore.shared.appLanguage.locale)
 }
 
+/// Localize a *runtime-determined* key (e.g. a stored relation value like "Mom") against an
+/// explicit language. Unlike `L(_:)`, the key isn't a compile-time literal, so this routes
+/// through `NSLocalizedString`, which accepts a `String` key. Returns the key unchanged when
+/// no translation exists.
+func L(dynamic key: String, locale: Locale) -> String {
+    guard !key.isEmpty else { return key }
+    return NSLocalizedString(key, bundle: localizedBundle(for: locale), comment: "")
+}
+
+/// Localize a runtime-determined key against the in-app selected language.
+@MainActor
+func L(dynamic key: String) -> String {
+    L(dynamic: key, locale: SessionStore.shared.appLanguage.locale)
+}
+
 /// The Locale currently selected in-app — pass to date/number formatters so they
 /// format in the chosen language too.
 @MainActor
