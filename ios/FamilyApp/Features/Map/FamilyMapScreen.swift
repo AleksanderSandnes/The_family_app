@@ -18,7 +18,14 @@ struct FamilyMapScreen: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             Map(position: $camera) {
-                UserAnnotation()
+                // Own pin — same avatar + name treatment as every other member, rather
+                // than the default plain blue dot.
+                if let myCoordinate = viewModel.myLocation, let myId = viewModel.currentUserId {
+                    let myProfile = viewModel.userProfiles[myId]
+                    Annotation(myProfile?.name ?? L("You"), coordinate: myCoordinate) {
+                        MemberPin(user: myProfile, displayName: myProfile?.name ?? L("You"))
+                    }
+                }
                 ForEach(viewModel.locations, id: \.userId) { location in
                     Annotation(
                         location.displayName,
