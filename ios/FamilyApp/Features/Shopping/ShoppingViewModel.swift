@@ -165,7 +165,7 @@ final class ShoppingViewModel {
 
     // MARK: - List mutations (optimistic → call → reload)
 
-    func addList(title: String, icon: String = "shopping_cart") {
+    func addList(title: String, icon: String = "shopping_cart", color: Int? = nil) {
         Task {
             guard let userId = repo.session.currentUserId else { return }
             let user = await repo.getUser(userId)
@@ -175,15 +175,33 @@ final class ShoppingViewModel {
             temp.ownerUserId = userId
             temp.familyId = user?.familyId
             temp.icon = icon
+            temp.color = color
             lists.append(temp)
 
             var payload: [String: AnyJSON] = [
                 "title": .string(title),
                 "icon": .string(icon),
                 "owner_user_id": .string(userId),
+                "color": color.map { AnyJSON.integer($0) } ?? .null,
             ]
             if let familyId = user?.familyId { payload["family_id"] = .string(familyId) }
             _ = try? await client.from("shopping_lists").insert(payload).execute()
+            await reloadLists()
+        }
+    }
+
+    func changeListColor(listId: String, color: Int?) {
+        Task {
+            lists = lists.map { list in
+                var list = list
+                if list.id == listId { list.color = color }
+                return list
+            }
+            selectedList?.color = color
+            _ = try? await client.from("shopping_lists")
+                .update(["color": color.map { AnyJSON.integer($0) } ?? .null])
+                .eq("id", value: listId)
+                .execute()
             await reloadLists()
         }
     }

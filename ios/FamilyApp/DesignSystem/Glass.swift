@@ -69,15 +69,17 @@ struct FeatureBadge: View {
     let feature: FeatureAccent
     var size: CGFloat = 38
     var cornerRadius: CGFloat = 12
+    /// When set, overrides the feature palette with a user-picked colour.
+    var colorOverride: Color?
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(feature.badgeFill)
+            .fill(colorOverride?.opacity(0.16) ?? feature.badgeFill)
             .frame(width: size, height: size)
             .overlay(
                 Image(systemName: systemImage)
                     .font(.system(size: size * 0.44, weight: .semibold))
-                    .foregroundStyle(feature.stroke)
+                    .foregroundStyle(colorOverride ?? feature.stroke)
             )
     }
 }

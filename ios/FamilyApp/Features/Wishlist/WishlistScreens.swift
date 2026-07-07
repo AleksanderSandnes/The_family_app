@@ -54,8 +54,8 @@ struct WishlistScreen: View {
         .featureTopBar(L("Wishlists"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
-            NewWishlistSheet { name, icon in
-                viewModel.addWishlist(name: name, icon: icon)
+            NewWishlistSheet { name, icon, color in
+                viewModel.addWishlist(name: name, icon: icon, color: color)
                 showAdd = false
             }
         }
@@ -73,7 +73,8 @@ private struct WishlistRow: View {
                     systemImage: IconKeyMap.wishlistSymbol(wishlist.icon),
                     feature: .wishlists,
                     size: 46,
-                    cornerRadius: 23
+                    cornerRadius: 23,
+                    colorOverride: hexColor(wishlist.color)
                 )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(wishlist.name)
@@ -219,11 +220,14 @@ struct WishlistDetailScreen: View {
                 title: L("Change icon"),
                 options: IconOptions.wishlist,
                 selected: viewModel.selectedWishlist?.icon ?? "card_giftcard",
-                symbolFor: IconKeyMap.wishlistSymbol
-            ) { icon in
-                viewModel.changeWishlistIcon(wishlistId: wishlistId, newIcon: icon)
-                showChangeIcon = false
-            }
+                symbolFor: IconKeyMap.wishlistSymbol,
+                onPick: { icon in
+                    viewModel.changeWishlistIcon(wishlistId: wishlistId, newIcon: icon)
+                    showChangeIcon = false
+                },
+                initialColor: viewModel.selectedWishlist?.color,
+                onColorPick: { color in viewModel.changeWishlistColor(wishlistId: wishlistId, color: color) }
+            )
         }
         .sheet(isPresented: $showAddWish) {
             AddWishSheet { draft in
@@ -370,11 +374,12 @@ private struct MemberWishRow: View {
 // MARK: - Sheets
 
 private struct NewWishlistSheet: View {
-    let onCreate: (String, String) -> Void
+    let onCreate: (String, String, Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var selectedIcon = "card_giftcard"
+    @State private var color: Int?
 
     private var canCreate: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
@@ -385,7 +390,7 @@ private struct NewWishlistSheet: View {
             SheetHeader(title: L("New wishlist"), confirmTitle: L("Create"), confirmEnabled: canCreate) {
                 dismiss()
             } onConfirm: {
-                onCreate(name.trimmingCharacters(in: .whitespaces), selectedIcon)
+                onCreate(name.trimmingCharacters(in: .whitespaces), selectedIcon, color)
                 dismiss()
             }
             GlassField(systemImage: "gift", placeholder: L("Wishlist name"), text: $name)
@@ -395,6 +400,8 @@ private struct NewWishlistSheet: View {
                 selected: selectedIcon,
                 symbolFor: IconKeyMap.wishlistSymbol
             ) { selectedIcon = $0 }
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)

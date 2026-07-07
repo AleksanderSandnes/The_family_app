@@ -203,7 +203,7 @@ final class WishlistViewModel {
 
     // MARK: - Wishlist mutations
 
-    func addWishlist(name: String, icon: String = "card_giftcard") {
+    func addWishlist(name: String, icon: String = "card_giftcard", color: Int? = nil) {
         Task {
             guard let userId = repo.session.currentUserId else { return }
             let user = await repo.getUser(userId)
@@ -213,16 +213,34 @@ final class WishlistViewModel {
             temp.familyId = user?.familyId
             temp.name = name
             temp.icon = icon
+            temp.color = color
             wishlists.append(temp)
 
             var payload: [String: AnyJSON] = [
                 "owner_user_id": .string(userId),
                 "name": .string(name),
                 "icon": .string(icon),
+                "color": color.map { AnyJSON.integer($0) } ?? .null,
             ]
             if let familyId = user?.familyId { payload["family_id"] = .string(familyId) }
             _ = try? await client.from("wishlists").insert(payload).execute()
             await loadWishlists()
+        }
+    }
+
+    func changeWishlistColor(wishlistId: String, color: Int?) {
+        Task {
+            wishlists = wishlists.map { list in
+                var list = list
+                if list.id == wishlistId { list.color = color }
+                return list
+            }
+            selectedWishlist?.color = color
+            _ = try? await client.from("wishlists")
+                .update(["color": color.map { AnyJSON.integer($0) } ?? .null])
+                .eq("id", value: wishlistId)
+                .execute()
+            await reloadDetail(wishlistId)
         }
     }
 
