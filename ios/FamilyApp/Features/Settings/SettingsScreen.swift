@@ -144,7 +144,7 @@ struct SettingsScreen: View {
                             .background {
                                 if selected {
                                     Capsule().fill(Color.appPrimary)
-                                        .shadow(color: Color.appPrimary.opacity(0.3), radius: 8, y: 3)
+                                        .accentGlow(opacity: 0.3, radius: 8, y: 3)
                                 } else {
                                     Capsule().fill(Color.appSurface.opacity(0.55))
                                 }

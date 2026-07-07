@@ -457,7 +457,7 @@ private struct MealRowGlass: ViewModifier {
                     RoundedRectangle(cornerRadius: Radius.row, style: .continuous)
                         .strokeBorder(Color.appPrimary.opacity(editing ? 0.55 : 0), lineWidth: 1.5)
                 )
-                .shadow(color: Color.appPrimary.opacity(editing ? 0.2 : 0), radius: 10, y: 6)
+                .accentGlow(active: editing, opacity: 0.2, radius: 10, y: 6)
         } else {
             content
         }

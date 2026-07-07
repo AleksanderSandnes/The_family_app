@@ -335,7 +335,7 @@ private struct MemberWishRow: View {
                         .padding(.horizontal, 15)
                         .frame(height: 32)
                         .background(Color.appPrimary, in: Capsule())
-                        .shadow(color: Color.appPrimary.opacity(0.3), radius: 8, y: 3)
+                        .accentGlow(opacity: 0.3, radius: 8, y: 3)
                 }
                 .buttonStyle(.plain)
             case .reservedByMe:
