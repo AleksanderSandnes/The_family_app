@@ -11,6 +11,8 @@ final class FamilyViewModel {
     private(set) var family: FamilyModel?
     private(set) var members: [UserModel] = []
     private(set) var currentUser: UserModel?
+    /// My relation to each other member (their id → relation label), from my perspective.
+    private(set) var relations: [String: String] = [:]
     var error: String?
     private(set) var isUploading = false
 
@@ -48,9 +50,27 @@ final class FamilyViewModel {
         if let familyId = user.familyId {
             family = await repo.getFamily(familyId: familyId)
             members = await repo.getFamilyMembers(familyId: familyId)
+            relations = await repo.getMyRelations(userId: userId)
         } else {
             family = nil
             members = []
+            relations = [:]
+        }
+    }
+
+    /// Sets my relation ("Dad", "Wife", …) to another member, or clears it when empty.
+    func setRelation(toUserId: String, relation: String) {
+        guard let userId = repo.session.currentUserId, let familyId = family?.id else { return }
+        // Optimistic local update.
+        if relation.trimmingCharacters(in: .whitespaces).isEmpty {
+            relations.removeValue(forKey: toUserId)
+        } else {
+            relations[toUserId] = relation
+        }
+        Task {
+            await repo.setRelation(
+                fromUserId: userId, toUserId: toUserId, familyId: familyId, relation: relation
+            )
         }
     }
 
@@ -70,12 +90,20 @@ final class FamilyViewModel {
         }
     }
 
+    /// Set right after joining a family with existing members — FamilyScreen shows the
+    /// "set your relations" prompt so the newcomer can label the people already there.
+    var promptRelationSetup = false
+
     func joinFamily(code: String) {
         Task {
             guard let userId = repo.session.currentUserId else { return }
             do {
                 _ = try await repo.joinFamily(code: code, userId: userId)
                 await load()
+                // Offer to set relations to the members already in the family.
+                if members.contains(where: { $0.id != userId }) {
+                    promptRelationSetup = true
+                }
             } catch {
                 self.error = (error as? RepositoryError)?.errorDescription ?? error.localizedDescription
             }

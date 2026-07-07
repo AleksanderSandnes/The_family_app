@@ -161,6 +161,38 @@ final class FamilyRepository {
             .value) ?? []
     }
 
+    // MARK: - Family relations (directional, relative to each viewer)
+
+    /// My relations to other members, keyed by the other member's id (toUserId → relation).
+    func getMyRelations(userId: String) async -> [String: String] {
+        let rows: [FamilyRelationModel] = await (try? client.from("family_relations")
+            .select()
+            .eq("from_user_id", value: userId)
+            .execute()
+            .value) ?? []
+        return Dictionary(rows.map { ($0.toUserId, $0.relation) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// Sets (or clears) my relation to another family member. Empty string removes it.
+    func setRelation(fromUserId: String, toUserId: String, familyId: String, relation: String) async {
+        let trimmed = relation.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty {
+            _ = try? await client.from("family_relations").delete()
+                .eq("from_user_id", value: fromUserId)
+                .eq("to_user_id", value: toUserId)
+                .execute()
+            return
+        }
+        _ = try? await client.from("family_relations")
+            .upsert([
+                "family_id": AnyJSON.string(familyId),
+                "from_user_id": .string(fromUserId),
+                "to_user_id": .string(toUserId),
+                "relation": .string(trimmed),
+            ], onConflict: "from_user_id,to_user_id")
+            .execute()
+    }
+
     func getFamily(familyId: String) async -> FamilyModel? {
         let rows: [FamilyModel] = await (try? client.from("families")
             .select()

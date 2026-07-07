@@ -45,6 +45,22 @@ struct FamilyModel: Codable, Identifiable, Hashable {
     }
 }
 
+/// Directional family relation ("relative to each viewer"): fromUserId's relation TO toUserId.
+struct FamilyRelationModel: Codable, Identifiable, Hashable {
+    var id = ""
+    var familyId = ""
+    var fromUserId = ""
+    var toUserId = ""
+    var relation = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, relation
+        case familyId = "family_id"
+        case fromUserId = "from_user_id"
+        case toUserId = "to_user_id"
+    }
+}
+
 struct ShoppingListModel: Codable, Identifiable, Hashable {
     var id = ""
     var title = ""

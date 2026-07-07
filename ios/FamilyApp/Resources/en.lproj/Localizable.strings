@@ -345,3 +345,13 @@
 "Select" = "Select";
 "Reservations are hidden from" = "Reservations are hidden from";
 "QR code" = "QR code";
+
+/* Family relations + member profile. */
+"Your relation" = "Your relation";
+"Set relation" = "Set relation";
+"Set your relations" = "Set your relations";
+"How are you related to each member? You can change this anytime." = "How are you related to each member? You can change this anytime.";
+"None" = "None";
+"Phone" = "Phone";
+"Not set" = "Not set";
+"Set" = "Set";
