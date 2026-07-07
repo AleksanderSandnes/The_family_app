@@ -283,7 +283,7 @@ struct ShoppingDetailScreen: View {
                     .foregroundStyle(.white)
                     .frame(width: 46, height: 46)
                     .background(Color.appPrimary.opacity(newItemText.isEmpty ? 0.4 : 1), in: Circle())
-                    .shadow(color: Color.appPrimary.opacity(newItemText.isEmpty ? 0 : 0.35), radius: 8, y: 3)
+                    .accentGlow(active: !newItemText.isEmpty, opacity: 0.35, radius: 8, y: 3)
             }
             .disabled(newItemText.isEmpty)
             .accessibilityLabel("Add item")
