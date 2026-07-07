@@ -9,6 +9,7 @@ import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -57,21 +58,50 @@ class FamilyMessagingService : FirebaseMessagingService() {
         // Realtime subscription already shows the message in-screen.
         if (ActiveChat.conversationId == conversationId) return
 
-        val conversation =
-            ConversationModel(
-                id = conversationId,
-                name = data["conversationName"].orEmpty(),
-                imageUri = data["imageUri"],
-            )
-        val msg =
-            MessageModel(
-                id = data["messageId"].orEmpty(),
-                conversationId = conversationId,
-                userFrom = data["senderId"].orEmpty(),
-                text = data["text"].orEmpty(),
-                messageType = data["messageType"] ?: "text",
-            )
-        val sender = data["senderName"]?.let { UserModel(id = msg.userFrom, name = it) }
-        NotificationHelper.postMessageNotification(applicationContext, conversation, msg, sender)
+        // Drop duplicate FCM deliveries of the same message (retries / a token registered
+        // under more than one recipient) so it never banners twice.
+        val messageId = data["messageId"].orEmpty()
+        if (!Dedup.firstSeen(messageId)) return
+
+        val senderId = data["senderId"].orEmpty()
+        scope.launch {
+            // Never notify the sender about their own message. A device can carry another
+            // account's token row (two logins on one phone, or a rotated token), so the
+            // server-side sender filter isn't enough — guard again against the current user.
+            val currentUserId =
+                runCatching { FamilyRepository.get(applicationContext).currentUserId.first() }.getOrNull()
+            if (senderId.isNotEmpty() && senderId == currentUserId) return@launch
+
+            val conversation =
+                ConversationModel(
+                    id = conversationId,
+                    name = data["conversationName"].orEmpty(),
+                    imageUri = data["imageUri"],
+                )
+            val msg =
+                MessageModel(
+                    id = messageId,
+                    conversationId = conversationId,
+                    userFrom = senderId,
+                    text = data["text"].orEmpty(),
+                    messageType = data["messageType"] ?: "text",
+                )
+            val sender = data["senderName"]?.let { UserModel(id = msg.userFrom, name = it) }
+            NotificationHelper.postMessageNotification(applicationContext, conversation, msg, sender)
+        }
+    }
+
+    /** Bounded set of recently shown message ids, so a re-delivered push never banners twice. */
+    private object Dedup {
+        private const val CAP = 100
+        private val ids = LinkedHashSet<String>()
+
+        @Synchronized
+        fun firstSeen(id: String): Boolean {
+            if (id.isEmpty()) return true
+            if (!ids.add(id)) return false
+            if (ids.size > CAP) ids.iterator().let { it.next(); it.remove() }
+            return true
+        }
     }
 }

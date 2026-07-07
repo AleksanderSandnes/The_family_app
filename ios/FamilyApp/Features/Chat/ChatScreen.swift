@@ -107,6 +107,7 @@ private struct ConversationRow: View {
                         Text(conversationPreviewText(
                             lastMessage: preview.lastMessage,
                             lastSenderName: preview.lastSenderName,
+                            isFromCurrentUser: preview.lastMessage?.userFrom == currentUserId,
                             locale: appLocale
                         ))
                         .font(.system(size: 13, weight: isUnread ? .medium : .regular))

@@ -91,10 +91,18 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) async -> UNNotificationPresentationOptions {
         let payload = notification.request.content.userInfo
         let conversationId = payload["conversationId"] as? String
-        let isOpenConversation = await MainActor.run {
-            conversationId != nil && ActiveChat.conversationId == conversationId
+        let senderId = payload["senderId"] as? String
+        let messageId = payload["messageId"] as? String
+        let suppress = await MainActor.run { () -> Bool in
+            // Never notify about my own message (same-device dual-login / stale token row).
+            if let senderId, senderId == SessionStore.shared.currentUserId { return true }
+            // Suppress the conversation currently on screen (ActiveChat parity).
+            if let conversationId, ActiveChat.conversationId == conversationId { return true }
+            // Suppress duplicate deliveries of the same message.
+            if let messageId, !PresentedMessages.firstSeen(messageId) { return true }
+            return false
         }
-        return isOpenConversation ? [] : [.banner, .sound, .badge]
+        return suppress ? [] : [.banner, .sound, .badge]
     }
 
     func userNotificationCenter(
@@ -144,4 +152,20 @@ extension Notification.Name {
 @MainActor
 enum ActiveChat {
     static var conversationId: String?
+}
+
+/// Bounded set of recently presented message ids, so a re-delivered push (retry, or a token
+/// shared by two accounts on one device) never banners twice. Twin of Android's `Dedup`.
+@MainActor
+enum PresentedMessages {
+    private static let cap = 100
+    private static var ids: [String] = []
+
+    static func firstSeen(_ id: String) -> Bool {
+        guard !id.isEmpty else { return true }
+        if ids.contains(id) { return false }
+        ids.append(id)
+        if ids.count > cap { ids.removeFirst(ids.count - cap) }
+        return true
+    }
 }
