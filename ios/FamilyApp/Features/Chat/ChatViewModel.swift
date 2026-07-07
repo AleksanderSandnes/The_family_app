@@ -161,11 +161,11 @@ final class ChatViewModel {
         var previews: [ConversationWithPreview] = []
         for conv in convs {
             let lastMessage = await repo.getLastMessage(conversationId: conv.id)
-            let lastSenderName: String? = if let lastMessage {
-                lastMessage.userFrom == userId
-                    ? L("You")
-                    : (userProfiles[lastMessage.userFrom]?.name
-                        ?? String(lastMessage.userFrom.prefix(userIdPreviewLength)))
+            // "You" is localized at render time (conversationPreviewText) so it follows a
+            // live language switch; store only the other person's name here.
+            let lastSenderName: String? = if let lastMessage, lastMessage.userFrom != userId {
+                userProfiles[lastMessage.userFrom]?.name
+                    ?? String(lastMessage.userFrom.prefix(userIdPreviewLength))
             } else {
                 nil
             }

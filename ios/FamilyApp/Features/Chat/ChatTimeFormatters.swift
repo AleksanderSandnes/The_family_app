@@ -154,10 +154,14 @@ func conversationDisplayName(
 func conversationPreviewText(
     lastMessage: MessageModel?,
     lastSenderName: String?,
+    isFromCurrentUser: Bool = false,
     locale: Locale = defaultFormatLocale
 ) -> String {
     guard let lastMessage else { return L("No messages yet", locale: locale) }
-    let prefix = lastSenderName.map { "\($0): " } ?? ""
+    // Localize "You" here (not at load time) so it follows a live language switch.
+    let prefix = isFromCurrentUser
+        ? "\(L("You", locale: locale)): "
+        : (lastSenderName.map { "\($0): " } ?? "")
     switch lastMessage.messageType {
     case "image": return prefix + L("Photo", locale: locale)
     case "voice": return prefix + L("Voice message", locale: locale)
