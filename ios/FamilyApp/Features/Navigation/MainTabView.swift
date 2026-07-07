@@ -26,6 +26,8 @@ struct MainTabView: View {
     /// Shared between the chat list and open thread — deletes in the thread must
     /// reflect in the list on pop-back (see CLAUDE.md).
     @State private var chatViewModel = ChatViewModel()
+    /// Set when a Google sign-up needs to complete their phone/birthday.
+    @State private var completionUser: UserModel?
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -75,6 +77,28 @@ struct MainTabView: View {
             .tag(Tab.profile)
         }
         .tint(Color.appPrimary)
+        .task {
+            LocationSharingService.shared.startIfEnabled()
+            await checkProfileCompletion()
+        }
+        .sheet(item: $completionUser) { user in
+            ProfileCompletionSheet(
+                onSave: { mobile, birthday in
+                    Task {
+                        await FamilyRepository.shared.updateProfile(
+                            userId: user.id,
+                            update: ProfileUpdate(
+                                name: user.name, email: user.email,
+                                birthday: birthday, mobile: mobile, avatarUrl: user.avatarUrl
+                            )
+                        )
+                        UserDefaults.standard.set(true, forKey: "profile_completed_\(user.id)")
+                        profileViewModel.refresh()
+                    }
+                },
+                onSkip: { UserDefaults.standard.set(true, forKey: "profile_completed_\(user.id)") }
+            )
+        }
         .onChange(of: deepLinks.pendingConversationId) { _, conversationId in
             // Push tap / chat link: land on the chat tab and open the thread.
             guard let conversationId else { return }
@@ -85,6 +109,18 @@ struct MainTabView: View {
         .onChange(of: FamilyRepository.shared.pendingJoinCode) { _, code in
             // Invite deep link routes the user to Family, which opens the join flow.
             if code != nil { selectedTab = .family }
+        }
+    }
+
+    /// One-time prompt for Google sign-ups (email registration already collects these).
+    private func checkProfileCompletion() async {
+        guard let userId = FamilyRepository.shared.session.currentUserId,
+              !UserDefaults.standard.bool(forKey: "profile_completed_\(userId)") else { return }
+        let provider = SupabaseClientProvider.client.auth.currentSession?
+            .user.appMetadata["provider"]?.stringValue
+        guard provider == "google" else { return }
+        if let user = await FamilyRepository.shared.getUser(userId), user.birthday.isEmpty {
+            completionUser = user
         }
     }
 

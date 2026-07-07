@@ -96,8 +96,10 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
         publishTask = nil
     }
 
-    /// Foreground-only v1: hide the pin when the map screen goes away.
+    /// Hide the pin when the map screen goes away — UNLESS the user enabled persistent
+    /// background sharing in settings, in which case LocationSharingService keeps it live.
     func clearOwnLocation() {
+        guard !repo.session.locationVisible else { return }
         Task {
             guard let userId = repo.session.currentUserId else { return }
             _ = try? await client.from("user_locations")
