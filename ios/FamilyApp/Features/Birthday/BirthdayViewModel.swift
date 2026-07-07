@@ -86,7 +86,10 @@ final class BirthdayViewModel {
 
     // MARK: - Mutations
 
-    func add(name: String, date: String) {
+    /// The current app user id — lets the screen gate editing to the birthday's creator.
+    var currentUserId: String? { repo.session.currentUserId }
+
+    func add(name: String, date: String, icon: String, color: Int?) {
         Task {
             guard let userId = repo.session.currentUserId,
                   let user = await repo.getUser(userId) else { return }
@@ -96,12 +99,16 @@ final class BirthdayViewModel {
             temp.date = date
             temp.familyId = user.familyId
             temp.madeByUserId = userId
+            temp.icon = icon
+            temp.color = color
             birthdays.append(temp)
 
             var payload: [String: AnyJSON] = [
                 "name": .string(name),
                 "date": .string(date),
                 "made_by_user_id": .string(userId),
+                "icon": .string(icon),
+                "color": color.map { AnyJSON.double(Double($0)) } ?? .null,
             ]
             if let familyId = user.familyId { payload["family_id"] = .string(familyId) }
             _ = try? await client.from("birthdays").insert(payload).execute()
@@ -109,18 +116,25 @@ final class BirthdayViewModel {
         }
     }
 
-    func update(id: String, name: String, date: String) {
+    func update(id: String, name: String, date: String, icon: String, color: Int?) {
         Task {
             birthdays = birthdays.map { existing in
                 var existing = existing
                 if existing.id == id {
                     existing.name = name
                     existing.date = date
+                    existing.icon = icon
+                    existing.color = color
                 }
                 return existing
             }
             _ = try? await client.from("birthdays")
-                .update(["name": AnyJSON.string(name), "date": .string(date)])
+                .update([
+                    "name": AnyJSON.string(name),
+                    "date": .string(date),
+                    "icon": .string(icon),
+                    "color": color.map { AnyJSON.double(Double($0)) } ?? .null,
+                ])
                 .eq("id", value: id)
                 .execute()
             await reload()
