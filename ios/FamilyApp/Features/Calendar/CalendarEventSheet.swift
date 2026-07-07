@@ -181,8 +181,10 @@ struct EventColorPicker: View {
                     .accessibilityLabel("Event colour")
                 }
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 2)
+            // Enough inset that the selected swatch's outward ring + scale never clip
+            // against the scroll view's edges.
+            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
         }
     }
 }
