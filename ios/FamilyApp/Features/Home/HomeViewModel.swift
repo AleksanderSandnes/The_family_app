@@ -169,6 +169,8 @@ final class HomeViewModel {
             .compactMap { birthday in
                 nextBirthdayDate(birthday.date, today: today).map { (model: birthday, next: $0) }
             }
+            // Only surface the next birthday on the dashboard when it's a week or less away.
+            .filter { today.daysUntil($0.next) <= 7 }
             .min { $0.next < $1.next }
     }
 
