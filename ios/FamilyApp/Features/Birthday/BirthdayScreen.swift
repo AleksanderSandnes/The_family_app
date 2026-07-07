@@ -82,7 +82,8 @@ private struct BirthdayCard: View {
         let next = nextBirthdayDate(birthday.date, today: today)
         let age = turnsAge(birthday.date, today: today)
         let daysUntil = next.map { today.daysUntil($0) }
-        let displayDate = next.map(formatFullDate) ?? birthday.date
+        // Show the actual date of birth (year included), not the next occurrence.
+        let displayDate = LocalDate(iso: birthday.date).map(formatFullDate) ?? birthday.date
         let isToday = daysUntil == 0
 
         Button(action: onEdit) {
