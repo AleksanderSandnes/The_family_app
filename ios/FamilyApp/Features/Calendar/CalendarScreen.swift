@@ -27,8 +27,8 @@ struct CalendarScreen: View {
     @State private var showAdd = false
     @State private var eventToEdit: CalendarEventModel?
 
-    private var iconsByDate: [LocalDate: [String]] {
-        dateEventIcons(for: viewModel.events)
+    private var dotColorsByDate: [LocalDate: [Color]] {
+        dateEventColors(for: viewModel.events)
     }
 
     var body: some View {
@@ -67,7 +67,7 @@ struct CalendarScreen: View {
                 MonthCalendarSection(
                     displayedMonth: viewModel.displayedMonth,
                     selectedDate: viewModel.selectedDate,
-                    iconsByDate: iconsByDate,
+                    dotColorsByDate: dotColorsByDate,
                     onPrev: viewModel.prevMonth,
                     onNext: viewModel.nextMonth,
                     onDaySelected: viewModel.selectDate
@@ -80,7 +80,7 @@ struct CalendarScreen: View {
             case .week:
                 WeekStrip(
                     selectedDate: viewModel.selectedDate,
-                    iconsByDate: iconsByDate,
+                    dotColorsByDate: dotColorsByDate,
                     onDaySelected: viewModel.selectDate
                 )
                 .padding(.vertical, 10)
@@ -115,6 +115,8 @@ struct CalendarScreen: View {
                 updated.timeFrom = draft.timeFrom
                 updated.timeTo = draft.timeTo
                 updated.icon = draft.icon
+                updated.isPrivate = draft.isPrivate
+                updated.color = draft.color
                 viewModel.updateEvent(updated)
                 eventToEdit = nil
             }
@@ -166,7 +168,7 @@ struct CalendarScreen: View {
 private struct MonthCalendarSection: View {
     let displayedMonth: YearMonth
     let selectedDate: LocalDate
-    let iconsByDate: [LocalDate: [String]]
+    let dotColorsByDate: [LocalDate: [Color]]
     let onPrev: () -> Void
     let onNext: () -> Void
     let onDaySelected: (LocalDate) -> Void
@@ -202,7 +204,7 @@ private struct MonthCalendarSection: View {
                             date: date,
                             isSelected: date == selectedDate,
                             isToday: date == today,
-                            eventIcons: date.flatMap { iconsByDate[$0] } ?? []
+                            eventDotColors: date.flatMap { dotColorsByDate[$0] } ?? []
                         ) {
                             if let date { onDaySelected(date) }
                         }
@@ -232,7 +234,7 @@ private struct WeekdayHeader: View {
 
 private struct WeekStrip: View {
     let selectedDate: LocalDate
-    let iconsByDate: [LocalDate: [String]]
+    let dotColorsByDate: [LocalDate: [Color]]
     let onDaySelected: (LocalDate) -> Void
 
     var body: some View {
@@ -249,7 +251,7 @@ private struct WeekStrip: View {
                         date: date,
                         isSelected: date == selectedDate,
                         isToday: date == today,
-                        eventIcons: iconsByDate[date] ?? []
+                        eventDotColors: dotColorsByDate[date] ?? []
                     ) { onDaySelected(date) }
                 }
             }
@@ -263,14 +265,8 @@ private struct DayCell: View {
     let date: LocalDate?
     let isSelected: Bool
     let isToday: Bool
-    let eventIcons: [String]
+    let eventDotColors: [Color]
     let onTap: () -> Void
-
-    /// Feature-coloured event dots (spec 2b) — a day may stack up to 3.
-    private let dotColors: [Color] = [
-        FeatureAccent.calendar.dot, FeatureAccent.shopping.dot, FeatureAccent.birthdays.dot,
-        FeatureAccent.meals.dot, FeatureAccent.wishlists.dot, FeatureAccent.map.dot,
-    ]
 
     var body: some View {
         Button(action: onTap) {
@@ -290,12 +286,12 @@ private struct DayCell: View {
                             .foregroundStyle(textColor)
                     }
                     HStack(spacing: 2) {
-                        if eventIcons.isEmpty {
+                        if eventDotColors.isEmpty {
                             Color.clear.frame(width: 6, height: 6)
                         } else {
-                            ForEach(Array(eventIcons.prefix(3).enumerated()), id: \.offset) { _, icon in
+                            ForEach(Array(eventDotColors.prefix(3).enumerated()), id: \.offset) { _, dotColor in
                                 Circle()
-                                    .fill(dotColors[calendarIconColorIndex(icon) % dotColors.count])
+                                    .fill(dotColor)
                                     .frame(width: 6, height: 6)
                             }
                         }
@@ -323,7 +319,7 @@ private struct DayCell: View {
 
     private var accessibilityText: String {
         guard let date else { return "" }
-        let count = eventIcons.count
+        let count = eventDotColors.count
         return "\(sectionDateLabel(date, locale: appLocale)). \(count == 1 ? L("1 event") : L("\(count) events"))"
     }
 }
@@ -399,20 +395,18 @@ private struct EventCard: View {
     let event: CalendarEventModel
     let onEdit: () -> Void
 
-    private let features: [FeatureAccent] = [.calendar, .shopping, .birthdays, .meals, .wishlists, .map]
-
     var body: some View {
-        let feature = features[calendarIconColorIndex(event.icon) % features.count]
+        let accent = calendarEventColor(event)
         let timeLabel = eventTimeLabel(event, locale: appLocale)
         Button(action: onEdit) {
             HStack(spacing: Spacing.md) {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(feature.badgeFill)
+                    .fill(accent.opacity(0.16))
                     .frame(width: 42, height: 42)
                     .overlay(
                         Image(systemName: IconKeyMap.calendarSymbol(event.icon))
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(feature.stroke)
+                            .foregroundStyle(accent)
                     )
                 VStack(alignment: .leading, spacing: 1) {
                     Text(event.activity)
@@ -432,4 +426,47 @@ private struct EventCard: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+// MARK: - Event colour
+
+/// The curated, on-brand palette offered in the event colour picker (0xRRGGBB).
+let calendarEventColorPalette: [Int] = [
+    0x6366F1, // indigo
+    0x8B5CF6, // violet
+    0xEC4899, // pink
+    0x3B82F6, // blue
+    0x14B8A6, // teal
+    0x22C55E, // green
+    0xF59E0B, // amber
+    0xEF4444, // red
+]
+
+/// Adaptive feature-derived dot colours used when an event has no custom colour.
+private let calendarDotFallback: [Color] = [
+    FeatureAccent.calendar.dot, FeatureAccent.shopping.dot, FeatureAccent.birthdays.dot,
+    FeatureAccent.meals.dot, FeatureAccent.wishlists.dot, FeatureAccent.map.dot,
+]
+
+/// An event's display colour — the user-picked colour, else an icon-derived accent.
+func calendarEventColor(_ event: CalendarEventModel) -> Color {
+    if let hex = event.color { return Color(hex: UInt32(truncatingIfNeeded: hex)) }
+    return calendarDotFallback[calendarIconColorIndex(event.icon) % calendarDotFallback.count]
+}
+
+/// Maps each date to the display colours of events covering it (multi-day capped at 60 days).
+func dateEventColors(for events: [CalendarEventModel]) -> [LocalDate: [Color]] {
+    var map: [LocalDate: [Color]] = [:]
+    for event in events {
+        guard let from = LocalDate(iso: event.dateFrom) else { continue }
+        let to = LocalDate(iso: event.dateTo) ?? from
+        let color = calendarEventColor(event)
+        var day = from
+        while !(to < day) {
+            map[day, default: []].append(color)
+            day = day.addingDays(1)
+            if from.daysUntil(day) > 60 { break }
+        }
+    }
+    return map
 }
