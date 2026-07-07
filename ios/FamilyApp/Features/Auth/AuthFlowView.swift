@@ -103,7 +103,7 @@ struct RegisterScreen: View {
     }
 
     var body: some View {
-        AuthScaffold(title: title, subtitle: subtitle) {
+        AuthScaffold(title: title, subtitle: subtitle, showIcon: false) {
             StepIndicator(currentStep: step, totalSteps: 2)
             ErrorBanner(message: viewModel.error)
             if step == 1 {
@@ -223,6 +223,7 @@ struct RegisterScreen: View {
 struct AuthScaffold<Content: View>: View {
     let title: String
     let subtitle: String
+    var showIcon = true
     @ViewBuilder let content: () -> Content
 
     @Environment(\.colorScheme) private var colorScheme
@@ -254,19 +255,21 @@ struct AuthScaffold<Content: View>: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Glass app-icon tile
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Color.white.opacity(0.2))
-                        .frame(width: 70, height: 70)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.4), lineWidth: 1)
-                        )
-                        .overlay(
-                            Image(systemName: "person.3.fill")
-                                .font(.system(size: 30, weight: .medium))
-                                .foregroundStyle(.white)
-                        )
-                        .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+                    if showIcon {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(Color.white.opacity(0.2))
+                            .frame(width: 70, height: 70)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .strokeBorder(Color.white.opacity(0.4), lineWidth: 1)
+                            )
+                            .overlay(
+                                Image(systemName: "person.3.fill")
+                                    .font(.system(size: 30, weight: .medium))
+                                    .foregroundStyle(.white)
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+                    }
                     Text("The Family App")
                         .font(.system(size: 23, weight: .bold))
                         .foregroundStyle(.white)

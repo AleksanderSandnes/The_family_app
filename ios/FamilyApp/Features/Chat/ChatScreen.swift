@@ -60,10 +60,7 @@ struct ChatScreen: View {
             onOpen(newId)
         }
         .sheet(isPresented: $showMemberPicker) {
-            NewConversationSheet(
-                familyMembers: viewModel.familyMembers,
-                myId: viewModel.currentUserId
-            ) { name, memberIds in
+            NewConversationSheet(viewModel: viewModel) { name, memberIds in
                 viewModel.createConversation(name: name, memberIds: memberIds)
                 showMemberPicker = false
             }
@@ -140,8 +137,7 @@ private struct ConversationRow: View {
 // MARK: - New conversation
 
 struct NewConversationSheet: View {
-    let familyMembers: [UserModel]
-    let myId: String?
+    let viewModel: ChatViewModel
     let onCreate: (String, [String]) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -149,7 +145,7 @@ struct NewConversationSheet: View {
     @State private var selected: Set<String> = []
 
     private var candidates: [UserModel] {
-        familyMembers.filter { $0.id != myId }
+        viewModel.familyMembers.filter { $0.id != viewModel.currentUserId }
     }
 
     var body: some View {
@@ -202,6 +198,7 @@ struct NewConversationSheet: View {
         .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.xl)
         .huggingSheet()
+        .task { await viewModel.refreshFamilyMembers() }
     }
 
     private var groupNameField: some View {
