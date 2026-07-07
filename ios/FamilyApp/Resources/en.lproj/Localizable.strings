@@ -356,6 +356,26 @@
 "Not set" = "Not set";
 "Set" = "Set";
 
+/* Family relation options (stored value stays English; localized on display). */
+"Mom" = "Mom";
+"Dad" = "Dad";
+"Son" = "Son";
+"Daughter" = "Daughter";
+"Sister" = "Sister";
+"Brother" = "Brother";
+"Wife" = "Wife";
+"Husband" = "Husband";
+"Fiancé" = "Fiancé";
+"Partner" = "Partner";
+"Grandmother" = "Grandmother";
+"Grandfather" = "Grandfather";
+"Grandchild" = "Grandchild";
+"Aunt" = "Aunt";
+"Uncle" = "Uncle";
+"Cousin" = "Cousin";
+"Friend" = "Friend";
+"Other" = "Other";
+
 /* Google profile completion + location sharing. */
 "Complete your profile" = "Complete your profile";
 "Add your phone and birthday so your family can reach you and celebrate you." = "Add your phone and birthday so your family can reach you and celebrate you.";

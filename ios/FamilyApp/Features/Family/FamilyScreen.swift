@@ -349,7 +349,7 @@ private struct MemberCard: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.appOnSurface)
                 if let relation, !relation.isEmpty {
-                    Text(relation)
+                    Text(L(dynamic: relation))
                         .font(.caption)
                         .foregroundStyle(Color.appCaption)
                 }
@@ -443,13 +443,13 @@ struct MemberProfileSheet: View {
                     .foregroundStyle(Color.appCaption)
                 Menu {
                     ForEach(familyRelationOptions, id: \.self) { option in
-                        Button(option) { onSetRelation(option) }
+                        Button(L(dynamic: option)) { onSetRelation(option) }
                     }
                     Divider()
                     Button(L("None"), role: .destructive) { onSetRelation("") }
                 } label: {
                     HStack(spacing: 4) {
-                        Text(relation.isEmpty ? L("Set relation") : relation)
+                        Text(relation.isEmpty ? L("Set relation") : L(dynamic: relation))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(relation.isEmpty ? Color.appPrimary : Color.appOnSurface)
                         Image(systemName: "chevron.up.chevron.down")
@@ -516,7 +516,7 @@ struct RelationsSetupSheet: View {
                         Spacer()
                         Menu {
                             ForEach(familyRelationOptions, id: \.self) { option in
-                                Button(option) { picked[member.id] = option
+                                Button(L(dynamic: option)) { picked[member.id] = option
                                     onSet(member.id, option)
                                 }
                             }
@@ -527,7 +527,7 @@ struct RelationsSetupSheet: View {
                         } label: {
                             let val = picked[member.id] ?? ""
                             HStack(spacing: 4) {
-                                Text(val.isEmpty ? L("Set") : val)
+                                Text(val.isEmpty ? L("Set") : L(dynamic: val))
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(val.isEmpty ? Color.appPrimary : Color.appOnSurface)
                                 Image(systemName: "chevron.up.chevron.down")
