@@ -3,7 +3,6 @@
 // birthday, shopping remaining).
 import Foundation
 import Observation
-import Supabase
 
 struct HomeUiState {
     var user: UserModel?
@@ -39,10 +38,6 @@ final class HomeViewModel {
     var state = HomeUiState()
 
     private let repo: FamilyRepositoryProtocol
-    private var client: SupabaseClient {
-        SupabaseClientProvider.client
-    }
-
     private var familyChangedTask: Task<Void, Never>?
 
     init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
@@ -115,34 +110,21 @@ final class HomeViewModel {
 
     /// Tonight's meal: the plan whose range covers today, then today's day row.
     private func loadTonightMeal(familyId: String, today: LocalDate) async -> String? {
-        let plans: [MealPlanModel] = await (try? client.from("meal_plans")
-            .select()
-            .eq("family_id", value: familyId)
-            .execute()
-            .value) ?? []
+        let plans = await (try? repo.fetchMealPlans(familyId: familyId)) ?? []
         let active = plans.first { plan in
             guard let from = LocalDate(iso: plan.fromDate),
                   let to = LocalDate(iso: plan.toDate) else { return false }
             return from <= today && today <= to
         }
         guard let active else { return nil }
-        let days: [MealPlanDayModel] = await (try? client.from("meal_plan_days")
-            .select()
-            .eq("meal_plan_id", value: active.id)
-            .eq("date", value: today.isoString)
-            .execute()
-            .value) ?? []
+        let days = await (try? repo.fetchMealPlanDays(mealPlanId: active.id, date: today.isoString)) ?? []
         let food = days.first?.food.trimmingCharacters(in: .whitespaces) ?? ""
         return food.isEmpty ? nil : food
     }
 
     /// Next upcoming event (ends today or later).
     private func loadNextEvent(familyId: String, today: LocalDate) async -> CalendarEventModel? {
-        let events: [CalendarEventModel] = await (try? client.from("calendar_events")
-            .select()
-            .eq("family_id", value: familyId)
-            .execute()
-            .value) ?? []
+        let events = await (try? repo.fetchFamilyCalendarEvents(familyId: familyId)) ?? []
         return events
             .filter { event in
                 let endIso = event.dateTo.isEmpty ? event.dateFrom : event.dateTo
@@ -161,11 +143,7 @@ final class HomeViewModel {
         familyId: String,
         today: LocalDate
     ) async -> (model: BirthdayModel, next: LocalDate)? {
-        let birthdays: [BirthdayModel] = await (try? client.from("birthdays")
-            .select()
-            .eq("family_id", value: familyId)
-            .execute()
-            .value) ?? []
+        let birthdays = await (try? repo.fetchFamilyBirthdays(familyId: familyId)) ?? []
         return birthdays
             .compactMap { birthday in
                 nextBirthdayDate(birthday.date, today: today).map { (model: birthday, next: $0) }
@@ -177,19 +155,10 @@ final class HomeViewModel {
 
     /// Items left to buy across all family lists.
     private func loadShoppingRemaining(familyId: String) async -> Int {
-        let lists: [ShoppingListModel] = await (try? client.from("shopping_lists")
-            .select()
-            .eq("family_id", value: familyId)
-            .execute()
-            .value) ?? []
+        let lists = await (try? repo.fetchShoppingLists(familyId: familyId)) ?? []
         let ids = lists.map(\.id)
         guard !ids.isEmpty else { return 0 }
-        let items: [ShoppingItemModel] = await (try? client.from("shopping_items")
-            .select()
-            .in("list_id", values: ids)
-            .eq("checked", value: false)
-            .execute()
-            .value) ?? []
+        let items = await (try? repo.fetchUncheckedShoppingItems(listIds: ids)) ?? []
         return items.count
     }
 }
