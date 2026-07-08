@@ -227,4 +227,41 @@ final class MockRepository: FamilyRepositoryProtocol {
     func deleteCalendarEvent(id: String) async {
         deletedEventIds.append(id)
     }
+
+    // Home
+    var mealPlansResult: [MealPlanModel] = []
+    var mealPlanDaysResult: [MealPlanDayModel] = []
+    var homeEventsResult: [CalendarEventModel] = []
+    var homeBirthdaysResult: [BirthdayModel] = []
+    var shoppingListsResult: [ShoppingListModel] = []
+    var uncheckedItemsResult: [ShoppingItemModel] = []
+    private(set) var fetchedMealPlanDayRequests: [(mealPlanId: String, date: String)] = []
+    private(set) var fetchedUncheckedListIds: [[String]] = []
+
+    func fetchMealPlans(familyId _: String) async throws -> [MealPlanModel] {
+        mealPlansResult
+    }
+
+    func fetchMealPlanDays(mealPlanId: String, date: String) async throws -> [MealPlanDayModel] {
+        fetchedMealPlanDayRequests.append((mealPlanId, date))
+        return mealPlanDaysResult
+    }
+
+    func fetchFamilyCalendarEvents(familyId _: String) async throws -> [CalendarEventModel] {
+        homeEventsResult
+    }
+
+    func fetchFamilyBirthdays(familyId _: String) async throws -> [BirthdayModel] {
+        homeBirthdaysResult
+    }
+
+    func fetchShoppingLists(familyId _: String) async throws -> [ShoppingListModel] {
+        shoppingListsResult
+    }
+
+    func fetchUncheckedShoppingItems(listIds: [String]) async throws -> [ShoppingItemModel] {
+        fetchedUncheckedListIds.append(listIds)
+        guard !listIds.isEmpty else { return [] }
+        return uncheckedItemsResult
+    }
 }
