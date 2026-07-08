@@ -132,6 +132,8 @@ struct CalendarEventModel: Codable, Identifiable, Hashable {
     var icon = "schedule"
     var isPrivate = false
     var color: Int?
+    /// Family member ids the creator is going to this event with.
+    var attendeeIds: [String] = []
 
     enum CodingKeys: String, CodingKey {
         case id, activity, icon, color
@@ -141,6 +143,7 @@ struct CalendarEventModel: Codable, Identifiable, Hashable {
         case dateTo = "date_to"
         case timeFrom = "time_from"
         case timeTo = "time_to"
+        case attendeeIds = "attendee_ids"
         case allDay = "all_day"
         case isPrivate = "is_private"
     }

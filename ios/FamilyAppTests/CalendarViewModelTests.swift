@@ -141,4 +141,22 @@ final class CalendarViewModelTests: XCTestCase {
         XCTAssertTrue(visible.contains { $0.id == "e1" })
         XCTAssertFalse(visible.contains { $0.id == "e2" })
     }
+
+    func testAddEventIncludesGoingWithAttendees() async {
+        let mock = makeMock()
+        mock.calendarEventsResult = []
+        let vm = makeVM(mock)
+        await waitUntil { true }
+
+        var draft = EventDraft(
+            activity: "Concert", allDay: false,
+            dateFrom: "2026-07-10", dateTo: "2026-07-10",
+            timeFrom: "19:00", timeTo: "22:00"
+        )
+        draft.attendeeIds = ["u2", "u3"]
+        vm.addEvent(draft)
+
+        await waitUntil { !mock.insertedEvents.isEmpty }
+        XCTAssertEqual(mock.insertedEvents.first?.attendeeIds, ["u2", "u3"])
+    }
 }

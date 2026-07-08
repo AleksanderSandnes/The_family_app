@@ -253,4 +253,22 @@ final class WishlistViewModelTests: XCTestCase {
         await waitUntil { vm.reservations["wish1"] == nil }
         XCTAssertNil(vm.reservations["wish1"])
     }
+
+    func testUpdateWishCallsRepoWithNewValues() async {
+        let mock = makeMock()
+        let vm = makeVM(mock)
+        await waitUntil { true }
+
+        vm.updateWish(
+            wishId: "wi1",
+            draft: WishDraft(text: "New title", link: "https://x.com", price: "99", imageData: nil)
+        )
+        await waitUntil { !mock.updatedWishes.isEmpty }
+
+        let record = mock.updatedWishes.first
+        XCTAssertEqual(record?.id, "wi1")
+        XCTAssertEqual(record?.text, "New title")
+        XCTAssertEqual(record?.link, "https://x.com")
+        XCTAssertEqual(record?.price, "99")
+    }
 }

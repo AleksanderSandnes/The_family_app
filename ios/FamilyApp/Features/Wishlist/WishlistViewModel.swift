@@ -266,6 +266,38 @@ final class WishlistViewModel {
         }
     }
 
+    func updateWish(wishId: String, draft: WishDraft) {
+        Task {
+            guard let userId = repo.session.currentUserId else { return }
+            let existing = wishes.first { $0.id == wishId }
+            let cleanLink = draft.link?.trimmingCharacters(in: .whitespaces)
+            let cleanPrice = draft.price?.trimmingCharacters(in: .whitespaces)
+            let link = cleanLink?.isEmpty == false ? cleanLink : nil
+            let price = cleanPrice?.isEmpty == false ? cleanPrice : nil
+
+            // A newly-picked photo replaces the image; otherwise keep the existing one.
+            var imageUrl = existing?.imageUrl
+            if let data = draft.imageData {
+                let filename = "\(Int(Date().timeIntervalSince1970 * 1000)).jpg"
+                imageUrl = await (try? StorageService.uploadWishImage(
+                    data: data, appUserId: userId, filename: filename
+                )) ?? imageUrl
+            }
+
+            wishes = wishes.map { existingWish in
+                guard existingWish.id == wishId else { return existingWish }
+                var updated = existingWish
+                updated.text = draft.text
+                updated.link = link
+                updated.price = price
+                updated.imageUrl = imageUrl
+                return updated
+            }
+            await repo.updateWish(id: wishId, text: draft.text, link: link, price: price, imageUrl: imageUrl)
+            if let wishlistId = existing?.wishlistId { await reloadDetail(wishlistId) }
+        }
+    }
+
     func toggle(_ wish: WishModel) {
         Task {
             wishes = wishes.map { existing in

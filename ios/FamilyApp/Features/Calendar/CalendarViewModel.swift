@@ -56,6 +56,7 @@ struct EventDraft {
     var icon = "schedule"
     var isPrivate = false
     var color: Int?
+    var attendeeIds: [String] = []
 }
 
 @Observable
@@ -66,7 +67,22 @@ final class CalendarViewModel {
     private(set) var selectedDate = LocalDate.today()
     private(set) var displayedMonth = YearMonth.now()
     private(set) var events: [CalendarEventModel] = CalendarViewModel.cache
+    private(set) var familyMembers: [UserModel] = []
     private(set) var isLoading = false
+
+    var currentUserId: String? {
+        repo.session.currentUserId
+    }
+
+    /// Family members other than me — the selectable "Going with" list.
+    var otherMembers: [UserModel] {
+        familyMembers.filter { $0.id != currentUserId }
+    }
+
+    /// Display name for a member id (event creator / attendee); empty if unknown.
+    func memberName(_ id: String) -> String {
+        familyMembers.first { $0.id == id }?.name ?? ""
+    }
 
     var eventsForSelectedDate: [CalendarEventModel] {
         events.filter { event in
@@ -112,6 +128,9 @@ final class CalendarViewModel {
         if events.isEmpty { isLoading = true }
         defer { isLoading = false }
         guard let user = await repo.getUser(userId) else { return }
+        if let familyId = user.familyId {
+            familyMembers = await repo.getFamilyMembers(familyId: familyId)
+        }
 
         let result = await (try? repo.fetchCalendarEvents(userId: userId, familyId: user.familyId)) ?? events
         Self.cache = result
@@ -165,6 +184,7 @@ final class CalendarViewModel {
             temp.icon = draft.icon
             temp.isPrivate = draft.isPrivate
             temp.color = draft.color
+            temp.attendeeIds = draft.attendeeIds
             events.append(temp)
 
             await repo.insertCalendarEvent(temp)

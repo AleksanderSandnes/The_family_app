@@ -72,12 +72,13 @@ final class EntitiesTests: XCTestCase {
         {"id": "e1", "user_id": "u1", "family_id": "f1", "date_from": "2026-07-06",
          "date_to": "2026-07-06", "time_from": "18:00", "time_to": "19:00",
          "activity": "Football", "all_day": false, "icon": "schedule",
-         "is_private": true, "color": 6513393}
+         "is_private": true, "color": 6513393, "attendee_ids": ["u2", "u3"]}
         """)
         XCTAssertEqual(event.dateFrom, "2026-07-06")
         XCTAssertFalse(event.allDay)
         XCTAssertTrue(event.isPrivate)
         XCTAssertEqual(event.color, 6513393)
+        XCTAssertEqual(event.attendeeIds, ["u2", "u3"])
     }
 
     func testBirthdayModelDecodes() throws {
