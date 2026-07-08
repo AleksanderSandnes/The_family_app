@@ -21,7 +21,9 @@ final class BirthdayViewModelTests: XCTestCase {
     func testRefreshLoadsBirthdaysFromRepo() async {
         let mock = makeMock()
         var b = BirthdayModel()
-        b.id = "b1"; b.name = "Alice"; b.familyId = "f1"
+        b.id = "b1"
+        b.name = "Alice"
+        b.familyId = "f1"
         mock.birthdaysResult = [b]
         let vm = makeVM(mock)
         // Wait for the reload result specifically (the VM seeds from a shared static cache).
@@ -49,7 +51,8 @@ final class BirthdayViewModelTests: XCTestCase {
     func testUpdateCallsRepositoryWithNewValues() async {
         let mock = makeMock()
         var b = BirthdayModel()
-        b.id = "b1"; b.name = "Old"
+        b.id = "b1"
+        b.name = "Old"
         mock.birthdaysResult = [b]
         let vm = makeVM(mock)
         await waitUntil { !vm.birthdays.isEmpty }

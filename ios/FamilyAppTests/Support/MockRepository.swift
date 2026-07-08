@@ -179,31 +179,52 @@ final class MockRepository: FamilyRepositoryProtocol {
     }
 
     // Birthdays
-    var birthdaysResult: [BirthdayModel]?
+    var birthdaysResult: [BirthdayModel] = []
     private(set) var insertedBirthdays: [BirthdayModel] = []
     private(set) var updatedBirthdays: [BirthdayModel] = []
     private(set) var deletedBirthdayIds: [String] = []
 
-    func fetchBirthdays(userId _: String, familyId _: String?) async -> [BirthdayModel]? {
+    func fetchBirthdays(userId _: String, familyId _: String?) async throws -> [BirthdayModel] {
         birthdaysResult
     }
 
-    func insertBirthday(
-        name: String, date: String, userId: String, familyId: String?, icon: String, color: Int?
-    ) async {
-        var b = BirthdayModel()
-        b.name = name; b.date = date; b.madeByUserId = userId
-        b.familyId = familyId; b.icon = icon; b.color = color
-        insertedBirthdays.append(b)
+    func insertBirthday(_ birthday: BirthdayModel) async {
+        insertedBirthdays.append(birthday)
     }
 
     func updateBirthday(id: String, name: String, date: String, icon: String, color: Int?) async {
         var b = BirthdayModel()
-        b.id = id; b.name = name; b.date = date; b.icon = icon; b.color = color
+        b.id = id
+        b.name = name
+        b.date = date
+        b.icon = icon
+        b.color = color
         updatedBirthdays.append(b)
     }
 
     func deleteBirthday(id: String) async {
         deletedBirthdayIds.append(id)
+    }
+
+    // Calendar
+    var calendarEventsResult: [CalendarEventModel] = []
+    private(set) var insertedEvents: [CalendarEventModel] = []
+    private(set) var updatedEvents: [CalendarEventModel] = []
+    private(set) var deletedEventIds: [String] = []
+
+    func fetchCalendarEvents(userId _: String, familyId _: String?) async throws -> [CalendarEventModel] {
+        calendarEventsResult
+    }
+
+    func insertCalendarEvent(_ event: CalendarEventModel) async {
+        insertedEvents.append(event)
+    }
+
+    func updateCalendarEvent(_ event: CalendarEventModel) async {
+        updatedEvents.append(event)
+    }
+
+    func deleteCalendarEvent(id: String) async {
+        deletedEventIds.append(id)
     }
 }

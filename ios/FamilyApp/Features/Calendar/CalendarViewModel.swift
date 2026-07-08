@@ -77,16 +77,16 @@ final class CalendarViewModel {
     }
 
     private let repo: FamilyRepositoryProtocol
-    private var client: SupabaseClient {
-        SupabaseClientProvider.client
-    }
-
-    private let observer = RealtimeObserver()
+    private let observer: RealtimeObserving
     private var subscribedFamilyId: String?
     private var familyChangedTask: Task<Void, Never>?
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+    init(
+        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
+    ) {
         self.repo = repo
+        observer = realtime()
         Task { await loadEvents() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }
@@ -113,22 +113,7 @@ final class CalendarViewModel {
         defer { isLoading = false }
         guard let user = await repo.getUser(userId) else { return }
 
-        let result: [CalendarEventModel]
-        if let familyId = user.familyId {
-            let fetched: [CalendarEventModel] = await (try? client.from("calendar_events")
-                .select()
-                .or("user_id.eq.\(userId),family_id.eq.\(familyId)")
-                .execute()
-                .value) ?? events
-            result = fetched.filter { $0.familyId == nil || $0.familyId == familyId }
-        } else {
-            let fetched: [CalendarEventModel] = await (try? client.from("calendar_events")
-                .select()
-                .eq("user_id", value: userId)
-                .execute()
-                .value) ?? events
-            result = fetched.filter { $0.familyId == nil }
-        }
+        let result = await (try? repo.fetchCalendarEvents(userId: userId, familyId: user.familyId)) ?? events
         Self.cache = result
         events = result
 
@@ -182,20 +167,7 @@ final class CalendarViewModel {
             temp.color = draft.color
             events.append(temp)
 
-            var payload: [String: AnyJSON] = [
-                "user_id": .string(userId),
-                "activity": .string(draft.activity),
-                "all_day": .bool(draft.allDay),
-                "date_from": .string(draft.dateFrom),
-                "date_to": .string(resolvedDateTo),
-                "time_from": .string(draft.allDay ? "" : draft.timeFrom),
-                "time_to": .string(draft.allDay ? "" : draft.timeTo),
-                "icon": .string(draft.icon),
-                "is_private": .bool(draft.isPrivate),
-                "color": draft.color.map { AnyJSON.double(Double($0)) } ?? .null,
-            ]
-            if let familyId = user.familyId { payload["family_id"] = .string(familyId) }
-            _ = try? await client.from("calendar_events").insert(payload).execute()
+            await repo.insertCalendarEvent(temp)
             await loadEvents()
         }
     }
@@ -203,20 +175,7 @@ final class CalendarViewModel {
     func updateEvent(_ event: CalendarEventModel) {
         Task {
             events = events.map { $0.id == event.id ? event : $0 }
-            _ = try? await client.from("calendar_events")
-                .update([
-                    "activity": AnyJSON.string(event.activity),
-                    "all_day": .bool(event.allDay),
-                    "date_from": .string(event.dateFrom),
-                    "date_to": .string(event.dateTo),
-                    "time_from": .string(event.timeFrom),
-                    "time_to": .string(event.timeTo),
-                    "icon": .string(event.icon),
-                    "is_private": .bool(event.isPrivate),
-                    "color": event.color.map { AnyJSON.double(Double($0)) } ?? .null,
-                ])
-                .eq("id", value: event.id)
-                .execute()
+            await repo.updateCalendarEvent(event)
             await loadEvents()
         }
     }
@@ -224,7 +183,7 @@ final class CalendarViewModel {
     func delete(_ event: CalendarEventModel) {
         Task {
             events.removeAll { $0.id == event.id }
-            _ = try? await client.from("calendar_events").delete().eq("id", value: event.id).execute()
+            await repo.deleteCalendarEvent(id: event.id)
             await loadEvents()
         }
     }

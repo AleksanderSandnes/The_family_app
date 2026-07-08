@@ -55,12 +55,16 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func setLocationVisible(_ visible: Bool)
 
     // Birthdays (migrated out of BirthdayViewModel)
-    func fetchBirthdays(userId: String, familyId: String?) async -> [BirthdayModel]?
-    func insertBirthday(
-        name: String, date: String, userId: String, familyId: String?, icon: String, color: Int?
-    ) async
+    func fetchBirthdays(userId: String, familyId: String?) async throws -> [BirthdayModel]
+    func insertBirthday(_ birthday: BirthdayModel) async
     func updateBirthday(id: String, name: String, date: String, icon: String, color: Int?) async
     func deleteBirthday(id: String) async
+
+    // Calendar (migrated out of CalendarViewModel)
+    func fetchCalendarEvents(userId: String, familyId: String?) async throws -> [CalendarEventModel]
+    func insertCalendarEvent(_ event: CalendarEventModel) async
+    func updateCalendarEvent(_ event: CalendarEventModel) async
+    func deleteCalendarEvent(id: String) async
 }
 
 /// FamilyRepository already implements every method above; this just records the conformance.
