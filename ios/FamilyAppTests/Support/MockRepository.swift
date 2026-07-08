@@ -24,7 +24,12 @@ final class MockRepository: FamilyRepositoryProtocol {
     private(set) var renamedFamilies: [(familyId: String, name: String)] = []
     private(set) var updatedFamilyPhotos: [(familyId: String, url: String)] = []
     private(set) var removedMembers: [String] = []
-    private(set) var setRelations: [(from: String, to: String, relation: String)] = []
+    struct RelationRecord: Equatable { let from: String
+        let to: String
+        let relation: String
+    }
+
+    private(set) var setRelations: [RelationRecord] = []
     private(set) var sentMessages: [(conversationId: String, text: String)] = []
     private(set) var addedReactions: [(messageId: String, emoji: String)] = []
     private(set) var removedReactions: [String] = []
@@ -43,59 +48,133 @@ final class MockRepository: FamilyRepositoryProtocol {
         self.session = session ?? SessionStore(defaults: UserDefaults(suiteName: "mock-\(UUID().uuidString)")!)
     }
 
-    // Reads
-    func getUser(_ userId: String) async -> UserModel? { users[userId] }
-    func getFamily(familyId: String) async -> FamilyModel? { families[familyId] }
-    func getFamilyMembers(familyId _: String) async -> [UserModel] { familyMembers }
-    func getMyRelations(userId _: String) async -> [String: String] { relations }
-    func getLastMessage(conversationId: String) async -> MessageModel? { lastMessageByConversation[conversationId] }
-    func familyChanged() -> AsyncStream<Void> { AsyncStream { $0.finish() } }
-    func invalidateUserCache() { invalidatedCache = true }
-
-    // Family lifecycle
-    func createFamily(name: String, code _: String, userId _: String) async throws -> String {
-        renamedFamilies.append((createResult, name)); return createResult
+    /// Reads
+    func getUser(_ userId: String) async -> UserModel? {
+        users[userId]
     }
 
-    func joinFamily(code _: String, userId _: String) async throws -> String { joinResult }
-    func leaveFamily(userId: String) async { leaveFamilyCalls.append(userId) }
-    func renameFamily(familyId: String, newName: String) async throws { renamedFamilies.append((familyId, newName)) }
+    func getFamily(familyId: String) async -> FamilyModel? {
+        families[familyId]
+    }
+
+    func getFamilyMembers(familyId _: String) async -> [UserModel] {
+        familyMembers
+    }
+
+    func getMyRelations(userId _: String) async -> [String: String] {
+        relations
+    }
+
+    func getLastMessage(conversationId: String) async -> MessageModel? {
+        lastMessageByConversation[conversationId]
+    }
+
+    func familyChanged() -> AsyncStream<Void> {
+        AsyncStream { $0.finish() }
+    }
+
+    func invalidateUserCache() {
+        invalidatedCache = true
+    }
+
+    /// Family lifecycle
+    func createFamily(name: String, code _: String, userId _: String) async throws -> String {
+        renamedFamilies.append((createResult, name))
+        return createResult
+    }
+
+    func joinFamily(code _: String, userId _: String) async throws -> String {
+        joinResult
+    }
+
+    func leaveFamily(userId: String) async {
+        leaveFamilyCalls.append(userId)
+    }
+
+    func renameFamily(familyId: String, newName: String) async throws {
+        renamedFamilies.append((familyId, newName))
+    }
+
     func updateFamilyPhoto(familyId: String, photoUrl: String) async throws {
         updatedFamilyPhotos.append((familyId, photoUrl))
     }
 
-    func removeFamilyMember(memberId: String) async throws { removedMembers.append(memberId) }
-    func setRelation(fromUserId: String, toUserId: String, familyId _: String, relation: String) async {
-        setRelations.append((fromUserId, toUserId, relation))
+    func removeFamilyMember(memberId: String) async throws {
+        removedMembers.append(memberId)
     }
 
-    // Profile
-    func updateProfile(userId: String, update: ProfileUpdate) async { updatedProfiles.append((userId, update)) }
+    func setRelation(fromUserId: String, toUserId: String, familyId _: String, relation: String) async {
+        setRelations.append(RelationRecord(from: fromUserId, to: toUserId, relation: relation))
+    }
 
-    // Auth
-    func login(email _: String, password _: String) async throws -> String { loginResult }
-    func register(name: String, email _: String, password _: String, birthday _: String, mobile _: String) async throws {
+    /// Profile
+    func updateProfile(userId: String, update: ProfileUpdate) async {
+        updatedProfiles.append((userId, update))
+    }
+
+    /// Auth
+    func login(email _: String, password _: String) async throws -> String {
+        loginResult
+    }
+
+    func register(
+        name: String, email _: String, password _: String, birthday _: String, mobile _: String
+    ) async throws {
         registeredUsers.append(name)
     }
 
-    func signInWithGoogle() async throws { googleSignInCalled = true }
-    func signOut() async { signOutCalled = true }
-    func completeSignInAfterConfirmation() async throws -> String { confirmResult }
-    func consumePendingJoinCode() -> String? { defer { pendingJoinCode = nil }; return pendingJoinCode }
-    func setPendingJoinCode(_ code: String) { pendingJoinCode = code }
+    func signInWithGoogle() async throws {
+        googleSignInCalled = true
+    }
 
-    // Chat
-    func markConversationRead(conversationId: String) async { markReadConversations.append(conversationId) }
-    func sendMessage(conversationId: String, text: String) async throws { sentMessages.append((conversationId, text)) }
+    func signOut() async {
+        signOutCalled = true
+    }
+
+    func completeSignInAfterConfirmation() async throws -> String {
+        confirmResult
+    }
+
+    func consumePendingJoinCode() -> String? {
+        defer { pendingJoinCode = nil }
+        return pendingJoinCode
+    }
+
+    func setPendingJoinCode(_ code: String) {
+        pendingJoinCode = code
+    }
+
+    /// Chat
+    func markConversationRead(conversationId: String) async {
+        markReadConversations.append(conversationId)
+    }
+
+    func sendMessage(conversationId: String, text: String) async throws {
+        sentMessages.append((conversationId, text))
+    }
+
     func addReaction(messageId: String, conversationId _: String, emoji: String) async throws {
         addedReactions.append((messageId, emoji))
     }
 
-    func removeReaction(messageId: String) async throws { removedReactions.append(messageId) }
+    func removeReaction(messageId: String) async throws {
+        removedReactions.append(messageId)
+    }
 
-    // Settings
-    func setThemeMode(_ mode: ThemeMode) { themeModes.append(mode) }
-    func setNotificationsEnabled(_ enabled: Bool) async { notificationsEnabled.append(enabled) }
-    func setNotifyDaysBefore(_ days: Int) async { notifyDaysBefore.append(days) }
-    func setLocationVisible(_ visible: Bool) { locationVisible.append(visible) }
+    /// Settings
+    func setThemeMode(_ mode: ThemeMode) {
+        themeModes.append(mode)
+    }
+
+    func setNotificationsEnabled(_ enabled: Bool) async {
+        notificationsEnabled.append(enabled)
+    }
+
+    func setNotifyDaysBefore(_ days: Int) async {
+        notifyDaysBefore.append(days)
+    }
+
+    func setLocationVisible(_ visible: Bool) {
+        locationVisible.append(visible)
+    }
 }
