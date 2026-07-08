@@ -125,6 +125,18 @@ extension FamilyRepository {
             .execute()
     }
 
+    func updateWish(id: String, text: String, link: String?, price: String?, imageUrl: String?) async {
+        _ = try? await client.from("wishes")
+            .update([
+                "text": AnyJSON.string(text),
+                "link": link.map { AnyJSON.string($0) } ?? .null,
+                "price": price.map { AnyJSON.string($0) } ?? .null,
+                "image_url": imageUrl.map { AnyJSON.string($0) } ?? .null,
+            ])
+            .eq("id", value: id)
+            .execute()
+    }
+
     func deleteWish(id: String) async {
         _ = try? await client.from("wishes").delete().eq("id", value: id).execute()
     }

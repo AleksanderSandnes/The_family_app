@@ -92,7 +92,8 @@ struct CalendarScreen: View {
                 AgendaList(
                     events: viewModel.events,
                     onEdit: { eventToEdit = $0 },
-                    onDelete: { viewModel.delete($0) }
+                    onDelete: { viewModel.delete($0) },
+                    memberName: viewModel.memberName
                 )
             }
         }
@@ -100,13 +101,21 @@ struct CalendarScreen: View {
         .toolbar(.hidden, for: .navigationBar)
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
-            EventSheet(existingEvent: nil, initialDate: viewModel.selectedDate) { draft in
+            EventSheet(
+                existingEvent: nil,
+                initialDate: viewModel.selectedDate,
+                members: viewModel.otherMembers
+            ) { draft in
                 viewModel.addEvent(draft)
                 showAdd = false
             }
         }
         .sheet(item: $eventToEdit) { event in
-            EventSheet(existingEvent: event, initialDate: viewModel.selectedDate) { draft in
+            EventSheet(
+                existingEvent: event,
+                initialDate: viewModel.selectedDate,
+                members: viewModel.otherMembers
+            ) { draft in
                 var updated = event
                 updated.activity = draft.activity
                 updated.allDay = draft.allDay
@@ -117,6 +126,7 @@ struct CalendarScreen: View {
                 updated.icon = draft.icon
                 updated.isPrivate = draft.isPrivate
                 updated.color = draft.color
+                updated.attendeeIds = draft.attendeeIds
                 viewModel.updateEvent(updated)
                 eventToEdit = nil
             }
@@ -142,7 +152,7 @@ struct CalendarScreen: View {
         } else {
             List {
                 ForEach(dayEvents) { event in
-                    EventCard(event: event) { eventToEdit = event }
+                    EventCard(event: event, memberName: viewModel.memberName) { eventToEdit = event }
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(
@@ -330,6 +340,7 @@ private struct AgendaList: View {
     let events: [CalendarEventModel]
     let onEdit: (CalendarEventModel) -> Void
     let onDelete: (CalendarEventModel) -> Void
+    var memberName: (String) -> String = { _ in "" }
 
     var body: some View {
         let today = LocalDate.today()
@@ -361,7 +372,7 @@ private struct AgendaList: View {
                 ForEach(Array(orderedDates.enumerated()), id: \.offset) { _, date in
                     Section {
                         ForEach(grouped[date] ?? []) { event in
-                            EventCard(event: event) { onEdit(event) }
+                            EventCard(event: event, memberName: memberName) { onEdit(event) }
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(
@@ -391,13 +402,25 @@ private struct AgendaList: View {
 
 // MARK: - Event card
 
+/// "by {creator} · with {attendees}" line shown under an event in the day list.
+@MainActor
+func eventPeopleLabel(creator: String, attendees: [String]) -> String {
+    var parts: [String] = []
+    if !creator.isEmpty { parts.append("\(L("by")) \(creator)") }
+    if !attendees.isEmpty { parts.append("\(L("with")) \(attendees.joined(separator: ", "))") }
+    return parts.joined(separator: " · ")
+}
+
 private struct EventCard: View {
     let event: CalendarEventModel
+    var memberName: (String) -> String = { _ in "" }
     let onEdit: () -> Void
 
     var body: some View {
         let accent = calendarEventColor(event)
         let timeLabel = eventTimeLabel(event, locale: appLocale)
+        let creator = memberName(event.userId)
+        let attendees = event.attendeeIds.map(memberName).filter { !$0.isEmpty }
         Button(action: onEdit) {
             HStack(spacing: Spacing.md) {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
@@ -408,7 +431,7 @@ private struct EventCard: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(accent)
                     )
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(event.activity)
                         .font(.cardTitle)
                         .foregroundStyle(Color.appOnSurface)
@@ -416,6 +439,12 @@ private struct EventCard: View {
                         Text(timeLabel)
                             .font(.caption)
                             .foregroundStyle(Color.appCaption)
+                    }
+                    if !creator.isEmpty || !attendees.isEmpty {
+                        Text(eventPeopleLabel(creator: creator, attendees: attendees))
+                            .font(.caption)
+                            .foregroundStyle(Color.appCaption)
+                            .lineLimit(1)
                     }
                 }
                 Spacer()

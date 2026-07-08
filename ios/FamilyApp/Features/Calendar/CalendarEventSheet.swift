@@ -6,6 +6,8 @@ import SwiftUI
 struct EventSheet: View {
     let existingEvent: CalendarEventModel?
     let initialDate: LocalDate
+    /// Family members (excluding self) selectable in the "Going with" picker.
+    let members: [UserModel]
     let onSave: (EventDraft) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -13,6 +15,7 @@ struct EventSheet: View {
     @State private var allDay: Bool
     @State private var isPrivate: Bool
     @State private var color: Int?
+    @State private var attendeeIds: Set<String>
     @State private var selectedIcon: String
     @State private var showIconPicker = false
     @State private var dateFrom: LocalDate
@@ -23,11 +26,14 @@ struct EventSheet: View {
     init(
         existingEvent: CalendarEventModel?,
         initialDate: LocalDate,
+        members: [UserModel] = [],
         onSave: @escaping (EventDraft) -> Void
     ) {
         self.existingEvent = existingEvent
         self.initialDate = initialDate
+        self.members = members
         self.onSave = onSave
+        _attendeeIds = State(initialValue: Set(existingEvent?.attendeeIds ?? []))
         _activity = State(initialValue: existingEvent?.activity ?? "")
         _allDay = State(initialValue: existingEvent?.allDay ?? false)
         _isPrivate = State(initialValue: existingEvent?.isPrivate ?? false)
@@ -70,7 +76,8 @@ struct EventSheet: View {
             timeTo: allDay ? "" : Self.timeString(timeTo),
             icon: selectedIcon,
             isPrivate: isPrivate,
-            color: color
+            color: color,
+            attendeeIds: members.map(\.id).filter { attendeeIds.contains($0) }
         ))
         dismiss()
     }
@@ -121,6 +128,41 @@ struct EventSheet: View {
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, 4)
             .glassCard(cornerRadius: Radius.menu)
+
+            if !members.isEmpty {
+                SectionHeader(text: L("Going with"))
+                VStack(spacing: 0) {
+                    ForEach(Array(members.enumerated()), id: \.element.id) { index, member in
+                        Button {
+                            if attendeeIds.contains(member.id) {
+                                attendeeIds.remove(member.id)
+                            } else {
+                                attendeeIds.insert(member.id)
+                            }
+                        } label: {
+                            HStack(spacing: Spacing.md) {
+                                InitialAvatar(user: member, size: 34)
+                                Text(member.name)
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(Color.appOnSurface)
+                                Spacer()
+                                Image(systemName: attendeeIds.contains(member.id) ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 22))
+                                    .foregroundStyle(attendeeIds.contains(member.id) ? Color.appPrimary : Color
+                                        .appCaption)
+                            }
+                            .padding(.horizontal, Spacing.lg)
+                            .padding(.vertical, 10)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if index < members.count - 1 {
+                            Divider().padding(.leading, 62)
+                        }
+                    }
+                }
+                .glassCard(cornerRadius: Radius.menu)
+            }
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)

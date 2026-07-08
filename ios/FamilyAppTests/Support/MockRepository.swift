@@ -678,6 +678,19 @@ final class MockRepository: FamilyRepositoryProtocol {
         wishChecks.append((id, checked))
     }
 
+    struct WishUpdateRecord: Equatable {
+        let id: String
+        let text: String
+        let link: String?
+        let price: String?
+        let imageUrl: String?
+    }
+
+    private(set) var updatedWishes: [WishUpdateRecord] = []
+    func updateWish(id: String, text: String, link: String?, price: String?, imageUrl: String?) async {
+        updatedWishes.append(WishUpdateRecord(id: id, text: text, link: link, price: price, imageUrl: imageUrl))
+    }
+
     func deleteWish(id: String) async {
         deletedWishIds.append(id)
     }

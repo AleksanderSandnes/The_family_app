@@ -105,6 +105,7 @@ struct WishlistDetailScreen: View {
     let viewModel: WishlistViewModel
 
     @State private var showAddWish = false
+    @State private var wishToEdit: WishModel?
     @State private var showRename = false
     @State private var showChangeIcon = false
     @State private var renameText = ""
@@ -140,14 +141,18 @@ struct WishlistDetailScreen: View {
                     ForEach(sortedWishes) { wish in
                         Group {
                             if isOwner {
-                                OwnerWishRow(wish: wish) { viewModel.toggle(wish) }
-                                    .swipeActions(edge: .trailing) {
-                                        Button(role: .destructive) {
-                                            viewModel.deleteWish(wish)
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
+                                OwnerWishRow(
+                                    wish: wish,
+                                    onToggle: { viewModel.toggle(wish) },
+                                    onEdit: { wishToEdit = wish }
+                                )
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteWish(wish)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
                                     }
+                                }
                             } else {
                                 MemberWishRow(
                                     wish: wish,
@@ -235,6 +240,12 @@ struct WishlistDetailScreen: View {
                 showAddWish = false
             }
         }
+        .sheet(item: $wishToEdit) { wish in
+            AddWishSheet(initial: wish) { draft in
+                viewModel.updateWish(wishId: wish.id, draft: draft)
+                wishToEdit = nil
+            }
+        }
     }
 }
 
@@ -278,6 +289,7 @@ private struct WishLinkButton: View {
 private struct OwnerWishRow: View {
     let wish: WishModel
     let onToggle: () -> Void
+    let onEdit: () -> Void
 
     var body: some View {
         HStack(spacing: Spacing.md) {
@@ -296,12 +308,20 @@ private struct OwnerWishRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(wish.checked ? L("Unmark as claimed") : L("Mark as claimed"))
-            WishThumb(url: wish.imageUrl)
-            Text(wishTitle(wish))
-                .font(.system(size: 15.5))
-                .foregroundStyle(wish.checked ? Color(hex: 0xA6ACC4) : Color.appOnSurface)
-                .strikethrough(wish.checked)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // Tap the wish itself to edit it (owner only).
+            Button(action: onEdit) {
+                HStack(spacing: Spacing.md) {
+                    WishThumb(url: wish.imageUrl)
+                    Text(wishTitle(wish))
+                        .font(.system(size: 15.5))
+                        .foregroundStyle(wish.checked ? Color(hex: 0xA6ACC4) : Color.appOnSurface)
+                        .strikethrough(wish.checked)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(L("Edit wish"))
             WishLinkButton(link: wish.link)
         }
         .padding(.horizontal, Spacing.lg)
@@ -412,6 +432,8 @@ private struct NewWishlistSheet: View {
 
 /// Rich add-wish flow: title (required) + optional link, price and photo.
 private struct AddWishSheet: View {
+    /// When set, the sheet edits this wish instead of adding a new one.
+    var initial: WishModel?
     let onConfirm: (WishDraft) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -427,7 +449,11 @@ private struct AddWishSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            SheetHeader(title: L("Add a wish"), confirmTitle: L("Add"), confirmEnabled: canAdd) {
+            SheetHeader(
+                title: initial != nil ? L("Edit wish") : L("Add a wish"),
+                confirmTitle: initial != nil ? L("Save") : L("Add"),
+                confirmEnabled: canAdd
+            ) {
                 dismiss()
             } onConfirm: {
                 onConfirm(WishDraft(
@@ -446,7 +472,10 @@ private struct AddWishSheet: View {
             PhotosPicker(selection: $photoItem, matching: .images) {
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "photo")
-                    Text(LocalizedStringKey(imageData == nil ? "Add photo (optional)" : "Photo selected"))
+                    Text(LocalizedStringKey(
+                        imageData != nil ? "Photo selected"
+                            : (initial?.imageUrl?.isEmpty == false ? "Change photo" : "Add photo (optional)")
+                    ))
                 }
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.appPrimary)
@@ -475,6 +504,13 @@ private struct AddWishSheet: View {
         .onChange(of: photoItem) { _, item in
             Task {
                 imageData = try? await item?.loadTransferable(type: Data.self)
+            }
+        }
+        .onAppear {
+            if let initial {
+                text = initial.text
+                link = initial.link ?? ""
+                price = initial.price ?? ""
             }
         }
     }

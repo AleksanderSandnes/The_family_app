@@ -151,6 +151,7 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func deleteWishlist(id: String) async
     func insertWish(_ wish: WishModel) async
     func setWishChecked(id: String, checked: Bool) async
+    func updateWish(id: String, text: String, link: String?, price: String?, imageUrl: String?) async
     func deleteWish(id: String) async
     func insertWishReservation(wishId: String, reservedBy: String) async
     func deleteWishReservation(wishId: String, reservedBy: String) async
