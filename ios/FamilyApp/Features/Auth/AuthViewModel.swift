@@ -3,7 +3,6 @@
 // completeSignInAfterConfirmation() persists the app user id in SessionStore.
 import Foundation
 import Observation
-import Supabase
 
 let minPasswordLength = 6
 private let strongPasswordLength = 8
@@ -31,10 +30,9 @@ final class AuthViewModel {
         self.repo = repo
         // Finalize external (Google OAuth) sign-in: once the redirect lands and the
         // session becomes authenticated, resolve + persist the app user so the gate flips.
-        authListener = Task {
-            for await (event, _) in SupabaseClientProvider.client.auth.authStateChanges
-                where event == .signedIn {
-                _ = try? await FamilyRepository.shared.completeSignInAfterConfirmation()
+        authListener = Task { [repo] in
+            for await _ in repo.authSignedInEvents() {
+                _ = try? await repo.completeSignInAfterConfirmation()
             }
         }
     }

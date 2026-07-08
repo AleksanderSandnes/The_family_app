@@ -11,6 +11,9 @@ final class NoopRealtimeObserver: RealtimeObserving {
         scope _: String,
         filter _: RealtimePostgresFilter?,
         onChange _: @escaping @MainActor () async -> Void
-    ) { startCount += 1 }
+    ) {
+        startCount += 1
+    }
+
     func stop() {}
 }

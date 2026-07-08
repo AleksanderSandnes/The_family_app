@@ -1,7 +1,6 @@
 // Family view model — the iOS twin of FamilyViewModel.kt.
 import Foundation
 import Observation
-import Supabase
 
 private let joinCodeLength = 8
 
@@ -26,9 +25,6 @@ final class FamilyViewModel {
     }
 
     private let repo: FamilyRepositoryProtocol
-    private var client: SupabaseClient {
-        SupabaseClientProvider.client
-    }
 
     init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
         self.repo = repo
@@ -142,11 +138,7 @@ final class FamilyViewModel {
             }
             do {
                 // Same bucket + path convention as Android: group-images/family-photos/{id}/photo.jpg
-                let bucket = client.storage.from("group-images")
-                let path = "family-photos/\(familyId)/photo.jpg"
-                try await bucket.upload(path, data: compressed, options: FileOptions(upsert: true))
-                let cacheBuster = Int(Date().timeIntervalSince1970 * 1000)
-                let url = try bucket.getPublicURL(path: path).absoluteString + "?t=\(cacheBuster)"
+                let url = try await repo.uploadFamilyPhotoImage(familyId: familyId, data: compressed)
                 try await repo.updateFamilyPhoto(familyId: familyId, photoUrl: url)
                 await load()
             } catch {
