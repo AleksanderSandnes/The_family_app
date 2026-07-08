@@ -87,7 +87,9 @@ final class BirthdayViewModel {
     // MARK: - Mutations
 
     /// The current app user id — lets the screen gate editing to the birthday's creator.
-    var currentUserId: String? { repo.session.currentUserId }
+    var currentUserId: String? {
+        repo.session.currentUserId
+    }
 
     func add(name: String, date: String, icon: String, color: Int?) {
         Task {

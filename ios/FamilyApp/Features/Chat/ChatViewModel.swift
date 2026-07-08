@@ -274,9 +274,9 @@ final class ChatViewModel {
         // Recompute the badge from last_read_at rather than blindly incrementing: a reconnect
         // (e.g. returning from the photo picker) or a re-delivered event must not inflate the
         // count or resurrect an already-read conversation, and my own messages never count.
-        let unread = currentConversationId == convId
+        let unread = await currentConversationId == convId
             ? 0
-            : (await unreadCounts(conversationIds: [convId], userId: userId)[convId] ?? 0)
+            : (unreadCounts(conversationIds: [convId], userId: userId)[convId] ?? 0)
         conversations = conversations.map { preview in
             guard preview.conversation.id == convId else { return preview }
             var preview = preview

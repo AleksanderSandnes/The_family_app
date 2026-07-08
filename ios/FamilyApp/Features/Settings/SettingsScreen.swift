@@ -69,8 +69,11 @@ struct SettingsScreen: View {
                         isOn: Binding(
                             get: { locationService.isSharing },
                             set: { visible in
-                                if visible { locationService.enableSharing() }
-                                else { locationService.disableSharing() }
+                                if visible {
+                                    locationService.enableSharing()
+                                } else {
+                                    locationService.disableSharing()
+                                }
                                 flashSaved()
                             }
                         )
