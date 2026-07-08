@@ -61,28 +61,28 @@ final class CalendarHelpersTests: XCTestCase {
         return event
     }
 
-    func testDateEventIconsSingleDay() {
-        let map = dateEventIcons(for: [event(from: "2026-07-05", icon: "cake")])
-        XCTAssertEqual(map[LocalDate(iso: "2026-07-05")!], ["cake"])
+    func testDateEventColorsSingleDay() {
+        let map = dateEventColors(for: [event(from: "2026-07-05", icon: "cake")])
+        XCTAssertEqual(map[LocalDate(iso: "2026-07-05")!]?.count, 1)
         XCTAssertNil(map[LocalDate(iso: "2026-07-06")!])
     }
 
-    func testDateEventIconsMultiDaySpansRange() {
-        let map = dateEventIcons(for: [event(from: "2026-07-05", to: "2026-07-07")])
+    func testDateEventColorsMultiDaySpansRange() {
+        let map = dateEventColors(for: [event(from: "2026-07-05", to: "2026-07-07")])
         XCTAssertEqual(map[LocalDate(iso: "2026-07-05")!]?.count, 1)
         XCTAssertEqual(map[LocalDate(iso: "2026-07-06")!]?.count, 1)
         XCTAssertEqual(map[LocalDate(iso: "2026-07-07")!]?.count, 1)
         XCTAssertNil(map[LocalDate(iso: "2026-07-08")!])
     }
 
-    func testDateEventIconsCapsAt60Days() {
-        let map = dateEventIcons(for: [event(from: "2026-01-01", to: "2026-12-31")])
+    func testDateEventColorsCapsAt60Days() {
+        let map = dateEventColors(for: [event(from: "2026-01-01", to: "2026-12-31")])
         XCTAssertNotNil(map[LocalDate(iso: "2026-01-01")!])
         XCTAssertNil(map[LocalDate(iso: "2026-06-01")!])
     }
 
-    func testDateEventIconsSkipsMalformed() {
-        XCTAssertTrue(dateEventIcons(for: [event(from: "not-a-date")]).isEmpty)
+    func testDateEventColorsSkipsMalformed() {
+        XCTAssertTrue(dateEventColors(for: [event(from: "not-a-date")]).isEmpty)
     }
 
     func testEventTimeLabel() {

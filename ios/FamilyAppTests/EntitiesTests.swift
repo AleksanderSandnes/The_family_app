@@ -71,18 +71,23 @@ final class EntitiesTests: XCTestCase {
         let event = try decode(CalendarEventModel.self, """
         {"id": "e1", "user_id": "u1", "family_id": "f1", "date_from": "2026-07-06",
          "date_to": "2026-07-06", "time_from": "18:00", "time_to": "19:00",
-         "activity": "Football", "all_day": false, "icon": "schedule"}
+         "activity": "Football", "all_day": false, "icon": "schedule",
+         "is_private": true, "color": 6513393}
         """)
         XCTAssertEqual(event.dateFrom, "2026-07-06")
         XCTAssertFalse(event.allDay)
+        XCTAssertTrue(event.isPrivate)
+        XCTAssertEqual(event.color, 6_513_393)
     }
 
     func testBirthdayModelDecodes() throws {
         let birthday = try decode(BirthdayModel.self, """
         {"id": "b1", "name": "Alice", "date": "1990-01-01", "family_id": "f1",
-         "user_id": "u1", "made_by_user_id": "u1"}
+         "user_id": "u1", "made_by_user_id": "u1", "icon": "cake", "color": 6513393}
         """)
         XCTAssertEqual(birthday.madeByUserId, "u1")
+        XCTAssertEqual(birthday.icon, "cake")
+        XCTAssertEqual(birthday.color, 6_513_393)
     }
 
     func testWishModelsDecodeAndOwnerNameIsTransient() throws {
