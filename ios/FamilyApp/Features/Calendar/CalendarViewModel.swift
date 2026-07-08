@@ -79,9 +79,9 @@ final class CalendarViewModel {
         familyMembers.filter { $0.id != currentUserId }
     }
 
-    /// Display name for a member id (event creator / attendee); empty if unknown.
-    func memberName(_ id: String) -> String {
-        familyMembers.first { $0.id == id }?.name ?? ""
+    /// The member for an id (event creator / attendee); nil if unknown.
+    func member(_ id: String) -> UserModel? {
+        familyMembers.first { $0.id == id }
     }
 
     var eventsForSelectedDate: [CalendarEventModel] {

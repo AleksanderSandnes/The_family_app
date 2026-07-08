@@ -16,6 +16,7 @@ struct EventSheet: View {
     @State private var isPrivate: Bool
     @State private var color: Int?
     @State private var attendeeIds: Set<String>
+    @State private var showAttendeePicker = false
     @State private var selectedIcon: String
     @State private var showIconPicker = false
     @State private var dateFrom: LocalDate
@@ -124,50 +125,53 @@ struct EventSheet: View {
                     if picked < dateFrom { dateTo = dateFrom }
                 }
                 .padding(.vertical, 14)
+                if !members.isEmpty {
+                    Divider()
+                    goingWithRow
+                }
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, 4)
             .glassCard(cornerRadius: Radius.menu)
-
-            if !members.isEmpty {
-                SectionHeader(text: L("Going with"))
-                VStack(spacing: 0) {
-                    ForEach(Array(members.enumerated()), id: \.element.id) { index, member in
-                        Button {
-                            if attendeeIds.contains(member.id) {
-                                attendeeIds.remove(member.id)
-                            } else {
-                                attendeeIds.insert(member.id)
-                            }
-                        } label: {
-                            HStack(spacing: Spacing.md) {
-                                InitialAvatar(user: member, size: 34)
-                                Text(member.name)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(Color.appOnSurface)
-                                Spacer()
-                                Image(systemName: attendeeIds.contains(member.id) ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(attendeeIds.contains(member.id) ? Color.appPrimary : Color
-                                        .appCaption)
-                            }
-                            .padding(.horizontal, Spacing.lg)
-                            .padding(.vertical, 10)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        if index < members.count - 1 {
-                            Divider().padding(.leading, 62)
-                        }
-                    }
-                }
-                .glassCard(cornerRadius: Radius.menu)
-            }
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.xl)
         .huggingSheet()
+        .sheet(isPresented: $showAttendeePicker) {
+            AttendeePickerSheet(members: members, selection: $attendeeIds)
+        }
+    }
+
+    /// Compact one-line row that opens the full attendee picker in its own sheet.
+    private var goingWithRow: some View {
+        Button { showAttendeePicker = true } label: {
+            HStack {
+                Text(L("Going with"))
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color.appOnSurface)
+                Spacer()
+                let selected = members.filter { attendeeIds.contains($0.id) }
+                if selected.isEmpty {
+                    Text(L("Add"))
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.appPrimary)
+                } else {
+                    HStack(spacing: -8) {
+                        ForEach(selected.prefix(4)) { member in
+                            InitialAvatar(user: member, size: 26)
+                                .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 2))
+                        }
+                    }
+                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.appCaption)
+            }
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func dateTimeRow(
@@ -187,6 +191,57 @@ struct EventSheet: View {
                     .labelsHidden()
             }
         }
+    }
+}
+
+/// Full attendee multi-select, presented as its own sheet from the compact "Going with" row
+/// so the event form itself stays short.
+private struct AttendeePickerSheet: View {
+    let members: [UserModel]
+    @Binding var selection: Set<String>
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            SheetHeader(
+                title: L("Going with"), confirmTitle: L("Done"), confirmEnabled: true,
+                onCancel: { dismiss() }, onConfirm: { dismiss() }
+            )
+            VStack(spacing: 0) {
+                ForEach(Array(members.enumerated()), id: \.element.id) { index, member in
+                    Button {
+                        if selection.contains(member.id) {
+                            selection.remove(member.id)
+                        } else {
+                            selection.insert(member.id)
+                        }
+                    } label: {
+                        HStack(spacing: Spacing.md) {
+                            InitialAvatar(user: member, size: 40)
+                            Text(member.name)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Color.appOnSurface)
+                            Spacer()
+                            Image(systemName: selection.contains(member.id) ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 22))
+                                .foregroundStyle(selection.contains(member.id) ? Color.appPrimary : Color.appCaption)
+                        }
+                        .padding(.horizontal, Spacing.lg)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if index < members.count - 1 {
+                        Divider().padding(.leading, 68)
+                    }
+                }
+            }
+            .glassCard(cornerRadius: Radius.row)
+        }
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }
 

@@ -93,7 +93,7 @@ struct CalendarScreen: View {
                     events: viewModel.events,
                     onEdit: { eventToEdit = $0 },
                     onDelete: { viewModel.delete($0) },
-                    memberName: viewModel.memberName
+                    member: viewModel.member
                 )
             }
         }
@@ -152,7 +152,7 @@ struct CalendarScreen: View {
         } else {
             List {
                 ForEach(dayEvents) { event in
-                    EventCard(event: event, memberName: viewModel.memberName) { eventToEdit = event }
+                    EventCard(event: event, member: viewModel.member) { eventToEdit = event }
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(
@@ -340,7 +340,7 @@ private struct AgendaList: View {
     let events: [CalendarEventModel]
     let onEdit: (CalendarEventModel) -> Void
     let onDelete: (CalendarEventModel) -> Void
-    var memberName: (String) -> String = { _ in "" }
+    var member: (String) -> UserModel? = { _ in nil }
 
     var body: some View {
         let today = LocalDate.today()
@@ -372,7 +372,7 @@ private struct AgendaList: View {
                 ForEach(Array(orderedDates.enumerated()), id: \.offset) { _, date in
                     Section {
                         ForEach(grouped[date] ?? []) { event in
-                            EventCard(event: event, memberName: memberName) { onEdit(event) }
+                            EventCard(event: event, member: member) { onEdit(event) }
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(
@@ -402,25 +402,15 @@ private struct AgendaList: View {
 
 // MARK: - Event card
 
-/// "by {creator} · with {attendees}" line shown under an event in the day list.
-@MainActor
-func eventPeopleLabel(creator: String, attendees: [String]) -> String {
-    var parts: [String] = []
-    if !creator.isEmpty { parts.append("\(L("by")) \(creator)") }
-    if !attendees.isEmpty { parts.append("\(L("with")) \(attendees.joined(separator: ", "))") }
-    return parts.joined(separator: " · ")
-}
-
 private struct EventCard: View {
     let event: CalendarEventModel
-    var memberName: (String) -> String = { _ in "" }
+    var member: (String) -> UserModel? = { _ in nil }
     let onEdit: () -> Void
 
     var body: some View {
         let accent = calendarEventColor(event)
         let timeLabel = eventTimeLabel(event, locale: appLocale)
-        let creator = memberName(event.userId)
-        let attendees = event.attendeeIds.map(memberName).filter { !$0.isEmpty }
+        let people = ([event.userId] + event.attendeeIds).compactMap(member)
         Button(action: onEdit) {
             HStack(spacing: Spacing.md) {
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
@@ -440,11 +430,8 @@ private struct EventCard: View {
                             .font(.caption)
                             .foregroundStyle(Color.appCaption)
                     }
-                    if !creator.isEmpty || !attendees.isEmpty {
-                        Text(eventPeopleLabel(creator: creator, attendees: attendees))
-                            .font(.caption)
-                            .foregroundStyle(Color.appCaption)
-                            .lineLimit(1)
+                    if !people.isEmpty {
+                        peopleView(people)
                     }
                 }
                 Spacer()
@@ -454,6 +441,24 @@ private struct EventCard: View {
             .glassCard(cornerRadius: Radius.row)
         }
         .buttonStyle(.plain)
+    }
+
+    /// Names when there are few; overlapping avatars when they'd overflow the row.
+    @ViewBuilder
+    private func peopleView(_ people: [UserModel]) -> some View {
+        if people.count <= 2 {
+            Text(people.map(\.name).joined(separator: ", "))
+                .font(.caption)
+                .foregroundStyle(Color.appCaption)
+                .lineLimit(1)
+        } else {
+            HStack(spacing: -6) {
+                ForEach(people.prefix(6)) { person in
+                    InitialAvatar(user: person, size: 22)
+                        .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 1.5))
+                }
+            }
+        }
     }
 }
 
