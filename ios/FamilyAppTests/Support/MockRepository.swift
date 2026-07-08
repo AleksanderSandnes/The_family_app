@@ -264,4 +264,64 @@ final class MockRepository: FamilyRepositoryProtocol {
         guard !listIds.isEmpty else { return [] }
         return uncheckedItemsResult
     }
+
+    // Meal
+    var mealPlanDetailResult: [MealPlanModel] = []
+    var mealPlanDaysForPlanResult: [MealPlanDayModel] = []
+    var mealPlanDaysForIdsResult: [MealPlanDayModel] = []
+    var insertMealPlanResult = MealPlanModel()
+    struct MealDayRecord: Equatable { let mealPlanId: String
+        let day: String
+        let date: String
+    }
+
+    private(set) var insertedMealPlans: [MealPlanModel] = []
+    private(set) var insertedMealPlanDays: [MealDayRecord] = []
+    private(set) var renamedMealPlans: [(id: String, name: String)] = []
+    private(set) var mealPlanIcons: [(id: String, icon: String)] = []
+    private(set) var mealPlanColors: [(id: String, color: Int?)] = []
+    private(set) var deletedMealPlanIds: [String] = []
+    private(set) var mealDayFoods: [(id: String, food: String)] = []
+
+    func fetchMealPlanDays(mealPlanIds: [String]) async throws -> [MealPlanDayModel] {
+        guard !mealPlanIds.isEmpty else { return [] }
+        return mealPlanDaysForIdsResult
+    }
+
+    func fetchMealPlans(planId _: String) async throws -> [MealPlanModel] {
+        mealPlanDetailResult
+    }
+
+    func fetchMealPlanDays(mealPlanId _: String) async throws -> [MealPlanDayModel] {
+        mealPlanDaysForPlanResult
+    }
+
+    func insertMealPlan(_ plan: MealPlanModel) async throws -> MealPlanModel {
+        insertedMealPlans.append(plan)
+        return insertMealPlanResult
+    }
+
+    func insertMealPlanDay(mealPlanId: String, day: String, date: String) async throws {
+        insertedMealPlanDays.append(MealDayRecord(mealPlanId: mealPlanId, day: day, date: date))
+    }
+
+    func renameMealPlan(id: String, name: String) async {
+        renamedMealPlans.append((id, name))
+    }
+
+    func setMealPlanIcon(id: String, icon: String) async {
+        mealPlanIcons.append((id, icon))
+    }
+
+    func setMealPlanColor(id: String, color: Int?) async {
+        mealPlanColors.append((id, color))
+    }
+
+    func deleteMealPlan(id: String) async {
+        deletedMealPlanIds.append(id)
+    }
+
+    func setMealDayFood(id: String, food: String) async {
+        mealDayFoods.append((id, food))
+    }
 }

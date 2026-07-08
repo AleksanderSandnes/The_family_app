@@ -73,6 +73,18 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func fetchFamilyBirthdays(familyId: String) async throws -> [BirthdayModel]
     func fetchShoppingLists(familyId: String) async throws -> [ShoppingListModel]
     func fetchUncheckedShoppingItems(listIds: [String]) async throws -> [ShoppingItemModel]
+
+    // Meal (migrated out of MealViewModel; fetchMealPlans(familyId:) above is reused)
+    func fetchMealPlanDays(mealPlanIds: [String]) async throws -> [MealPlanDayModel]
+    func fetchMealPlans(planId: String) async throws -> [MealPlanModel]
+    func fetchMealPlanDays(mealPlanId: String) async throws -> [MealPlanDayModel]
+    func insertMealPlan(_ plan: MealPlanModel) async throws -> MealPlanModel
+    func insertMealPlanDay(mealPlanId: String, day: String, date: String) async throws
+    func renameMealPlan(id: String, name: String) async
+    func setMealPlanIcon(id: String, icon: String) async
+    func setMealPlanColor(id: String, color: Int?) async
+    func deleteMealPlan(id: String) async
+    func setMealDayFood(id: String, food: String) async
 }
 
 /// FamilyRepository already implements every method above; this just records the conformance.
