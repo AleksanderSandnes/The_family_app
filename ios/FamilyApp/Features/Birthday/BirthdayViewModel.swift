@@ -21,7 +21,7 @@ final class BirthdayViewModel {
         realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
     ) {
         self.repo = repo
-        self.observer = realtime()
+        observer = realtime()
         Task { await load() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }
@@ -49,7 +49,7 @@ final class BirthdayViewModel {
         defer { isLoading = false }
         guard let user = await repo.getUser(userId) else { return }
 
-        let result = await repo.fetchBirthdays(userId: userId, familyId: user.familyId) ?? birthdays
+        let result = await (try? repo.fetchBirthdays(userId: userId, familyId: user.familyId)) ?? birthdays
         Self.cache = result
         birthdays = result
     }
@@ -92,10 +92,7 @@ final class BirthdayViewModel {
             temp.color = color
             birthdays.append(temp)
 
-            await repo.insertBirthday(
-                name: name, date: date, userId: userId,
-                familyId: user.familyId, icon: icon, color: color
-            )
+            await repo.insertBirthday(temp)
             await reload()
         }
     }
