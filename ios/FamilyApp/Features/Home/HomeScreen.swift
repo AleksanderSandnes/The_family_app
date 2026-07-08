@@ -233,12 +233,13 @@ private struct EventSummaryCard: View {
             }
             Spacer()
             if !people.isEmpty {
-                HStack(spacing: -8) {
+                HStack(spacing: -10) {
                     ForEach(people.prefix(3)) { person in
-                        InitialAvatar(user: person, size: 24)
-                            .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 1.5))
+                        InitialAvatar(user: person, size: 36)
+                            .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 2))
                     }
                 }
+                .padding(.leading, 4)
             }
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
