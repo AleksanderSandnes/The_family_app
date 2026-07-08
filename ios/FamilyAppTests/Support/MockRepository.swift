@@ -209,6 +209,168 @@ final class MockRepository: FamilyRepositoryProtocol {
         removedReactions.append(messageId)
     }
 
+    // Chat — reads/writes migrated out of ChatViewModel.
+    // Canned reads keyed so unread/preview logic can be driven declaratively.
+    var conversationsResult: [ConversationModel] = []
+    var messagesByConversation: [String: [MessageModel]] = [:]
+    var participantsByConversation: [String: [ConversationParticipantModel]] = [:]
+    var reactionsByConversation: [String: [MessageReactionModel]] = [:]
+    var insertConversationResult = ConversationModel()
+    var groupImageURLResult = "https://example.com/group.jpg"
+
+    struct ConversationInsert: Equatable { let userFrom: String
+        let name: String
+        let familyId: String?
+    }
+
+    struct TextMessageInsert: Equatable { let conversationId: String
+        let userFrom: String
+        let text: String
+        let replyToId: String?
+    }
+
+    struct SystemMessageInsert: Equatable { let conversationId: String
+        let userFrom: String
+        let text: String
+    }
+
+    struct MediaMessageInsert: Equatable { let conversationId: String
+        let userFrom: String
+        let mediaUrl: String
+    }
+
+    private(set) var insertedConversations: [ConversationInsert] = []
+    private(set) var insertedParticipants: [(conversationId: String, userId: String)] = []
+    private(set) var deletedParticipants: [(conversationId: String, userId: String)] = []
+    private(set) var renamedConversations: [(id: String, name: String)] = []
+    private(set) var setConversationImages: [(id: String, url: String)] = []
+    private(set) var clearedConversationImageIds: [String] = []
+    private(set) var deletedConversationIds: [String] = []
+    private(set) var insertedTextMessages: [TextMessageInsert] = []
+    private(set) var insertedSystemMessages: [SystemMessageInsert] = []
+    private(set) var insertedImageMessages: [MediaMessageInsert] = []
+    private(set) var insertedVoiceMessages: [MediaMessageInsert] = []
+    private(set) var uploadedGroupImageIds: [String] = []
+    private(set) var removedGroupImageIds: [String] = []
+
+    func fetchConversations() async throws -> [ConversationModel] {
+        conversationsResult
+    }
+
+    func fetchConversation(id: String) async throws -> [ConversationModel] {
+        conversationsResult.filter { $0.id == id }
+    }
+
+    func fetchMessages(conversationId: String) async throws -> [MessageModel] {
+        (messagesByConversation[conversationId] ?? []).sorted { $0.sentAt < $1.sentAt }
+    }
+
+    func fetchMyParticipants(
+        userId: String, conversationIds: [String]
+    ) async throws -> [ConversationParticipantModel] {
+        conversationIds
+            .flatMap { participantsByConversation[$0] ?? [] }
+            .filter { $0.userId == userId }
+    }
+
+    /// Faithfully reproduces the server predicate: messages from someone OTHER than me,
+    /// newer than `after`. Drives the unread-count tests from canned messages.
+    func countUnreadMessages(conversationId: String, userId: String, after: String) async -> Int {
+        (messagesByConversation[conversationId] ?? [])
+            .filter { $0.userFrom != userId && $0.sentAt > after }
+            .count
+    }
+
+    func fetchParticipants(conversationIds: [String]) async throws -> [ConversationParticipantModel] {
+        conversationIds.flatMap { participantsByConversation[$0] ?? [] }
+    }
+
+    func fetchParticipants(conversationId: String) async throws -> [ConversationParticipantModel] {
+        participantsByConversation[conversationId] ?? []
+    }
+
+    func fetchParticipants(userId: String) async throws -> [ConversationParticipantModel] {
+        participantsByConversation.values.flatMap { $0 }.filter { $0.userId == userId }
+    }
+
+    func fetchUsers(ids: [String]) async throws -> [UserModel] {
+        ids.compactMap { users[$0] }
+    }
+
+    func fetchReactions(conversationId: String) async throws -> [MessageReactionModel] {
+        reactionsByConversation[conversationId] ?? []
+    }
+
+    func insertConversation(
+        userFrom: String, name: String, familyId: String?
+    ) async throws -> ConversationModel {
+        insertedConversations.append(
+            ConversationInsert(userFrom: userFrom, name: name, familyId: familyId)
+        )
+        return insertConversationResult
+    }
+
+    func insertParticipant(conversationId: String, userId: String) async throws {
+        insertedParticipants.append((conversationId, userId))
+    }
+
+    func deleteParticipant(conversationId: String, userId: String) async {
+        deletedParticipants.append((conversationId, userId))
+    }
+
+    func renameConversation(id: String, name: String) async {
+        renamedConversations.append((id, name))
+    }
+
+    func setConversationImage(id: String, url: String) async throws {
+        setConversationImages.append((id, url))
+    }
+
+    func clearConversationImage(id: String) async {
+        clearedConversationImageIds.append(id)
+    }
+
+    func deleteConversation(id: String) async throws {
+        deletedConversationIds.append(id)
+    }
+
+    func insertTextMessage(
+        conversationId: String, userFrom: String, text: String, replyToId: String?
+    ) async throws {
+        insertedTextMessages.append(
+            TextMessageInsert(
+                conversationId: conversationId, userFrom: userFrom, text: text, replyToId: replyToId
+            )
+        )
+    }
+
+    func insertSystemMessage(conversationId: String, userFrom: String, text: String) async {
+        insertedSystemMessages.append(
+            SystemMessageInsert(conversationId: conversationId, userFrom: userFrom, text: text)
+        )
+    }
+
+    func insertImageMessage(conversationId: String, userFrom: String, mediaUrl: String) async throws {
+        insertedImageMessages.append(
+            MediaMessageInsert(conversationId: conversationId, userFrom: userFrom, mediaUrl: mediaUrl)
+        )
+    }
+
+    func insertVoiceMessage(conversationId: String, userFrom: String, mediaUrl: String) async throws {
+        insertedVoiceMessages.append(
+            MediaMessageInsert(conversationId: conversationId, userFrom: userFrom, mediaUrl: mediaUrl)
+        )
+    }
+
+    func uploadGroupImage(conversationId: String, data _: Data) async throws -> String {
+        uploadedGroupImageIds.append(conversationId)
+        return groupImageURLResult
+    }
+
+    func removeGroupImage(conversationId: String) async {
+        removedGroupImageIds.append(conversationId)
+    }
+
     /// Settings
     func setThemeMode(_ mode: ThemeMode) {
         themeModes.append(mode)

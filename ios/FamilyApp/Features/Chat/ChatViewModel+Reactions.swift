@@ -1,10 +1,46 @@
-// ChatViewModel — reaction toggling. Extracted from ChatViewModel.swift to keep the main
-// type's body under the length limit. Optimistic add/remove of the current user's emoji
-// reaction, then the write-through to the repository. Behaviour is identical.
+// ChatViewModel — reactions. Extracted from ChatViewModel.swift to keep the main type's
+// body under the length limit. Optimistic add/remove of the current user's emoji reaction
+// (write-through to the repository), plus the reactions load + the raw realtime presence
+// channel. Behaviour is identical. The presence channel is opened only from
+// loadConversation, so a test-built VM never touches a live client.
 import Foundation
 import Supabase
 
 extension ChatViewModel {
+    func loadReactions(_ conversationId: String) async {
+        guard let rows = try? await repo.fetchReactions(conversationId: conversationId)
+        else { return }
+        reactions = Dictionary(grouping: rows, by: \.messageId).mapValues { messageRows in
+            Dictionary(grouping: messageRows, by: \.emoji).mapValues { $0.map(\.userId) }
+        }
+    }
+
+    func subscribeToReactions(_ conversationId: String) async {
+        reactionTasks.forEach { $0.cancel() }
+        reactionTasks = []
+        if let reactionsChannel {
+            await client.removeChannel(reactionsChannel)
+        }
+        let channel = client.channel("reactions-\(conversationId)")
+        reactionsChannel = channel
+        let changes = channel.postgresChange(
+            AnyAction.self,
+            schema: "public",
+            table: "message_reactions",
+            filter: .eq("conversation_id", value: conversationId)
+        )
+        reactionTasks.append(Task { [weak self] in
+            do {
+                try await channel.subscribeWithError()
+            } catch {
+                return
+            }
+            for await _ in changes {
+                await self?.loadReactions(conversationId)
+            }
+        })
+    }
+
     func toggleReaction(messageId: String, conversationId: String, emoji: String) {
         Task {
             guard let userId = repo.session.currentUserId else { return }
