@@ -30,18 +30,19 @@ final class WishlistViewModel {
     }
 
     private let repo: FamilyRepositoryProtocol
-    private var client: SupabaseClient {
-        SupabaseClientProvider.client
-    }
-
-    private let wishlistsObserver = RealtimeObserver()
-    private let wishesObserver = RealtimeObserver()
+    private let wishlistsObserver: RealtimeObserving
+    private let wishesObserver: RealtimeObserving
     private var subscribedFamilyId: String?
     private var subscribedWishesListId: String?
     private var ownerNameCache: [String: String] = [:]
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+    init(
+        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
+    ) {
         self.repo = repo
+        wishlistsObserver = realtime()
+        wishesObserver = realtime()
         Task { await loadWishlists() }
     }
 
@@ -65,11 +66,7 @@ final class WishlistViewModel {
         if userId == repo.session.currentUserId {
             return await repo.getUser(userId)?.name
         }
-        let users: [UserModel] = await (try? client.from("users")
-            .select()
-            .eq("id", value: userId)
-            .execute()
-            .value) ?? []
+        let users = await (try? repo.fetchUser(id: userId)) ?? []
         return users.first?.name
     }
 
@@ -81,28 +78,14 @@ final class WishlistViewModel {
         if wishlists.isEmpty { isLoading = true }
         defer { isLoading = false }
         let user = await repo.getUser(userId)
+        let familyId = user?.familyId
 
-        let result: [WishlistModel]
-        if let familyId = user?.familyId {
-            let fetched: [WishlistModel] = await (try? client.from("wishlists")
-                .select()
-                .or("owner_user_id.eq.\(userId),family_id.eq.\(familyId)")
-                .execute()
-                .value) ?? wishlists
-            result = fetched.filter { $0.familyId == nil || $0.familyId == familyId }
-        } else {
-            let fetched: [WishlistModel] = await (try? client.from("wishlists")
-                .select()
-                .eq("owner_user_id", value: userId)
-                .execute()
-                .value) ?? wishlists
-            result = fetched.filter { $0.familyId == nil }
-        }
+        let result = await (try? repo.fetchWishlists(userId: userId, familyId: familyId)) ?? wishlists
         let resolved = await resolveOwnerNames(result)
         Self.cache = resolved
         wishlists = resolved
 
-        if let familyId = user?.familyId, subscribedFamilyId != familyId {
+        if let familyId, subscribedFamilyId != familyId {
             subscribedFamilyId = familyId
             wishlistsObserver.start(
                 table: "wishlists",
@@ -124,16 +107,8 @@ final class WishlistViewModel {
     }
 
     private func reloadDetail(_ wishlistId: String) async {
-        async let listFetch: [WishlistModel] = (try? client.from("wishlists")
-            .select()
-            .eq("id", value: wishlistId)
-            .execute()
-            .value) ?? []
-        async let wishesFetch: [WishModel] = (try? client.from("wishes")
-            .select()
-            .eq("wishlist_id", value: wishlistId)
-            .execute()
-            .value) ?? []
+        async let listFetch = (try? repo.fetchWishlist(id: wishlistId)) ?? []
+        async let wishesFetch = (try? repo.fetchWishes(wishlistId: wishlistId)) ?? []
         if let list = await listFetch.first { selectedWishlist = list }
         // Enrich owner name (for the "reservations hidden from …" member-view subtitle).
         if let ownerId = selectedWishlist?.ownerUserId {
@@ -153,11 +128,7 @@ final class WishlistViewModel {
             reservations = [:]
             return
         }
-        let rows: [WishReservationModel] = await (try? client.from("wish_reservations")
-            .select()
-            .in("wish_id", values: wishIds)
-            .execute()
-            .value) ?? []
+        let rows = await (try? repo.fetchWishReservations(wishIds: wishIds)) ?? []
         reservations = Dictionary(rows.map { ($0.wishId, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
@@ -182,9 +153,7 @@ final class WishlistViewModel {
             temp.wishId = wish.id
             temp.reservedBy = userId
             reservations[wish.id] = temp
-            _ = try? await client.from("wish_reservations")
-                .insert(["wish_id": AnyJSON.string(wish.id), "reserved_by": .string(userId)])
-                .execute()
+            await repo.insertWishReservation(wishId: wish.id, reservedBy: userId)
             await loadReservations()
         }
     }
@@ -193,11 +162,7 @@ final class WishlistViewModel {
         Task {
             guard let userId = repo.session.currentUserId else { return }
             reservations[wish.id] = nil
-            _ = try? await client.from("wish_reservations")
-                .delete()
-                .eq("wish_id", value: wish.id)
-                .eq("reserved_by", value: userId)
-                .execute()
+            await repo.deleteWishReservation(wishId: wish.id, reservedBy: userId)
             await loadReservations()
         }
     }
@@ -217,14 +182,7 @@ final class WishlistViewModel {
             temp.color = color
             wishlists.append(temp)
 
-            var payload: [String: AnyJSON] = [
-                "owner_user_id": .string(userId),
-                "name": .string(name),
-                "icon": .string(icon),
-                "color": color.map { AnyJSON.integer($0) } ?? .null,
-            ]
-            if let familyId = user?.familyId { payload["family_id"] = .string(familyId) }
-            _ = try? await client.from("wishlists").insert(payload).execute()
+            await repo.insertWishlist(temp)
             await loadWishlists()
         }
     }
@@ -237,10 +195,7 @@ final class WishlistViewModel {
                 return list
             }
             selectedWishlist?.color = color
-            _ = try? await client.from("wishlists")
-                .update(["color": color.map { AnyJSON.integer($0) } ?? .null])
-                .eq("id", value: wishlistId)
-                .execute()
+            await repo.setWishlistColor(id: wishlistId, color: color)
             await reloadDetail(wishlistId)
         }
     }
@@ -248,7 +203,7 @@ final class WishlistViewModel {
     func deleteWishlist(_ wishlist: WishlistModel) {
         Task {
             wishlists.removeAll { $0.id == wishlist.id }
-            _ = try? await client.from("wishlists").delete().eq("id", value: wishlist.id).execute()
+            await repo.deleteWishlist(id: wishlist.id)
             await loadWishlists()
         }
     }
@@ -261,10 +216,7 @@ final class WishlistViewModel {
                 return list
             }
             selectedWishlist?.name = newName
-            _ = try? await client.from("wishlists")
-                .update(["name": AnyJSON.string(newName)])
-                .eq("id", value: wishlistId)
-                .execute()
+            await repo.renameWishlist(id: wishlistId, name: newName)
             await reloadDetail(wishlistId)
         }
     }
@@ -277,10 +229,7 @@ final class WishlistViewModel {
                 return list
             }
             selectedWishlist?.icon = newIcon
-            _ = try? await client.from("wishlists")
-                .update(["icon": AnyJSON.string(newIcon)])
-                .eq("id", value: wishlistId)
-                .execute()
+            await repo.setWishlistIcon(id: wishlistId, icon: newIcon)
             await reloadDetail(wishlistId)
         }
     }
@@ -310,15 +259,9 @@ final class WishlistViewModel {
                 )
             }
 
-            var payload: [String: AnyJSON] = [
-                "wishlist_id": .string(wishlistId),
-                "user_id": .string(userId),
-                "text": .string(draft.text),
-            ]
-            if let cleanLink, !cleanLink.isEmpty { payload["link"] = .string(cleanLink) }
-            if let cleanPrice, !cleanPrice.isEmpty { payload["price"] = .string(cleanPrice) }
-            if let imageUrl { payload["image_url"] = .string(imageUrl) }
-            _ = try? await client.from("wishes").insert(payload).execute()
+            var toInsert = temp
+            toInsert.imageUrl = imageUrl
+            await repo.insertWish(toInsert)
             await reloadDetail(wishlistId)
         }
     }
@@ -330,10 +273,7 @@ final class WishlistViewModel {
                 if existing.id == wish.id { existing.checked = !wish.checked }
                 return existing
             }
-            _ = try? await client.from("wishes")
-                .update(["checked": AnyJSON.bool(!wish.checked)])
-                .eq("id", value: wish.id)
-                .execute()
+            await repo.setWishChecked(id: wish.id, checked: !wish.checked)
             await reloadDetail(wish.wishlistId)
         }
     }
@@ -341,7 +281,7 @@ final class WishlistViewModel {
     func deleteWish(_ wish: WishModel) {
         Task {
             wishes.removeAll { $0.id == wish.id }
-            _ = try? await client.from("wishes").delete().eq("id", value: wish.id).execute()
+            await repo.deleteWish(id: wish.id)
             await reloadDetail(wish.wishlistId)
         }
     }

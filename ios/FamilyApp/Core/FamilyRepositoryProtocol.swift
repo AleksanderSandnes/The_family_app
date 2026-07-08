@@ -102,6 +102,23 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func renameShoppingItem(id: String, item: String) async
     func deleteShoppingItem(id: String) async
     func clearCompletedShoppingItems(listId: String) async
+
+    // Wishlist (migrated out of WishlistViewModel; reservations are insert/delete only)
+    func fetchWishlists(userId: String, familyId: String?) async throws -> [WishlistModel]
+    func fetchWishlist(id: String) async throws -> [WishlistModel]
+    func fetchWishes(wishlistId: String) async throws -> [WishModel]
+    func fetchWishReservations(wishIds: [String]) async throws -> [WishReservationModel]
+    func fetchUser(id: String) async throws -> [UserModel]
+    func insertWishlist(_ list: WishlistModel) async
+    func setWishlistColor(id: String, color: Int?) async
+    func setWishlistIcon(id: String, icon: String) async
+    func renameWishlist(id: String, name: String) async
+    func deleteWishlist(id: String) async
+    func insertWish(_ wish: WishModel) async
+    func setWishChecked(id: String, checked: Bool) async
+    func deleteWish(id: String) async
+    func insertWishReservation(wishId: String, reservedBy: String) async
+    func deleteWishReservation(wishId: String, reservedBy: String) async
 }
 
 /// FamilyRepository already implements every method above; this just records the conformance.
