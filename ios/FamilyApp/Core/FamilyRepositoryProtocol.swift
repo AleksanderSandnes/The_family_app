@@ -28,6 +28,12 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func updateFamilyPhoto(familyId: String, photoUrl: String) async throws
     func removeFamilyMember(memberId: String) async throws
     func setRelation(fromUserId: String, toUserId: String, familyId: String, relation: String) async
+    func uploadFamilyPhotoImage(familyId: String, data: Data) async throws -> String
+
+    // App lifecycle (used by RootViewModel)
+    func touchLastActive() async
+    func syncPushToken() async
+    func syncNotificationPrefsToServer() async
 
     /// Profile
     func updateProfile(userId: String, update: ProfileUpdate) async
@@ -38,6 +44,7 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func signInWithGoogle() async throws
     func signOut() async
     func completeSignInAfterConfirmation() async throws -> String
+    func authSignedInEvents() -> AsyncStream<Void>
     func consumePendingJoinCode() -> String?
     func setPendingJoinCode(_ code: String)
 
@@ -119,6 +126,11 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func deleteWish(id: String) async
     func insertWishReservation(wishId: String, reservedBy: String) async
     func deleteWishReservation(wishId: String, reservedBy: String) async
+
+    // Map (migrated out of FamilyMapViewModel)
+    func fetchUserLocations(familyId: String) async throws -> [UserLocationModel]
+    func upsertUserLocation(_ location: UserLocationModel) async
+    func clearUserLocationVisibility(userId: String) async
 }
 
 /// FamilyRepository already implements every method above; this just records the conformance.

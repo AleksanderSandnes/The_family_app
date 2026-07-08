@@ -43,6 +43,28 @@ final class MockRepository: FamilyRepositoryProtocol {
     private(set) var leaveFamilyCalls: [String] = []
     private(set) var registeredUsers: [String] = []
     private(set) var invalidatedCache = false
+    struct LoginRecord: Equatable { let email: String
+        let password: String
+    }
+
+    struct RegisterRecord: Equatable { let name: String
+        let email: String
+        let password: String
+        let birthday: String
+        let mobile: String
+    }
+
+    private(set) var loginCalls: [LoginRecord] = []
+    private(set) var registerCalls: [RegisterRecord] = []
+
+    // App lifecycle (RootViewModel)
+    private(set) var touchLastActiveCalled = false
+    private(set) var syncPushTokenCalled = false
+    private(set) var syncNotificationPrefsCalled = false
+
+    // Family photo
+    var familyPhotoURLResult = "https://example.com/photo.jpg"
+    private(set) var uploadedFamilyPhotos: [String] = []
 
     init(session: SessionStore? = nil) {
         self.session = session ?? SessionStore(defaults: UserDefaults(suiteName: "mock-\(UUID().uuidString)")!)
@@ -107,20 +129,42 @@ final class MockRepository: FamilyRepositoryProtocol {
         setRelations.append(RelationRecord(from: fromUserId, to: toUserId, relation: relation))
     }
 
+    func uploadFamilyPhotoImage(familyId: String, data _: Data) async throws -> String {
+        uploadedFamilyPhotos.append(familyId)
+        return familyPhotoURLResult
+    }
+
+    /// App lifecycle (RootViewModel)
+    func touchLastActive() async {
+        touchLastActiveCalled = true
+    }
+
+    func syncPushToken() async {
+        syncPushTokenCalled = true
+    }
+
+    func syncNotificationPrefsToServer() async {
+        syncNotificationPrefsCalled = true
+    }
+
     /// Profile
     func updateProfile(userId: String, update: ProfileUpdate) async {
         updatedProfiles.append((userId, update))
     }
 
     /// Auth
-    func login(email _: String, password _: String) async throws -> String {
-        loginResult
+    func login(email: String, password: String) async throws -> String {
+        loginCalls.append(LoginRecord(email: email, password: password))
+        return loginResult
     }
 
     func register(
-        name: String, email _: String, password _: String, birthday _: String, mobile _: String
+        name: String, email: String, password: String, birthday: String, mobile: String
     ) async throws {
         registeredUsers.append(name)
+        registerCalls.append(
+            RegisterRecord(name: name, email: email, password: password, birthday: birthday, mobile: mobile)
+        )
     }
 
     func signInWithGoogle() async throws {
@@ -133,6 +177,10 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func completeSignInAfterConfirmation() async throws -> String {
         confirmResult
+    }
+
+    func authSignedInEvents() -> AsyncStream<Void> {
+        AsyncStream { $0.finish() }
     }
 
     func consumePendingJoinCode() -> String? {
@@ -478,5 +526,22 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func deleteWishReservation(wishId: String, reservedBy: String) async {
         deletedReservations.append(ReservationRecord(wishId: wishId, reservedBy: reservedBy))
+    }
+
+    // Map
+    var userLocationsResult: [UserLocationModel] = []
+    private(set) var upsertedLocations: [UserLocationModel] = []
+    private(set) var clearedLocationUserIds: [String] = []
+
+    func fetchUserLocations(familyId _: String) async throws -> [UserLocationModel] {
+        userLocationsResult
+    }
+
+    func upsertUserLocation(_ location: UserLocationModel) async {
+        upsertedLocations.append(location)
+    }
+
+    func clearUserLocationVisibility(userId: String) async {
+        clearedLocationUserIds.append(userId)
     }
 }
