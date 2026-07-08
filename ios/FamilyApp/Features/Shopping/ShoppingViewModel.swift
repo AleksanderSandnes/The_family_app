@@ -33,10 +33,10 @@ final class ShoppingViewModel {
     private var familyChangedTask: Task<Void, Never>?
 
     init(
-        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        repo: FamilyRepositoryProtocol? = nil,
         realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
     ) {
-        self.repo = repo
+        self.repo = repo ?? FamilyRepository.shared
         listsObserver = realtime()
         itemsObserver = realtime()
         Task { await load() }

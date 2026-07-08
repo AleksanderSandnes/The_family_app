@@ -92,10 +92,10 @@ final class ChatViewModel {
     private var familyChangedTask: Task<Void, Never>?
 
     init(
-        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        repo: FamilyRepositoryProtocol? = nil,
         realtime: @escaping @MainActor () -> RealtimeObserving = { RealtimeObserver() }
     ) {
-        self.repo = repo
+        self.repo = repo ?? FamilyRepository.shared
         realtimeFactory = realtime
         messagesObserver = realtime()
         participantsObserver = realtime()

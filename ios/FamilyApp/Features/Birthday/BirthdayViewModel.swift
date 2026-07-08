@@ -17,10 +17,10 @@ final class BirthdayViewModel {
     private var familyChangedTask: Task<Void, Never>?
 
     init(
-        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        repo: FamilyRepositoryProtocol? = nil,
         realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
     ) {
-        self.repo = repo
+        self.repo = repo ?? FamilyRepository.shared
         observer = realtime()
         Task { await load() }
         familyChangedTask = Task { [weak self] in

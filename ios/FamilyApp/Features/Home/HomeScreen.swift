@@ -121,13 +121,11 @@ struct HomeScreen: View {
                     detail: nil
                 ) { onOpen(.meal) }
             }
-            if let eventTitle = state.nextEventTitle {
-                SummaryCard(
-                    systemImage: "calendar",
-                    feature: .calendar,
-                    label: L("NEXT EVENT"),
-                    value: eventTitle,
-                    detail: state.nextEventWhen
+            if let event = state.nextEvent {
+                EventSummaryCard(
+                    event: event,
+                    detail: state.nextEventWhen,
+                    members: state.familyMembers
                 ) {
                     onOpenCalendarTab()
                 }
@@ -185,6 +183,63 @@ private struct SummaryCard: View {
                 }
             }
             Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.appCaption)
+        }
+    }
+}
+
+/// NEXT EVENT card — mirrors the calendar event's own icon, colour and attendees so the
+/// dashboard reflects the real event rather than a generic calendar glyph.
+private struct EventSummaryCard: View {
+    let event: CalendarEventModel
+    let detail: String?
+    let members: [UserModel]
+    let onTap: () -> Void
+
+    /// Creator first, then everyone tagged as "going with".
+    private var people: [UserModel] {
+        ([event.userId] + event.attendeeIds).compactMap { id in members.first { $0.id == id } }
+    }
+
+    private var accent: Color? {
+        event.color.map { Color(hex: UInt32(truncatingIfNeeded: $0)) }
+    }
+
+    var body: some View {
+        ListCard(onTap: onTap) {
+            FeatureBadge(
+                systemImage: IconKeyMap.calendarSymbol(event.icon),
+                feature: .calendar,
+                colorOverride: accent
+            )
+            Spacer().frame(width: 14)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L("NEXT EVENT"))
+                    .font(.eyebrow)
+                    .tracking(0.7)
+                    .foregroundStyle(accent ?? FeatureAccent.calendar.stroke)
+                Text(event.activity)
+                    .font(.cardTitle)
+                    .foregroundStyle(Color.appOnSurface)
+                    .lineLimit(1)
+                if let detail {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(Color.appCaption)
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+            if !people.isEmpty {
+                HStack(spacing: -8) {
+                    ForEach(people.prefix(3)) { person in
+                        InitialAvatar(user: person, size: 24)
+                            .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 1.5))
+                    }
+                }
+            }
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.appCaption)

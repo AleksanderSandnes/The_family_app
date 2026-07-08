@@ -13,6 +13,8 @@ struct HomeUiState {
     var tonightMeal: String?
     var nextEventTitle: String?
     var nextEventWhen: String?
+    var nextEvent: CalendarEventModel?
+    var familyMembers: [UserModel] = []
     var nextBirthdayName: String?
     var nextBirthdayWhen: String?
     var shoppingRemaining = 0
@@ -27,6 +29,7 @@ private struct HomeSummary {
     var tonightMeal: String?
     var nextEventTitle: String?
     var nextEventWhen: String?
+    var nextEvent: CalendarEventModel?
     var nextBirthdayName: String?
     var nextBirthdayWhen: String?
     var shoppingRemaining = 0
@@ -40,8 +43,8 @@ final class HomeViewModel {
     private let repo: FamilyRepositoryProtocol
     private var familyChangedTask: Task<Void, Never>?
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
-        self.repo = repo
+    init(repo: FamilyRepositoryProtocol? = nil) {
+        self.repo = repo ?? FamilyRepository.shared
         refresh()
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }
@@ -72,22 +75,24 @@ final class HomeViewModel {
             return
         }
         var family: FamilyModel?
-        var memberCount = 0
+        var members: [UserModel] = []
         var summary = HomeSummary()
         if let familyId = user.familyId {
             family = await repo.getFamily(familyId: familyId)
-            memberCount = await repo.getFamilyMembers(familyId: familyId).count
+            members = await repo.getFamilyMembers(familyId: familyId)
             // Summary is best-effort — a failure here must not blank the whole screen.
             summary = await (try? loadSummary(familyId: familyId)) ?? HomeSummary()
         }
         state = HomeUiState(
             user: user,
             family: family,
-            memberCount: memberCount,
+            memberCount: members.count,
             isLoading: false,
             tonightMeal: summary.tonightMeal,
             nextEventTitle: summary.nextEventTitle,
             nextEventWhen: summary.nextEventWhen,
+            nextEvent: summary.nextEvent,
+            familyMembers: members,
             nextBirthdayName: summary.nextBirthdayName,
             nextBirthdayWhen: summary.nextBirthdayWhen,
             shoppingRemaining: summary.shoppingRemaining
@@ -102,6 +107,7 @@ final class HomeViewModel {
             tonightMeal: loadTonightMeal(familyId: familyId, today: today),
             nextEventTitle: event?.activity,
             nextEventWhen: event.map { eventWhen($0, today: today, locale: appLocale) },
+            nextEvent: event,
             nextBirthdayName: birthday?.model.name,
             nextBirthdayWhen: birthday.map { birthdayWhen($0.model, next: $0.next, today: today, locale: appLocale) },
             shoppingRemaining: loadShoppingRemaining(familyId: familyId)
