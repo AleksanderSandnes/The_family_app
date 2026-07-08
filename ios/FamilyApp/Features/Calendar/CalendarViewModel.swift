@@ -76,7 +76,7 @@ final class CalendarViewModel {
         }
     }
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
     private var client: SupabaseClient {
         SupabaseClientProvider.client
     }
@@ -85,7 +85,8 @@ final class CalendarViewModel {
     private var subscribedFamilyId: String?
     private var familyChangedTask: Task<Void, Never>?
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         Task { await loadEvents() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }

@@ -25,7 +25,7 @@ final class ShoppingViewModel {
     private(set) var items: [ShoppingItemModel] = []
     private(set) var listProgress: [String: ListProgress] = [:]
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
     private var client: SupabaseClient {
         SupabaseClientProvider.client
     }
@@ -36,7 +36,8 @@ final class ShoppingViewModel {
     private var subscribedItemsListId: String?
     private var familyChangedTask: Task<Void, Never>?
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         Task { await load() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }

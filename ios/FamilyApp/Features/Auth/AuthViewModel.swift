@@ -24,10 +24,11 @@ final class AuthViewModel {
     var loading = false
     var error: String?
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
     private var authListener: Task<Void, Never>?
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         // Finalize external (Google OAuth) sign-in: once the redirect lands and the
         // session becomes authenticated, resolve + persist the app user so the gate flips.
         authListener = Task {
