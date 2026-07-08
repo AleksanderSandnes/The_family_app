@@ -29,19 +29,19 @@ struct BirthdayScreen: View {
                                 // Only the creator may edit (auto-birthdays belong to the person).
                                 if birthday.madeByUserId == viewModel.currentUserId { editing = birthday }
                             }
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(
-                                    top: 6, leading: Spacing.screenEdge,
-                                    bottom: 6, trailing: Spacing.screenEdge
-                                ))
-                                .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        viewModel.delete(birthday)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(
+                                top: 6, leading: Spacing.screenEdge,
+                                bottom: 6, trailing: Spacing.screenEdge
+                            ))
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    viewModel.delete(birthday)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
+                            }
                         }
                     }
                     .listStyle(.plain)

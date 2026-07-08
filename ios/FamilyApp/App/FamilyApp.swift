@@ -60,7 +60,10 @@ struct FamilyApp: App {
 /// keyboard/text field ends editing. `cancelsTouchesInView = false` plus a permissive
 /// delegate mean it never swallows taps meant for buttons, list rows, or other controls.
 struct KeyboardDismissInstaller: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIView { InstallerView() }
+    func makeUIView(context: Context) -> UIView {
+        InstallerView()
+    }
+
     func updateUIView(_ uiView: UIView, context: Context) {}
 
     private final class InstallerView: UIView {
@@ -95,7 +98,9 @@ private final class KeyboardDismissCoordinator: NSObject, UIGestureRecognizerDel
     func gestureRecognizer(
         _ gestureRecognizer: UIGestureRecognizer,
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
-    ) -> Bool { true }
+    ) -> Bool {
+        true
+    }
 
     func gestureRecognizer(
         _ gestureRecognizer: UIGestureRecognizer,

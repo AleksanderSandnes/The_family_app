@@ -454,7 +454,9 @@ struct IconPickerSheet: View {
                 SectionHeader(text: L("Color"))
                 EventColorPicker(selection: Binding(
                     get: { color },
-                    set: { color = $0; onColorPick?($0) }
+                    set: { color = $0
+                        onColorPick?($0)
+                    }
                 ))
             }
         }
