@@ -26,18 +26,19 @@ final class ShoppingViewModel {
     private(set) var listProgress: [String: ListProgress] = [:]
 
     private let repo: FamilyRepositoryProtocol
-    private var client: SupabaseClient {
-        SupabaseClientProvider.client
-    }
-
-    private let listsObserver = RealtimeObserver()
-    private let itemsObserver = RealtimeObserver()
+    private let listsObserver: RealtimeObserving
+    private let itemsObserver: RealtimeObserving
     private var subscribedListsFamilyId: String?
     private var subscribedItemsListId: String?
     private var familyChangedTask: Task<Void, Never>?
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+    init(
+        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
+    ) {
         self.repo = repo
+        listsObserver = realtime()
+        itemsObserver = realtime()
         Task { await load() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }
@@ -73,22 +74,7 @@ final class ShoppingViewModel {
         let user = await repo.getUser(userId)
         let familyId = user?.familyId
 
-        let result: [ShoppingListModel]
-        if let familyId {
-            let fetched: [ShoppingListModel] = await (try? client.from("shopping_lists")
-                .select()
-                .or("owner_user_id.eq.\(userId),family_id.eq.\(familyId)")
-                .execute()
-                .value) ?? lists
-            result = fetched.filter { $0.familyId == nil || $0.familyId == familyId }
-        } else {
-            let fetched: [ShoppingListModel] = await (try? client.from("shopping_lists")
-                .select()
-                .eq("owner_user_id", value: userId)
-                .execute()
-                .value) ?? lists
-            result = fetched.filter { $0.familyId == nil }
-        }
+        let result = await (try? repo.fetchShoppingLists(userId: userId, familyId: familyId)) ?? lists
         Self.cache = result
         lists = result
         await loadListProgress(listIds: result.map(\.id))
@@ -102,12 +88,7 @@ final class ShoppingViewModel {
             listProgress = [:]
             return
         }
-        guard let allItems: [ShoppingItemModel] = try? await client.from("shopping_items")
-            .select()
-            .in("list_id", values: listIds)
-            .execute()
-            .value
-        else { return }
+        guard let allItems = try? await repo.fetchShoppingItems(listIds: listIds) else { return }
         listProgress = Dictionary(grouping: allItems, by: \.listId).mapValues { items in
             ListProgress(bought: items.count(where: \.checked), total: items.count)
         }
@@ -137,16 +118,8 @@ final class ShoppingViewModel {
 
     /// Pure data reload for the detail screen — no subscribe.
     private func reloadItems(listId: String) async {
-        async let listFetch: [ShoppingListModel] = (try? client.from("shopping_lists")
-            .select()
-            .eq("id", value: listId)
-            .execute()
-            .value) ?? []
-        async let itemsFetch: [ShoppingItemModel] = (try? client.from("shopping_items")
-            .select()
-            .eq("list_id", value: listId)
-            .execute()
-            .value) ?? []
+        async let listFetch = (try? repo.fetchShoppingList(id: listId)) ?? []
+        async let itemsFetch = (try? repo.fetchShoppingItems(listId: listId)) ?? []
         if let list = await listFetch.first { selectedList = list }
         items = await itemsFetch
     }
@@ -179,14 +152,7 @@ final class ShoppingViewModel {
             temp.color = color
             lists.append(temp)
 
-            var payload: [String: AnyJSON] = [
-                "title": .string(title),
-                "icon": .string(icon),
-                "owner_user_id": .string(userId),
-                "color": color.map { AnyJSON.integer($0) } ?? .null,
-            ]
-            if let familyId = user?.familyId { payload["family_id"] = .string(familyId) }
-            _ = try? await client.from("shopping_lists").insert(payload).execute()
+            await repo.insertShoppingList(temp)
             await reloadLists()
         }
     }
@@ -199,10 +165,7 @@ final class ShoppingViewModel {
                 return list
             }
             selectedList?.color = color
-            _ = try? await client.from("shopping_lists")
-                .update(["color": color.map { AnyJSON.integer($0) } ?? .null])
-                .eq("id", value: listId)
-                .execute()
+            await repo.setShoppingListColor(id: listId, color: color)
             await reloadLists()
         }
     }
@@ -215,10 +178,7 @@ final class ShoppingViewModel {
                 return list
             }
             selectedList?.icon = icon
-            _ = try? await client.from("shopping_lists")
-                .update(["icon": AnyJSON.string(icon)])
-                .eq("id", value: listId)
-                .execute()
+            await repo.setShoppingListIcon(id: listId, icon: icon)
             await reloadLists()
         }
     }
@@ -226,10 +186,7 @@ final class ShoppingViewModel {
     func renameList(listId: String, newTitle: String) {
         Task {
             selectedList?.title = newTitle
-            _ = try? await client.from("shopping_lists")
-                .update(["title": AnyJSON.string(newTitle)])
-                .eq("id", value: listId)
-                .execute()
+            await repo.renameShoppingList(id: listId, title: newTitle)
             await reloadItems(listId: listId)
         }
     }
@@ -237,7 +194,7 @@ final class ShoppingViewModel {
     func deleteList(_ list: ShoppingListModel) {
         Task {
             lists.removeAll { $0.id == list.id }
-            _ = try? await client.from("shopping_lists").delete().eq("id", value: list.id).execute()
+            await repo.deleteShoppingList(id: list.id)
             await reloadLists()
         }
     }
@@ -251,9 +208,7 @@ final class ShoppingViewModel {
             temp.listId = listId
             temp.item = item
             items.append(temp)
-            _ = try? await client.from("shopping_items")
-                .insert(["list_id": AnyJSON.string(listId), "item": .string(item)])
-                .execute()
+            await repo.insertShoppingItem(temp)
             await reloadItems(listId: listId)
         }
     }
@@ -265,10 +220,7 @@ final class ShoppingViewModel {
                 if existing.id == item.id { existing.checked = !item.checked }
                 return existing
             }
-            _ = try? await client.from("shopping_items")
-                .update(["checked": AnyJSON.bool(!item.checked)])
-                .eq("id", value: item.id)
-                .execute()
+            await repo.setShoppingItemChecked(id: item.id, checked: !item.checked)
             await reloadItems(listId: item.listId)
         }
     }
@@ -280,10 +232,7 @@ final class ShoppingViewModel {
                 if existing.id == item.id { existing.item = newName }
                 return existing
             }
-            _ = try? await client.from("shopping_items")
-                .update(["item": AnyJSON.string(newName)])
-                .eq("id", value: item.id)
-                .execute()
+            await repo.renameShoppingItem(id: item.id, item: newName)
             await reloadItems(listId: item.listId)
         }
     }
@@ -291,7 +240,7 @@ final class ShoppingViewModel {
     func deleteItem(_ item: ShoppingItemModel) {
         Task {
             items.removeAll { $0.id == item.id }
-            _ = try? await client.from("shopping_items").delete().eq("id", value: item.id).execute()
+            await repo.deleteShoppingItem(id: item.id)
             await reloadItems(listId: item.listId)
         }
     }
@@ -301,11 +250,7 @@ final class ShoppingViewModel {
         Task {
             guard items.contains(where: \.checked) else { return }
             items.removeAll(where: \.checked)
-            _ = try? await client.from("shopping_items")
-                .delete()
-                .eq("list_id", value: listId)
-                .eq("checked", value: true)
-                .execute()
+            await repo.clearCompletedShoppingItems(listId: listId)
             await reloadItems(listId: listId)
         }
     }
