@@ -177,4 +177,33 @@ final class MockRepository: FamilyRepositoryProtocol {
     func setLocationVisible(_ visible: Bool) {
         locationVisible.append(visible)
     }
+
+    // Birthdays
+    var birthdaysResult: [BirthdayModel]?
+    private(set) var insertedBirthdays: [BirthdayModel] = []
+    private(set) var updatedBirthdays: [BirthdayModel] = []
+    private(set) var deletedBirthdayIds: [String] = []
+
+    func fetchBirthdays(userId _: String, familyId _: String?) async -> [BirthdayModel]? {
+        birthdaysResult
+    }
+
+    func insertBirthday(
+        name: String, date: String, userId: String, familyId: String?, icon: String, color: Int?
+    ) async {
+        var b = BirthdayModel()
+        b.name = name; b.date = date; b.madeByUserId = userId
+        b.familyId = familyId; b.icon = icon; b.color = color
+        insertedBirthdays.append(b)
+    }
+
+    func updateBirthday(id: String, name: String, date: String, icon: String, color: Int?) async {
+        var b = BirthdayModel()
+        b.id = id; b.name = name; b.date = date; b.icon = icon; b.color = color
+        updatedBirthdays.append(b)
+    }
+
+    func deleteBirthday(id: String) async {
+        deletedBirthdayIds.append(id)
+    }
 }
