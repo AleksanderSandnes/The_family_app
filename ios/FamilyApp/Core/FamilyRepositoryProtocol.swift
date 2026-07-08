@@ -54,6 +54,34 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func sendMessage(conversationId: String, text: String) async throws
     func addReaction(messageId: String, conversationId: String, emoji: String) async throws
     func removeReaction(messageId: String) async throws
+    // Chat — reads/writes migrated out of ChatViewModel
+    func fetchConversations() async throws -> [ConversationModel]
+    func fetchConversation(id: String) async throws -> [ConversationModel]
+    func fetchMessages(conversationId: String) async throws -> [MessageModel]
+    func fetchMyParticipants(userId: String, conversationIds: [String]) async throws
+        -> [ConversationParticipantModel]
+    func countUnreadMessages(conversationId: String, userId: String, after: String) async -> Int
+    func fetchParticipants(conversationIds: [String]) async throws -> [ConversationParticipantModel]
+    func fetchParticipants(conversationId: String) async throws -> [ConversationParticipantModel]
+    func fetchParticipants(userId: String) async throws -> [ConversationParticipantModel]
+    func fetchUsers(ids: [String]) async throws -> [UserModel]
+    func fetchReactions(conversationId: String) async throws -> [MessageReactionModel]
+    func insertConversation(userFrom: String, name: String, familyId: String?) async throws
+        -> ConversationModel
+    func insertParticipant(conversationId: String, userId: String) async throws
+    func deleteParticipant(conversationId: String, userId: String) async
+    func renameConversation(id: String, name: String) async
+    func setConversationImage(id: String, url: String) async throws
+    func clearConversationImage(id: String) async
+    func deleteConversation(id: String) async throws
+    func insertTextMessage(
+        conversationId: String, userFrom: String, text: String, replyToId: String?
+    ) async throws
+    func insertSystemMessage(conversationId: String, userFrom: String, text: String) async
+    func insertImageMessage(conversationId: String, userFrom: String, mediaUrl: String) async throws
+    func insertVoiceMessage(conversationId: String, userFrom: String, mediaUrl: String) async throws
+    func uploadGroupImage(conversationId: String, data: Data) async throws -> String
+    func removeGroupImage(conversationId: String) async
 
     // Settings
     func setThemeMode(_ mode: ThemeMode)

@@ -2,7 +2,6 @@
 // type's body under the length limit. Optimistic text send, reply state, and image/voice
 // uploads. Behaviour is identical; these were plain methods on the class.
 import Foundation
-import Supabase
 
 extension ChatViewModel {
     func setReplyTo(_ message: MessageModel) {
@@ -28,14 +27,13 @@ extension ChatViewModel {
             temp.sentAt = isoNow()
             messages.append(temp)
 
-            var payload: [String: AnyJSON] = [
-                "conversation_id": .string(conversationId),
-                "user_from": .string(userId),
-                "text": .string(text),
-            ]
-            if let pendingReplyTo { payload["reply_to_id"] = .string(pendingReplyTo.id) }
             do {
-                try await client.from("messages").insert(payload).execute()
+                try await repo.insertTextMessage(
+                    conversationId: conversationId,
+                    userFrom: userId,
+                    text: text,
+                    replyToId: pendingReplyTo?.id
+                )
             } catch {
                 errorMessage = L("Failed to send message")
                 messages.removeAll { $0.id == temp.id }
@@ -62,13 +60,9 @@ extension ChatViewModel {
                 let url = try await StorageService.uploadChatMedia(
                     conversationId: conversationId, data: data, filename: filename
                 )
-                try await client.from("messages").insert([
-                    "conversation_id": AnyJSON.string(conversationId),
-                    "user_from": .string(userId),
-                    "text": .string(""),
-                    "message_type": .string("image"),
-                    "media_url": .string(url),
-                ]).execute()
+                try await repo.insertImageMessage(
+                    conversationId: conversationId, userFrom: userId, mediaUrl: url
+                )
                 await loadMessages(conversationId)
             } catch {
                 errorMessage = L("Failed to send image")
@@ -83,13 +77,9 @@ extension ChatViewModel {
                 let url = try await StorageService.uploadChatMedia(
                     conversationId: conversationId, data: data, filename: filename
                 )
-                try await client.from("messages").insert([
-                    "conversation_id": AnyJSON.string(conversationId),
-                    "user_from": .string(userId),
-                    "text": .string(""),
-                    "message_type": .string("voice"),
-                    "media_url": .string(url),
-                ]).execute()
+                try await repo.insertVoiceMessage(
+                    conversationId: conversationId, userFrom: userId, mediaUrl: url
+                )
                 await loadMessages(conversationId)
             } catch {
                 errorMessage = L("Failed to send voice message")
