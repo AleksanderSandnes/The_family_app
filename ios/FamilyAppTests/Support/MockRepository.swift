@@ -397,4 +397,86 @@ final class MockRepository: FamilyRepositoryProtocol {
     func clearCompletedShoppingItems(listId: String) async {
         clearedCompletedListIds.append(listId)
     }
+
+    // Wishlist
+    var wishlistsForUserResult: [WishlistModel] = []
+    var wishlistDetailResult: [WishlistModel] = []
+    var wishesForListResult: [WishModel] = []
+    var wishReservationsResult: [WishReservationModel] = []
+    var usersByIdResult: [UserModel] = []
+    struct ReservationRecord: Equatable { let wishId: String
+        let reservedBy: String
+    }
+
+    private(set) var insertedWishlists: [WishlistModel] = []
+    private(set) var wishlistColors: [(id: String, color: Int?)] = []
+    private(set) var wishlistIcons: [(id: String, icon: String)] = []
+    private(set) var renamedWishlists: [(id: String, name: String)] = []
+    private(set) var deletedWishlistIds: [String] = []
+    private(set) var insertedWishes: [WishModel] = []
+    private(set) var wishChecks: [(id: String, checked: Bool)] = []
+    private(set) var deletedWishIds: [String] = []
+    private(set) var insertedReservations: [ReservationRecord] = []
+    private(set) var deletedReservations: [ReservationRecord] = []
+
+    func fetchWishlists(userId _: String, familyId _: String?) async throws -> [WishlistModel] {
+        wishlistsForUserResult
+    }
+
+    func fetchWishlist(id _: String) async throws -> [WishlistModel] {
+        wishlistDetailResult
+    }
+
+    func fetchWishes(wishlistId _: String) async throws -> [WishModel] {
+        wishesForListResult
+    }
+
+    func fetchWishReservations(wishIds: [String]) async throws -> [WishReservationModel] {
+        guard !wishIds.isEmpty else { return [] }
+        return wishReservationsResult
+    }
+
+    func fetchUser(id _: String) async throws -> [UserModel] {
+        usersByIdResult
+    }
+
+    func insertWishlist(_ list: WishlistModel) async {
+        insertedWishlists.append(list)
+    }
+
+    func setWishlistColor(id: String, color: Int?) async {
+        wishlistColors.append((id, color))
+    }
+
+    func setWishlistIcon(id: String, icon: String) async {
+        wishlistIcons.append((id, icon))
+    }
+
+    func renameWishlist(id: String, name: String) async {
+        renamedWishlists.append((id, name))
+    }
+
+    func deleteWishlist(id: String) async {
+        deletedWishlistIds.append(id)
+    }
+
+    func insertWish(_ wish: WishModel) async {
+        insertedWishes.append(wish)
+    }
+
+    func setWishChecked(id: String, checked: Bool) async {
+        wishChecks.append((id, checked))
+    }
+
+    func deleteWish(id: String) async {
+        deletedWishIds.append(id)
+    }
+
+    func insertWishReservation(wishId: String, reservedBy: String) async {
+        insertedReservations.append(ReservationRecord(wishId: wishId, reservedBy: reservedBy))
+    }
+
+    func deleteWishReservation(wishId: String, reservedBy: String) async {
+        deletedReservations.append(ReservationRecord(wishId: wishId, reservedBy: reservedBy))
+    }
 }
