@@ -18,6 +18,8 @@ struct FamilyScreen: View {
     @State private var showPhotoPicker = false
     @State private var selectedMember: UserModel?
 
+    @Environment(\.colorScheme) private var colorScheme
+
     private var isAdmin: Bool {
         viewModel.family != nil && viewModel.family?.adminId == viewModel.currentUser?.id
     }
@@ -210,19 +212,24 @@ struct FamilyScreen: View {
     }
 
     private func headerCard(_ family: FamilyModel) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) {
-            HStack(spacing: Spacing.md) {
-                AvatarStack(members: viewModel.members)
-                VStack(alignment: .leading, spacing: 2) {
+        VStack(spacing: Spacing.lg) {
+            VStack(spacing: Spacing.md) {
+                familyPhotoHero(family)
+                VStack(spacing: 4) {
                     Text(family.name)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(Color.appOnSurface)
-                    Text("\(viewModel.members.count) members")
-                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                    Text(viewModel.members.count == 1 ? L("1 member") : L("\(viewModel.members.count) members"))
+                        .font(.subheadline)
                         .foregroundStyle(Color.appCaption)
                 }
-                Spacer(minLength: 0)
+                if !viewModel.members.isEmpty {
+                    AvatarStack(members: viewModel.members)
+                        .padding(.top, 2)
+                }
             }
+            .frame(maxWidth: .infinity)
 
             if !family.joinCode.isEmpty {
                 CopyableCodeField(code: family.joinCode)
@@ -251,9 +258,61 @@ struct FamilyScreen: View {
             }
             ErrorBanner(message: viewModel.error)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding(Spacing.xl)
         .glassCard(cornerRadius: Radius.bigCard)
+    }
+
+    /// Large family portrait at the top of the header. Admins can tap it (or the camera
+    /// badge) to swap the photo; everyone else sees it as a static hero.
+    @ViewBuilder
+    private func familyPhotoHero(_ family: FamilyModel) -> some View {
+        if isAdmin {
+            Button { showPhotoPicker = true } label: { photoCircle(family) }
+                .buttonStyle(.plain)
+        } else {
+            photoCircle(family)
+        }
+    }
+
+    private func photoCircle(_ family: FamilyModel) -> some View {
+        let size: CGFloat = 112
+        return ZStack {
+            Gradients.hero(dark: colorScheme == .dark)
+            if let photoUrl = family.photoUrl, let url = URL(string: photoUrl) {
+                LazyImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        familyPhotoFallback
+                    }
+                }
+            } else {
+                familyPhotoFallback
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 3))
+        .overlay(alignment: .bottomTrailing) {
+            if isAdmin {
+                ZStack {
+                    Circle().fill(Color.appPrimary)
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 34, height: 34)
+                .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 2.5))
+            }
+        }
+        .shadow(color: (colorScheme == .dark ? Color.black : Palette.indigo600).opacity(0.28), radius: 14, y: 6)
+    }
+
+    private var familyPhotoFallback: some View {
+        Image(systemName: "person.3.fill")
+            .font(.system(size: 42, weight: .medium))
+            .foregroundStyle(.white)
     }
 
     private func shareLabel(_ text: String, systemImage: String) -> some View {
