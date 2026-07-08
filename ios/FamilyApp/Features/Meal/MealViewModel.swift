@@ -27,10 +27,10 @@ final class MealViewModel {
     private var familyChangedTask: Task<Void, Never>?
 
     init(
-        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        repo: FamilyRepositoryProtocol? = nil,
         realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
     ) {
-        self.repo = repo
+        self.repo = repo ?? FamilyRepository.shared
         plansObserver = realtime()
         Task { await loadForCurrentFamily() }
         familyChangedTask = Task { [weak self] in

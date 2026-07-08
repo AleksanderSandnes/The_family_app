@@ -26,10 +26,11 @@ final class AuthViewModel {
     private let repo: FamilyRepositoryProtocol
     private var authListener: Task<Void, Never>?
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
-        self.repo = repo
+    init(repo: FamilyRepositoryProtocol? = nil) {
+        self.repo = repo ?? FamilyRepository.shared
         // Finalize external (Google OAuth) sign-in: once the redirect lands and the
         // session becomes authenticated, resolve + persist the app user so the gate flips.
+        let repo = self.repo
         authListener = Task { [repo] in
             for await _ in repo.authSignedInEvents() {
                 _ = try? await repo.completeSignInAfterConfirmation()
@@ -62,7 +63,7 @@ final class AuthViewModel {
         error = nil
         Task {
             do {
-                try await repo.login(email: email, password: password)
+                _ = try await repo.login(email: email, password: password)
                 loading = false
             } catch {
                 loading = false
@@ -91,7 +92,7 @@ final class AuthViewModel {
                     mobile: form.mobile
                 )
                 // Email confirmation is disabled — session is active immediately.
-                try await repo.completeSignInAfterConfirmation()
+                _ = try await repo.completeSignInAfterConfirmation()
                 loading = false
             } catch {
                 loading = false

@@ -30,10 +30,10 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
     private var lastPublish = Date.distantPast
 
     init(
-        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        repo: FamilyRepositoryProtocol? = nil,
         realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
     ) {
-        self.repo = repo
+        self.repo = repo ?? FamilyRepository.shared
         observer = realtime()
         super.init()
         locationManager.delegate = self

@@ -18,8 +18,8 @@ final class RootViewModel {
     private var bootstrapped = false
     private var didSyncAfterSignIn = false
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
-        self.repo = repo
+    init(repo: FamilyRepositoryProtocol? = nil) {
+        self.repo = repo ?? FamilyRepository.shared
     }
 
     var gate: AuthGate {

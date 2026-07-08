@@ -36,8 +36,8 @@ final class DeepLinkRouter {
 
     private let repo: FamilyRepositoryProtocol
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
-        self.repo = repo
+    init(repo: FamilyRepositoryProtocol? = nil) {
+        self.repo = repo ?? FamilyRepository.shared
     }
 
     func handle(_ url: URL) {

@@ -26,8 +26,8 @@ final class FamilyViewModel {
 
     private let repo: FamilyRepositoryProtocol
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
-        self.repo = repo
+    init(repo: FamilyRepositoryProtocol? = nil) {
+        self.repo = repo ?? FamilyRepository.shared
         refresh()
     }
 
