@@ -324,4 +324,77 @@ final class MockRepository: FamilyRepositoryProtocol {
     func setMealDayFood(id: String, food: String) async {
         mealDayFoods.append((id, food))
     }
+
+    // Shopping
+    var shoppingListsForUserResult: [ShoppingListModel] = []
+    var shoppingItemsForIdsResult: [ShoppingItemModel] = []
+    var shoppingListDetailResult: [ShoppingListModel] = []
+    var shoppingItemsForListResult: [ShoppingItemModel] = []
+    private(set) var insertedShoppingLists: [ShoppingListModel] = []
+    private(set) var shoppingListColors: [(id: String, color: Int?)] = []
+    private(set) var shoppingListIcons: [(id: String, icon: String)] = []
+    private(set) var renamedShoppingLists: [(id: String, title: String)] = []
+    private(set) var deletedShoppingListIds: [String] = []
+    private(set) var insertedShoppingItems: [ShoppingItemModel] = []
+    private(set) var shoppingItemChecks: [(id: String, checked: Bool)] = []
+    private(set) var renamedShoppingItems: [(id: String, item: String)] = []
+    private(set) var deletedShoppingItemIds: [String] = []
+    private(set) var clearedCompletedListIds: [String] = []
+
+    func fetchShoppingLists(userId _: String, familyId _: String?) async throws -> [ShoppingListModel] {
+        shoppingListsForUserResult
+    }
+
+    func fetchShoppingItems(listIds: [String]) async throws -> [ShoppingItemModel] {
+        guard !listIds.isEmpty else { return [] }
+        return shoppingItemsForIdsResult
+    }
+
+    func fetchShoppingList(id _: String) async throws -> [ShoppingListModel] {
+        shoppingListDetailResult
+    }
+
+    func fetchShoppingItems(listId _: String) async throws -> [ShoppingItemModel] {
+        shoppingItemsForListResult
+    }
+
+    func insertShoppingList(_ list: ShoppingListModel) async {
+        insertedShoppingLists.append(list)
+    }
+
+    func setShoppingListColor(id: String, color: Int?) async {
+        shoppingListColors.append((id, color))
+    }
+
+    func setShoppingListIcon(id: String, icon: String) async {
+        shoppingListIcons.append((id, icon))
+    }
+
+    func renameShoppingList(id: String, title: String) async {
+        renamedShoppingLists.append((id, title))
+    }
+
+    func deleteShoppingList(id: String) async {
+        deletedShoppingListIds.append(id)
+    }
+
+    func insertShoppingItem(_ item: ShoppingItemModel) async {
+        insertedShoppingItems.append(item)
+    }
+
+    func setShoppingItemChecked(id: String, checked: Bool) async {
+        shoppingItemChecks.append((id, checked))
+    }
+
+    func renameShoppingItem(id: String, item: String) async {
+        renamedShoppingItems.append((id, item))
+    }
+
+    func deleteShoppingItem(id: String) async {
+        deletedShoppingItemIds.append(id)
+    }
+
+    func clearCompletedShoppingItems(listId: String) async {
+        clearedCompletedListIds.append(listId)
+    }
 }

@@ -85,6 +85,23 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func setMealPlanColor(id: String, color: Int?) async
     func deleteMealPlan(id: String) async
     func setMealDayFood(id: String, food: String) async
+
+    // Shopping (migrated out of ShoppingViewModel; fetchShoppingLists(familyId:) &
+    // fetchUncheckedShoppingItems(listIds:) above are family/unchecked-scoped and not reused)
+    func fetchShoppingLists(userId: String, familyId: String?) async throws -> [ShoppingListModel]
+    func fetchShoppingItems(listIds: [String]) async throws -> [ShoppingItemModel]
+    func fetchShoppingList(id: String) async throws -> [ShoppingListModel]
+    func fetchShoppingItems(listId: String) async throws -> [ShoppingItemModel]
+    func insertShoppingList(_ list: ShoppingListModel) async
+    func setShoppingListColor(id: String, color: Int?) async
+    func setShoppingListIcon(id: String, icon: String) async
+    func renameShoppingList(id: String, title: String) async
+    func deleteShoppingList(id: String) async
+    func insertShoppingItem(_ item: ShoppingItemModel) async
+    func setShoppingItemChecked(id: String, checked: Bool) async
+    func renameShoppingItem(id: String, item: String) async
+    func deleteShoppingItem(id: String) async
+    func clearCompletedShoppingItems(listId: String) async
 }
 
 /// FamilyRepository already implements every method above; this just records the conformance.
