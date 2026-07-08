@@ -11,7 +11,7 @@ final class BirthdayViewModel {
     private(set) var birthdays: [BirthdayModel] = BirthdayViewModel.cache
     private(set) var isLoading = false
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
     private var client: SupabaseClient {
         SupabaseClientProvider.client
     }
@@ -20,7 +20,8 @@ final class BirthdayViewModel {
     private var subscribedFamilyId: String?
     private var familyChangedTask: Task<Void, Never>?
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         Task { await load() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }

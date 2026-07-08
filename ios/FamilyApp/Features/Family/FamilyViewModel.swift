@@ -25,12 +25,13 @@ final class FamilyViewModel {
         repo.consumePendingJoinCode()
     }
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
     private var client: SupabaseClient {
         SupabaseClientProvider.client
     }
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         refresh()
     }
 

@@ -29,7 +29,7 @@ final class WishlistViewModel {
         repo.session.currentUserId
     }
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
     private var client: SupabaseClient {
         SupabaseClientProvider.client
     }
@@ -40,7 +40,8 @@ final class WishlistViewModel {
     private var subscribedWishesListId: String?
     private var ownerNameCache: [String: String] = [:]
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         Task { await loadWishlists() }
     }
 

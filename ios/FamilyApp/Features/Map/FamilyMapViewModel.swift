@@ -21,7 +21,7 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
         repo.session.currentUserId
     }
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
     private var client: SupabaseClient {
         SupabaseClientProvider.client
     }
@@ -33,7 +33,8 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
     private var publishTask: Task<Void, Never>?
     private var lastPublish = Date.distantPast
 
-    override init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters

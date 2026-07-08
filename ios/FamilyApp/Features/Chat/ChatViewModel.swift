@@ -60,7 +60,7 @@ final class ChatViewModel {
 
     // Internal (not private) so the `+Media`/`+Members` extensions in sibling files
     // can reach them.
-    let repo = FamilyRepository.shared
+    let repo: FamilyRepositoryProtocol
     var client: SupabaseClient {
         SupabaseClientProvider.client
     }
@@ -82,7 +82,8 @@ final class ChatViewModel {
     private var messagesTask: Task<Void, Never>?
     private var familyChangedTask: Task<Void, Never>?
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         Task { await loadConversations() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }

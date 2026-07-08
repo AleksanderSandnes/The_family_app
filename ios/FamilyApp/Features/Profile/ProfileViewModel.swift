@@ -12,9 +12,10 @@ final class ProfileViewModel {
     var error: String?
     private(set) var isUploading = false
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         refresh()
     }
 

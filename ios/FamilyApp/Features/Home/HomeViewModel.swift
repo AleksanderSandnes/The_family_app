@@ -38,14 +38,15 @@ private struct HomeSummary {
 final class HomeViewModel {
     var state = HomeUiState()
 
-    private let repo = FamilyRepository.shared
+    private let repo: FamilyRepositoryProtocol
     private var client: SupabaseClient {
         SupabaseClientProvider.client
     }
 
     private var familyChangedTask: Task<Void, Never>?
 
-    init() {
+    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+        self.repo = repo
         refresh()
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }
