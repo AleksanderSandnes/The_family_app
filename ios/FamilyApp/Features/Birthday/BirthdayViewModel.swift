@@ -12,16 +12,16 @@ final class BirthdayViewModel {
     private(set) var isLoading = false
 
     private let repo: FamilyRepositoryProtocol
-    private var client: SupabaseClient {
-        SupabaseClientProvider.client
-    }
-
-    private let observer = RealtimeObserver()
+    private let observer: RealtimeObserving
     private var subscribedFamilyId: String?
     private var familyChangedTask: Task<Void, Never>?
 
-    init(repo: FamilyRepositoryProtocol = FamilyRepository.shared) {
+    init(
+        repo: FamilyRepositoryProtocol = FamilyRepository.shared,
+        realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
+    ) {
         self.repo = repo
+        self.observer = realtime()
         Task { await load() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }
@@ -49,21 +49,7 @@ final class BirthdayViewModel {
         defer { isLoading = false }
         guard let user = await repo.getUser(userId) else { return }
 
-        let result: [BirthdayModel]
-        if let familyId = user.familyId {
-            let fetched: [BirthdayModel] = await (try? client.from("birthdays")
-                .select()
-                .or("made_by_user_id.eq.\(userId),family_id.eq.\(familyId)")
-                .execute()
-                .value) ?? birthdays
-            result = fetched.filter { $0.familyId == nil || $0.familyId == familyId }
-        } else {
-            result = await (try? client.from("birthdays")
-                .select()
-                .eq("made_by_user_id", value: userId)
-                .execute()
-                .value) ?? birthdays
-        }
+        let result = await repo.fetchBirthdays(userId: userId, familyId: user.familyId) ?? birthdays
         Self.cache = result
         birthdays = result
     }
@@ -106,15 +92,10 @@ final class BirthdayViewModel {
             temp.color = color
             birthdays.append(temp)
 
-            var payload: [String: AnyJSON] = [
-                "name": .string(name),
-                "date": .string(date),
-                "made_by_user_id": .string(userId),
-                "icon": .string(icon),
-                "color": color.map { AnyJSON.double(Double($0)) } ?? .null,
-            ]
-            if let familyId = user.familyId { payload["family_id"] = .string(familyId) }
-            _ = try? await client.from("birthdays").insert(payload).execute()
+            await repo.insertBirthday(
+                name: name, date: date, userId: userId,
+                familyId: user.familyId, icon: icon, color: color
+            )
             await reload()
         }
     }
@@ -131,15 +112,7 @@ final class BirthdayViewModel {
                 }
                 return existing
             }
-            _ = try? await client.from("birthdays")
-                .update([
-                    "name": AnyJSON.string(name),
-                    "date": .string(date),
-                    "icon": .string(icon),
-                    "color": color.map { AnyJSON.double(Double($0)) } ?? .null,
-                ])
-                .eq("id", value: id)
-                .execute()
+            await repo.updateBirthday(id: id, name: name, date: date, icon: icon, color: color)
             await reload()
         }
     }
@@ -147,7 +120,7 @@ final class BirthdayViewModel {
     func delete(_ birthday: BirthdayModel) {
         Task {
             birthdays.removeAll { $0.id == birthday.id }
-            _ = try? await client.from("birthdays").delete().eq("id", value: birthday.id).execute()
+            await repo.deleteBirthday(id: birthday.id)
             await reload()
         }
     }
