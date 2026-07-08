@@ -77,7 +77,7 @@ final class EntitiesTests: XCTestCase {
         XCTAssertEqual(event.dateFrom, "2026-07-06")
         XCTAssertFalse(event.allDay)
         XCTAssertTrue(event.isPrivate)
-        XCTAssertEqual(event.color, 6_513_393)
+        XCTAssertEqual(event.color, 6513393)
     }
 
     func testBirthdayModelDecodes() throws {
@@ -87,7 +87,7 @@ final class EntitiesTests: XCTestCase {
         """)
         XCTAssertEqual(birthday.madeByUserId, "u1")
         XCTAssertEqual(birthday.icon, "cake")
-        XCTAssertEqual(birthday.color, 6_513_393)
+        XCTAssertEqual(birthday.color, 6513393)
     }
 
     func testWishModelsDecodeAndOwnerNameIsTransient() throws {
