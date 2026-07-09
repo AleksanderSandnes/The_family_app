@@ -33,7 +33,6 @@ struct FamilyScreen: View {
             }
         }
         .ambientBackground()
-        .toolbar(.hidden, for: .navigationBar)
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
         .sheet(item: $selectedMember) { member in
             MemberProfileSheet(
