@@ -9,9 +9,9 @@ struct MainTabView: View {
 
     @State private var selectedTab: Tab = .home
     @State private var homePath: [Route] = []
+    @State private var shoppingPath: [Route] = []
     @State private var calendarPath: [Route] = []
     @State private var chatPath: [Route] = []
-    @State private var familyPath: [Route] = []
     @State private var profilePath: [Route] = []
 
     // Hoisted feature view models — created once for the signed-in session.
@@ -36,19 +36,19 @@ struct MainTabView: View {
                     viewModel: homeViewModel,
                     onOpen: { homePath.append($0) },
                     onOpenCalendarTab: { selectedTab = .calendar },
-                    onOpenFamily: { selectedTab = .family }
+                    onOpenFamily: { openFamily() }
                 )
                 .navigationDestination(for: Route.self) { destination(for: $0) }
             }
             .tabItem { Label("Home", systemImage: "house.fill") }
             .tag(Tab.home)
 
-            NavigationStack(path: $calendarPath) {
-                CalendarScreen(viewModel: calendarViewModel)
+            NavigationStack(path: $shoppingPath) {
+                ShoppingScreen(viewModel: shoppingViewModel) { shoppingPath.append(.shoppingDetail(listId: $0)) }
                     .navigationDestination(for: Route.self) { destination(for: $0) }
             }
-            .tabItem { Label("Calendar", systemImage: "calendar") }
-            .tag(Tab.calendar)
+            .tabItem { Label("Shopping", systemImage: "cart.fill") }
+            .tag(Tab.shopping)
 
             NavigationStack(path: $chatPath) {
                 ChatScreen(viewModel: chatViewModel) { chatPath.append(.chatDetail(conversationId: $0)) }
@@ -58,12 +58,12 @@ struct MainTabView: View {
             .tag(Tab.chat)
             .badge(chatViewModel.totalUnread)
 
-            NavigationStack(path: $familyPath) {
-                FamilyScreen(viewModel: familyViewModel)
+            NavigationStack(path: $calendarPath) {
+                CalendarScreen(viewModel: calendarViewModel)
                     .navigationDestination(for: Route.self) { destination(for: $0) }
             }
-            .tabItem { Label("Family", systemImage: "person.3.fill") }
-            .tag(Tab.family)
+            .tabItem { Label("Calendar", systemImage: "calendar") }
+            .tag(Tab.calendar)
 
             NavigationStack(path: $profilePath) {
                 ProfileScreen(
@@ -108,8 +108,14 @@ struct MainTabView: View {
         }
         .onChange(of: FamilyRepository.shared.pendingJoinCode) { _, code in
             // Invite deep link routes the user to Family, which opens the join flow.
-            if code != nil { selectedTab = .family }
+            if code != nil { openFamily() }
         }
+    }
+
+    /// Family lives on the Home dashboard now — surface it by pushing onto the home stack.
+    private func openFamily() {
+        selectedTab = .home
+        if homePath.last != .family { homePath.append(.family) }
     }
 
     /// One-time prompt for Google sign-ups (email registration already collects these).
@@ -156,6 +162,8 @@ struct MainTabView: View {
             SettingsScreen()
         case .familyMap:
             FamilyMapScreen()
+        case .family:
+            FamilyScreen(viewModel: familyViewModel)
         }
     }
 }

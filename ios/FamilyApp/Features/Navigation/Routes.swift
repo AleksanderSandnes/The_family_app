@@ -14,14 +14,16 @@ enum Route: Hashable {
     case profileEdit
     case settings
     case familyMap
+    /// Family is reachable from the Home dashboard, not a bottom tab.
+    case family
 }
 
 /// Bottom tabs (Android: crossfade destinations).
 enum Tab: Hashable {
     case home
-    case calendar
+    case shopping
     case chat
-    case family
+    case calendar
     case profile
 }
 
