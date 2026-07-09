@@ -130,22 +130,40 @@ struct MainTabView: View {
         }
     }
 
-    /// Route → screen. Placeholders are swapped out feature phase by feature phase.
+    /// Route → screen. Feature roots live here; the pushed detail screens are split into
+    /// `detailDestination` to keep each switch under the cyclomatic-complexity limit.
     @ViewBuilder
     private func destination(for route: Route) -> some View {
         switch route {
         case .shopping:
             ShoppingScreen(viewModel: shoppingViewModel) { homePath.append(.shoppingDetail(listId: $0)) }
-        case let .shoppingDetail(listId):
-            ShoppingDetailScreen(listId: listId, viewModel: shoppingViewModel)
         case .meal:
             MealScreen(viewModel: mealViewModel) { homePath.append(.mealDetail(planId: $0)) }
-        case let .mealDetail(planId):
-            MealDetailScreen(planId: planId, viewModel: mealViewModel)
         case .birthday:
             BirthdayScreen(viewModel: birthdayViewModel)
         case .wishlist:
             WishlistScreen(viewModel: wishlistViewModel) { homePath.append(.wishlistDetail(wishlistId: $0)) }
+        case .profileEdit:
+            ProfileEditScreen(viewModel: profileViewModel)
+        case .settings:
+            SettingsScreen()
+        case .familyMap:
+            FamilyMapScreen()
+        case .family:
+            FamilyScreen(viewModel: familyViewModel)
+        default:
+            detailDestination(for: route)
+        }
+    }
+
+    /// Pushed detail screens (each opened from its feature root).
+    @ViewBuilder
+    private func detailDestination(for route: Route) -> some View {
+        switch route {
+        case let .shoppingDetail(listId):
+            ShoppingDetailScreen(listId: listId, viewModel: shoppingViewModel)
+        case let .mealDetail(planId):
+            MealDetailScreen(planId: planId, viewModel: mealViewModel)
         case let .wishlistDetail(wishlistId):
             WishlistDetailScreen(wishlistId: wishlistId, viewModel: wishlistViewModel)
         case let .chatDetail(conversationId):
@@ -156,14 +174,8 @@ struct MainTabView: View {
                     chatViewModel.navigateToConversation = nil
                     chatPath = [.chatDetail(conversationId: newId)]
                 }
-        case .profileEdit:
-            ProfileEditScreen(viewModel: profileViewModel)
-        case .settings:
-            SettingsScreen()
-        case .familyMap:
-            FamilyMapScreen()
-        case .family:
-            FamilyScreen(viewModel: familyViewModel)
+        default:
+            EmptyView()
         }
     }
 }
