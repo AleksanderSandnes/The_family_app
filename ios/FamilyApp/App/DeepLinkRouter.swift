@@ -34,6 +34,12 @@ final class DeepLinkRouter {
     /// Conversation to open once the chat tab is up (push tap / chat link).
     var pendingConversationId: String?
 
+    private let repo: FamilyRepositoryProtocol
+
+    init(repo: FamilyRepositoryProtocol? = nil) {
+        self.repo = repo ?? FamilyRepository.shared
+    }
+
     func handle(_ url: URL) {
         switch DeepLink.parse(url) {
         case let .auth(url):
@@ -44,7 +50,7 @@ final class DeepLinkRouter {
         case let .chat(conversationId):
             pendingConversationId = conversationId
         case let .join(code):
-            FamilyRepository.shared.setPendingJoinCode(code)
+            repo.setPendingJoinCode(code)
         case nil:
             break
         }

@@ -1,7 +1,9 @@
 // Support views extracted from ConversationScreen.swift: the typing-indicator row, the
 // add/select-member sheet, and the full-screen pinch-zoom image viewer with its model.
 import NukeUI
+import Photos
 import SwiftUI
+import UIKit
 
 private let quickReactions = ["❤️", "😂", "👍", "😮", "😢", "🙏"]
 
@@ -104,14 +106,18 @@ struct MemberListSheet: View {
 }
 
 /// Full-screen image viewer with pinch zoom — the iOS twin of ImageViewerDialog.
+/// Image is vertically centred; a download button saves the full-size image to Photos.
 struct ImageViewer: View {
     let url: String
     let onClose: () -> Void
 
     @State private var scale: CGFloat = 1
+    @State private var saveState: SaveState = .idle
+
+    private enum SaveState { case idle, saving, done, failed }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             Color.black.ignoresSafeArea()
             if let imageURL = URL(string: url) {
                 LazyImage(url: imageURL) { phase in
@@ -121,6 +127,7 @@ struct ImageViewer: View {
                         ProgressView().tint(.white)
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .scaleEffect(scale)
                 .gesture(
                     MagnifyGesture()
@@ -128,6 +135,8 @@ struct ImageViewer: View {
                         .onEnded { _ in withAnimation { scale = 1 } }
                 )
             }
+        }
+        .overlay(alignment: .topTrailing) {
             Button(action: onClose) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 30))
@@ -135,6 +144,62 @@ struct ImageViewer: View {
             }
             .padding(Spacing.xl)
             .accessibilityLabel("Close")
+        }
+        .overlay(alignment: .bottom) {
+            Button(action: downloadImage) {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: downloadIcon)
+                    Text(downloadTitle)
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, Spacing.xl)
+                .frame(height: 46)
+                .glassEffect(.regular, in: Capsule())
+            }
+            .disabled(saveState == .saving || saveState == .done)
+            .padding(.bottom, Spacing.xxl)
+            .accessibilityLabel("Save image")
+        }
+    }
+
+    private var downloadIcon: String {
+        switch saveState {
+        case .done: "checkmark"
+        case .failed: "exclamationmark.triangle"
+        default: "square.and.arrow.down"
+        }
+    }
+
+    private var downloadTitle: String {
+        switch saveState {
+        case .saving: L("Saving…")
+        case .done: L("Saved")
+        case .failed: L("Couldn’t save")
+        default: L("Save image")
+        }
+    }
+
+    private func downloadImage() {
+        guard let imageURL = URL(string: url), saveState != .saving else { return }
+        saveState = .saving
+        Task {
+            let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+            guard status == .authorized || status == .limited else { saveState = .failed
+                return
+            }
+            do {
+                let (data, _) = try await URLSession.shared.data(from: imageURL)
+                guard let image = UIImage(data: data) else { saveState = .failed
+                    return
+                }
+                try await PHPhotoLibrary.shared().performChanges {
+                    PHAssetChangeRequest.creationRequestForAsset(from: image)
+                }
+                saveState = .done
+            } catch {
+                saveState = .failed
+            }
         }
     }
 }

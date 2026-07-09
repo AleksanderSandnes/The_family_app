@@ -20,26 +20,28 @@ struct BirthdayScreen: View {
                     EmptyState(
                         systemImage: "birthday.cake.fill",
                         title: L("No birthdays"),
-                        subtitle: L("Add family birthdays so you never miss a celebration."),
-                        actionLabel: L("Add birthday")
-                    ) { showAdd = true }
+                        subtitle: L("Add family birthdays so you never miss a celebration.")
+                    )
                 } else {
                     List {
                         ForEach(sorted) { birthday in
-                            BirthdayCard(birthday: birthday, today: today) { editing = birthday }
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(
-                                    top: 6, leading: Spacing.screenEdge,
-                                    bottom: 6, trailing: Spacing.screenEdge
-                                ))
-                                .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        viewModel.delete(birthday)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
+                            BirthdayCard(birthday: birthday, today: today) {
+                                // Only the creator may edit (auto-birthdays belong to the person).
+                                if birthday.madeByUserId == viewModel.currentUserId { editing = birthday }
+                            }
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(
+                                top: 6, leading: Spacing.screenEdge,
+                                bottom: 6, trailing: Spacing.screenEdge
+                            ))
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    viewModel.delete(birthday)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
+                            }
                         }
                     }
                     .listStyle(.plain)
@@ -55,8 +57,8 @@ struct BirthdayScreen: View {
         .featureTopBar(L("Birthdays"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
-            BirthdaySheet(title: L("Add birthday"), confirmLabel: L("Add")) { name, date in
-                viewModel.add(name: name, date: date)
+            BirthdaySheet(title: L("Add birthday"), confirmLabel: L("Add")) { name, date, icon, color in
+                viewModel.add(name: name, date: date, icon: icon, color: color)
                 showAdd = false
             }
         }
@@ -65,9 +67,11 @@ struct BirthdayScreen: View {
                 title: L("Edit birthday"),
                 confirmLabel: L("Save"),
                 initialName: birthday.name,
-                initialDate: birthday.date
-            ) { name, date in
-                viewModel.update(id: birthday.id, name: name, date: date)
+                initialDate: birthday.date,
+                initialIcon: birthday.icon,
+                initialColor: birthday.color
+            ) { name, date, icon, color in
+                viewModel.update(id: birthday.id, name: name, date: date, icon: icon, color: color)
                 editing = nil
             }
         }
@@ -83,31 +87,31 @@ private struct BirthdayCard: View {
         let next = nextBirthdayDate(birthday.date, today: today)
         let age = turnsAge(birthday.date, today: today)
         let daysUntil = next.map { today.daysUntil($0) }
-        let displayDate = next.map(formatFullDate) ?? birthday.date
+        // Show the actual date of birth (year included), not the next occurrence.
+        let displayDate = LocalDate(iso: birthday.date).map(formatFullDate) ?? birthday.date
         let isToday = daysUntil == 0
-        let thisWeek = (daysUntil ?? 999) >= 1 && (daysUntil ?? 999) <= 7
-        let later = !isToday && !thisWeek
+        let accent = birthdayAccent(birthday)
 
         Button(action: onEdit) {
             HStack(spacing: 12) {
-                FeatureBadge(
-                    systemImage: "birthday.cake.fill",
-                    feature: .birthdays,
-                    size: 46,
-                    cornerRadius: 23
-                )
-                .saturation(later ? 0.35 : 1)
-                .opacity(later ? 0.85 : 1)
+                Circle()
+                    .fill(accent.opacity(0.16))
+                    .frame(width: 46, height: 46)
+                    .overlay(
+                        Image(systemName: IconKeyMap.calendarSymbol(birthday.icon))
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(accent)
+                    )
                 VStack(alignment: .leading, spacing: 3) {
                     Text(birthday.name)
                         .font(.system(size: 15.5, weight: .semibold))
-                        .foregroundStyle(later ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                        .foregroundStyle(Color.appOnSurface)
                     HStack(spacing: 5) {
                         Text(displayDate)
                             .foregroundStyle(Color.appCaption)
                         if let age {
                             Text("· turning \(age)")
-                                .foregroundStyle(later ? Color.appCaption : FeatureAccent.birthdays.stroke)
+                                .foregroundStyle(FeatureAccent.birthdays.stroke)
                         }
                     }
                     .font(.system(size: 12.5, weight: .medium))
@@ -118,7 +122,7 @@ private struct BirthdayCard: View {
                 }
             }
             .padding(Spacing.cardPadding)
-            .modifier(BirthdaySurface(isToday: isToday, later: later))
+            .modifier(BirthdaySurface(isToday: isToday))
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel("\(birthday.name)'s birthday, \(displayDate)")
@@ -149,10 +153,9 @@ private struct BirthdayCard: View {
         }
     }
 
-    /// Urgency-driven surface: today = glass + green ring, this week = glass, later = ghost.
+    /// Today = glass + green ring; all other (future/this week) = solid glass card.
     private struct BirthdaySurface: ViewModifier {
         let isToday: Bool
-        let later: Bool
         func body(content: Content) -> some View {
             if isToday {
                 content
@@ -163,7 +166,7 @@ private struct BirthdayCard: View {
                     )
                     .shadow(color: Color.appSuccess.opacity(0.18), radius: 12, y: 8)
             } else {
-                content.rowSurface(ghost: later, cornerRadius: Radius.overviewCard)
+                content.rowSurface(ghost: false, cornerRadius: Radius.overviewCard)
             }
         }
     }
@@ -178,16 +181,26 @@ private struct BirthdayCard: View {
     }
 }
 
+/// A birthday's badge colour — the user-picked colour, else the birthdays accent.
+func birthdayAccent(_ birthday: BirthdayModel) -> Color {
+    if let hex = birthday.color { return Color(hex: UInt32(truncatingIfNeeded: hex)) }
+    return FeatureAccent.birthdays.stroke
+}
+
 private struct BirthdaySheet: View {
     let title: String
     let confirmLabel: String
     var initialName = ""
     var initialDate = ""
-    let onConfirm: (String, String) -> Void
+    var initialIcon = "cake"
+    var initialColor: Int? = calendarEventColorPalette.first
+    let onConfirm: (String, String, String, Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var date = ""
+    @State private var icon = "cake"
+    @State private var color: Int?
 
     private var canConfirm: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !date.isEmpty
@@ -198,11 +211,21 @@ private struct BirthdaySheet: View {
             SheetHeader(title: title, confirmTitle: confirmLabel, confirmEnabled: canConfirm) {
                 dismiss()
             } onConfirm: {
-                onConfirm(name.trimmingCharacters(in: .whitespaces), date)
+                onConfirm(name.trimmingCharacters(in: .whitespaces), date, icon, color)
                 dismiss()
             }
             GlassField(systemImage: "person", placeholder: L("Name"), text: $name)
             BirthdayPickerField(isoDate: $date, label: L("Birthday *"))
+
+            SectionHeader(text: L("Icon"))
+            IconGrid(
+                options: IconOptions.calendar,
+                selected: icon,
+                symbolFor: IconKeyMap.calendarSymbol
+            ) { icon = $0 }
+
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
@@ -211,6 +234,8 @@ private struct BirthdaySheet: View {
         .onAppear {
             name = initialName
             date = initialDate
+            icon = initialIcon
+            color = initialColor
         }
     }
 }

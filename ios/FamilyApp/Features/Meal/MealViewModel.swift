@@ -21,16 +21,17 @@ final class MealViewModel {
     private(set) var selectedPlan: MealPlanModel?
     private(set) var days: [MealPlanDayModel] = []
 
-    private let repo = FamilyRepository.shared
-    private var client: SupabaseClient {
-        SupabaseClientProvider.client
-    }
-
-    private let plansObserver = RealtimeObserver()
+    private let repo: FamilyRepositoryProtocol
+    private let plansObserver: RealtimeObserving
     private var subscribedFamilyId: String?
     private var familyChangedTask: Task<Void, Never>?
 
-    init() {
+    init(
+        repo: FamilyRepositoryProtocol? = nil,
+        realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
+    ) {
+        self.repo = repo ?? FamilyRepository.shared
+        plansObserver = realtime()
         Task { await loadForCurrentFamily() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }
@@ -68,11 +69,7 @@ final class MealViewModel {
     /// Fetches meal plans without touching the realtime channel.
     private func loadPlansOnly(familyId: String) async {
         if plans.isEmpty { isLoading = true }
-        if let result: [MealPlanModel] = try? await client.from("meal_plans")
-            .select()
-            .eq("family_id", value: familyId)
-            .execute()
-            .value {
+        if let result = try? await repo.fetchMealPlans(familyId: familyId) {
             Self.cache = result
             plans = result
             await loadPlanProgress(planIds: result.map(\.id))
@@ -86,12 +83,7 @@ final class MealViewModel {
             planProgress = [:]
             return
         }
-        guard let allDays: [MealPlanDayModel] = try? await client.from("meal_plan_days")
-            .select()
-            .in("meal_plan_id", values: planIds)
-            .execute()
-            .value
-        else { return }
+        guard let allDays = try? await repo.fetchMealPlanDays(mealPlanIds: planIds) else { return }
         planProgress = Dictionary(grouping: allDays, by: \.mealPlanId).mapValues { days in
             MealProgress(
                 planned: days.count { !$0.food.trimmingCharacters(in: .whitespaces).isEmpty },
@@ -119,23 +111,15 @@ final class MealViewModel {
     }
 
     private func reloadPlanDetail(_ planId: String) async {
-        async let planFetch: [MealPlanModel] = (try? client.from("meal_plans")
-            .select()
-            .eq("id", value: planId)
-            .execute()
-            .value) ?? []
-        async let daysFetch: [MealPlanDayModel] = (try? client.from("meal_plan_days")
-            .select()
-            .eq("meal_plan_id", value: planId)
-            .execute()
-            .value) ?? []
+        async let planFetch = (try? repo.fetchMealPlans(planId: planId)) ?? []
+        async let daysFetch = (try? repo.fetchMealPlanDays(mealPlanId: planId)) ?? []
         if let plan = await planFetch.first { selectedPlan = plan }
         days = await daysFetch.sorted { $0.date < $1.date }
     }
 
     // MARK: - Mutations
 
-    func createPlan(name: String, fromIso: String, toIso: String, icon: String) {
+    func createPlan(name: String, fromIso: String, toIso: String, icon: String, color: Int?) {
         Task {
             guard let userId = repo.session.currentUserId,
                   let familyId = await repo.getUser(userId)?.familyId,
@@ -149,35 +133,22 @@ final class MealViewModel {
             temp.familyId = familyId
             temp.name = name
             temp.icon = icon
+            temp.color = color
             temp.fromDate = fromIso
             temp.toDate = toIso
             temp.week = week
             plans.append(temp)
 
             do {
-                let plan: MealPlanModel = try await client.from("meal_plans")
-                    .insert([
-                        "family_id": AnyJSON.string(familyId),
-                        "name": .string(name),
-                        "icon": .string(icon),
-                        "from_date": .string(fromIso),
-                        "to_date": .string(toIso),
-                        "week": .integer(week),
-                    ])
-                    .select()
-                    .single()
-                    .execute()
-                    .value
+                let plan = try await repo.insertMealPlan(temp)
 
                 var current = from
                 while !(to < current) {
-                    try await client.from("meal_plan_days")
-                        .insert([
-                            "meal_plan_id": AnyJSON.string(plan.id),
-                            "day": .string(current.fullDayName()),
-                            "date": .string(current.isoString),
-                        ])
-                        .execute()
+                    try await repo.insertMealPlanDay(
+                        mealPlanId: plan.id,
+                        day: current.fullDayName(),
+                        date: current.isoString
+                    )
                     current = current.addingDays(1)
                 }
             } catch {
@@ -194,10 +165,7 @@ final class MealViewModel {
             selectedPlan = updated
             plans = plans.map { $0.id == plan.id ? updated : $0 }
             Self.cache = plans
-            _ = try? await client.from("meal_plans")
-                .update(["name": AnyJSON.string(newName)])
-                .eq("id", value: plan.id)
-                .execute()
+            await repo.renameMealPlan(id: plan.id, name: newName)
         }
     }
 
@@ -208,17 +176,25 @@ final class MealViewModel {
             selectedPlan = updated
             plans = plans.map { $0.id == plan.id ? updated : $0 }
             Self.cache = plans
-            _ = try? await client.from("meal_plans")
-                .update(["icon": AnyJSON.string(newIcon)])
-                .eq("id", value: plan.id)
-                .execute()
+            await repo.setMealPlanIcon(id: plan.id, icon: newIcon)
+        }
+    }
+
+    func setPlanColor(_ plan: MealPlanModel, color: Int?) {
+        Task {
+            var updated = plan
+            updated.color = color
+            selectedPlan = updated
+            plans = plans.map { $0.id == plan.id ? updated : $0 }
+            Self.cache = plans
+            await repo.setMealPlanColor(id: plan.id, color: color)
         }
     }
 
     func deletePlan(_ plan: MealPlanModel) {
         Task {
             plans.removeAll { $0.id == plan.id }
-            _ = try? await client.from("meal_plans").delete().eq("id", value: plan.id).execute()
+            await repo.deleteMealPlan(id: plan.id)
             if let familyId = await currentFamilyId() {
                 await loadPlansOnly(familyId: familyId)
             }
@@ -232,10 +208,7 @@ final class MealViewModel {
                 if existing.id == day.id { existing.food = food }
                 return existing
             }
-            _ = try? await client.from("meal_plan_days")
-                .update(["food": AnyJSON.string(food)])
-                .eq("id", value: day.id)
-                .execute()
+            await repo.setMealDayFood(id: day.id, food: food)
             await reloadPlanDetail(day.mealPlanId)
         }
     }

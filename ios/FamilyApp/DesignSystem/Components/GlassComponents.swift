@@ -2,6 +2,31 @@
 // glass form field, segmented picker. Screens compose from these — don't re-roll them.
 import SwiftUI
 
+// MARK: - Accent glow
+
+/// The accent "elevation" glow under solid-accent controls. On a light background this reads
+/// as a soft drop shadow; on a dark background the *same* coloured shadow turns into a bright
+/// halo around the edges, so it's dimmed substantially in dark mode.
+private struct AccentGlow: ViewModifier {
+    var active: Bool
+    var opacity: Double
+    var radius: CGFloat
+    var y: CGFloat
+    @Environment(\.colorScheme) private var scheme
+
+    func body(content: Content) -> some View {
+        let resolved = active ? (scheme == .dark ? opacity * 0.3 : opacity) : 0
+        return content.shadow(color: Color.appPrimary.opacity(resolved), radius: radius, x: 0, y: y)
+    }
+}
+
+extension View {
+    /// Accent elevation glow that dims in dark mode so it doesn't halo (see `AccentGlow`).
+    func accentGlow(active: Bool = true, opacity: Double, radius: CGFloat, y: CGFloat) -> some View {
+        modifier(AccentGlow(active: active, opacity: opacity, radius: radius, y: y))
+    }
+}
+
 // MARK: - Extended FAB
 
 /// Floating action button — solid accent capsule with a `+` glyph and label.
@@ -23,7 +48,7 @@ struct GlassFAB: View {
             .padding(.horizontal, 20)
             .frame(height: 52)
             .background(Color.appPrimary, in: Capsule())
-            .shadow(color: Color.appPrimary.opacity(0.4), radius: 12, x: 0, y: 8)
+            .accentGlow(opacity: 0.4, radius: 12, y: 8)
         }
         .buttonStyle(PressScaleButtonStyle())
     }
@@ -62,7 +87,7 @@ struct SheetHeader: View {
                     .padding(.horizontal, 16)
                     .frame(height: 34)
                     .background(Color.appPrimary, in: Capsule())
-                    .shadow(color: Color.appPrimary.opacity(0.35), radius: 6, y: 4)
+                    .accentGlow(opacity: 0.35, radius: 6, y: 4)
                     .opacity(confirmEnabled ? 1 : 0.4)
             }
             .disabled(!confirmEnabled)
@@ -90,7 +115,7 @@ struct GlassChip: View {
             if selected {
                 content
                     .background(Color.appPrimary, in: Capsule())
-                    .shadow(color: Color.appPrimary.opacity(0.3), radius: 8, y: 3)
+                    .accentGlow(opacity: 0.3, radius: 8, y: 3)
             } else {
                 content.glassChrome(cornerRadius: 16)
             }
@@ -193,7 +218,7 @@ struct IconGrid: View {
                             let shape = RoundedRectangle(cornerRadius: Radius.badgeLarge, style: .continuous)
                             if isSelected {
                                 shape.fill(Color.appPrimary)
-                                    .shadow(color: Color.appPrimary.opacity(0.4), radius: 8, y: 3)
+                                    .accentGlow(opacity: 0.4, radius: 8, y: 3)
                             } else {
                                 shape.fill(Color.appSurface.opacity(0.6))
                             }
@@ -259,11 +284,13 @@ private struct HuggingSheetModifier: ViewModifier {
 struct GlassButton: View {
     let text: String
     var systemImage: String?
+    /// Solid near-white fill (used on the purple auth hero) instead of translucent glass.
+    var whiter = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Spacing.sm) {
+            let content = HStack(spacing: Spacing.sm) {
                 if let systemImage {
                     Image(systemName: systemImage)
                         .font(.system(size: 17, weight: .semibold))
@@ -273,7 +300,16 @@ struct GlassButton: View {
             }
             .foregroundStyle(Color.appOnSurface)
             .frame(maxWidth: .infinity, minHeight: 54)
-            .glassCard(cornerRadius: 27)
+            if whiter {
+                content
+                    .background(
+                        RoundedRectangle(cornerRadius: 27, style: .continuous)
+                            .fill(Color(light: .white, dark: Palette.inkSurfaceVariant))
+                            .shadow(color: Color(hex: 0x141A3C).opacity(0.06), radius: 6, y: 2)
+                    )
+            } else {
+                content.glassCard(cornerRadius: 27)
+            }
         }
         .buttonStyle(PressScaleButtonStyle())
     }

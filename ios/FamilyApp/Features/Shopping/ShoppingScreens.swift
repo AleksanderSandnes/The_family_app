@@ -19,9 +19,8 @@ struct ShoppingScreen: View {
                     EmptyState(
                         systemImage: "cart.fill",
                         title: L("No lists yet"),
-                        subtitle: L("Create a shared shopping list for your family."),
-                        actionLabel: L("New list")
-                    ) { showAdd = true }
+                        subtitle: L("Create a shared shopping list for your family.")
+                    )
                 } else {
                     List {
                         ForEach(viewModel.lists) { list in
@@ -57,8 +56,8 @@ struct ShoppingScreen: View {
         .featureTopBar(L("Shopping lists"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
-            NewListSheet { title, icon in
-                viewModel.addList(title: title, icon: icon)
+            NewListSheet { title, icon, color in
+                viewModel.addList(title: title, icon: icon, color: color)
                 showAdd = false
             }
         }
@@ -96,7 +95,8 @@ private struct ShoppingListRow: View {
                             systemImage: IconKeyMap.shoppingSymbol(list.icon),
                             feature: .shopping,
                             size: 44,
-                            cornerRadius: Radius.badgeLarge
+                            cornerRadius: Radius.badgeLarge,
+                            colorOverride: hexColor(list.color)
                         )
                     }
                     VStack(alignment: .leading, spacing: 2) {
@@ -223,14 +223,20 @@ struct ShoppingDetailScreen: View {
                         .padding(.leading, 8)
                 }
                 Menu {
-                    Button("Rename list") {
+                    Button {
                         renameText = viewModel.selectedList?.title ?? ""
                         showRename = true
+                    } label: {
+                        Label(L("Rename list"), systemImage: "pencil")
                     }
-                    Button("Change icon") { showChangeIcon = true }
+                    Button { showChangeIcon = true } label: {
+                        Label(L("Change icon"), systemImage: "star")
+                    }
                     if !completed.isEmpty {
-                        Button("Clear completed", role: .destructive) {
+                        Button(role: .destructive) {
                             viewModel.clearCompleted(listId: listId)
+                        } label: {
+                            Label("\(L("Clear completed")) (\(completed.count))", systemImage: "trash")
                         }
                     }
                 } label: {
@@ -255,11 +261,14 @@ struct ShoppingDetailScreen: View {
                 title: L("Change icon"),
                 options: IconOptions.shopping,
                 selected: viewModel.selectedList?.icon ?? "shopping_cart",
-                symbolFor: IconKeyMap.shoppingSymbol
-            ) { icon in
-                viewModel.changeListIcon(listId: listId, icon: icon)
-                showChangeIcon = false
-            }
+                symbolFor: IconKeyMap.shoppingSymbol,
+                onPick: { icon in
+                    viewModel.changeListIcon(listId: listId, icon: icon)
+                    showChangeIcon = false
+                },
+                initialColor: viewModel.selectedList?.color,
+                onColorPick: { color in viewModel.changeListColor(listId: listId, color: color) }
+            )
         }
     }
 
@@ -278,7 +287,7 @@ struct ShoppingDetailScreen: View {
                     .foregroundStyle(.white)
                     .frame(width: 46, height: 46)
                     .background(Color.appPrimary.opacity(newItemText.isEmpty ? 0.4 : 1), in: Circle())
-                    .shadow(color: Color.appPrimary.opacity(newItemText.isEmpty ? 0 : 0.35), radius: 8, y: 3)
+                    .accentGlow(active: !newItemText.isEmpty, opacity: 0.35, radius: 8, y: 3)
             }
             .disabled(newItemText.isEmpty)
             .accessibilityLabel("Add item")
@@ -419,11 +428,15 @@ struct IconPickerSheet: View {
     let selected: String
     let symbolFor: (String) -> String
     let onPick: (String) -> Void
+    /// When `onColorPick` is provided, a colour picker is shown too and applied live.
+    var initialColor: Int?
+    var onColorPick: ((Int?) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
+    @State private var color: Int?
 
     var body: some View {
-        VStack(spacing: Spacing.lg) {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
             ZStack {
                 Text(title)
                     .font(.pushedTitle)
@@ -435,22 +448,34 @@ struct IconPickerSheet: View {
                     Spacer()
                 }
             }
+            .frame(maxWidth: .infinity)
             IconGrid(options: options, selected: selected, symbolFor: symbolFor, onPick: onPick)
+            if onColorPick != nil {
+                SectionHeader(text: L("Color"))
+                EventColorPicker(selection: Binding(
+                    get: { color },
+                    set: { color = $0
+                        onColorPick?($0)
+                    }
+                ))
+            }
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.xl)
         .huggingSheet()
+        .onAppear { color = initialColor }
     }
 }
 
 /// New-list sheet with name + icon picker — mirrors NewListDialog.
 private struct NewListSheet: View {
-    let onCreate: (String, String) -> Void
+    let onCreate: (String, String, Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
     @State private var selectedIcon = "shopping_cart"
+    @State private var color: Int? = calendarEventColorPalette.first
 
     private var canCreate: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty
@@ -461,7 +486,7 @@ private struct NewListSheet: View {
             SheetHeader(title: L("New list"), confirmTitle: L("Create"), confirmEnabled: canCreate) {
                 dismiss()
             } onConfirm: {
-                onCreate(title.trimmingCharacters(in: .whitespaces), selectedIcon)
+                onCreate(title.trimmingCharacters(in: .whitespaces), selectedIcon, color)
                 dismiss()
             }
             GlassField(systemImage: "cart", placeholder: L("List name"), text: $title)
@@ -471,6 +496,8 @@ private struct NewListSheet: View {
                 selected: selectedIcon,
                 symbolFor: IconKeyMap.shoppingSymbol
             ) { selectedIcon = $0 }
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)

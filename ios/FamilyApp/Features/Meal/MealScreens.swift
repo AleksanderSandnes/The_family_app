@@ -19,9 +19,8 @@ struct MealScreen: View {
                     EmptyState(
                         systemImage: "fork.knife",
                         title: L("No meal plans yet"),
-                        subtitle: L("Plan your family's meals for the week ahead."),
-                        actionLabel: L("Create a meal plan")
-                    ) { showCreate = true }
+                        subtitle: L("Plan your family's meals for the week ahead.")
+                    )
                 } else {
                     List {
                         ForEach(viewModel.plans) { plan in
@@ -59,8 +58,8 @@ struct MealScreen: View {
         .featureTopBar(L("Meal planner"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showCreate) {
-            CreatePlanSheet { name, fromIso, toIso, icon in
-                viewModel.createPlan(name: name, fromIso: fromIso, toIso: toIso, icon: icon)
+            CreatePlanSheet { name, fromIso, toIso, icon, color in
+                viewModel.createPlan(name: name, fromIso: fromIso, toIso: toIso, icon: icon, color: color)
                 showCreate = false
             }
         }
@@ -91,13 +90,13 @@ private struct MealPlanRow: View {
                         systemImage: IconKeyMap.mealSymbol(plan.icon),
                         feature: .meals,
                         size: 44,
-                        cornerRadius: Radius.badgeLarge
+                        cornerRadius: Radius.badgeLarge,
+                        colorOverride: hexColor(plan.color)
                     )
-                    .opacity(nothingPlanned ? 0.7 : 1)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name)
                             .font(.system(size: 15.5, weight: .semibold))
-                            .foregroundStyle(nothingPlanned ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                            .foregroundStyle(Color.appOnSurface)
                         Text(
                             "\(dateRange) · \(mealPlanLabel(progress: progress, fromIso: plan.fromDate, toIso: plan.toDate, locale: appLocale))"
                         )
@@ -114,7 +113,9 @@ private struct MealPlanRow: View {
                 }
             }
             .padding(Spacing.cardPadding)
-            .rowSurface(ghost: nothingPlanned, cornerRadius: Radius.overviewCard)
+            // Meal plans are always shown active — never dashed/greyed, even when empty
+            // or fully planned.
+            .rowSurface(ghost: false, cornerRadius: Radius.overviewCard)
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel(
@@ -126,13 +127,14 @@ private struct MealPlanRow: View {
 // MARK: - Create plan
 
 private struct CreatePlanSheet: View {
-    let onCreate: (_ name: String, _ fromIso: String, _ toIso: String, _ icon: String) -> Void
+    let onCreate: (_ name: String, _ fromIso: String, _ toIso: String, _ icon: String, _ color: Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var fromDate: Date?
     @State private var toDate: Date?
     @State private var selectedIcon = "restaurant"
+    @State private var color: Int? = calendarEventColorPalette.first
 
     private static let isoFormat: DateFormatter = {
         let formatter = DateFormatter()
@@ -156,7 +158,8 @@ private struct CreatePlanSheet: View {
                     name.trimmingCharacters(in: .whitespaces),
                     Self.isoFormat.string(from: fromDate),
                     Self.isoFormat.string(from: toDate),
-                    selectedIcon
+                    selectedIcon,
+                    color
                 )
                 dismiss()
             }
@@ -171,11 +174,13 @@ private struct CreatePlanSheet: View {
                 selected: selectedIcon,
                 symbolFor: IconKeyMap.mealSymbol
             ) { selectedIcon = $0 }
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
             HStack(spacing: Spacing.sm) {
-                PlanDatePicker(label: L("Start date"), selection: $fromDate) { picked in
+                PlanDatePicker(label: L("Starts"), selection: $fromDate) { picked in
                     if let to = toDate, to < picked { toDate = picked }
                 }
-                PlanDatePicker(label: L("End date"), selection: $toDate) { picked in
+                PlanDatePicker(label: L("Ends"), selection: $toDate) { picked in
                     if let from = fromDate, picked < from { toDate = from }
                 }
             }
@@ -201,12 +206,25 @@ private struct PlanDatePicker: View {
             draft = selection ?? Date()
             showPicker = true
         } label: {
-            Text(selection.map { formatMealDate(isoString(from: $0), locale: appLocale) } ?? label)
-                .font(.bodyMedium)
-                .foregroundStyle(selection == nil ? Color.appOnSurfaceVariant : Color.appOnSurface)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .background(Color.appSurfaceVariant)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.appPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label.uppercased())
+                        .font(.sectionLabel)
+                        .tracking(0.5)
+                        .foregroundStyle(Color.appCaption)
+                    Text(selection.map { formatMealDate(isoString(from: $0), locale: appLocale) } ?? L("Select"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(selection == nil ? Color.appOnSurfaceVariant : Color.appOnSurface)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, Spacing.md)
+            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+            .background(Color.appPrimary.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.field, style: .continuous))
         }
         .sheet(isPresented: $showPicker) {
             VStack(spacing: Spacing.lg) {
@@ -275,11 +293,15 @@ struct MealDetailScreen: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Rename") {
+                    Button {
                         renameText = viewModel.selectedPlan?.name ?? ""
                         showRename = true
+                    } label: {
+                        Label(L("Rename plan"), systemImage: "pencil")
                     }
-                    Button("Change icon") { showIconPicker = true }
+                    Button { showIconPicker = true } label: {
+                        Label(L("Change icon"), systemImage: "star")
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .accessibilityLabel("More options")
@@ -303,13 +325,20 @@ struct MealDetailScreen: View {
                 title: L("Change icon"),
                 options: IconOptions.meal,
                 selected: viewModel.selectedPlan?.icon ?? "restaurant",
-                symbolFor: IconKeyMap.mealSymbol
-            ) { icon in
-                if let plan = viewModel.selectedPlan {
-                    viewModel.setPlanIcon(plan, newIcon: icon)
+                symbolFor: IconKeyMap.mealSymbol,
+                onPick: { icon in
+                    if let plan = viewModel.selectedPlan {
+                        viewModel.setPlanIcon(plan, newIcon: icon)
+                    }
+                    showIconPicker = false
+                },
+                initialColor: viewModel.selectedPlan?.color,
+                onColorPick: { color in
+                    if let plan = viewModel.selectedPlan {
+                        viewModel.setPlanColor(plan, color: color)
+                    }
                 }
-                showIconPicker = false
-            }
+            )
         }
     }
 
@@ -441,7 +470,7 @@ private struct MealRowGlass: ViewModifier {
                     RoundedRectangle(cornerRadius: Radius.row, style: .continuous)
                         .strokeBorder(Color.appPrimary.opacity(editing ? 0.55 : 0), lineWidth: 1.5)
                 )
-                .shadow(color: Color.appPrimary.opacity(editing ? 0.2 : 0), radius: 10, y: 6)
+                .accentGlow(active: editing, opacity: 0.2, radius: 10, y: 6)
         } else {
             content
         }

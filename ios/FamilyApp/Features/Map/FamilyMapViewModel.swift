@@ -21,19 +21,20 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
         repo.session.currentUserId
     }
 
-    private let repo = FamilyRepository.shared
-    private var client: SupabaseClient {
-        SupabaseClientProvider.client
-    }
-
-    private let observer = RealtimeObserver()
+    private let repo: FamilyRepositoryProtocol
+    private let observer: RealtimeObserving
     private var currentFamilyId: String?
 
     private let locationManager = CLLocationManager()
     private var publishTask: Task<Void, Never>?
     private var lastPublish = Date.distantPast
 
-    override init() {
+    init(
+        repo: FamilyRepositoryProtocol? = nil,
+        realtime: @MainActor () -> RealtimeObserving = { RealtimeObserver() }
+    ) {
+        self.repo = repo ?? FamilyRepository.shared
+        observer = realtime()
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
@@ -66,14 +67,8 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
         guard let familyId = currentFamilyId, let myId = repo.session.currentUserId else { return }
         isLoading = true
         defer { isLoading = false }
-        if let fetched: [UserLocationModel] = try? await client.from("user_locations")
-            .select()
-            .eq("family_id", value: familyId)
-            .eq("visible", value: true)
-            .execute()
-            .value {
-            locations = fetched.filter { $0.userId != myId }
-        }
+        let fetched = await (try? repo.fetchUserLocations(familyId: familyId)) ?? locations
+        locations = fetched.filter { $0.userId != myId }
     }
 
     // MARK: - Own location publishing (30 s while the map is open)
@@ -96,30 +91,27 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
         publishTask = nil
     }
 
-    /// Foreground-only v1: hide the pin when the map screen goes away.
+    /// Hide the pin when the map screen goes away — UNLESS the user enabled persistent
+    /// background sharing in settings, in which case LocationSharingService keeps it live.
     func clearOwnLocation() {
+        guard !repo.session.locationVisible else { return }
         Task {
             guard let userId = repo.session.currentUserId else { return }
-            _ = try? await client.from("user_locations")
-                .update(["visible": AnyJSON.bool(false)])
-                .eq("user_id", value: userId)
-                .execute()
+            await repo.clearUserLocationVisibility(userId: userId)
         }
     }
 
     private func publishLocation(lat: Double, lng: Double) async {
         guard let userId = repo.session.currentUserId,
               let user = await repo.getUser(userId) else { return }
-        let visible = repo.session.locationVisible
-        _ = try? await client.from("user_locations").upsert([
-            "user_id": AnyJSON.string(userId),
-            "family_id": user.familyId.map { AnyJSON.string($0) } ?? .null,
-            "lat": .double(lat),
-            "lng": .double(lng),
-            "display_name": .string(user.name),
-            "visible": .bool(visible),
-            "updated_at": .string(isoNow()),
-        ]).execute()
+        var location = UserLocationModel()
+        location.userId = userId
+        location.familyId = user.familyId
+        location.lat = lat
+        location.lng = lng
+        location.displayName = user.name
+        location.visible = repo.session.locationVisible
+        await repo.upsertUserLocation(location)
     }
 
     // MARK: - CLLocationManagerDelegate

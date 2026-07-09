@@ -38,7 +38,7 @@ struct PrimaryButton: View {
             // Solid accent (Liquid Glass 1c) — the brand gradient is reserved for
             // identity surfaces only. Accent glow underneath.
             .background(Color.appPrimary, in: RoundedRectangle(cornerRadius: 27, style: .continuous))
-            .shadow(color: Color.appPrimary.opacity(active ? 0.35 : 0), radius: 11, x: 0, y: 8)
+            .accentGlow(active: active, opacity: 0.35, radius: 11, y: 8)
             // Disabled = the SAME accent at 38% opacity — never a flat dead-gray.
             .opacity(active ? 1 : 0.38)
         }

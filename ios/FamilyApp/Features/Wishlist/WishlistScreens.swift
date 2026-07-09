@@ -20,9 +20,8 @@ struct WishlistScreen: View {
                     EmptyState(
                         systemImage: "gift.fill",
                         title: L("No wishlists yet"),
-                        subtitle: L("Create a wishlist to share with your family"),
-                        actionLabel: L("New wishlist")
-                    ) { showAdd = true }
+                        subtitle: L("Create a wishlist to share with your family")
+                    )
                 } else {
                     List {
                         ForEach(viewModel.wishlists) { wishlist in
@@ -55,8 +54,8 @@ struct WishlistScreen: View {
         .featureTopBar(L("Wishlists"))
         .resumeEffect { viewModel.refresh() }
         .sheet(isPresented: $showAdd) {
-            NewWishlistSheet { name, icon in
-                viewModel.addWishlist(name: name, icon: icon)
+            NewWishlistSheet { name, icon, color in
+                viewModel.addWishlist(name: name, icon: icon, color: color)
                 showAdd = false
             }
         }
@@ -74,7 +73,8 @@ private struct WishlistRow: View {
                     systemImage: IconKeyMap.wishlistSymbol(wishlist.icon),
                     feature: .wishlists,
                     size: 46,
-                    cornerRadius: 23
+                    cornerRadius: 23,
+                    colorOverride: hexColor(wishlist.color)
                 )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(wishlist.name)
@@ -105,6 +105,7 @@ struct WishlistDetailScreen: View {
     let viewModel: WishlistViewModel
 
     @State private var showAddWish = false
+    @State private var wishToEdit: WishModel?
     @State private var showRename = false
     @State private var showChangeIcon = false
     @State private var renameText = ""
@@ -120,6 +121,14 @@ struct WishlistDetailScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if !isOwner, let owner = viewModel.selectedWishlist?.ownerName, !owner.isEmpty {
+                Text("\(L("Reservations are hidden from")) \(owner) 🤫")
+                    .font(.caption)
+                    .foregroundStyle(Color.appCaption)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, Spacing.sm)
+                    .padding(.bottom, Spacing.xs)
+            }
             if sortedWishes.isEmpty {
                 EmptyState(
                     systemImage: "gift.fill",
@@ -132,14 +141,18 @@ struct WishlistDetailScreen: View {
                     ForEach(sortedWishes) { wish in
                         Group {
                             if isOwner {
-                                OwnerWishRow(wish: wish) { viewModel.toggle(wish) }
-                                    .swipeActions(edge: .trailing) {
-                                        Button(role: .destructive) {
-                                            viewModel.deleteWish(wish)
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
+                                OwnerWishRow(
+                                    wish: wish,
+                                    onToggle: { viewModel.toggle(wish) },
+                                    onEdit: { wishToEdit = wish }
+                                )
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteWish(wish)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
                                     }
+                                }
                             } else {
                                 MemberWishRow(
                                     wish: wish,
@@ -173,16 +186,23 @@ struct WishlistDetailScreen: View {
         .ambientBackground()
         .featureTopBar(viewModel.selectedWishlist?.name ?? L("Wishlist"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button("Rename wishlist") {
-                        renameText = viewModel.selectedWishlist?.name ?? ""
-                        showRename = true
+            // Only the wishlist's creator (owner) can rename it or change its icon.
+            if isOwner {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            renameText = viewModel.selectedWishlist?.name ?? ""
+                            showRename = true
+                        } label: {
+                            Label(L("Rename wishlist"), systemImage: "pencil")
+                        }
+                        Button { showChangeIcon = true } label: {
+                            Label(L("Change icon"), systemImage: "star")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .accessibilityLabel("More options")
                     }
-                    Button("Change icon") { showChangeIcon = true }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .accessibilityLabel("More options")
                 }
             }
         }
@@ -205,16 +225,25 @@ struct WishlistDetailScreen: View {
                 title: L("Change icon"),
                 options: IconOptions.wishlist,
                 selected: viewModel.selectedWishlist?.icon ?? "card_giftcard",
-                symbolFor: IconKeyMap.wishlistSymbol
-            ) { icon in
-                viewModel.changeWishlistIcon(wishlistId: wishlistId, newIcon: icon)
-                showChangeIcon = false
-            }
+                symbolFor: IconKeyMap.wishlistSymbol,
+                onPick: { icon in
+                    viewModel.changeWishlistIcon(wishlistId: wishlistId, newIcon: icon)
+                    showChangeIcon = false
+                },
+                initialColor: viewModel.selectedWishlist?.color,
+                onColorPick: { color in viewModel.changeWishlistColor(wishlistId: wishlistId, color: color) }
+            )
         }
         .sheet(isPresented: $showAddWish) {
             AddWishSheet { draft in
                 viewModel.addWish(wishlistId: wishlistId, draft: draft)
                 showAddWish = false
+            }
+        }
+        .sheet(item: $wishToEdit) { wish in
+            AddWishSheet(initial: wish) { draft in
+                viewModel.updateWish(wishId: wish.id, draft: draft)
+                wishToEdit = nil
             }
         }
     }
@@ -260,6 +289,7 @@ private struct WishLinkButton: View {
 private struct OwnerWishRow: View {
     let wish: WishModel
     let onToggle: () -> Void
+    let onEdit: () -> Void
 
     var body: some View {
         HStack(spacing: Spacing.md) {
@@ -278,12 +308,20 @@ private struct OwnerWishRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(wish.checked ? L("Unmark as claimed") : L("Mark as claimed"))
-            WishThumb(url: wish.imageUrl)
-            Text(wishTitle(wish))
-                .font(.system(size: 15.5))
-                .foregroundStyle(wish.checked ? Color(hex: 0xA6ACC4) : Color.appOnSurface)
-                .strikethrough(wish.checked)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // Tap the wish itself to edit it (owner only).
+            Button(action: onEdit) {
+                HStack(spacing: Spacing.md) {
+                    WishThumb(url: wish.imageUrl)
+                    Text(wishTitle(wish))
+                        .font(.system(size: 15.5))
+                        .foregroundStyle(wish.checked ? Color(hex: 0xA6ACC4) : Color.appOnSurface)
+                        .strikethrough(wish.checked)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(L("Edit wish"))
             WishLinkButton(link: wish.link)
         }
         .padding(.horizontal, Spacing.lg)
@@ -302,10 +340,17 @@ private struct MemberWishRow: View {
     var body: some View {
         HStack(spacing: Spacing.md) {
             WishThumb(url: wish.imageUrl)
-            Text(wishTitle(wish))
-                .font(.system(size: 15.5))
-                .foregroundStyle(state == .reservedByOther ? Color(hex: 0x767E9C) : Color.appOnSurface)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(wish.text)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(state == .reservedByOther ? Color(hex: 0x767E9C) : Color.appOnSurface)
+                if let price = wish.price?.trimmingCharacters(in: .whitespaces), !price.isEmpty {
+                    Text(price)
+                        .font(.caption)
+                        .foregroundStyle(Color.appCaption)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             WishLinkButton(link: wish.link)
             switch state {
             case .available:
@@ -317,7 +362,7 @@ private struct MemberWishRow: View {
                         .padding(.horizontal, 15)
                         .frame(height: 32)
                         .background(Color.appPrimary, in: Capsule())
-                        .shadow(color: Color.appPrimary.opacity(0.3), radius: 8, y: 3)
+                        .accentGlow(opacity: 0.3, radius: 8, y: 3)
                 }
                 .buttonStyle(.plain)
             case .reservedByMe:
@@ -349,11 +394,12 @@ private struct MemberWishRow: View {
 // MARK: - Sheets
 
 private struct NewWishlistSheet: View {
-    let onCreate: (String, String) -> Void
+    let onCreate: (String, String, Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var selectedIcon = "card_giftcard"
+    @State private var color: Int? = calendarEventColorPalette.first
 
     private var canCreate: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
@@ -364,7 +410,7 @@ private struct NewWishlistSheet: View {
             SheetHeader(title: L("New wishlist"), confirmTitle: L("Create"), confirmEnabled: canCreate) {
                 dismiss()
             } onConfirm: {
-                onCreate(name.trimmingCharacters(in: .whitespaces), selectedIcon)
+                onCreate(name.trimmingCharacters(in: .whitespaces), selectedIcon, color)
                 dismiss()
             }
             GlassField(systemImage: "gift", placeholder: L("Wishlist name"), text: $name)
@@ -374,6 +420,8 @@ private struct NewWishlistSheet: View {
                 selected: selectedIcon,
                 symbolFor: IconKeyMap.wishlistSymbol
             ) { selectedIcon = $0 }
+            SectionHeader(text: L("Color"))
+            EventColorPicker(selection: $color)
         }
         .padding(.horizontal, Spacing.screenEdge)
         .padding(.top, Spacing.lg)
@@ -384,6 +432,8 @@ private struct NewWishlistSheet: View {
 
 /// Rich add-wish flow: title (required) + optional link, price and photo.
 private struct AddWishSheet: View {
+    /// When set, the sheet edits this wish instead of adding a new one.
+    var initial: WishModel?
     let onConfirm: (WishDraft) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -399,7 +449,11 @@ private struct AddWishSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            SheetHeader(title: L("Add a wish"), confirmTitle: L("Add"), confirmEnabled: canAdd) {
+            SheetHeader(
+                title: initial != nil ? L("Edit wish") : L("Add a wish"),
+                confirmTitle: initial != nil ? L("Save") : L("Add"),
+                confirmEnabled: canAdd
+            ) {
                 dismiss()
             } onConfirm: {
                 onConfirm(WishDraft(
@@ -418,7 +472,10 @@ private struct AddWishSheet: View {
             PhotosPicker(selection: $photoItem, matching: .images) {
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "photo")
-                    Text(LocalizedStringKey(imageData == nil ? "Add photo (optional)" : "Photo selected"))
+                    Text(LocalizedStringKey(
+                        imageData != nil ? "Photo selected"
+                            : (initial?.imageUrl?.isEmpty == false ? "Change photo" : "Add photo (optional)")
+                    ))
                 }
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.appPrimary)
@@ -447,6 +504,13 @@ private struct AddWishSheet: View {
         .onChange(of: photoItem) { _, item in
             Task {
                 imageData = try? await item?.loadTransferable(type: Data.self)
+            }
+        }
+        .onAppear {
+            if let initial {
+                text = initial.text
+                link = initial.link ?? ""
+                price = initial.price ?? ""
             }
         }
     }

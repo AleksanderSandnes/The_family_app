@@ -98,6 +98,7 @@ targets:
         NSCameraUsageDescription: Take photos for your profile, family, chat messages and wishes.
         NSMicrophoneUsageDescription: Record voice messages in family chat.
         NSPhotoLibraryUsageDescription: Choose photos for your profile, family, chat messages and wishes.
+        NSPhotoLibraryAddUsageDescription: Save chat photos to your photo library.
         NSLocationWhenInUseUsageDescription: Share your live location with your family on the family map.
         NSLocationAlwaysAndWhenInUseUsageDescription: Keep sharing your location with your family while the app is in the background.
         UIBackgroundModes:

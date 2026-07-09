@@ -56,6 +56,11 @@
 "1 event" = "1 hendelse";
 "%lld events" = "%lld hendelser";
 "All day" = "Hele dagen";
+"Private" = "Privat";
+"Color" = "Farge";
+"Going with" = "Sammen med";
+"Edit wish" = "Rediger ønske";
+"Change photo" = "Endre bilde";
 "Edit event" = "Rediger hendelse";
 "New event" = "Ny hendelse";
 "Save" = "Lagre";
@@ -331,3 +336,53 @@
 "Profile pictures and photo sharing in chat. Asked when you first use them." = "Profilbilder og bildedeling i chat. Etterspørres første gang du bruker dem.";
 "Allow permissions" = "Tillat tillatelser";
 "Maybe later" = "Kanskje senere";
+
+/* Design-spec polish pass (chat, wishlist, family, meal, new-conversation). */
+"Family members" = "Familiemedlemmer";
+"Group name" = "Gruppenavn";
+"optional" = "valgfritt";
+"Replying to" = "Svarer";
+"Saving…" = "Lagrer …";
+"Saved" = "Lagret";
+"Couldn’t save" = "Kunne ikke lagre";
+"Save image" = "Lagre bilde";
+"Select" = "Velg";
+"Reservations are hidden from" = "Reservasjoner er skjult for";
+"QR code" = "QR-kode";
+
+/* Family relations + member profile. */
+"Your relation" = "Din relasjon";
+"Set relation" = "Angi relasjon";
+"Set your relations" = "Angi dine relasjoner";
+"How are you related to each member? You can change this anytime." = "Hvordan er du i slekt med hvert medlem? Du kan endre det når som helst.";
+"None" = "Ingen";
+"Phone" = "Telefon";
+"Not set" = "Ikke angitt";
+"Set" = "Angi";
+
+/* Family relation options (stored value stays English; localized on display). */
+"Mom" = "Mamma";
+"Dad" = "Pappa";
+"Son" = "Sønn";
+"Daughter" = "Datter";
+"Sister" = "Søster";
+"Brother" = "Bror";
+"Wife" = "Kone";
+"Husband" = "Ektemann";
+"Fiancé" = "Forlovede";
+"Partner" = "Partner";
+"Grandmother" = "Bestemor";
+"Grandfather" = "Bestefar";
+"Grandchild" = "Barnebarn";
+"Aunt" = "Tante";
+"Uncle" = "Onkel";
+"Cousin" = "Søskenbarn";
+"Friend" = "Venn";
+"Other" = "Annet";
+
+/* Google profile completion + location sharing. */
+"Complete your profile" = "Fullfør profilen din";
+"Add your phone and birthday so your family can reach you and celebrate you." = "Legg til telefon og bursdag så familien kan nå deg og feire deg.";
+"Skip for now" = "Hopp over for nå";
+"Share your live location with family" = "Del din posisjon med familien";
+"Location access is off — turn it on in iOS Settings" = "Posisjonstilgang er av — slå det på i iOS-innstillinger";

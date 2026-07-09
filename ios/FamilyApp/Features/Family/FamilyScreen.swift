@@ -15,6 +15,10 @@ struct FamilyScreen: View {
     @State private var joinCodeText = ""
     @State private var showQr = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var showPhotoPicker = false
+    @State private var selectedMember: UserModel?
+
+    @Environment(\.colorScheme) private var colorScheme
 
     private var isAdmin: Bool {
         viewModel.family != nil && viewModel.family?.adminId == viewModel.currentUser?.id
@@ -29,20 +33,26 @@ struct FamilyScreen: View {
             }
         }
         .ambientBackground()
-        .navigationTitle("Family")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            if viewModel.family != nil {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        PhotosPicker(selection: $photoItem, matching: .images) {
-                            Text("Change family photo")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .accessibilityLabel("More options")
-                    }
-                }
+        .toolbar(.hidden, for: .navigationBar)
+        .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
+        .sheet(item: $selectedMember) { member in
+            MemberProfileSheet(
+                member: member,
+                isSelf: member.id == viewModel.currentUser?.id,
+                relation: viewModel.relations[member.id] ?? ""
+            ) { newRelation in
+                viewModel.setRelation(toUserId: member.id, relation: newRelation)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { viewModel.promptRelationSetup },
+            set: { viewModel.promptRelationSetup = $0 }
+        )) {
+            RelationsSetupSheet(
+                members: viewModel.members.filter { $0.id != viewModel.currentUser?.id },
+                relations: viewModel.relations
+            ) { toUserId, relation in
+                viewModel.setRelation(toUserId: toUserId, relation: relation)
             }
         }
         .resumeEffect {
@@ -152,6 +162,19 @@ struct FamilyScreen: View {
     private func familyContent(_ family: FamilyModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.cardGap) {
+                ScreenHeader(L("Family")) {
+                    Menu {
+                        // PhotosPicker inside a Menu is a no-op on iOS — trigger it via state instead.
+                        Button { showPhotoPicker = true } label: {
+                            Label(L("Change family photo"), systemImage: "photo")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.system(size: 24))
+                            .accessibilityLabel("More options")
+                    }
+                }
+
                 headerCard(family)
 
                 SectionHeader(text: L("Members"))
@@ -159,14 +182,23 @@ struct FamilyScreen: View {
 
                 ForEach(viewModel.members) { member in
                     let memberIsAdmin = member.id == family.adminId
-                    MemberCard(member: member, isAdmin: memberIsAdmin)
-                        .contextMenu {
-                            if isAdmin, !memberIsAdmin, member.id != viewModel.currentUser?.id {
-                                Button("Remove from family", role: .destructive) {
-                                    memberToRemove = member
-                                }
+                    Button { selectedMember = member } label: {
+                        MemberCard(
+                            member: member,
+                            isAdmin: memberIsAdmin,
+                            relation: viewModel.relations[member.id]
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        if isAdmin, !memberIsAdmin, member.id != viewModel.currentUser?.id {
+                            Button(role: .destructive) {
+                                memberToRemove = member
+                            } label: {
+                                Label(L("Remove from family"), systemImage: "person.badge.minus")
                             }
                         }
+                    }
                 }
 
                 DestructiveButton(text: L("Leave family"), systemImage: "rectangle.portrait.and.arrow.right") {
@@ -180,29 +212,40 @@ struct FamilyScreen: View {
     }
 
     private func headerCard(_ family: FamilyModel) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            AvatarStack(members: viewModel.members)
-            Text(family.name)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color.appOnSurface)
-            Text("\(viewModel.members.count) members")
-                .font(.caption)
-                .foregroundStyle(Color.appCaption)
+        VStack(spacing: Spacing.lg) {
+            VStack(spacing: Spacing.md) {
+                familyPhotoHero(family)
+                VStack(spacing: 4) {
+                    Text(family.name)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(Color.appOnSurface)
+                        .multilineTextAlignment(.center)
+                    Text(viewModel.members.count == 1 ? L("1 member") : L("\(viewModel.members.count) members"))
+                        .font(.subheadline)
+                        .foregroundStyle(Color.appCaption)
+                }
+                if !viewModel.members.isEmpty {
+                    AvatarStack(members: viewModel.members)
+                        .padding(.top, 2)
+                }
+            }
+            .frame(maxWidth: .infinity)
 
             if !family.joinCode.isEmpty {
                 CopyableCodeField(code: family.joinCode)
-                    .padding(.top, Spacing.sm)
-                ShareLink(item: inviteMessage(
-                    familyName: family.name,
-                    joinCode: family.joinCode,
-                    locale: appLocale
-                )) {
-                    shareLabel(L("Share invite"), systemImage: "square.and.arrow.up")
-                }
-                Button {
-                    showQr = true
-                } label: {
-                    shareLabel(L("Show QR code"), systemImage: "qrcode")
+                HStack(spacing: Spacing.sm) {
+                    ShareLink(item: inviteMessage(
+                        familyName: family.name,
+                        joinCode: family.joinCode,
+                        locale: appLocale
+                    )) {
+                        shareLabel(L("Share invite"), systemImage: "square.and.arrow.up")
+                    }
+                    Button {
+                        showQr = true
+                    } label: {
+                        shareLabel(L("QR code"), systemImage: "qrcode")
+                    }
                 }
             }
             if viewModel.isUploading {
@@ -215,9 +258,61 @@ struct FamilyScreen: View {
             }
             ErrorBanner(message: viewModel.error)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding(Spacing.xl)
         .glassCard(cornerRadius: Radius.bigCard)
+    }
+
+    /// Large family portrait at the top of the header. Admins can tap it (or the camera
+    /// badge) to swap the photo; everyone else sees it as a static hero.
+    @ViewBuilder
+    private func familyPhotoHero(_ family: FamilyModel) -> some View {
+        if isAdmin {
+            Button { showPhotoPicker = true } label: { photoCircle(family) }
+                .buttonStyle(.plain)
+        } else {
+            photoCircle(family)
+        }
+    }
+
+    private func photoCircle(_ family: FamilyModel) -> some View {
+        let size: CGFloat = 112
+        return ZStack {
+            Gradients.hero(dark: colorScheme == .dark)
+            if let photoUrl = family.photoUrl, let url = URL(string: photoUrl) {
+                LazyImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        familyPhotoFallback
+                    }
+                }
+            } else {
+                familyPhotoFallback
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 3))
+        .overlay(alignment: .bottomTrailing) {
+            if isAdmin {
+                ZStack {
+                    Circle().fill(Color.appPrimary)
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 34, height: 34)
+                .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 2.5))
+            }
+        }
+        .shadow(color: (colorScheme == .dark ? Color.black : Palette.indigo600).opacity(0.28), radius: 14, y: 6)
+    }
+
+    private var familyPhotoFallback: some View {
+        Image(systemName: "person.3.fill")
+            .font(.system(size: 42, weight: .medium))
+            .foregroundStyle(.white)
     }
 
     private func shareLabel(_ text: String, systemImage: String) -> some View {
@@ -303,13 +398,21 @@ private struct CopyableCodeField: View {
 private struct MemberCard: View {
     let member: UserModel
     let isAdmin: Bool
+    var relation: String?
 
     var body: some View {
         HStack(spacing: Spacing.md) {
             InitialAvatar(user: member, size: 42)
-            Text(member.name)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.appOnSurface)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(member.name)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.appOnSurface)
+                if let relation, !relation.isEmpty {
+                    Text(L(dynamic: relation))
+                        .font(.caption)
+                        .foregroundStyle(Color.appCaption)
+                }
+            }
             Spacer()
             if isAdmin {
                 Text("Admin")
@@ -319,6 +422,9 @@ private struct MemberCard: View {
                     .padding(.vertical, 4)
                     .background(Color.appPrimary.opacity(0.12), in: Capsule())
             }
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.appCaption)
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, 12)
@@ -326,6 +432,14 @@ private struct MemberCard: View {
         .accessibilityLabel("\(member.name), \(isAdmin ? L("Admin") : L("Member"))")
     }
 }
+
+/// Family relation options (relative to the viewer).
+let familyRelationOptions = [
+    "Mom", "Dad", "Son", "Daughter", "Sister", "Brother",
+    "Wife", "Husband", "Fiancé", "Partner",
+    "Grandmother", "Grandfather", "Grandchild",
+    "Aunt", "Uncle", "Cousin", "Friend", "Other",
+]
 
 private struct CreateFamilySheet: View {
     let onCreate: (String, String) -> Void

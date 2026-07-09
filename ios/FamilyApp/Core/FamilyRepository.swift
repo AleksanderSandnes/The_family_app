@@ -161,6 +161,38 @@ final class FamilyRepository {
             .value) ?? []
     }
 
+    // MARK: - Family relations (directional, relative to each viewer)
+
+    /// My relations to other members, keyed by the other member's id (toUserId → relation).
+    func getMyRelations(userId: String) async -> [String: String] {
+        let rows: [FamilyRelationModel] = await (try? client.from("family_relations")
+            .select()
+            .eq("from_user_id", value: userId)
+            .execute()
+            .value) ?? []
+        return Dictionary(rows.map { ($0.toUserId, $0.relation) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// Sets (or clears) my relation to another family member. Empty string removes it.
+    func setRelation(fromUserId: String, toUserId: String, familyId: String, relation: String) async {
+        let trimmed = relation.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty {
+            _ = try? await client.from("family_relations").delete()
+                .eq("from_user_id", value: fromUserId)
+                .eq("to_user_id", value: toUserId)
+                .execute()
+            return
+        }
+        _ = try? await client.from("family_relations")
+            .upsert([
+                "family_id": AnyJSON.string(familyId),
+                "from_user_id": .string(fromUserId),
+                "to_user_id": .string(toUserId),
+                "relation": .string(trimmed),
+            ], onConflict: "from_user_id,to_user_id")
+            .execute()
+    }
+
     func getFamily(familyId: String) async -> FamilyModel? {
         let rows: [FamilyModel] = await (try? client.from("families")
             .select()
@@ -172,71 +204,8 @@ final class FamilyRepository {
 
     // MARK: - Auth
 
-    func register(
-        name: String,
-        email: String,
-        password: String,
-        birthday: String,
-        mobile: String
-    ) async throws {
-        let emailNorm = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        // Clear any stale session before signing up to avoid an FK from the wrong auth_id.
-        try? await client.auth.signOut()
-        try await client.auth.signUp(
-            email: emailNorm,
-            password: password,
-            data: [
-                "full_name": .string(name.trimmingCharacters(in: .whitespacesAndNewlines)),
-                "phone": .string(mobile),
-                "birthday": .string(birthday),
-                "avatar_color": .integer(Self.palette(name)),
-            ],
-            redirectTo: SupabaseClientProvider.authRedirectURL
-        )
-        // The public.users profile row is created by the on_auth_user_created trigger —
-        // NEVER insert into public.users manually after signup.
-    }
-
-    /// After email confirmation (or OAuth): resolves the app user id (public.users.id)
-    /// from the auth session's auth_id and persists it. Returns the app user id.
-    @discardableResult
-    func completeSignInAfterConfirmation() async throws -> String {
-        guard let authId = client.auth.currentSession?.user.id.uuidString.lowercased() else {
-            throw RepositoryError.notAuthenticated
-        }
-        let users: [UserModel] = try await client.from("users")
-            .select()
-            .eq("auth_id", value: authId)
-            .execute()
-            .value
-        guard let user = users.first else { throw RepositoryError.profileNotFound }
-        session.signIn(userId: user.id)
-        return user.id
-    }
-
-    /// Starts the browser-based Google OAuth flow (ASWebAuthenticationSession).
-    /// Completion arrives via the familyapp://auth deep link.
-    func signInWithGoogle() async throws {
-        try await client.auth.signInWithOAuth(
-            provider: .google,
-            redirectTo: SupabaseClientProvider.authRedirectURL
-        )
-    }
-
-    @discardableResult
-    func login(email: String, password: String) async throws -> String {
-        let emailNorm = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        try await client.auth.signIn(email: emailNorm, password: password)
-        return try await completeSignInAfterConfirmation()
-    }
-
-    func signOut() async {
-        // Remove this device's push token while the auth session is still valid (RLS).
-        await unregisterPushToken()
-        try? await client.auth.signOut()
-        invalidateUserCache()
-        session.signOut()
-    }
+    // register / completeSignInAfterConfirmation / signInWithGoogle / login / signOut live
+    // in FamilyRepository+Auth.swift (alongside authSignedInEvents) to keep this body short.
 
     // MARK: - Family
 
@@ -262,25 +231,28 @@ final class FamilyRepository {
     }
 
     func joinFamily(code: String, userId: String) async throws -> String {
-        let families: [FamilyModel] = try await client.from("families")
-            .select()
-            .eq("join_code", value: code.trimmingCharacters(in: .whitespacesAndNewlines))
+        // Join is validated and family_id is set inside the join_family() RPC
+        // (SECURITY DEFINER). Direct users.family_id writes are blocked by an RLS
+        // trigger, so a user can't self-join an arbitrary family. A nil result means
+        // the code didn't match any family.
+        let familyId: String? = try await client
+            .rpc("join_family", params: ["p_code": code.trimmingCharacters(in: .whitespacesAndNewlines)])
             .execute()
             .value
-        guard let family = families.first else { throw RepositoryError.joinCodeIncorrect }
-        try await client.from("users")
-            .update(["family_id": AnyJSON.string(family.id)])
-            .eq("id", value: userId)
-            .execute()
-        await syncUserBirthday(userId: userId, familyId: family.id)
+        guard let familyId else { throw RepositoryError.joinCodeIncorrect }
+        await syncUserBirthday(userId: userId, familyId: familyId)
         invalidateUserCache()
         emitFamilyChanged()
-        return family.id
+        return familyId
     }
 
-    /// Auto-creates the user's own birthday entry when creating/joining a family.
+    /// Creates OR updates the user's own shared birthday event, named "{name}'s birthday".
+    /// Called on family create/join and whenever the birthday is changed in the profile, so
+    /// the family always sees an up-to-date entry. Repeats yearly — the birthday screen always
+    /// projects the next occurrence from this single stored date.
     private func syncUserBirthday(userId: String, familyId: String) async {
         guard let user = await getUser(userId), !user.birthday.isEmpty else { return }
+        let title = "\(user.name)'s birthday"
         do {
             let existing: [BirthdayModel] = try await client.from("birthdays")
                 .select()
@@ -288,16 +260,25 @@ final class FamilyRepository {
                 .eq("family_id", value: familyId)
                 .execute()
                 .value
-            guard existing.isEmpty else { return }
-            try await client.from("birthdays")
-                .insert([
-                    "name": AnyJSON.string(user.name),
-                    "date": .string(user.birthday),
-                    "family_id": .string(familyId),
-                    "user_id": .string(userId),
-                    "made_by_user_id": .string(userId),
-                ])
-                .execute()
+            if let row = existing.first {
+                try await client.from("birthdays")
+                    .update([
+                        "name": AnyJSON.string(title),
+                        "date": .string(user.birthday),
+                    ])
+                    .eq("id", value: row.id)
+                    .execute()
+            } else {
+                try await client.from("birthdays")
+                    .insert([
+                        "name": AnyJSON.string(title),
+                        "date": .string(user.birthday),
+                        "family_id": .string(familyId),
+                        "user_id": .string(userId),
+                        "made_by_user_id": .string(userId),
+                    ])
+                    .execute()
+            }
         } catch {
             // Best-effort, same as Android.
         }
@@ -391,6 +372,10 @@ final class FamilyRepository {
             .eq("id", value: userId)
             .execute()
         invalidateUserCache()
+        // Keep the shared birthday event in sync with the just-saved birthday/name.
+        if let user = await getUser(userId), let familyId = user.familyId {
+            await syncUserBirthday(userId: userId, familyId: familyId)
+        }
     }
 
     func removeFamilyMember(memberId: String) async throws {

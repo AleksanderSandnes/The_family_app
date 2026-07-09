@@ -14,8 +14,13 @@ enum AuthGate {
 @MainActor
 final class RootViewModel {
     private let store = SessionStore.shared
+    private let repo: FamilyRepositoryProtocol
     private var bootstrapped = false
     private var didSyncAfterSignIn = false
+
+    init(repo: FamilyRepositoryProtocol? = nil) {
+        self.repo = repo ?? FamilyRepository.shared
+    }
 
     var gate: AuthGate {
         if !bootstrapped { return .loading }
@@ -33,7 +38,7 @@ final class RootViewModel {
         _ = try? await SupabaseClientProvider.client.auth.session
         bootstrapped = true
         if store.currentUserId != nil {
-            await FamilyRepository.shared.touchLastActive()
+            await repo.touchLastActive()
         }
     }
 
@@ -42,8 +47,8 @@ final class RootViewModel {
     func onSignedIn() async {
         guard !didSyncAfterSignIn else { return }
         didSyncAfterSignIn = true
-        await FamilyRepository.shared.syncPushToken()
-        await FamilyRepository.shared.syncNotificationPrefsToServer()
+        await repo.syncPushToken()
+        await repo.syncNotificationPrefsToServer()
     }
 
     func completePermissionsOnboarding() {

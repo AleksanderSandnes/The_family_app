@@ -286,3 +286,46 @@ struct ProfileEditScreen: View {
         }
     }
 }
+
+/// One-time "complete your profile" prompt shown after a Google sign-up (Google doesn't
+/// provide phone/birthday). Saving the birthday also creates the shared birthday event.
+struct ProfileCompletionSheet: View {
+    let onSave: (String, String) -> Void
+    let onSkip: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var mobile = ""
+    @State private var birthday = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(L("Complete your profile"))
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Color.appOnSurface)
+                Text(L("Add your phone and birthday so your family can reach you and celebrate you."))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.appOnSurfaceVariant)
+            }
+            FamilyTextField(
+                label: L("Mobile"), text: $mobile, systemImage: "phone", keyboardType: .phonePad
+            )
+            BirthdayPickerField(isoDate: $birthday, label: L("Birthday"))
+            PrimaryButton(text: L("Save"), enabled: !mobile.isEmpty || !birthday.isEmpty) {
+                onSave(mobile.trimmingCharacters(in: .whitespaces), birthday)
+                dismiss()
+            }
+            Button(L("Skip for now")) {
+                onSkip()
+                dismiss()
+            }
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(Color.appPrimary)
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.xl)
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
+    }
+}

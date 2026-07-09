@@ -14,6 +14,7 @@ let leadTimeOptions: [(label: String, days: Int)] = [
 
 struct SettingsScreen: View {
     private let repo = FamilyRepository.shared
+    private let locationService = LocationSharingService.shared
     private var session: SessionStore {
         SessionStore.shared
     }
@@ -60,11 +61,19 @@ struct SettingsScreen: View {
                     ToggleRow(
                         systemImage: "location.fill",
                         title: L("Visible on family map"),
-                        subtitle: L("Share your location with family"),
+                        subtitle: locationService.permissionAllowsSharing
+                            ? L("Share your live location with family")
+                            : L("Location access is off — turn it on in iOS Settings"),
+                        // Reflects the real system permission: if location is denied the
+                        // toggle reads off regardless of the saved preference.
                         isOn: Binding(
-                            get: { session.locationVisible },
+                            get: { locationService.isSharing },
                             set: { visible in
-                                repo.setLocationVisible(visible)
+                                if visible {
+                                    locationService.enableSharing()
+                                } else {
+                                    locationService.disableSharing()
+                                }
                                 flashSaved()
                             }
                         )
@@ -138,7 +147,7 @@ struct SettingsScreen: View {
                             .background {
                                 if selected {
                                     Capsule().fill(Color.appPrimary)
-                                        .shadow(color: Color.appPrimary.opacity(0.3), radius: 8, y: 3)
+                                        .accentGlow(opacity: 0.3, radius: 8, y: 3)
                                 } else {
                                     Capsule().fill(Color.appSurface.opacity(0.55))
                                 }

@@ -45,15 +45,32 @@ struct FamilyModel: Codable, Identifiable, Hashable {
     }
 }
 
+/// Directional family relation ("relative to each viewer"): fromUserId's relation TO toUserId.
+struct FamilyRelationModel: Codable, Identifiable, Hashable {
+    var id = ""
+    var familyId = ""
+    var fromUserId = ""
+    var toUserId = ""
+    var relation = ""
+
+    enum CodingKeys: String, CodingKey {
+        case id, relation
+        case familyId = "family_id"
+        case fromUserId = "from_user_id"
+        case toUserId = "to_user_id"
+    }
+}
+
 struct ShoppingListModel: Codable, Identifiable, Hashable {
     var id = ""
     var title = ""
     var ownerUserId = ""
     var familyId: String?
     var icon = "shopping_cart"
+    var color: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, icon
+        case id, title, icon, color
         case ownerUserId = "owner_user_id"
         case familyId = "family_id"
     }
@@ -79,9 +96,10 @@ struct MealPlanModel: Codable, Identifiable, Hashable {
     var week = 0
     var name = ""
     var icon = "restaurant"
+    var color: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, week, name, icon
+        case id, week, name, icon, color
         case familyId = "family_id"
         case fromDate = "from_date"
         case toDate = "to_date"
@@ -112,16 +130,22 @@ struct CalendarEventModel: Codable, Identifiable, Hashable {
     var activity = ""
     var allDay = false
     var icon = "schedule"
+    var isPrivate = false
+    var color: Int?
+    /// Family member ids the creator is going to this event with.
+    var attendeeIds: [String] = []
 
     enum CodingKeys: String, CodingKey {
-        case id, activity, icon
+        case id, activity, icon, color
         case userId = "user_id"
         case familyId = "family_id"
         case dateFrom = "date_from"
         case dateTo = "date_to"
         case timeFrom = "time_from"
         case timeTo = "time_to"
+        case attendeeIds = "attendee_ids"
         case allDay = "all_day"
+        case isPrivate = "is_private"
     }
 }
 
@@ -132,9 +156,11 @@ struct BirthdayModel: Codable, Identifiable, Hashable {
     var familyId: String?
     var userId: String?
     var madeByUserId = ""
+    var icon = "cake"
+    var color: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, date
+        case id, name, date, icon, color
         case familyId = "family_id"
         case userId = "user_id"
         case madeByUserId = "made_by_user_id"
@@ -147,11 +173,12 @@ struct WishlistModel: Codable, Identifiable, Hashable {
     var familyId: String?
     var name = ""
     var icon = "card_giftcard"
+    var color: Int?
     /// Not a DB column (Kotlin @Transient) — resolved client-side from family members.
     var ownerName = ""
 
     enum CodingKeys: String, CodingKey {
-        case id, name, icon
+        case id, name, icon, color
         case ownerUserId = "owner_user_id"
         case familyId = "family_id"
     }

@@ -9,7 +9,21 @@ struct ChatScreen: View {
     @State private var showMemberPicker = false
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        VStack(spacing: 0) {
+            ScreenHeader(L("Chats")) {
+                Button {
+                    showMemberPicker = true
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.appPrimary)
+                        .frame(width: 36, height: 36)
+                        .glassCard(cornerRadius: 18)
+                        .accessibilityLabel("New conversation")
+                }
+            }
+            .padding(.horizontal, Spacing.screenEdge)
+
             Group {
                 if viewModel.isLoading, viewModel.conversations.isEmpty {
                     LoadingState().frame(maxHeight: .infinity, alignment: .top)
@@ -39,28 +53,14 @@ struct ChatScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .ambientBackground()
-        .navigationTitle("Chats")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showMemberPicker = true
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                        .accessibilityLabel("New conversation")
-                }
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .onChange(of: viewModel.navigateToConversation) { _, newId in
             guard let newId else { return }
             viewModel.navigateToConversation = nil
             onOpen(newId)
         }
         .sheet(isPresented: $showMemberPicker) {
-            NewConversationSheet(
-                familyMembers: viewModel.familyMembers,
-                myId: viewModel.currentUserId
-            ) { name, memberIds in
+            NewConversationSheet(viewModel: viewModel) { name, memberIds in
                 viewModel.createConversation(name: name, memberIds: memberIds)
                 showMemberPicker = false
             }
@@ -107,6 +107,7 @@ private struct ConversationRow: View {
                         Text(conversationPreviewText(
                             lastMessage: preview.lastMessage,
                             lastSenderName: preview.lastSenderName,
+                            isFromCurrentUser: preview.lastMessage?.userFrom == currentUserId,
                             locale: appLocale
                         ))
                         .font(.system(size: 13, weight: isUnread ? .medium : .regular))
@@ -137,8 +138,7 @@ private struct ConversationRow: View {
 // MARK: - New conversation
 
 struct NewConversationSheet: View {
-    let familyMembers: [UserModel]
-    let myId: String?
+    let viewModel: ChatViewModel
     let onCreate: (String, [String]) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -146,7 +146,7 @@ struct NewConversationSheet: View {
     @State private var selected: Set<String> = []
 
     private var candidates: [UserModel] {
-        familyMembers.filter { $0.id != myId }
+        viewModel.familyMembers.filter { $0.id != viewModel.currentUserId }
     }
 
     var body: some View {
@@ -170,18 +170,28 @@ struct NewConversationSheet: View {
                     subtitle: L("Invite your family first to start chatting.")
                 )
             } else {
-                if selected.count > 1 {
-                    GlassField(placeholder: L("Group name (optional)"), text: $name)
-                        .padding(.bottom, Spacing.xs)
-                }
-                ForEach(candidates) { member in
-                    MemberSelectRow(member: member, selected: selected.contains(member.id)) {
-                        if selected.contains(member.id) {
-                            selected.remove(member.id)
-                        } else {
-                            selected.insert(member.id)
+                SectionHeader(text: L("Family members"))
+                VStack(spacing: 0) {
+                    ForEach(Array(candidates.enumerated()), id: \.element.id) { index, member in
+                        MemberSelectRow(member: member, selected: selected.contains(member.id)) {
+                            if selected.contains(member.id) {
+                                selected.remove(member.id)
+                            } else {
+                                selected.insert(member.id)
+                            }
+                        }
+                        if index < candidates.count - 1 {
+                            Divider().padding(.leading, 68)
                         }
                     }
+                }
+                .glassCard(cornerRadius: Radius.row)
+
+                // Group name only applies to a group — shown once 2+ people are selected.
+                if selected.count > 1 {
+                    SectionHeader(text: L("Group name"))
+                        .padding(.top, Spacing.xs)
+                    groupNameField
                 }
             }
         }
@@ -189,6 +199,26 @@ struct NewConversationSheet: View {
         .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.xl)
         .huggingSheet()
+        .task { await viewModel.refreshFamilyMembers() }
+    }
+
+    private var groupNameField: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "person.2")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(Color.appPrimary)
+                .frame(width: 22)
+            TextField(L("Group name"), text: $name)
+                .font(.system(size: 16))
+                .foregroundStyle(Color.appOnSurface)
+                .tint(Color.appPrimary)
+            Text(L("optional"))
+                .font(.system(size: 14))
+                .foregroundStyle(Color.appCaption)
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 54)
+        .glassCard(cornerRadius: Radius.field)
     }
 }
 
@@ -211,7 +241,7 @@ struct MemberSelectRow: View {
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, 12)
-            .rowSurface(ghost: false, cornerRadius: Radius.row)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

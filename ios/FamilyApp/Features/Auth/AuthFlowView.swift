@@ -37,7 +37,8 @@ struct LoginScreen: View {
                 systemImage: "envelope",
                 keyboardType: .emailAddress,
                 textContentType: .emailAddress,
-                autocapitalization: .never
+                autocapitalization: .never,
+                whiteField: true
             )
             .accessibilityLabel("Email address field")
             FamilyTextField(
@@ -45,12 +46,13 @@ struct LoginScreen: View {
                 text: $password.clearingError(viewModel),
                 systemImage: "lock",
                 isPassword: true,
-                textContentType: .password
+                textContentType: .password,
+                whiteField: true
             )
             .accessibilityLabel("Password field")
 
             Button("Forgot password?") { showForgotDialog = true }
-                .font(.labelMedium)
+                .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(Color.appPrimary)
                 .frame(maxWidth: .infinity, alignment: .trailing)
 
@@ -63,7 +65,7 @@ struct LoginScreen: View {
             }
             .accessibilityLabel("Sign in button")
 
-            GlassButton(text: L("Continue with Google"), systemImage: "globe") {
+            GlassButton(text: L("Continue with Google"), systemImage: "globe", whiter: true) {
                 viewModel.signInWithGoogle()
             }
             .accessibilityLabel("Continue with Google button")
@@ -101,7 +103,7 @@ struct RegisterScreen: View {
     }
 
     var body: some View {
-        AuthScaffold(title: title, subtitle: subtitle) {
+        AuthScaffold(title: title, subtitle: subtitle, showIcon: false) {
             StepIndicator(currentStep: step, totalSteps: 2)
             ErrorBanner(message: viewModel.error)
             if step == 1 {
@@ -122,7 +124,8 @@ struct RegisterScreen: View {
             text: $form.name.clearingError(viewModel),
             systemImage: "person",
             textContentType: .name,
-            autocapitalization: .words
+            autocapitalization: .words,
+            whiteField: true
         )
         FamilyTextField(
             label: L("Email"),
@@ -130,14 +133,16 @@ struct RegisterScreen: View {
             systemImage: "envelope",
             keyboardType: .emailAddress,
             textContentType: .emailAddress,
-            autocapitalization: .never
+            autocapitalization: .never,
+            whiteField: true
         )
         FamilyTextField(
             label: L("Password"),
             text: $form.password.clearingError(viewModel),
             systemImage: "lock",
             isPassword: true,
-            textContentType: .newPassword
+            textContentType: .newPassword,
+            whiteField: true
         )
         PasswordStrengthBar(password: form.password)
         FamilyTextField(
@@ -145,7 +150,8 @@ struct RegisterScreen: View {
             text: $form.confirm.clearingError(viewModel),
             systemImage: "lock",
             isPassword: true,
-            textContentType: .newPassword
+            textContentType: .newPassword,
+            whiteField: true
         )
         PrimaryButton(
             text: L("Continue"),
@@ -156,6 +162,11 @@ struct RegisterScreen: View {
             advanceToStep2()
         }
         .accessibilityLabel("Continue to next step button")
+
+        GlassButton(text: L("Continue with Google"), systemImage: "globe", whiter: true) {
+            viewModel.signInWithGoogle()
+        }
+        .accessibilityLabel("Continue with Google button")
     }
 
     @ViewBuilder private var registrationStep2: some View {
@@ -172,7 +183,8 @@ struct RegisterScreen: View {
                 text: $form.mobile,
                 systemImage: "phone",
                 keyboardType: .phonePad,
-                textContentType: .telephoneNumber
+                textContentType: .telephoneNumber,
+                whiteField: true
             )
             Text("For family contact info")
                 .font(.labelMedium)
@@ -211,6 +223,7 @@ struct RegisterScreen: View {
 struct AuthScaffold<Content: View>: View {
     let title: String
     let subtitle: String
+    var showIcon = true
     @ViewBuilder let content: () -> Content
 
     @Environment(\.colorScheme) private var colorScheme
@@ -242,19 +255,21 @@ struct AuthScaffold<Content: View>: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Glass app-icon tile
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Color.white.opacity(0.2))
-                        .frame(width: 70, height: 70)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.4), lineWidth: 1)
-                        )
-                        .overlay(
-                            Image(systemName: "person.3.fill")
-                                .font(.system(size: 30, weight: .medium))
-                                .foregroundStyle(.white)
-                        )
-                        .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+                    if showIcon {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(Color.white.opacity(0.2))
+                            .frame(width: 70, height: 70)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .strokeBorder(Color.white.opacity(0.4), lineWidth: 1)
+                            )
+                            .overlay(
+                                Image(systemName: "person.3.fill")
+                                    .font(.system(size: 30, weight: .medium))
+                                    .foregroundStyle(.white)
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+                    }
                     Text("The Family App")
                         .font(.system(size: 23, weight: .bold))
                         .foregroundStyle(.white)
@@ -277,9 +292,9 @@ struct AuthScaffold<Content: View>: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Spacing.xxl)
                     .padding(.vertical, Spacing.xxxl)
-                    .glassEffect(
-                        .regular.tint(.white.opacity(0.5)),
-                        in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .background(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .fill(Color(light: Color(hex: 0xF7F6FC), dark: Palette.inkSurface))
                     )
                     .shadow(color: Color(hex: 0x0A0C28).opacity(0.3), radius: 30, y: 20)
                     .padding(.top, Spacing.xxxl)

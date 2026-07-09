@@ -58,26 +58,48 @@ final class ChatViewModel {
         repo.session.currentUserId
     }
 
-    // Internal (not private) so the `+Media`/`+Members` extensions in sibling files
-    // can reach them.
-    let repo = FamilyRepository.shared
+    /// Internal (not private) so the `+Media`/`+Members` extensions in sibling files
+    /// can reach them.
+    let repo: FamilyRepositoryProtocol
+    /// Used ONLY for the raw broadcast/presence channels (typing + reactions), which are
+    /// opened lazily from loadConversation — never at construction — so a test-built VM
+    /// (mock repo + NoopRealtimeObserver) touches no live client.
     var client: SupabaseClient {
         SupabaseClientProvider.client
     }
 
-    private let messagesObserver = RealtimeObserver()
-    private var reactionsChannel: RealtimeChannelV2?
-    private var reactionTasks: [Task<Void, Never>] = []
-    private let participantsObserver = RealtimeObserver()
+    // Postgres observers go through the injected factory so tests get NoopRealtimeObservers.
+    // Chat spins up one observer per conversation dynamically, so the factory is stored and
+    // called again for each notification observer.
+    private let realtimeFactory: @MainActor () -> RealtimeObserving
+    private let messagesObserver: RealtimeObserving
+    // Not private: the reactions presence channel is opened/torn down in the `+Reactions`
+    // sibling file (loadReactions / subscribeToReactions live there to keep this body short).
+    var reactionsChannel: RealtimeChannelV2?
+    var reactionTasks: [Task<Void, Never>] = []
+    private let participantsObserver: RealtimeObserving
     private var typingChannel: RealtimeChannelV2?
     private var typingTask: Task<Void, Never>?
     private var typingClearTasks: [String: Task<Void, Never>] = [:]
     private var lastTypingSent = Date.distantPast
-    private var notifObservers: [String: RealtimeObserver] = [:]
+    private var notifObservers: [String: RealtimeObserving] = [:]
+    // List-level realtime so new conversations appear without a relaunch. (Family-member
+    // changes are picked up by refreshFamilyMembers() when the new-conversation sheet opens —
+    // the users table isn't in the realtime publication, and its heartbeat updates would spam.)
+    private let conversationsListObserver: RealtimeObserving
+    private var listSubsStarted = false
     private var messagesTask: Task<Void, Never>?
     private var familyChangedTask: Task<Void, Never>?
 
-    init() {
+    init(
+        repo: FamilyRepositoryProtocol? = nil,
+        realtime: @escaping @MainActor () -> RealtimeObserving = { RealtimeObserver() }
+    ) {
+        self.repo = repo ?? FamilyRepository.shared
+        realtimeFactory = realtime
+        messagesObserver = realtime()
+        participantsObserver = realtime()
+        conversationsListObserver = realtime()
         Task { await loadConversations() }
         familyChangedTask = Task { [weak self] in
             guard let stream = self?.repo.familyChanged() else { return }
@@ -106,6 +128,18 @@ final class ChatViewModel {
         await loadConversations()
     }
 
+    /// Reloads just the family member list — called when the new-conversation sheet opens
+    /// so a member who joined on another device is immediately selectable.
+    func refreshFamilyMembers() async {
+        guard let userId = repo.session.currentUserId,
+              let user = await repo.getUser(userId), let familyId = user.familyId else { return }
+        let members = await repo.getFamilyMembers(familyId: familyId)
+        familyMembers = members
+        for member in members {
+            userProfiles[member.id] = member
+        }
+    }
+
     func loadConversations() async {
         guard let userId = repo.session.currentUserId else {
             conversations = []
@@ -114,43 +148,46 @@ final class ChatViewModel {
         isLoading = true
         defer { isLoading = false }
 
-        if let user = await repo.getUser(userId), let familyId = user.familyId {
-            let members = await repo.getFamilyMembers(familyId: familyId)
-            familyMembers = members
-            for member in members {
-                userProfiles[member.id] = member
+        var familyId: String?
+        if let user = await repo.getUser(userId) {
+            familyId = user.familyId
+            if let familyId {
+                let members = await repo.getFamilyMembers(familyId: familyId)
+                familyMembers = members
+                for member in members {
+                    userProfiles[member.id] = member
+                }
             }
         }
+        startListSubscriptions(userId: userId, familyId: familyId)
 
         // RLS scopes this to conversations the user participates in.
-        let convs: [ConversationModel] = await (try? client.from("conversations")
-            .select()
-            .execute()
-            .value) ?? []
+        let convs = await (try? repo.fetchConversations()) ?? []
         guard !convs.isEmpty else {
             conversations = []
             return
         }
 
         let participantsMap = await loadParticipantsMap(conversationIds: convs.map(\.id))
+        // Authoritative unread counts from last_read_at — survives relaunch (unlike the
+        // in-session increments), so the badge is correct on a cold start.
+        let unreadMap = await unreadCounts(conversationIds: convs.map(\.id), userId: userId)
         var previews: [ConversationWithPreview] = []
         for conv in convs {
             let lastMessage = await repo.getLastMessage(conversationId: conv.id)
-            let lastSenderName: String? = if let lastMessage {
-                lastMessage.userFrom == userId
-                    ? L("You")
-                    : (userProfiles[lastMessage.userFrom]?.name
-                        ?? String(lastMessage.userFrom.prefix(userIdPreviewLength)))
+            // "You" is localized at render time (conversationPreviewText) so it follows a
+            // live language switch; store only the other person's name here.
+            let lastSenderName: String? = if let lastMessage, lastMessage.userFrom != userId {
+                userProfiles[lastMessage.userFrom]?.name
+                    ?? String(lastMessage.userFrom.prefix(userIdPreviewLength))
             } else {
                 nil
             }
-            let existingUnread = conversations
-                .first { $0.conversation.id == conv.id }?.unreadCount ?? 0
             previews.append(ConversationWithPreview(
                 conversation: conv,
                 lastMessage: lastMessage,
                 lastSenderName: lastSenderName,
-                unreadCount: existingUnread,
+                unreadCount: currentConversationId == conv.id ? 0 : (unreadMap[conv.id] ?? 0),
                 participants: participantsMap[conv.id] ?? []
             ))
         }
@@ -162,21 +199,46 @@ final class ChatViewModel {
         subscribeAllForNotifications(userId: userId)
     }
 
+    /// Starts the list-level realtime subscriptions once: a new conversation in my family
+    /// (or a new family member) triggers a full reload so I see it without force-closing.
+    private func startListSubscriptions(userId: String, familyId: String?) {
+        guard !listSubsStarted, let familyId else { return }
+        listSubsStarted = true
+        conversationsListObserver.start(
+            table: "conversations",
+            scope: "list-convs-\(familyId)",
+            filter: .eq("family_id", value: familyId)
+        ) { [weak self] in
+            await self?.loadConversations()
+        }
+    }
+
+    /// Per-conversation unread = messages from others newer than my last_read_at.
+    private func unreadCounts(conversationIds: [String], userId: String) async -> [String: Int] {
+        // My participant rows carry my last_read_at per conversation.
+        let myRows = await (try? repo.fetchMyParticipants(
+            userId: userId, conversationIds: conversationIds
+        )) ?? []
+        let lastReadByConv = Dictionary(
+            myRows.map { ($0.conversationId, $0.lastReadAt ?? "1970-01-01T00:00:00Z") },
+            uniquingKeysWith: { first, _ in first }
+        )
+        var result: [String: Int] = [:]
+        for convId in conversationIds {
+            let lastRead = lastReadByConv[convId] ?? "1970-01-01T00:00:00Z"
+            result[convId] = await repo.countUnreadMessages(
+                conversationId: convId, userId: userId, after: lastRead
+            )
+        }
+        return result
+    }
+
     private func loadParticipantsMap(conversationIds: [String]) async -> [String: [UserModel]] {
-        let allRows: [ConversationParticipantModel] = await (try? client
-            .from("conversation_participants")
-            .select()
-            .in("conversation_id", values: conversationIds)
-            .execute()
-            .value) ?? []
+        let allRows = await (try? repo.fetchParticipants(conversationIds: conversationIds)) ?? []
 
         let missingIds = Set(allRows.map(\.userId)).subtracting(userProfiles.keys)
         if !missingIds.isEmpty {
-            let fresh: [UserModel] = await (try? client.from("users")
-                .select()
-                .in("id", values: Array(missingIds))
-                .execute()
-                .value) ?? []
+            let fresh = await (try? repo.fetchUsers(ids: Array(missingIds))) ?? []
             for user in fresh {
                 userProfiles[user.id] = user
             }
@@ -191,7 +253,7 @@ final class ChatViewModel {
         for preview in conversations {
             let convId = preview.conversation.id
             guard notifObservers[convId] == nil else { continue }
-            let observer = RealtimeObserver()
+            let observer = realtimeFactory()
             notifObservers[convId] = observer
             observer.start(
                 table: "messages",
@@ -204,17 +266,24 @@ final class ChatViewModel {
     }
 
     private func onConversationActivity(convId: String, userId: String) async {
-        guard let last = await repo.getLastMessage(conversationId: convId),
-              last.userFrom != userId else { return }
-        let senderName = userProfiles[last.userFrom]?.name ?? L("Family member")
+        let last = await repo.getLastMessage(conversationId: convId)
+        // Recompute the badge from last_read_at rather than blindly incrementing: a reconnect
+        // (e.g. returning from the photo picker) or a re-delivered event must not inflate the
+        // count or resurrect an already-read conversation, and my own messages never count.
+        let unread = await currentConversationId == convId
+            ? 0
+            : (unreadCounts(conversationIds: [convId], userId: userId)[convId] ?? 0)
         conversations = conversations.map { preview in
             guard preview.conversation.id == convId else { return preview }
             var preview = preview
-            preview.lastMessage = last
-            preview.lastSenderName = senderName
-            if currentConversationId != convId {
-                preview.unreadCount += 1
+            if let last {
+                preview.lastMessage = last
+                // Store only another person's name; "You" is localized at render time.
+                preview.lastSenderName = last.userFrom == userId
+                    ? nil
+                    : (userProfiles[last.userFrom]?.name ?? L("Family member"))
             }
+            preview.unreadCount = unread
             return preview
         }
     }
@@ -235,29 +304,18 @@ final class ChatViewModel {
 
     func loadConversation(_ conversationId: String) {
         Task {
-            let rows: [ConversationModel] = await (try? client.from("conversations")
-                .select()
-                .eq("id", value: conversationId)
-                .execute()
-                .value) ?? []
+            let rows = await (try? repo.fetchConversation(id: conversationId)) ?? []
             conversation = rows.first
             await loadMessages(conversationId)
 
-            let participantRows: [ConversationParticipantModel] = await (try? client
-                .from("conversation_participants")
-                .select()
-                .eq("conversation_id", value: conversationId)
-                .execute()
-                .value) ?? []
+            let participantRows = await (try? repo.fetchParticipants(
+                conversationId: conversationId
+            )) ?? []
             let participantIds = participantRows.map(\.userId)
 
             let missing = Set(participantIds).subtracting(userProfiles.keys)
             if !missing.isEmpty {
-                let fresh: [UserModel] = await (try? client.from("users")
-                    .select()
-                    .in("id", values: Array(missing))
-                    .execute()
-                    .value) ?? []
+                let fresh = await (try? repo.fetchUsers(ids: Array(missing))) ?? []
                 for user in fresh {
                     userProfiles[user.id] = user
                 }
@@ -288,12 +346,7 @@ final class ChatViewModel {
     }
 
     func loadMessages(_ conversationId: String) async {
-        if let fetched: [MessageModel] = try? await client.from("messages")
-            .select()
-            .eq("conversation_id", value: conversationId)
-            .order("sent_at", ascending: true)
-            .execute()
-            .value {
+        if let fetched = try? await repo.fetchMessages(conversationId: conversationId) {
             messages = fetched
         }
     }
@@ -316,12 +369,7 @@ final class ChatViewModel {
             filter: .eq("conversation_id", value: conversationId)
         ) { [weak self] in
             guard let self else { return }
-            let rows: [ConversationParticipantModel] = await (try? client
-                .from("conversation_participants")
-                .select()
-                .eq("conversation_id", value: conversationId)
-                .execute()
-                .value) ?? []
+            let rows = await (try? repo.fetchParticipants(conversationId: conversationId)) ?? []
             let myId = repo.session.currentUserId
             otherLastRead = rows
                 .filter { $0.userId != myId }
@@ -386,45 +434,5 @@ final class ChatViewModel {
                 message: TypingSignal(userId: myId, typing: typing)
             )
         }
-    }
-
-    // MARK: - Reactions
-
-    private func loadReactions(_ conversationId: String) async {
-        guard let rows: [MessageReactionModel] = try? await client.from("message_reactions")
-            .select()
-            .eq("conversation_id", value: conversationId)
-            .execute()
-            .value
-        else { return }
-        reactions = Dictionary(grouping: rows, by: \.messageId).mapValues { messageRows in
-            Dictionary(grouping: messageRows, by: \.emoji).mapValues { $0.map(\.userId) }
-        }
-    }
-
-    private func subscribeToReactions(_ conversationId: String) async {
-        reactionTasks.forEach { $0.cancel() }
-        reactionTasks = []
-        if let reactionsChannel {
-            await client.removeChannel(reactionsChannel)
-        }
-        let channel = client.channel("reactions-\(conversationId)")
-        reactionsChannel = channel
-        let changes = channel.postgresChange(
-            AnyAction.self,
-            schema: "public",
-            table: "message_reactions",
-            filter: .eq("conversation_id", value: conversationId)
-        )
-        reactionTasks.append(Task { [weak self] in
-            do {
-                try await channel.subscribeWithError()
-            } catch {
-                return
-            }
-            for await _ in changes {
-                await self?.loadReactions(conversationId)
-            }
-        })
     }
 }

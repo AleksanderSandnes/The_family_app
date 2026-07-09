@@ -5,8 +5,28 @@
 import Foundation
 import Supabase
 
+/// The realtime seam VMs depend on, so tests can substitute a no-op (see NoopRealtimeObserver)
+/// and never open a live channel. RealtimeObserver is the production implementation.
 @MainActor
-final class RealtimeObserver {
+protocol RealtimeObserving: AnyObject {
+    func start(
+        table: String,
+        scope: String,
+        filter: RealtimePostgresFilter?,
+        onChange: @escaping @MainActor () async -> Void
+    )
+    func stop()
+}
+
+extension RealtimeObserving {
+    /// Convenience matching the concrete observer's default (no server-side filter).
+    func start(table: String, scope: String, onChange: @escaping @MainActor () async -> Void) {
+        start(table: table, scope: scope, filter: nil, onChange: onChange)
+    }
+}
+
+@MainActor
+final class RealtimeObserver: RealtimeObserving {
     private var channel: RealtimeChannelV2?
     private var task: Task<Void, Never>?
 

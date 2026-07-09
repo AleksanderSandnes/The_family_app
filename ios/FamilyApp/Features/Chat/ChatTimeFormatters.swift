@@ -83,6 +83,20 @@ func messageTimeLabel(
     }
 }
 
+/// Full exact timestamp revealed when a message bubble is tapped
+/// (e.g. "Jul 7, 2026 at 2:30 PM" for en, "7. juli 2026, 14:30" for nb).
+func exactMessageTimestamp(
+    _ isoString: String,
+    locale: Locale = defaultFormatLocale
+) -> String {
+    guard let instant = parseInstantMs(isoString) else { return "" }
+    let formatter = DateFormatter()
+    formatter.locale = locale
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .short
+    return formatter.string(from: Date(timeIntervalSince1970: Double(instant) / 1000))
+}
+
 /// Chat-header presence: "Active now" within 2 minutes, else "Active {relative}".
 func presenceLabel(
     _ lastActiveIso: String?,
@@ -140,10 +154,14 @@ func conversationDisplayName(
 func conversationPreviewText(
     lastMessage: MessageModel?,
     lastSenderName: String?,
+    isFromCurrentUser: Bool = false,
     locale: Locale = defaultFormatLocale
 ) -> String {
     guard let lastMessage else { return L("No messages yet", locale: locale) }
-    let prefix = lastSenderName.map { "\($0): " } ?? ""
+    // Localize "You" here (not at load time) so it follows a live language switch.
+    let prefix = isFromCurrentUser
+        ? "\(L("You", locale: locale)): "
+        : (lastSenderName.map { "\($0): " } ?? "")
     switch lastMessage.messageType {
     case "image": return prefix + L("Photo", locale: locale)
     case "voice": return prefix + L("Voice message", locale: locale)

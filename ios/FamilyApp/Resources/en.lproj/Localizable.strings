@@ -57,6 +57,11 @@
 "1 event" = "1 event";
 "%lld events" = "%lld events";
 "All day" = "All day";
+"Private" = "Private";
+"Color" = "Color";
+"Going with" = "Going with";
+"Edit wish" = "Edit wish";
+"Change photo" = "Change photo";
 "Edit event" = "Edit event";
 "New event" = "New event";
 "Save" = "Save";
@@ -332,3 +337,53 @@
 "Profile pictures and photo sharing in chat. Asked when you first use them." = "Profile pictures and photo sharing in chat. Asked when you first use them.";
 "Allow permissions" = "Allow permissions";
 "Maybe later" = "Maybe later";
+
+/* Design-spec polish pass (chat, wishlist, family, meal, new-conversation). */
+"Family members" = "Family members";
+"Group name" = "Group name";
+"optional" = "optional";
+"Replying to" = "Replying to";
+"Saving…" = "Saving…";
+"Saved" = "Saved";
+"Couldn’t save" = "Couldn’t save";
+"Save image" = "Save image";
+"Select" = "Select";
+"Reservations are hidden from" = "Reservations are hidden from";
+"QR code" = "QR code";
+
+/* Family relations + member profile. */
+"Your relation" = "Your relation";
+"Set relation" = "Set relation";
+"Set your relations" = "Set your relations";
+"How are you related to each member? You can change this anytime." = "How are you related to each member? You can change this anytime.";
+"None" = "None";
+"Phone" = "Phone";
+"Not set" = "Not set";
+"Set" = "Set";
+
+/* Family relation options (stored value stays English; localized on display). */
+"Mom" = "Mom";
+"Dad" = "Dad";
+"Son" = "Son";
+"Daughter" = "Daughter";
+"Sister" = "Sister";
+"Brother" = "Brother";
+"Wife" = "Wife";
+"Husband" = "Husband";
+"Fiancé" = "Fiancé";
+"Partner" = "Partner";
+"Grandmother" = "Grandmother";
+"Grandfather" = "Grandfather";
+"Grandchild" = "Grandchild";
+"Aunt" = "Aunt";
+"Uncle" = "Uncle";
+"Cousin" = "Cousin";
+"Friend" = "Friend";
+"Other" = "Other";
+
+/* Google profile completion + location sharing. */
+"Complete your profile" = "Complete your profile";
+"Add your phone and birthday so your family can reach you and celebrate you." = "Add your phone and birthday so your family can reach you and celebrate you.";
+"Skip for now" = "Skip for now";
+"Share your live location with family" = "Share your live location with family";
+"Location access is off — turn it on in iOS Settings" = "Location access is off — turn it on in iOS Settings";
