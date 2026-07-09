@@ -116,7 +116,7 @@ struct HomeScreen: View {
                 SummaryCard(
                     systemImage: "fork.knife",
                     feature: .meals,
-                    label: L("TONIGHT"),
+                    label: L("TODAY"),
                     value: tonight,
                     detail: nil
                 ) { onOpen(.meal) }
