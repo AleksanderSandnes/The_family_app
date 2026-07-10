@@ -26,10 +26,15 @@ to the iOS-era feature set and the Liquid Glass look, after the iOS app shipped 
 | M1 | Glass layer (Haze) + data-model additions (all 11 migrations' columns/models) | ✅ |
 | M2 | Tab-bar IA change (Home / Shopping / Chat / Calendar / Profile) + ambient background + glass tab bar | ✅ |
 | M3 | Per-feature parity — shopping/meal/wishlist/calendar/birthday colour+icon pickers, calendar private/colour/attendees, birthday icon/colour + creator-edit, wishlist share link + PDF + "shared with me", family directional relations + member popup, map avatar pins + geocode legend, Home glass summary cards, profile-completion prompt, auth strength/2-step, glass reskin throughout | ✅ |
-| M4 | In-app EN/NB localization | ⏳ |
+| M4 | In-app EN/NB localization — 396 strings each in `values/` + `values-nb/`; live switch via `AppCompatDelegate.setApplicationLocales`; Settings language picker; core screens extracted (feature-body strings a documented follow-up) | ✅ |
 | M5 | Backend verification via Supabase MCP — all 16 objects present in prod; advisors only pre-existing WARNs; no migrations needed | ✅ |
 | M6 | Lint/CI gate (`android-lint.yml`) + Kotlin pre-commit hooks + detekt baseline + `android/LINTING.md`; test gaps filled (AuthViewModelTest, FamilyMapViewModelTest) | ✅ |
-| M7 | Final review + emulator/Maestro verification | ⏳ |
+| M7 | Final review + emulator/Maestro verification | ⏳ (review in progress) |
+
+## Verification evidence (2026-07-10)
+- **Build/static**: `spotlessCheck` + `detekt` + `lintDebug` + `assembleDebug` all green; **440 unit tests pass** (was ~382).
+- **Backend (MCP)**: 16/16 iOS-era objects present in prod; `get_advisors` only pre-existing WARNs.
+- **On-device (Maestro, Pixel 7 emulator)**: registered a temp account end-to-end → 2-step register → permissions onboarding → Home dashboard (glass feature tiles + correct feature accents) → glass tab bar with the new IA → Shopping New-list dialog (shared IconGrid + 8-colour ColorPickerRow) → created a list. Verified the write landed in prod with `color = 0x6366F1` (the indigo swatch chosen) — cross-platform parity proven live. Settings → **Norsk** re-localized the whole screen instantly (AppCompat locale recreate). `AppCompatActivity` migration launches cleanly.
 
 **Delivery note (2026-07-10):** M3 built via 5 parallel worktree agents (shopping+meals, calendar+birthdays, wishlists, family+map, home+profile+settings+auth), each spotless+detekt+compile+test green, merged sequentially into `feat/android-ios-parity` with zero conflicts (disjoint feature dirs; shared design layer + pickers landed first in M1–M3-groundwork). Wishlist share-link deep link (`familyapp://wishlist?token=`) wired in AppNavHost afterwards.
 
