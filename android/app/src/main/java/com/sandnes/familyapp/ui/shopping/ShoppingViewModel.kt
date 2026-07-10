@@ -284,11 +284,13 @@ class ShoppingViewModel
         fun addList(
             title: String,
             icon: String = "shopping_cart",
+            color: Int? = null,
         ) = viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
             val user = repo.getUser(userId)
             val tempId = "temp-${java.util.UUID.randomUUID()}"
-            _lists.value = _lists.value + ShoppingListModel(id = tempId, title = title, ownerUserId = userId, familyId = user?.familyId, icon = icon)
+            _lists.value = _lists.value +
+                ShoppingListModel(id = tempId, title = title, ownerUserId = userId, familyId = user?.familyId, icon = icon, color = color)
             runCatching {
                 db.from("shopping_lists").insert(
                     buildJsonObject {
@@ -296,9 +298,23 @@ class ShoppingViewModel
                         put("icon", icon)
                         put("owner_user_id", userId)
                         if (user?.familyId != null) put("family_id", user.familyId)
+                        if (color != null) put("color", color)
                     },
                 )
             }
+            reloadLists(userId)
+        }
+
+        fun changeListColor(
+            listId: String,
+            color: Int?,
+        ) = viewModelScope.launch {
+            _lists.value = _lists.value.map { if (it.id == listId) it.copy(color = color) else it }
+            _selectedList.value = _selectedList.value?.copy(color = color)
+            runCatching {
+                db.from("shopping_lists").update({ set("color", color) }) { filter { eq("id", listId) } }
+            }
+            val userId = currentUserId ?: repo.currentUserId.first() ?: return@launch
             reloadLists(userId)
         }
 

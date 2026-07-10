@@ -2,7 +2,6 @@
 
 package com.sandnes.familyapp.ui.shopping
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,9 +10,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,30 +20,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Cake
-import androidx.compose.material.icons.filled.Celebration
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.Flight
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -55,7 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -72,7 +61,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.ImeAction
@@ -82,39 +70,29 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sandnes.familyapp.data.ShoppingItemModel
 import com.sandnes.familyapp.ui.components.AppFab
+import com.sandnes.familyapp.ui.components.ColorPickerRow
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
+import com.sandnes.familyapp.ui.components.IconGrid
 import com.sandnes.familyapp.ui.components.InputDialog
-import com.sandnes.familyapp.ui.components.ListCard
 import com.sandnes.familyapp.ui.components.ListSkeleton
 import com.sandnes.familyapp.ui.components.PillTag
 import com.sandnes.familyapp.ui.components.PullRefresh
 import com.sandnes.familyapp.ui.components.RefreshOnResume
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
-
-private data class ShoppingIconOption(
-    val key: String,
-    val vector: ImageVector,
-)
-
-private val SHOPPING_ICON_OPTIONS =
-    listOf(
-        ShoppingIconOption("shopping_cart", Icons.Filled.ShoppingCart),
-        ShoppingIconOption("restaurant", Icons.Filled.Restaurant),
-        ShoppingIconOption("cake", Icons.Filled.Cake),
-        ShoppingIconOption("local_hospital", Icons.Filled.LocalHospital),
-        ShoppingIconOption("celebration", Icons.Filled.Celebration),
-        ShoppingIconOption("favorite", Icons.Filled.Favorite),
-        ShoppingIconOption("star", Icons.Filled.Star),
-        ShoppingIconOption("fitness_center", Icons.Filled.FitnessCenter),
-        ShoppingIconOption("home", Icons.Filled.Home),
-        ShoppingIconOption("pets", Icons.Filled.Pets),
-        ShoppingIconOption("flight", Icons.Filled.Flight),
-        ShoppingIconOption("people", Icons.Filled.People),
-    )
-
-private fun shoppingIconVector(key: String): ImageVector =
-    SHOPPING_ICON_OPTIONS.firstOrNull { it.key == key }?.vector ?: Icons.Filled.ShoppingCart
+import com.sandnes.familyapp.ui.theme.AppColorPalette
+import com.sandnes.familyapp.ui.theme.FeatureAccent
+import com.sandnes.familyapp.ui.theme.FeatureBadge
+import com.sandnes.familyapp.ui.theme.GlassProgressBar
+import com.sandnes.familyapp.ui.theme.IconKeyMap
+import com.sandnes.familyapp.ui.theme.IconOptions
+import com.sandnes.familyapp.ui.theme.LiveGreen
+import com.sandnes.familyapp.ui.theme.LiveGreenText
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.glassCard
+import com.sandnes.familyapp.ui.theme.hexColor
+import com.sandnes.familyapp.ui.theme.rowSurface
 
 private fun shoppingProgressLabel(p: ListProgress?): String =
     when {
@@ -137,7 +115,7 @@ fun ShoppingScreen(
     RefreshOnResume { viewModel.refresh() }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         topBar = { FeatureTopBar("Shopping lists", onBack) },
         floatingActionButton = {
             AppFab(text = "New list", icon = Icons.Filled.Add, onClick = { showAdd = true })
@@ -162,30 +140,22 @@ fun ShoppingScreen(
             } else {
                 LazyColumn(
                     Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(Spacing.screenEdge),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
                 ) {
                     items(lists, key = { it.id }) { list ->
                         SwipeToRevealDelete(
                             onDelete = { viewModel.deleteList(list) },
                             modifier = Modifier.animateItem(),
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(Radius.overviewCard),
                         ) {
-                            ListCard(onClick = { onOpenList(list.id) }) {
-                                Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                                    Icon(shoppingIconVector(list.icon), null, tint = MaterialTheme.colorScheme.primary)
-                                }
-                                Spacer(Modifier.size(8.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(list.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    Text(
-                                        shoppingProgressLabel(progress[list.id]),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                            ShoppingListCard(
+                                title = list.title,
+                                iconKey = list.icon,
+                                color = list.color,
+                                progress = progress[list.id],
+                                onClick = { onOpenList(list.id) },
+                            )
                         }
                     }
                 }
@@ -196,11 +166,76 @@ fun ShoppingScreen(
     if (showAdd) {
         NewListDialog(
             onDismiss = { showAdd = false },
-            onConfirm = { title, icon ->
-                viewModel.addList(title, icon)
+            onConfirm = { title, icon, color ->
+                viewModel.addList(title, icon, color)
                 showAdd = false
             },
         )
+    }
+}
+
+@Composable
+private fun ShoppingListCard(
+    title: String,
+    iconKey: String,
+    color: Int?,
+    progress: ListProgress?,
+    onClick: () -> Unit,
+) {
+    val fraction =
+        if (progress != null && progress.total > 0) {
+            progress.bought.toFloat() / progress.total.toFloat()
+        } else {
+            0f
+        }
+    val allDone = progress != null && progress.total > 0 && progress.bought == progress.total
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .rowSurface(ghost = allDone, cornerRadius = Radius.overviewCard)
+            .clickable(onClick = onClick)
+            .padding(Spacing.cardPadding),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (allDone) {
+                Box(
+                    Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(Radius.badgeLarge))
+                        .background(LiveGreen.copy(alpha = 0.13f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.Check, null, tint = LiveGreen, modifier = Modifier.size(22.dp))
+                }
+            } else {
+                FeatureBadge(
+                    icon = IconKeyMap.shopping(iconKey),
+                    feature = FeatureAccent.Shopping,
+                    size = 44.dp,
+                    cornerRadius = Radius.badgeLarge,
+                    colorOverride = hexColor(color),
+                )
+            }
+            Spacer(Modifier.width(Spacing.md))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (allDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    shoppingProgressLabel(progress),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (allDone) LiveGreenText else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (!allDone && progress != null) {
+            GlassProgressBar(value = fraction, tint = MaterialTheme.colorScheme.primary)
+        }
     }
 }
 
@@ -210,7 +245,7 @@ fun ShoppingDetailScreen(
     onBack: () -> Unit,
     viewModel: ShoppingViewModel = hiltViewModel(),
 ) {
-    androidx.compose.runtime.LaunchedEffect(listId) { viewModel.loadListDetail(listId) }
+    LaunchedEffect(listId) { viewModel.loadListDetail(listId) }
     val list by viewModel.selectedList.collectAsStateWithLifecycle()
     val items by viewModel.items.collectAsStateWithLifecycle()
     var newItemText by remember { mutableStateOf("") }
@@ -236,7 +271,7 @@ fun ShoppingDetailScreen(
 
     Scaffold(
         modifier = Modifier.imePadding(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         topBar = {
             FeatureTopBar(list?.title ?: "List", onBack) {
                 if (items.isNotEmpty()) {
@@ -244,7 +279,7 @@ fun ShoppingDetailScreen(
                         "$remaining left",
                         MaterialTheme.colorScheme.primaryContainer,
                         MaterialTheme.colorScheme.onPrimaryContainer,
-                        Modifier.padding(end = 4.dp),
+                        Modifier.padding(end = Spacing.xs),
                     )
                 }
                 Box {
@@ -269,50 +304,25 @@ fun ShoppingDetailScreen(
                                 showChangeIcon = true
                             },
                         )
+                        if (completed.isNotEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("Clear completed (${completed.size})") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.clearCompleted(listId)
+                                },
+                            )
+                        }
                     }
                 }
             }
         },
         bottomBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = newItemText,
-                        onValueChange = { newItemText = it },
-                        placeholder = { Text("Add item…") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(24.dp),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { addItem() }),
-                        modifier = Modifier.weight(1f),
-                        colors =
-                            OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                            ),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { addItem() },
-                        enabled = newItemText.isNotBlank(),
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Add item",
-                            tint = if (newItemText.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
+            AddItemBar(
+                value = newItemText,
+                onValueChange = { newItemText = it },
+                onSubmit = { addItem() },
+            )
         },
     ) { padding ->
         if (items.isEmpty()) {
@@ -323,8 +333,8 @@ fun ShoppingDetailScreen(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(Spacing.screenEdge),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
                 items(active, key = { it.id }) { item ->
                     ShoppingItemRow(item, viewModel, Modifier.animateItem())
@@ -364,12 +374,72 @@ fun ShoppingDetailScreen(
     if (showChangeIcon) {
         ChangeIconDialog(
             currentIcon = list?.icon ?: "shopping_cart",
+            currentColor = list?.color,
             onDismiss = { showChangeIcon = false },
-            onConfirm = { icon ->
+            onConfirm = { icon, color ->
                 viewModel.changeListIcon(listId, icon)
+                viewModel.changeListColor(listId, color)
                 showChangeIcon = false
             },
         )
+    }
+}
+
+@Composable
+private fun AddItemBar(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .weight(1f)
+                .height(46.dp)
+                .glassCard(cornerRadius = 23.dp)
+                .padding(horizontal = Spacing.lg),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            if (value.isEmpty()) {
+                Text(
+                    "Add item…",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Spacer(Modifier.width(Spacing.sm))
+        val enabled = value.isNotBlank()
+        Box(
+            Modifier
+                .size(46.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 1f else 0.4f))
+                .clickable(enabled = enabled, onClick = onSubmit),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Add item",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
@@ -399,53 +469,53 @@ private fun ShoppingItemRow(
         if (isEditing) focusRequester.requestFocus()
     }
 
-    SwipeToRevealDelete(onDelete = { viewModel.deleteItem(item) }, modifier = modifier, shape = RoundedCornerShape(16.dp)) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier.fillMaxWidth(),
+    SwipeToRevealDelete(onDelete = { viewModel.deleteItem(item) }, modifier = modifier, shape = RoundedCornerShape(Radius.row)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .rowSurface(ghost = item.checked, cornerRadius = Radius.row)
+                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    viewModel.toggle(item)
-                }) {
-                    Icon(
-                        if (item.checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
-                        null,
-                        tint = if (item.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (isEditing) {
-                    BasicTextField(
-                        value = editText,
-                        onValueChange = { editText = it },
-                        textStyle =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                color = MaterialTheme.colorScheme.onSurface,
-                            ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { commitEdit() }),
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .focusRequester(focusRequester)
-                                .onFocusChanged { if (!it.isFocused) commitEdit() },
-                    )
-                } else {
-                    Text(
-                        item.item,
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .clickable { isEditing = true },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                        textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
-                    )
-                }
+            IconButton(onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                viewModel.toggle(item)
+            }) {
+                Icon(
+                    if (item.checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
+                    null,
+                    tint = if (item.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (isEditing) {
+                BasicTextField(
+                    value = editText,
+                    onValueChange = { editText = it },
+                    textStyle =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { commitEdit() }),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { if (!it.isFocused) commitEdit() },
+                )
+            } else {
+                Text(
+                    item.item,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .clickable { isEditing = true },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
+                )
             }
         }
     }
@@ -462,9 +532,9 @@ private fun CompletedHeader(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(Radius.badge))
                 .clickable(onClick = onToggle)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = Spacing.sm, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -484,42 +554,87 @@ private fun CompletedHeader(
 @Composable
 private fun NewListDialog(
     onDismiss: () -> Unit,
-    onConfirm: (title: String, icon: String) -> Unit,
+    onConfirm: (title: String, icon: String, color: Int) -> Unit,
 ) {
     var title by remember { mutableStateOf("") }
     var selectedIcon by remember { mutableStateOf("shopping_cart") }
-    var showIconPicker by remember { mutableStateOf(false) }
+    var selectedColor by remember { mutableStateOf(AppColorPalette.first()) }
 
+    IconColorDialog(
+        heading = "New shopping list",
+        confirmLabel = "Create",
+        title = title,
+        onTitleChange = { title = it },
+        titlePlaceholder = "List name",
+        selectedIcon = selectedIcon,
+        onIconSelect = { selectedIcon = it },
+        selectedColor = selectedColor,
+        onColorSelect = { selectedColor = it },
+        confirmEnabled = title.isNotBlank(),
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(title.trim(), selectedIcon, selectedColor) },
+    )
+}
+
+@Composable
+private fun ChangeIconDialog(
+    currentIcon: String,
+    currentColor: Int?,
+    onDismiss: () -> Unit,
+    onConfirm: (icon: String, color: Int) -> Unit,
+) {
+    var selectedIcon by remember { mutableStateOf(currentIcon) }
+    var selectedColor by remember { mutableStateOf(currentColor ?: AppColorPalette.first()) }
+
+    IconColorDialog(
+        heading = "Change icon",
+        confirmLabel = "Save",
+        title = null,
+        onTitleChange = {},
+        titlePlaceholder = "",
+        selectedIcon = selectedIcon,
+        onIconSelect = { selectedIcon = it },
+        selectedColor = selectedColor,
+        onColorSelect = { selectedColor = it },
+        confirmEnabled = true,
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(selectedIcon, selectedColor) },
+    )
+}
+
+/**
+ * Shared new/edit dialog body for shopping lists: optional name field, icon grid and colour row.
+ * Passing a null [title] hides the name field (used by the change-icon path).
+ */
+@Composable
+private fun IconColorDialog(
+    heading: String,
+    confirmLabel: String,
+    title: String?,
+    onTitleChange: (String) -> Unit,
+    titlePlaceholder: String,
+    selectedIcon: String,
+    onIconSelect: (String) -> Unit,
+    selectedColor: Int,
+    onColorSelect: (Int) -> Unit,
+    confirmEnabled: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text("New shopping list", style = MaterialTheme.typography.titleLarge) },
+        shape = RoundedCornerShape(Radius.sheet),
+        title = { Text(heading, style = MaterialTheme.typography.titleLarge) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .clickable { showIconPicker = !showIconPicker },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            shoppingIconVector(selectedIcon),
-                            "Change icon",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                if (title != null) {
                     OutlinedTextField(
                         value = title,
-                        onValueChange = { title = it },
-                        placeholder = { Text("List name") },
+                        onValueChange = onTitleChange,
+                        placeholder = { Text(titlePlaceholder) },
                         singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(Radius.field),
+                        modifier = Modifier.fillMaxWidth(),
                         colors =
                             OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -529,92 +644,31 @@ private fun NewListDialog(
                             ),
                     )
                 }
-                AnimatedVisibility(visible = showIconPicker) {
-                    ShoppingIconPickerGrid(
-                        selected = selectedIcon,
-                        onSelect = {
-                            selectedIcon = it
-                            showIconPicker = false
-                        },
-                    )
-                }
+                Text(
+                    "ICON",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                IconGrid(
+                    options = IconOptions.shopping,
+                    selected = selectedIcon,
+                    onSelect = onIconSelect,
+                    feature = FeatureAccent.Shopping,
+                    colorOverride = hexColor(selectedColor),
+                )
+                Text(
+                    "COLOR",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                ColorPickerRow(selected = selectedColor, onSelect = onColorSelect)
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = { if (title.isNotBlank()) onConfirm(title.trim(), selectedIcon) },
-                enabled = title.isNotBlank(),
-            ) { Text("Create") }
+            TextButton(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmLabel) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
     )
-}
-
-@Composable
-private fun ChangeIconDialog(
-    currentIcon: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-) {
-    var selectedIcon by remember { mutableStateOf(currentIcon) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text("Change icon", style = MaterialTheme.typography.titleLarge) },
-        text = {
-            ShoppingIconPickerGrid(selected = selectedIcon, onSelect = { selectedIcon = it })
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(selectedIcon) }) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
-}
-
-@Composable
-private fun ShoppingIconPickerGrid(
-    selected: String,
-    onSelect: (String) -> Unit,
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp),
-    ) {
-        SHOPPING_ICON_OPTIONS.chunked(4).forEach { row ->
-            Row(Modifier.fillMaxWidth()) {
-                row.forEach { opt ->
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .padding(4.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(
-                                if (selected == opt.key) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                },
-                            ).clickable { onSelect(opt.key) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            opt.vector,
-                            null,
-                            modifier = Modifier.size(22.dp),
-                            tint =
-                                if (selected == opt.key) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                        )
-                    }
-                }
-                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-    }
 }

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -505,5 +506,55 @@ class ShoppingViewModelTest {
             // Emitting the same value to a StateFlow does NOT re-trigger collect — verified here
             // by checking getUser was called only once (from the initial loadLists).
             coVerify(exactly = 1) { repo.getUser("user1") }
+        }
+
+    // ──────────────────────────────────────────────────────────────
+    // 13. colour — addList / changeListColor optimistic update
+    // ──────────────────────────────────────────────────────────────
+
+    @Test
+    fun `addList stores the specified color optimistically`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "user1"
+            advanceUntilIdle()
+
+            vm.addList("Groceries", "shopping_cart", 0x6366F1)
+            advanceUntilIdle()
+
+            val added = vm.lists.value.firstOrNull { it.title == "Groceries" }
+            assertNotNull("list 'Groceries' should exist", added)
+            assertEquals("color should be stored on the optimistic entry", 0x6366F1, added!!.color)
+        }
+
+    @Test
+    fun `addList without color defaults to null color`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "user1"
+            advanceUntilIdle()
+
+            vm.addList("Groceries", "shopping_cart")
+            advanceUntilIdle()
+
+            val added = vm.lists.value.firstOrNull { it.title == "Groceries" }
+            assertNotNull("list 'Groceries' should exist", added)
+            assertNull("color should default to null", added!!.color)
+        }
+
+    @Test
+    fun `changeListColor updates color optimistically in lists`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "user1"
+            advanceUntilIdle()
+
+            vm.addList("Groceries", "shopping_cart")
+            advanceUntilIdle()
+
+            val list = vm.lists.value.first { it.title == "Groceries" }
+            vm.changeListColor(list.id, 0xEC4899)
+            advanceUntilIdle()
+
+            val updated = vm.lists.value.firstOrNull { it.title == "Groceries" }
+            assertNotNull("list should still exist after colour change", updated)
+            assertEquals("colour should be updated optimistically", 0xEC4899, updated!!.color)
         }
 }
