@@ -68,5 +68,12 @@ class MainActivity : ComponentActivity() {
                 repo.setPendingJoinCode(it.uppercase())
             }
         }
+        // Wishlist share: familyapp://wishlist?token=UUID — stash the token so the wishlist
+        // screen redeems it (cross-family read access) once the user is signed in.
+        if (data?.scheme == "familyapp" && data.host == "wishlist") {
+            data.getQueryParameter("token")?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                repo.setPendingWishlistShareToken(it)
+            }
+        }
     }
 }

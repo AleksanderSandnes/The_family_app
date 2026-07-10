@@ -63,6 +63,16 @@ class FamilyRepository
             _pendingJoinCode.value = null
         }
 
+        // Wishlist share token captured from a deep link (familyapp://wishlist?token=...).
+        // Redeemed by WishlistViewModel once the user is signed in.
+        private val _pendingWishlistShareToken = MutableStateFlow<String?>(null)
+        val pendingWishlistShareToken: StateFlow<String?> = _pendingWishlistShareToken.asStateFlow()
+
+        /** Sets the pending share token; pass null to consume it after redemption. */
+        fun setPendingWishlistShareToken(token: String?) {
+            _pendingWishlistShareToken.value = token
+        }
+
         /** Bumps the current user's last_active_at — called when the app foregrounds (presence). */
         suspend fun touchLastActive() {
             runCatching {

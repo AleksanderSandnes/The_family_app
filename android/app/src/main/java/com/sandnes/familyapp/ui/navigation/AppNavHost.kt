@@ -164,6 +164,17 @@ private fun MainFlow() {
         }
     }
 
+    // A wishlist share link (familyapp://wishlist?token=…) redeems cross-family access to that
+    // one wishlist, then opens the wishlist screen (it appears under "Shared with me").
+    val pendingWishlistToken by wishlistVm.pendingShareToken.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingWishlistToken) {
+        pendingWishlistToken?.let { token ->
+            wishlistVm.redeemShareToken(token)
+            wishlistVm.consumePendingShareToken()
+            navController.navigate(Routes.WISHLIST) { launchSingleTop = true }
+        }
+    }
+
     AmbientBackground {
         Scaffold(
             containerColor = Color.Transparent,

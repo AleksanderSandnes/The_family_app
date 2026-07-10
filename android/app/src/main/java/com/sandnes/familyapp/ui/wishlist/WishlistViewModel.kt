@@ -326,13 +326,18 @@ class WishlistViewModel
         }
 
         /** Redeem a token from an opened link: grants access to this one wishlist, then refreshes.
-         *  Deep-link plumbing (AppNavHost/DeepLinkRouter) is expected to call this. */
+         *  Deep-link plumbing (AppNavHost) observes [pendingShareToken] and calls this. */
         fun redeemShareToken(token: String) =
             viewModelScope.launch {
                 repo.acceptWishlistShare(token)
                 val userId = repo.currentUserId.first() ?: return@launch
                 loadWishlists(userId)
             }
+
+        /** A wishlist share token captured from a `familyapp://wishlist?token=` deep link. */
+        val pendingShareToken: StateFlow<String?> get() = repo.pendingWishlistShareToken
+
+        fun consumePendingShareToken() = repo.setPendingWishlistShareToken(null)
 
         // ─── Wishlist mutations ──────────────────────────────────────────────────
 
