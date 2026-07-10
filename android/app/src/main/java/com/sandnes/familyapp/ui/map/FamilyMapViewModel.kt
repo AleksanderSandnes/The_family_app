@@ -199,3 +199,65 @@ class FamilyMapViewModel
             // visibility cleared by screen's DisposableEffect unless service takes over
         }
     }
+
+// ── Pure, testable helpers (last-seen formatting, live/stale threshold, place formatting) ──
+
+/** A shared location counts as "live" when it was updated less than 5 minutes ago. */
+private const val LIVE_THRESHOLD_MS = 5 * 60 * 1000L
+
+private const val MILLIS_PER_SECOND = 1000L
+private const val SECONDS_PER_MINUTE = 60
+private const val SECONDS_PER_HOUR = 3600
+private const val SECONDS_PER_DAY = 86400
+
+/** Parses an ISO-8601 instant to epoch milliseconds, or null when unparseable. */
+internal fun parseInstantMs(iso: String?): Long? {
+    iso ?: return null
+    return runCatching {
+        java.time.Instant
+            .parse(iso)
+            .toEpochMilli()
+    }.getOrNull()
+}
+
+/**
+ * Whether a location's [updatedAt] timestamp is within the live window (< 5 min). Mirrors the iOS
+ * legend live/stale dot. Unknown / unparseable timestamps are treated as stale.
+ */
+internal fun isLocationLive(
+    updatedAt: String?,
+    nowMs: Long = System.currentTimeMillis(),
+): Boolean {
+    val instantMs = parseInstantMs(updatedAt) ?: return false
+    return (nowMs - instantMs) < LIVE_THRESHOLD_MS
+}
+
+/** Human-readable "last seen" label for a shared location's [updatedAt]. Mirrors iOS `formatLastSeen`. */
+internal fun formatLastSeen(
+    updatedAt: String?,
+    nowMs: Long = System.currentTimeMillis(),
+): String {
+    updatedAt ?: return "Unknown"
+    val instantMs = parseInstantMs(updatedAt) ?: return "Location shared"
+    val seconds = (nowMs - instantMs) / MILLIS_PER_SECOND
+    return when {
+        seconds < SECONDS_PER_MINUTE -> "Just now" // also handles clock-skew futures (negative seconds)
+        seconds < SECONDS_PER_HOUR -> "${seconds / SECONDS_PER_MINUTE} min ago"
+        seconds < SECONDS_PER_DAY -> "${seconds / SECONDS_PER_HOUR} hours ago"
+        else ->
+            java.time.Instant
+                .ofEpochMilli(instantMs)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDate()
+                .format(
+                    java.time.format.DateTimeFormatter
+                        .ofPattern("MMM d, yyyy"),
+                )
+    }
+}
+
+/** Combines a place name (may be null/blank) with a last-seen label: "Place · 3 min ago". */
+internal fun formatPlaceDetail(
+    place: String?,
+    lastSeen: String,
+): String = if (!place.isNullOrBlank()) "$place · $lastSeen" else lastSeen

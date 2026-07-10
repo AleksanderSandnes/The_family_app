@@ -8,6 +8,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,24 +29,31 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.FamilyRestroom
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,6 +65,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -64,6 +75,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.ui.components.AppTopBar
 import com.sandnes.familyapp.ui.components.CopyableCodeField
@@ -76,9 +88,40 @@ import com.sandnes.familyapp.ui.components.InputDialog
 import com.sandnes.familyapp.ui.components.PillTag
 import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.components.SecondaryButton
+import com.sandnes.familyapp.ui.components.SectionHeader
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
 import com.sandnes.familyapp.ui.navigation.Routes
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.colorFromArgb
+import com.sandnes.familyapp.ui.theme.glassCard
 
+/** Family relation options (relative to the viewer). Mirrors iOS `familyRelationOptions`. */
+val familyRelationOptions =
+    listOf(
+        "Mom",
+        "Dad",
+        "Son",
+        "Daughter",
+        "Sister",
+        "Brother",
+        "Wife",
+        "Husband",
+        "Fiancé",
+        "Partner",
+        "Grandmother",
+        "Grandfather",
+        "Grandchild",
+        "Aunt",
+        "Uncle",
+        "Cousin",
+        "Friend",
+        "Other",
+    )
+
+private val defaultAvatarColor = Color(0xFF6366F1)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FamilyScreen(
     onBack: (() -> Unit)? = null,
@@ -88,12 +131,15 @@ fun FamilyScreen(
     val members by viewModel.members.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val relations by viewModel.relations.collectAsStateWithLifecycle()
+    val promptRelationSetup by viewModel.promptRelationSetup.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var showCreate by remember { mutableStateOf(false) }
     var showJoin by remember { mutableStateOf(false) }
     var showLeaveConfirm by remember { mutableStateOf(false) }
     var memberToRemove by remember { mutableStateOf<UserModel?>(null) }
+    var selectedMember by remember { mutableStateOf<UserModel?>(null) }
     var showPhotoMenu by remember { mutableStateOf(false) }
     var joinInitial by remember { mutableStateOf("") }
     var showQr by remember { mutableStateOf(false) }
@@ -124,7 +170,7 @@ fun FamilyScreen(
                 title = "Family",
                 onBack = onBack,
                 actions = {
-                    if (family != null) {
+                    if (family != null && isAdmin) {
                         Box {
                             IconButton(onClick = { showPhotoMenu = true }) {
                                 Icon(Icons.Filled.MoreVert, contentDescription = "More options")
@@ -150,165 +196,77 @@ fun FamilyScreen(
         },
     ) { padding ->
         if (family == null) {
-            // ── No-family empty state ──────────────────────────────────────
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-            ) {
-                // Subtle gradient decoration behind the empty state
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(300.dp)
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                                        MaterialTheme.colorScheme.background,
-                                    ),
-                                ),
-                            ),
-                )
-
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 28.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    EmptyState(
-                        icon = Icons.Filled.FamilyRestroom,
-                        title = "Bring your family together",
-                        subtitle = "Create a family space or join one with an invite code to share calendars, shopping lists, wishlists, and more.",
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    ErrorBanner(error)
-                    if (error != null) Spacer(Modifier.height(8.dp))
-                    PrimaryButton(
-                        text = "Create a Family",
-                        onClick = { showCreate = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = Icons.Filled.FamilyRestroom,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    SecondaryButton(
-                        text = "Join with Invite Code",
-                        onClick = {
-                            joinInitial = ""
-                            showJoin = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = Icons.Filled.GroupAdd,
-                    )
-                }
-            }
+            NoFamilyContent(
+                error = error,
+                modifier = Modifier.fillMaxSize().padding(padding),
+                onCreate = { showCreate = true },
+                onJoin = {
+                    joinInitial = ""
+                    showJoin = true
+                },
+            )
         } else {
-            // ── Has-family state ──────────────────────────────────────────
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(Spacing.screenEdge),
+                verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
             ) {
-                // Family header card
                 item {
-                    Surface(
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Column(Modifier.padding(20.dp)) {
-                            Text(
-                                family!!.name,
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold,
+                    FamilyHeaderCard(
+                        familyName = family!!.name,
+                        joinCode = family!!.joinCode,
+                        photoUrl = family!!.photoUrl,
+                        members = members,
+                        isAdmin = isAdmin,
+                        onChangePhoto = {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                             )
-                            Spacer(Modifier.height(8.dp))
-                            // Avatar stack
-                            AvatarStack(members = members)
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "${members.size} member${if (members.size == 1) "" else "s"}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            if (family!!.joinCode.isNotBlank()) {
-                                Spacer(Modifier.height(16.dp))
-                                CopyableCodeField(
-                                    code = family!!.joinCode,
-                                    label = "Invite Code",
-                                    modifier =
-                                        Modifier.semantics {
-                                            contentDescription = "Family invite code: ${family!!.joinCode}"
-                                        },
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                SecondaryButton(
-                                    text = "Share invite",
-                                    onClick = {
-                                        val message =
-                                            "Join our family \"${family!!.name}\" on The Family App!\n\n" +
-                                                "Tap to join: ${Routes.inviteLink(family!!.joinCode)}\n\n" +
-                                                "Or open the app, tap \"Join with Invite Code\", and enter: ${family!!.joinCode}"
-                                        val send =
-                                            Intent(Intent.ACTION_SEND).apply {
-                                                type = "text/plain"
-                                                putExtra(Intent.EXTRA_TEXT, message)
-                                            }
-                                        context.startActivity(Intent.createChooser(send, "Share invite"))
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    leadingIcon = Icons.Filled.Share,
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                SecondaryButton(
-                                    text = "Show QR code",
-                                    onClick = { showQr = true },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    leadingIcon = Icons.Filled.QrCode2,
-                                )
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Members",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+                        },
+                        onShare = {
+                            val message =
+                                "Join our family \"${family!!.name}\" on The Family App!\n\n" +
+                                    "Tap to join: ${Routes.inviteLink(family!!.joinCode)}\n\n" +
+                                    "Or open the app, tap \"Join with Invite Code\", and enter: ${family!!.joinCode}"
+                            val send =
+                                Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, message)
+                                }
+                            context.startActivity(Intent.createChooser(send, "Share invite"))
+                        },
+                        onShowQr = { showQr = true },
                     )
+                    ErrorBanner(error)
+                    SectionHeader("Members", modifier = Modifier.padding(top = Spacing.sm))
                 }
 
-                // Member cards
                 items(members, key = { it.id }) { member ->
                     val memberIsAdmin = member.id == family!!.adminId
                     val canRemove = isAdmin && !memberIsAdmin && member.id != currentUser?.id
-                    val memberDescription = "${member.name}, ${if (memberIsAdmin) "Admin" else "Member"}"
-
+                    val card: @Composable () -> Unit = {
+                        MemberCard(
+                            member = member,
+                            isAdmin = memberIsAdmin,
+                            relation = relations[member.id],
+                            onClick = { selectedMember = member },
+                        )
+                    }
                     if (canRemove) {
                         SwipeToRevealDelete(
                             onDelete = { memberToRemove = member },
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            MemberCard(member = member, isAdmin = memberIsAdmin, memberDescription = memberDescription)
-                        }
+                            shape = RoundedCornerShape(Radius.row),
+                        ) { card() }
                     } else {
-                        MemberCard(member = member, isAdmin = memberIsAdmin, memberDescription = memberDescription)
+                        card()
                     }
                 }
 
-                // Leave button
                 item {
-                    Spacer(Modifier.height(8.dp))
                     DestructiveButton(
                         text = "Leave family",
                         onClick = { showLeaveConfirm = true },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = Spacing.sm),
                         leadingIcon = Icons.AutoMirrored.Filled.Logout,
                     )
                 }
@@ -316,12 +274,33 @@ fun FamilyScreen(
         }
     }
 
-    // ── Dialogs ───────────────────────────────────────────────────────────
+    // ── Sheets ─────────────────────────────────────────────────────────────
+
+    selectedMember?.let { member ->
+        MemberProfileSheet(
+            member = member,
+            isSelf = member.id == currentUser?.id,
+            relation = relations[member.id] ?: "",
+            onSetRelation = { viewModel.setRelation(member.id, it) },
+            onDismiss = { selectedMember = null },
+        )
+    }
+
+    if (promptRelationSetup) {
+        RelationsSetupSheet(
+            members = members.filter { it.id != currentUser?.id },
+            relations = relations,
+            onSet = { toUserId, relation -> viewModel.setRelation(toUserId, relation) },
+            onDismiss = { viewModel.dismissRelationSetup() },
+        )
+    }
+
+    // ── Dialogs ────────────────────────────────────────────────────────────
 
     if (showLeaveConfirm) {
         AlertDialog(
             onDismissRequest = { showLeaveConfirm = false },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(Radius.large),
             title = { Text("Leave family?") },
             text = { Text("You will lose access to shared data. You can rejoin later with the invite code.") },
             confirmButton = {
@@ -341,7 +320,7 @@ fun FamilyScreen(
     memberToRemove?.let { member ->
         AlertDialog(
             onDismissRequest = { memberToRemove = null },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(Radius.large),
             title = { Text("Remove member?") },
             text = { Text("${member.name} will be removed from the family. They can rejoin later with the invite code.") },
             confirmButton = {
@@ -391,7 +370,7 @@ fun FamilyScreen(
         val qr = remember(link) { generateQrBitmap(link) }
         AlertDialog(
             onDismissRequest = { showQr = false },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(Radius.large),
             confirmButton = { TextButton(onClick = { showQr = false }) { Text("Done") } },
             title = { Text("Scan to join") },
             text = {
@@ -403,7 +382,7 @@ fun FamilyScreen(
                             modifier = Modifier.size(220.dp),
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(Spacing.md))
                     Text(
                         family!!.joinCode,
                         style = MaterialTheme.typography.titleMedium,
@@ -415,13 +394,190 @@ fun FamilyScreen(
     }
 }
 
+// ── No-family state ────────────────────────────────────────────────────────
+
+@Composable
+private fun NoFamilyContent(
+    error: String?,
+    modifier: Modifier = Modifier,
+    onCreate: () -> Unit,
+    onJoin: () -> Unit,
+) {
+    Box(modifier) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                                MaterialTheme.colorScheme.background,
+                            ),
+                        ),
+                    ),
+        )
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 28.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            EmptyState(
+                icon = Icons.Filled.FamilyRestroom,
+                title = "Bring your family together",
+                subtitle = "Create a family space or join one with an invite code to share calendars, shopping lists, wishlists, and more.",
+            )
+            Spacer(Modifier.height(Spacing.sm))
+            ErrorBanner(error)
+            if (error != null) Spacer(Modifier.height(Spacing.sm))
+            PrimaryButton(
+                text = "Create a Family",
+                onClick = onCreate,
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = Icons.Filled.FamilyRestroom,
+            )
+            Spacer(Modifier.height(Spacing.md))
+            SecondaryButton(
+                text = "Join with Invite Code",
+                onClick = onJoin,
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = Icons.Filled.GroupAdd,
+            )
+        }
+    }
+}
+
+// ── Header card ────────────────────────────────────────────────────────────
+
+private const val PHOTO_HERO_SIZE = 112
+private const val CAMERA_BADGE_SIZE = 34
+
+@Composable
+private fun FamilyHeaderCard(
+    familyName: String,
+    joinCode: String,
+    photoUrl: String?,
+    members: List<UserModel>,
+    isAdmin: Boolean,
+    onChangePhoto: () -> Unit,
+    onShare: () -> Unit,
+    onShowQr: () -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .glassCard(Radius.bigCard)
+            .padding(Spacing.xl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+    ) {
+        FamilyPhotoHero(photoUrl = photoUrl, isAdmin = isAdmin, onChangePhoto = onChangePhoto)
+        Text(
+            familyName,
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            "${members.size} member${if (members.size == 1) "" else "s"}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        AvatarStack(members = members)
+        if (joinCode.isNotBlank()) {
+            Spacer(Modifier.height(Spacing.xs))
+            CopyableCodeField(
+                code = joinCode,
+                label = "Invite Code",
+                modifier =
+                    Modifier.semantics {
+                        contentDescription = "Family invite code: $joinCode"
+                    },
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                SecondaryButton(
+                    text = "Share invite",
+                    onClick = onShare,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Filled.Share,
+                )
+                SecondaryButton(
+                    text = "QR code",
+                    onClick = onShowQr,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Filled.QrCode2,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FamilyPhotoHero(
+    photoUrl: String?,
+    isAdmin: Boolean,
+    onChangePhoto: () -> Unit,
+) {
+    Box(contentAlignment = Alignment.BottomEnd) {
+        val circle =
+            Modifier
+                .size(PHOTO_HERO_SIZE.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFF7C3AED), Color(0xFF5457E8)),
+                    ),
+                ).let { if (isAdmin) it.clickable(onClick = onChangePhoto) else it }
+        Box(circle, contentAlignment = Alignment.Center) {
+            if (photoUrl != null) {
+                AsyncImage(
+                    model = photoUrl,
+                    contentDescription = "Family photo",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(PHOTO_HERO_SIZE.dp).clip(CircleShape),
+                )
+            } else {
+                Icon(
+                    Icons.Filled.FamilyRestroom,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(46.dp),
+                )
+            }
+        }
+        if (isAdmin) {
+            Box(
+                Modifier
+                    .size(CAMERA_BADGE_SIZE.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable(onClick = onChangePhoto),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.CameraAlt,
+                    contentDescription = "Change family photo",
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+    }
+}
+
 /** Overlapping avatar stack showing up to 4 avatars, then a "+N" overflow badge. */
 @Composable
 private fun AvatarStack(members: List<UserModel>) {
     if (members.isEmpty()) return
 
-    val avatarSize = 36
-    val overlapOffset = 24 // dp each avatar shifts right from previous
+    val avatarSize = 40
+    val overlapOffset = 26 // dp each avatar shifts right from previous
     val displayMembers = members.take(4)
     val overflow = members.size - displayMembers.size
     val stackWidth =
@@ -431,13 +587,6 @@ private fun AvatarStack(members: List<UserModel>) {
         ).dp
 
     val names = members.joinToString(", ") { it.name }
-    val avatarColors =
-        listOf(
-            Color(0xFF6366F1), // indigo
-            Color(0xFF8B5CF6), // violet
-            Color(0xFF14B8A6), // teal
-            Color(0xFFF59E0B), // amber
-        )
 
     Box(
         modifier =
@@ -447,7 +596,6 @@ private fun AvatarStack(members: List<UserModel>) {
                 .semantics { contentDescription = "Family members: $names" },
     ) {
         displayMembers.forEachIndexed { index, member ->
-            val color = if (member.avatarColor != 0) Color(member.avatarColor) else avatarColors[index % avatarColors.size]
             Box(
                 modifier =
                     Modifier
@@ -455,12 +603,12 @@ private fun AvatarStack(members: List<UserModel>) {
                         .size(avatarSize.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surface)
-                        .padding(1.dp),
+                        .padding(2.dp),
             ) {
                 InitialAvatar(
                     name = member.name,
-                    color = color,
-                    size = avatarSize,
+                    color = member.avatarColor.takeIf { it != 0 }?.let { colorFromArgb(it) } ?: defaultAvatarColor,
+                    size = avatarSize - 4,
                     avatarUri = member.avatarUrl,
                 )
             }
@@ -477,7 +625,7 @@ private fun AvatarStack(members: List<UserModel>) {
             ) {
                 Text(
                     text = "+$overflow",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.Bold,
                 )
@@ -486,68 +634,273 @@ private fun AvatarStack(members: List<UserModel>) {
     }
 }
 
-/** Single member card with avatar, name+email column, and role badge. */
+/** Single member row: avatar, name + relation (as seen by me), admin badge, chevron. */
 @Composable
 private fun MemberCard(
     member: UserModel,
     isAdmin: Boolean,
-    memberDescription: String,
+    relation: String?,
+    onClick: () -> Unit,
 ) {
-    val avatarColor = if (member.avatarColor != 0) Color(member.avatarColor) else Color(0xFF6366F1)
+    val avatarColor = member.avatarColor.takeIf { it != 0 }?.let { colorFromArgb(it) } ?: defaultAvatarColor
+    val subtitle = relation?.takeIf { it.isNotBlank() } ?: member.email
+    val memberDescription = "${member.name}, ${if (isAdmin) "Admin" else "Member"}"
 
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .semantics { contentDescription = memberDescription },
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .glassCard(Radius.row)
+            .clickable(onClick = onClick)
+            .padding(Spacing.lg)
+            .semantics { contentDescription = memberDescription },
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            InitialAvatar(
-                name = member.name,
-                color = avatarColor,
-                size = 48,
-                avatarUri = member.avatarUrl,
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = member.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    if (isAdmin) {
-                        Spacer(Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.Filled.Star,
-                            contentDescription = "Admin",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp),
-                        )
-                    }
-                }
+        InitialAvatar(name = member.name, color = avatarColor, size = 44, avatarUri = member.avatarUrl)
+        Spacer(Modifier.width(Spacing.md))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = member.email,
+                    text = member.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (isAdmin) {
+                    Spacer(Modifier.width(Spacing.xs))
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "Admin",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+            if (subtitle.isNotBlank()) {
+                Text(
+                    text = subtitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+        if (isAdmin) {
             PillTag(
-                text = if (isAdmin) "Admin" else "Member",
-                container = if (isAdmin) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                content = if (isAdmin) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+                text = "Admin",
+                container = MaterialTheme.colorScheme.primaryContainer,
+                content = MaterialTheme.colorScheme.onPrimaryContainer,
             )
+            Spacer(Modifier.width(Spacing.sm))
+        }
+        Icon(
+            Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+// ── Member profile sheet ─────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MemberProfileSheet(
+    member: UserModel,
+    isSelf: Boolean,
+    relation: String,
+    onSetRelation: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val avatarColor = member.avatarColor.takeIf { it != 0 }?.let { colorFromArgb(it) } ?: defaultAvatarColor
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.screenEdge)
+                .padding(bottom = Spacing.xxl),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            InitialAvatar(name = member.name, color = avatarColor, size = 96, avatarUri = member.avatarUrl)
+            Text(
+                member.name,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Column(Modifier.fillMaxWidth().glassCard(Radius.row)) {
+                if (member.email.isNotBlank()) {
+                    InfoRow(icon = Icons.Filled.Email, label = "Email", value = member.email)
+                    HorizontalDivider(Modifier.padding(start = 52.dp))
+                }
+                InfoRow(
+                    icon = Icons.Filled.Phone,
+                    label = "Phone",
+                    value = member.mobile.ifBlank { "Not set" },
+                )
+                if (!isSelf) {
+                    HorizontalDivider(Modifier.padding(start = 52.dp))
+                    RelationRow(relation = relation, onSetRelation = onSetRelation)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(Spacing.md))
+        Column {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+}
+
+@Composable
+private fun RelationRow(
+    relation: String,
+    onSetRelation: (String) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Filled.Favorite,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(Spacing.md))
+        Column {
+            Text("Your relation", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            RelationPicker(relation = relation, onSetRelation = onSetRelation)
+        }
+    }
+}
+
+/** Dropdown that lets the viewer pick their relation label (or clear it). */
+@Composable
+private fun RelationPicker(
+    relation: String,
+    onSetRelation: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            Modifier.clickable { expanded = true },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                relation.ifBlank { "Set relation" },
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = if (relation.isBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+            Icon(
+                Icons.Filled.UnfoldMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            familyRelationOptions.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        expanded = false
+                        onSetRelation(option)
+                    },
+                )
+            }
+            if (relation.isNotBlank()) {
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("None", color = MaterialTheme.colorScheme.error) },
+                    onClick = {
+                        expanded = false
+                        onSetRelation("")
+                    },
+                )
+            }
+        }
+    }
+}
+
+// ── Relations-setup sheet (post-join) ────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RelationsSetupSheet(
+    members: List<UserModel>,
+    relations: Map<String, String>,
+    onSet: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.screenEdge)
+                .padding(bottom = Spacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Set your relations",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onDismiss) { Text("Done") }
+            }
+            Text(
+                "How are you related to each member? You can change this anytime.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            LazyColumn(Modifier.heightIn(max = 400.dp), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                items(members, key = { it.id }) { member ->
+                    val avatarColor = member.avatarColor.takeIf { it != 0 }?.let { colorFromArgb(it) } ?: defaultAvatarColor
+                    Row(
+                        Modifier.fillMaxWidth().glassCard(Radius.row).padding(Spacing.md),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        InitialAvatar(name = member.name, color = avatarColor, size = 40, avatarUri = member.avatarUrl)
+                        Spacer(Modifier.width(Spacing.md))
+                        Text(
+                            member.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        RelationPicker(
+                            relation = relations[member.id] ?: "",
+                            onSetRelation = { onSet(member.id, it) },
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -563,10 +916,10 @@ private fun CreateFamilyDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(Radius.large),
         title = { Text("Create a family") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 FamilyTextField(
                     value = name,
                     onValueChange = { name = it },

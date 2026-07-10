@@ -8,7 +8,9 @@ import androidx.lifecycle.viewModelScope
 import com.sandnes.familyapp.data.FamilyModel
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.UserModel
+import com.sandnes.familyapp.data.getFamilyRelations
 import com.sandnes.familyapp.data.remote.SupabaseManager
+import com.sandnes.familyapp.data.setFamilyRelation
 import com.sandnes.familyapp.util.compressImageWithOrientation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -46,6 +49,21 @@ class FamilyViewModel
 
         private val _isUploading = MutableStateFlow(false)
         val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
+
+        /** My relation to each other member (their id → relation label), from my perspective. */
+        private val _relations = MutableStateFlow<Map<String, String>>(emptyMap())
+        val relations: StateFlow<Map<String, String>> = _relations.asStateFlow()
+
+        /**
+         * Set right after joining a family that already has members, so the screen can prompt the
+         * newcomer to label the people already there. Mirrors iOS `promptRelationSetup`.
+         */
+        private val _promptRelationSetup = MutableStateFlow(false)
+        val promptRelationSetup: StateFlow<Boolean> = _promptRelationSetup.asStateFlow()
+
+        fun dismissRelationSetup() {
+            _promptRelationSetup.value = false
+        }
 
         /** Invite code captured from a deep link; FamilyScreen opens the join flow with it. */
         val pendingJoinCode = repo.pendingJoinCode
@@ -83,11 +101,33 @@ class FamilyViewModel
                             .from("users")
                             .select { filter { eq("family_id", user.familyId) } }
                             .decodeList<UserModel>()
+                    _relations.value =
+                        repo
+                            .getFamilyRelations(user.familyId)
+                            .filter { it.fromUserId == userId }
+                            .associate { it.toUserId to it.relation }
                 } else {
                     _family.value = null
                     _members.value = emptyList()
+                    _relations.value = emptyMap()
                 }
             }
+        }
+
+        /**
+         * Sets my relation ("Dad", "Wife", …) to another member, or clears it when blank. Optimistic
+         * local update, then persists (RLS enforces from_user_id = me). Mirrors iOS `setRelation`.
+         */
+        fun setRelation(
+            toUserId: String,
+            relation: String,
+        ) = viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            val familyId = _family.value?.id ?: return@launch
+            _relations.update { current ->
+                if (relation.isBlank()) current - toUserId else current + (toUserId to relation)
+            }
+            repo.setFamilyRelation(userId, toUserId, familyId, relation)
         }
 
         fun clearError() {
@@ -111,8 +151,13 @@ class FamilyViewModel
                 val userId = repo.currentUserId.first() ?: return@launch
                 repo
                     .joinFamily(code, userId)
-                    .onSuccess { load(userId) }
-                    .onFailure { _error.value = it.message }
+                    .onSuccess {
+                        load(userId)
+                        // Offer to set relations to the members already in the family.
+                        if (_members.value.any { it.id != userId }) {
+                            _promptRelationSetup.value = true
+                        }
+                    }.onFailure { _error.value = it.message }
             }
 
         fun leaveFamily() =
