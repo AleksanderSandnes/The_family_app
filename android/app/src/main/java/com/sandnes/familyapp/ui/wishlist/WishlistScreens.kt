@@ -63,6 +63,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -74,6 +75,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.WishModel
 import com.sandnes.familyapp.data.WishReservationModel
 import com.sandnes.familyapp.data.WishlistModel
@@ -121,7 +123,7 @@ fun WishlistScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = { FeatureTopBar("Wishlists", onBack) },
+        topBar = { FeatureTopBar(stringResource(R.string.wishlists), onBack) },
         floatingActionButton = {
             AppFab(text = "New wishlist", icon = Icons.Filled.Add, onClick = { showAdd = true })
         },

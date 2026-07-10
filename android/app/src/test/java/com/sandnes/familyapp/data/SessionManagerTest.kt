@@ -32,6 +32,7 @@ class SessionManagerTest {
             sessionManager.setNotificationsEnabled(true)
             sessionManager.setNotifyDaysBefore(1)
             sessionManager.setLocationVisible(false)
+            sessionManager.setAppLanguage("system")
         }
     }
 
@@ -151,5 +152,30 @@ class SessionManagerTest {
         runTest {
             sessionManager.setPermissionsRequested()
             assertTrue(sessionManager.permissionsRequested.first())
+        }
+
+    // --- App language (in-app locale override) ---
+
+    @Test
+    fun `appLanguage defaults to system`() =
+        runTest {
+            assertEquals("system", sessionManager.appLanguage.first())
+        }
+
+    @Test
+    fun `setAppLanguage persists the selected tag`() =
+        runTest {
+            sessionManager.setAppLanguage("nb")
+            assertEquals("nb", sessionManager.appLanguage.first())
+            sessionManager.setAppLanguage("en")
+            assertEquals("en", sessionManager.appLanguage.first())
+        }
+
+    @Test
+    fun `setAppLanguage back to system restores default`() =
+        runTest {
+            sessionManager.setAppLanguage("nb")
+            sessionManager.setAppLanguage("system")
+            assertEquals("system", sessionManager.appLanguage.first())
         }
 }

@@ -2,6 +2,7 @@
 
 package com.sandnes.familyapp.ui.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -39,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -49,6 +51,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.auth.LoginScreen
 import com.sandnes.familyapp.ui.auth.RegisterScreen
 import com.sandnes.familyapp.ui.birthday.BirthdayScreen
@@ -82,7 +85,7 @@ import com.sandnes.familyapp.ui.wishlist.WishlistViewModel
 
 private data class BottomDest(
     val route: String,
-    val label: String,
+    @StringRes val labelRes: Int,
     val icon: ImageVector,
 )
 
@@ -91,11 +94,11 @@ private data class BottomDest(
 // from the Home dashboard / Profile, not tabs.
 private val bottomDestinations =
     listOf(
-        BottomDest(Routes.HOME, "Home", Icons.Filled.Home),
-        BottomDest(Routes.SHOPPING, "Shopping", Icons.Filled.ShoppingCart),
-        BottomDest(Routes.CHAT, "Chat", Icons.AutoMirrored.Filled.Chat),
-        BottomDest(Routes.CALENDAR, "Calendar", Icons.Filled.CalendarMonth),
-        BottomDest(Routes.PROFILE, "Profile", Icons.Filled.Person),
+        BottomDest(Routes.HOME, R.string.home, Icons.Filled.Home),
+        BottomDest(Routes.SHOPPING, R.string.shopping, Icons.Filled.ShoppingCart),
+        BottomDest(Routes.CHAT, R.string.chat, Icons.AutoMirrored.Filled.Chat),
+        BottomDest(Routes.CALENDAR, R.string.calendar, Icons.Filled.CalendarMonth),
+        BottomDest(Routes.PROFILE, R.string.profile, Icons.Filled.Person),
     )
 
 @Composable
@@ -217,13 +220,13 @@ private fun MainFlow() {
                                                 }
                                             },
                                         ) {
-                                            Icon(dest.icon, contentDescription = dest.label)
+                                            Icon(dest.icon, contentDescription = stringResource(dest.labelRes))
                                         }
                                     } else {
-                                        Icon(dest.icon, contentDescription = dest.label)
+                                        Icon(dest.icon, contentDescription = stringResource(dest.labelRes))
                                     }
                                 },
-                                label = { Text(dest.label) },
+                                label = { Text(stringResource(dest.labelRes)) },
                                 colors =
                                     NavigationBarItemDefaults.colors(
                                         selectedIconColor = MaterialTheme.colorScheme.primary,

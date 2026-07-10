@@ -1,6 +1,7 @@
 package com.sandnes.familyapp.ui.settings
 
 import com.sandnes.familyapp.data.FamilyRepository
+import com.sandnes.familyapp.data.SessionManager
 import com.sandnes.familyapp.data.ThemeMode
 import com.sandnes.familyapp.util.MainDispatcherRule
 import io.mockk.coVerify
@@ -37,26 +38,31 @@ class SettingsViewModelTest {
     val dispatcherRule = MainDispatcherRule()
 
     private lateinit var repo: FamilyRepository
+    private lateinit var session: SessionManager
     private lateinit var themeMode: MutableStateFlow<ThemeMode>
     private lateinit var notificationsEnabled: MutableStateFlow<Boolean>
     private lateinit var notifyDaysBefore: MutableStateFlow<Int>
     private lateinit var locationVisible: MutableStateFlow<Boolean>
+    private lateinit var appLanguage: MutableStateFlow<String>
     private lateinit var vm: SettingsViewModel
 
     @Before
     fun setUp() {
         repo = mockk(relaxed = true)
+        session = mockk(relaxed = true)
         themeMode = MutableStateFlow(ThemeMode.SYSTEM)
         notificationsEnabled = MutableStateFlow(true)
         notifyDaysBefore = MutableStateFlow(1)
         locationVisible = MutableStateFlow(false)
+        appLanguage = MutableStateFlow("system")
 
         every { repo.themeMode } returns themeMode
         every { repo.notificationsEnabled } returns notificationsEnabled
         every { repo.notifyDaysBefore } returns notifyDaysBefore
         every { repo.locationVisible } returns locationVisible
+        every { session.appLanguage } returns appLanguage
 
-        vm = SettingsViewModel(repo)
+        vm = SettingsViewModel(repo, session)
     }
 
     @After
@@ -134,6 +140,22 @@ class SettingsViewModelTest {
             locationVisible.value = true
             advanceUntilIdle()
             assertTrue(vm.locationVisible.value)
+        }
+
+    @Test
+    fun `initial appLanguage is system`() =
+        runTest(dispatcherRule.dispatcher) {
+            advanceUntilIdle()
+            assertEquals("system", vm.appLanguage.value)
+        }
+
+    @Test
+    fun `appLanguage StateFlow reflects session flow change to nb`() =
+        runTest(dispatcherRule.dispatcher) {
+            backgroundScope.launch { vm.appLanguage.collect {} }
+            appLanguage.value = "nb"
+            advanceUntilIdle()
+            assertEquals("nb", vm.appLanguage.value)
         }
 
     // ─────────────────────────────────────────────────────────────────────────

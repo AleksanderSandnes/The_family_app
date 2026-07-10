@@ -84,6 +84,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -96,6 +97,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.compose.AsyncImage
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.theme.BrandGradient
 import com.sandnes.familyapp.ui.theme.Elevation
 import com.sandnes.familyapp.ui.theme.Radius
@@ -478,7 +480,7 @@ fun PillTag(
 fun CopyableCodeField(
     code: String,
     modifier: Modifier = Modifier,
-    label: String = "Share code",
+    label: String = stringResource(R.string.share_code),
 ) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
@@ -492,7 +494,7 @@ fun CopyableCodeField(
             IconButton(onClick = {
                 scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("", code))) }
             }) {
-                Icon(Icons.Filled.ContentCopy, contentDescription = "Copy code")
+                Icon(Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.copy_code))
             }
         },
         shape = RoundedCornerShape(Radius.field),
@@ -514,7 +516,7 @@ fun CopyableCodeField(
 fun BirthdayPickerField(
     value: String,
     onChange: (String) -> Unit,
-    label: String = "Birthday (optional)",
+    label: String = stringResource(R.string.birthday_optional),
 ) {
     var showPicker by remember { mutableStateOf(false) }
     val fallbackMillis = System.currentTimeMillis() - 30L * 365 * 24 * 60 * 60 * 1000
@@ -595,10 +597,10 @@ fun BirthdayPickerField(
                         onChange(date.toString())
                     }
                     showPicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel)) }
             },
         ) {
             DatePicker(state = pickerState)
@@ -637,7 +639,7 @@ fun SwipeToRevealDelete(
                     revealed = false
                     onDelete()
                 }) {
-                    Icon(Icons.Filled.Delete, "Delete", tint = Color.White)
+                    Icon(Icons.Filled.Delete, stringResource(R.string.delete), tint = Color.White)
                 }
             }
         }
@@ -752,7 +754,7 @@ fun ListSkeleton(
 fun ConfirmationDialog(
     title: String,
     message: String,
-    confirmText: String = "Delete",
+    confirmText: String = stringResource(R.string.delete),
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -767,7 +769,7 @@ fun ConfirmationDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

@@ -55,6 +55,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +65,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.components.BirthdayPickerField
 import com.sandnes.familyapp.ui.components.ErrorBanner
 import com.sandnes.familyapp.ui.components.FamilyTextField
@@ -89,23 +91,27 @@ fun LoginScreen(
     if (showForgotDialog) {
         AlertDialog(
             onDismissRequest = { showForgotDialog = false },
-            title = { Text("Forgot password?") },
+            title = { Text(stringResource(R.string.forgot_password)) },
             text = {
                 Text(
-                    "Password reset is coming soon. Contact support at support@familyapp.com",
+                    stringResource(R.string.password_reset_is_coming_soon_contact_support_at_support_familyapp_com),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             },
             confirmButton = {
-                TextButton(onClick = { showForgotDialog = false }) { Text("OK") }
+                TextButton(onClick = { showForgotDialog = false }) { Text(stringResource(R.string.ok)) }
             },
         )
     }
 
     AuthScaffold(
-        title = "Welcome back",
-        subtitle = "Sign in to keep your family in sync.",
+        title = stringResource(R.string.welcome_back),
+        subtitle = stringResource(R.string.sign_in_to_keep_your_family_in_sync),
     ) {
+        val emailFieldDescription = stringResource(R.string.email_address_field)
+        val passwordFieldDescription = stringResource(R.string.password_field)
+        val signInButtonDescription = stringResource(R.string.sign_in_button)
+        val googleButtonDescription = stringResource(R.string.continue_with_google_button)
         ErrorBanner(state.error)
         FamilyTextField(
             value = email,
@@ -113,12 +119,12 @@ fun LoginScreen(
                 email = it
                 viewModel.clearError()
             },
-            label = "Email",
+            label = stringResource(R.string.email),
             leadingIcon = Icons.Outlined.Mail,
             keyboardType = KeyboardType.Email,
             imeAction = ImeAction.Next,
             enabled = !state.loading,
-            modifier = Modifier.semantics { contentDescription = "Email address field" },
+            modifier = Modifier.semantics { contentDescription = emailFieldDescription },
         )
         FamilyTextField(
             value = password,
@@ -126,7 +132,7 @@ fun LoginScreen(
                 password = it
                 viewModel.clearError()
             },
-            label = "Password",
+            label = stringResource(R.string.password),
             leadingIcon = Icons.Outlined.Lock,
             isPassword = true,
             imeAction = ImeAction.Done,
@@ -139,34 +145,34 @@ fun LoginScreen(
                     },
                 ),
             enabled = !state.loading,
-            modifier = Modifier.semantics { contentDescription = "Password field" },
+            modifier = Modifier.semantics { contentDescription = passwordFieldDescription },
         )
         TextButton(
             onClick = { showForgotDialog = true },
             modifier = Modifier.align(Alignment.End),
         ) {
             Text(
-                "Forgot password?",
+                stringResource(R.string.forgot_password),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
             )
         }
         PrimaryButton(
-            text = "Sign in",
+            text = stringResource(R.string.sign_in),
             onClick = { viewModel.login(email, password) },
             enabled = email.isNotBlank() && password.isNotBlank(),
             loading = state.loading,
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Sign in button" },
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = signInButtonDescription },
         )
         Spacer(Modifier.height(12.dp))
         SecondaryButton(
-            text = "Continue with Google",
+            text = stringResource(R.string.continue_with_google),
             onClick = { viewModel.signInWithGoogle() },
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Continue with Google button" },
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = googleButtonDescription },
         )
         AuthFooter(
-            prompt = "New to The Family App?",
-            action = "Create account",
+            prompt = stringResource(R.string.new_to_the_family_app),
+            action = stringResource(R.string.create_account),
             onClick = onNavigateToRegister,
         )
     }
@@ -196,9 +202,17 @@ fun RegisterScreen(
 
     val (title, subtitle) =
         when (step) {
-            1 -> "Create your account" to "Start with your login details."
-            else -> "About you" to "Optional details to help your family recognize you."
+            1 ->
+                stringResource(R.string.create_your_account) to
+                    stringResource(R.string.start_with_your_login_details)
+            else ->
+                stringResource(R.string.about_you) to
+                    stringResource(R.string.optional_details_to_help_your_family_recognize_you)
         }
+    val errEnterName = stringResource(R.string.please_enter_your_name)
+    val errInvalidEmail = stringResource(R.string.please_enter_a_valid_email_address)
+    val errShortPassword = stringResource(R.string.password_must_be_at_least_6_characters)
+    val errPasswordMismatch = stringResource(R.string.passwords_do_not_match)
 
     AuthScaffold(title = title, subtitle = subtitle) {
         StepIndicator(currentStep = step, totalSteps = 2)
@@ -230,10 +244,10 @@ fun RegisterScreen(
                     loading = state.loading,
                     onNext = {
                         when {
-                            name.isBlank() -> viewModel.setError("Please enter your name.")
-                            !email.contains('@') || !email.contains('.') -> viewModel.setError("Please enter a valid email address.")
-                            password.length < 6 -> viewModel.setError("Password must be at least 6 characters.")
-                            password != confirm -> viewModel.setError("Passwords do not match.")
+                            name.isBlank() -> viewModel.setError(errEnterName)
+                            !email.contains('@') || !email.contains('.') -> viewModel.setError(errInvalidEmail)
+                            password.length < 6 -> viewModel.setError(errShortPassword)
+                            password != confirm -> viewModel.setError(errPasswordMismatch)
                             else -> {
                                 viewModel.clearError()
                                 step = 2
@@ -257,8 +271,8 @@ fun RegisterScreen(
         }
         if (step == 1) {
             AuthFooter(
-                prompt = "Already have an account?",
-                action = "Sign in",
+                prompt = stringResource(R.string.already_have_an_account),
+                action = stringResource(R.string.sign_in),
                 onClick = onNavigateToLogin,
             )
         }
@@ -339,13 +353,15 @@ private fun PasswordStrengthBar(password: String) {
     if (password.isEmpty()) return
     val strength = passwordStrength(password)
     val label =
-        when (strength) {
-            0 -> "Too short"
-            1 -> "Weak"
-            2 -> "Medium"
-            3 -> "Strong"
-            else -> "Strong"
-        }
+        stringResource(
+            when (strength) {
+                0 -> R.string.too_short
+                1 -> R.string.weak
+                2 -> R.string.medium
+                3 -> R.string.strong
+                else -> R.string.strong
+            },
+        )
     val color =
         when (strength) {
             0, 1 -> MaterialTheme.colorScheme.error
@@ -396,20 +412,26 @@ private fun RegistrationStep1(
     val passwordFocus = remember { FocusRequester() }
     val confirmFocus = remember { FocusRequester() }
 
+    val nameFieldDescription = stringResource(R.string.full_name_field)
+    val emailFieldDescription = stringResource(R.string.email_address_field)
+    val passwordFieldDescription = stringResource(R.string.password_field)
+    val confirmFieldDescription = stringResource(R.string.confirm_password_field)
+    val continueButtonDescription = stringResource(R.string.continue_next_step_button)
+
     FamilyTextField(
         value = name,
         onValueChange = onNameChange,
-        label = "Full name",
+        label = stringResource(R.string.full_name),
         leadingIcon = Icons.Outlined.Person,
         imeAction = ImeAction.Next,
         keyboardActions = KeyboardActions(onNext = { emailFocus.requestFocus() }),
         enabled = !loading,
-        modifier = Modifier.semantics { contentDescription = "Full name field" },
+        modifier = Modifier.semantics { contentDescription = nameFieldDescription },
     )
     FamilyTextField(
         value = email,
         onValueChange = onEmailChange,
-        label = "Email",
+        label = stringResource(R.string.email),
         leadingIcon = Icons.Outlined.Mail,
         keyboardType = KeyboardType.Email,
         imeAction = ImeAction.Next,
@@ -418,12 +440,12 @@ private fun RegistrationStep1(
         modifier =
             Modifier
                 .focusRequester(emailFocus)
-                .semantics { contentDescription = "Email address field" },
+                .semantics { contentDescription = emailFieldDescription },
     )
     FamilyTextField(
         value = password,
         onValueChange = onPasswordChange,
-        label = "Password",
+        label = stringResource(R.string.password),
         leadingIcon = Icons.Outlined.Lock,
         isPassword = true,
         imeAction = ImeAction.Next,
@@ -432,13 +454,13 @@ private fun RegistrationStep1(
         modifier =
             Modifier
                 .focusRequester(passwordFocus)
-                .semantics { contentDescription = "Password field" },
+                .semantics { contentDescription = passwordFieldDescription },
     )
     PasswordStrengthBar(password)
     FamilyTextField(
         value = confirm,
         onValueChange = onConfirmChange,
-        label = "Confirm password",
+        label = stringResource(R.string.confirm_password),
         leadingIcon = Icons.Outlined.Lock,
         isPassword = true,
         imeAction = ImeAction.Done,
@@ -447,18 +469,18 @@ private fun RegistrationStep1(
         modifier =
             Modifier
                 .focusRequester(confirmFocus)
-                .semantics { contentDescription = "Confirm password field" },
+                .semantics { contentDescription = confirmFieldDescription },
     )
     Spacer(Modifier.height(4.dp))
     PrimaryButton(
-        text = "Continue",
+        text = stringResource(R.string.continue_label),
         onClick = onNext,
         enabled = name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirm.isNotBlank(),
         loading = loading,
         modifier =
             Modifier
                 .fillMaxWidth()
-                .semantics { contentDescription = "Continue to next step button" },
+                .semantics { contentDescription = continueButtonDescription },
     )
 }
 
@@ -478,26 +500,28 @@ private fun RegistrationStep2(
             onChange = onBirthdayChange,
         )
         Text(
-            text = "Used to track family birthdays",
+            text = stringResource(R.string.used_to_track_family_birthdays),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp),
         )
     }
+    val mobileFieldDescription = stringResource(R.string.mobile_phone_number_field_optional)
+    val createAccountButtonDescription = stringResource(R.string.create_account_button)
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         FamilyTextField(
             value = mobile,
             onValueChange = onMobileChange,
-            label = "Mobile (optional)",
+            label = stringResource(R.string.mobile_optional),
             leadingIcon = Icons.Outlined.Phone,
             keyboardType = KeyboardType.Phone,
             imeAction = ImeAction.Done,
             keyboardActions = KeyboardActions(onDone = { onSubmit() }),
             enabled = !loading,
-            modifier = Modifier.semantics { contentDescription = "Mobile phone number field (optional)" },
+            modifier = Modifier.semantics { contentDescription = mobileFieldDescription },
         )
         Text(
-            text = "For family contact info",
+            text = stringResource(R.string.for_family_contact_info),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp),
@@ -505,13 +529,13 @@ private fun RegistrationStep2(
     }
     Spacer(Modifier.height(4.dp))
     PrimaryButton(
-        text = "Create account",
+        text = stringResource(R.string.create_account),
         onClick = onSubmit,
         loading = loading,
         modifier =
             Modifier
                 .fillMaxWidth()
-                .semantics { contentDescription = "Create account button" },
+                .semantics { contentDescription = createAccountButtonDescription },
     )
     SecondaryButton(
         text = "Back",
@@ -564,13 +588,13 @@ private fun AuthScaffold(
             }
             Spacer(Modifier.height(14.dp))
             Text(
-                "The Family App",
+                stringResource(R.string.the_family_app),
                 color = Color.White,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                "One home for everything you share",
+                stringResource(R.string.one_home_for_everything_you_share),
                 color = Color.White.copy(alpha = 0.80f),
                 style = MaterialTheme.typography.bodyMedium,
             )

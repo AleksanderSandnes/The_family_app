@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
@@ -48,26 +49,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sandnes.familyapp.BuildConfig
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ThemeMode
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.glassCard
+import com.sandnes.familyapp.util.LocaleManager
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 
 private val LEAD_TIME_OPTIONS =
     listOf(
-        "Same day" to 0,
-        "1 day" to 1,
-        "2 days" to 2,
-        "7 days" to 7,
+        R.string.same_day to 0,
+        R.string.one_day to 1,
+        R.string.two_days to 2,
+        R.string.seven_days to 7,
+    )
+
+// Language picker options: stored tag + endonym label. Endonyms stay constant across languages;
+// "System" localizes so it reads in the currently active language.
+private val LANGUAGE_OPTIONS =
+    listOf(
+        LocaleManager.SYSTEM to R.string.system,
+        "en" to R.string.english,
+        "nb" to R.string.norwegian,
     )
 
 @Composable
@@ -79,8 +92,10 @@ fun SettingsScreen(
     val notificationsEnabled by vm.notificationsEnabled.collectAsStateWithLifecycle()
     val notifyDaysBefore by vm.notifyDaysBefore.collectAsStateWithLifecycle()
     val locationVisible by vm.locationVisible.collectAsStateWithLifecycle()
+    val appLanguage by vm.appLanguage.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val settingsSavedMessage = stringResource(R.string.settings_saved)
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -96,14 +111,15 @@ fun SettingsScreen(
             snapshotFlow { notificationsEnabled }.drop(1).map { },
             snapshotFlow { notifyDaysBefore }.drop(1).map { },
             snapshotFlow { locationVisible }.drop(1).map { },
+            snapshotFlow { appLanguage }.drop(1).map { },
         ).collect {
-            snackbarHostState.showSnackbar("Settings saved")
+            snackbarHostState.showSnackbar(settingsSavedMessage)
         }
     }
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = { FeatureTopBar("Settings", onBack) },
+        topBar = { FeatureTopBar(stringResource(R.string.settings), onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
@@ -115,18 +131,24 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // ── APPEARANCE ──────────────────────────────────────────────────
-            SettingsSectionHeader("Appearance")
+            SettingsSectionHeader(stringResource(R.string.appearance))
             SettingsCard {
                 ThemeSelector(selected = themeMode, onSelect = vm::setThemeMode)
             }
 
+            // ── LANGUAGE ─────────────────────────────────────────────────────
+            SettingsSectionHeader(stringResource(R.string.language))
+            SettingsCard {
+                LanguageSelector(selected = appLanguage, onSelect = vm::setAppLanguage)
+            }
+
             // ── NOTIFICATIONS ────────────────────────────────────────────────
-            SettingsSectionHeader("Notifications")
+            SettingsSectionHeader(stringResource(R.string.notifications))
             SettingsCard {
                 ToggleRow(
                     icon = Icons.Filled.Notifications,
-                    title = "Notifications",
-                    subtitle = "Family activity and reminders",
+                    title = stringResource(R.string.notifications),
+                    subtitle = stringResource(R.string.family_activity_and_reminders),
                     checked = notificationsEnabled,
                     onChange = { enabled ->
                         if (!enabled) {
@@ -150,19 +172,19 @@ fun SettingsScreen(
             }
 
             // ── PRIVACY ──────────────────────────────────────────────────────
-            SettingsSectionHeader("Privacy")
+            SettingsSectionHeader(stringResource(R.string.privacy))
             SettingsCard {
                 ToggleRow(
                     icon = Icons.Filled.LocationOn,
-                    title = "Visible on family map",
-                    subtitle = "Share your location with family",
+                    title = stringResource(R.string.visible_on_family_map),
+                    subtitle = stringResource(R.string.share_your_location_with_family),
                     checked = locationVisible,
                     onChange = { vm.setLocationVisible(it) },
                 )
             }
 
             // ── ABOUT ────────────────────────────────────────────────────────
-            SettingsSectionHeader("About")
+            SettingsSectionHeader(stringResource(R.string.about))
             SettingsCard {
                 AboutSection()
             }
@@ -200,17 +222,50 @@ private fun LeadTimeSelector(
 ) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            "Remind me",
+            stringResource(R.string.remind_me),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LEAD_TIME_OPTIONS.forEach { (label, days) ->
+            LEAD_TIME_OPTIONS.forEach { (labelRes, days) ->
                 LeadTimeChip(
-                    label = label,
+                    label = stringResource(labelRes),
                     selected = selected == days,
                     modifier = Modifier.weight(1f),
                     onClick = { onSelect(days) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LanguageSelector(
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Filled.Language,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
+            Spacer(Modifier.size(12.dp))
+            Text(
+                stringResource(R.string.language),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            LANGUAGE_OPTIONS.forEach { (tag, labelRes) ->
+                LeadTimeChip(
+                    label = stringResource(labelRes),
+                    selected = selected == tag,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onSelect(tag) },
                 )
             }
         }
@@ -256,9 +311,13 @@ private fun ThemeSelector(
             )
             Spacer(Modifier.size(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Appearance", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
                 Text(
-                    "Choose how the app looks",
+                    stringResource(R.string.appearance),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    stringResource(R.string.settings_appearance_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -267,21 +326,21 @@ private fun ThemeSelector(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ThemeOption(
                 icon = Icons.Filled.BrightnessAuto,
-                label = "System",
+                label = stringResource(R.string.system),
                 selected = selected == ThemeMode.SYSTEM,
                 modifier = Modifier.weight(1f),
                 onClick = { onSelect(ThemeMode.SYSTEM) },
             )
             ThemeOption(
                 icon = Icons.Filled.LightMode,
-                label = "Light",
+                label = stringResource(R.string.light),
                 selected = selected == ThemeMode.LIGHT,
                 modifier = Modifier.weight(1f),
                 onClick = { onSelect(ThemeMode.LIGHT) },
             )
             ThemeOption(
                 icon = Icons.Filled.DarkMode,
-                label = "Dark",
+                label = stringResource(R.string.dark),
                 selected = selected == ThemeMode.DARK,
                 modifier = Modifier.weight(1f),
                 onClick = { onSelect(ThemeMode.DARK) },
@@ -380,17 +439,17 @@ private fun AboutSection() {
         Spacer(Modifier.size(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                "The Family App",
+                stringResource(R.string.the_family_app),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                "v$versionName (build $versionCode)",
+                stringResource(R.string.app_version_format, versionName, versionCode),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "Your family, together",
+                stringResource(R.string.your_family_together),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

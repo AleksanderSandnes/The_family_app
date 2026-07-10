@@ -3,7 +3,9 @@ package com.sandnes.familyapp.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sandnes.familyapp.data.FamilyRepository
+import com.sandnes.familyapp.data.SessionManager
 import com.sandnes.familyapp.data.ThemeMode
+import com.sandnes.familyapp.util.LocaleManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +18,10 @@ class SettingsViewModel
     @Inject
     constructor(
         internal val repo: FamilyRepository,
+        private val session: SessionManager,
     ) : ViewModel() {
+        val appLanguage: StateFlow<String> =
+            session.appLanguage.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LocaleManager.SYSTEM)
         val themeMode: StateFlow<ThemeMode> =
             repo.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
 
@@ -50,5 +55,13 @@ class SettingsViewModel
         fun setLocationVisible(enabled: Boolean) =
             viewModelScope.launch {
                 repo.setLocationVisible(enabled)
+            }
+
+        // Persist the in-app language and apply it immediately so the UI re-localizes live.
+        // viewModelScope runs on Dispatchers.Main.immediate, so the AppCompat call is on-thread.
+        fun setAppLanguage(tag: String) =
+            viewModelScope.launch {
+                session.setAppLanguage(tag)
+                LocaleManager.apply(tag)
             }
     }

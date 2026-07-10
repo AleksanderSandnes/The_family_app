@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.components.AppTopBar
 import com.sandnes.familyapp.ui.components.BirthdayPickerField
 import com.sandnes.familyapp.ui.components.DestructiveButton
@@ -111,7 +113,7 @@ fun ProfileScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = { AppTopBar("Profile") },
+        topBar = { AppTopBar(stringResource(R.string.profile)) },
     ) { padding ->
         Column(
             Modifier
@@ -383,7 +385,7 @@ fun ProfileEditScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = { FeatureTopBar("Edit profile", onBack) },
+        topBar = { FeatureTopBar(stringResource(R.string.edit_profile), onBack) },
     ) { padding ->
         Column(
             Modifier

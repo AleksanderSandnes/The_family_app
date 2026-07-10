@@ -36,12 +36,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.BirthdayModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.BirthdayPickerField
@@ -96,7 +98,7 @@ fun BirthdayScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = { FeatureTopBar("Birthdays", onBack) },
+        topBar = { FeatureTopBar(stringResource(R.string.birthdays), onBack) },
         floatingActionButton = {
             AppFab(text = "Add birthday", icon = Icons.Filled.Add, onClick = { showAdd = true })
         },

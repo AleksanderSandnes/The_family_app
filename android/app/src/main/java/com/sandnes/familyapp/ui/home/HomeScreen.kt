@@ -3,6 +3,7 @@
 package com.sandnes.familyapp.ui.home
 
 import android.content.res.Configuration
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,6 +57,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -66,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.CalendarEventModel
 import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.ui.components.ErrorBanner
@@ -84,8 +87,8 @@ import com.sandnes.familyapp.ui.theme.heroGradient
 import com.sandnes.familyapp.ui.theme.hexColor
 
 private data class Feature(
-    val title: String,
-    val subtitle: String,
+    @StringRes val titleRes: Int,
+    @StringRes val subtitleRes: Int,
     val icon: ImageVector,
     val accent: FeatureAccent,
     val route: String,
@@ -94,12 +97,12 @@ private data class Feature(
 // All feature values are compile-time constants — hoisted to avoid reallocating on every recomposition.
 private val features =
     listOf(
-        Feature("Shopping", "Shared lists", Icons.Filled.ShoppingCart, FeatureAccent.Shopping, Routes.SHOPPING),
-        Feature("Meals", "Plan the week", Icons.Filled.Restaurant, FeatureAccent.Meals, Routes.MEAL),
-        Feature("Calendar", "Family events", Icons.Filled.CalendarMonth, FeatureAccent.Calendar, Routes.CALENDAR),
-        Feature("Birthdays", "Never miss one", Icons.Filled.Cake, FeatureAccent.Birthdays, Routes.BIRTHDAY),
-        Feature("Wishlists", "Gift ideas", Icons.Filled.CardGiftcard, FeatureAccent.Wishlists, Routes.WISHLIST),
-        Feature("Family Map", "See where everyone is", Icons.Filled.Map, FeatureAccent.Map, Routes.FAMILY_MAP),
+        Feature(R.string.shopping, R.string.shared_lists, Icons.Filled.ShoppingCart, FeatureAccent.Shopping, Routes.SHOPPING),
+        Feature(R.string.meals, R.string.plan_the_week, Icons.Filled.Restaurant, FeatureAccent.Meals, Routes.MEAL),
+        Feature(R.string.calendar, R.string.family_events, Icons.Filled.CalendarMonth, FeatureAccent.Calendar, Routes.CALENDAR),
+        Feature(R.string.birthdays, R.string.never_miss_one, Icons.Filled.Cake, FeatureAccent.Birthdays, Routes.BIRTHDAY),
+        Feature(R.string.wishlists, R.string.gift_ideas, Icons.Filled.CardGiftcard, FeatureAccent.Wishlists, Routes.WISHLIST),
+        Feature(R.string.family_map, R.string.see_where_everyone_is, Icons.Filled.Map, FeatureAccent.Map, Routes.FAMILY_MAP),
     )
 
 private const val PRESSED_TILE_SCALE = 0.97f
@@ -162,7 +165,7 @@ fun HomeScreen(
             state.isLoading -> item(span = { GridItemSpan(maxLineSpan) }) { ListSkeleton(rows = 3) }
             state.loadError ->
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    ErrorBanner(message = "Couldn't load your data. Pull to refresh.")
+                    ErrorBanner(message = stringResource(R.string.couldn_t_load_your_data_pull_to_refresh))
                 }
             else -> {
                 if (state.hasSummary) {
@@ -195,7 +198,7 @@ private fun SummarySection(
             SummaryCard(
                 icon = Icons.Filled.Restaurant,
                 accent = FeatureAccent.Meals,
-                label = "TODAY",
+                label = stringResource(R.string.today_header),
                 value = tonight,
                 detail = null,
             ) { onOpen(Routes.MEAL) }
@@ -211,8 +214,8 @@ private fun SummarySection(
             SummaryCard(
                 icon = Icons.Filled.ShoppingCart,
                 accent = FeatureAccent.Shopping,
-                label = "SHOPPING",
-                value = "${state.shoppingRemaining} left to buy",
+                label = stringResource(R.string.shopping_header),
+                value = stringResource(R.string.count_left_to_buy, state.shoppingRemaining),
                 detail = null,
             ) { onOpen(Routes.SHOPPING) }
         }
@@ -220,13 +223,13 @@ private fun SummarySection(
             SummaryCard(
                 icon = Icons.Filled.Cake,
                 accent = FeatureAccent.Birthdays,
-                label = "NEXT BIRTHDAY",
+                label = stringResource(R.string.next_birthday),
                 value = birthdayName,
                 detail = state.nextBirthdayWhen,
             ) { onOpen(Routes.BIRTHDAY) }
         }
         Spacer(Modifier.height(Spacing.xs))
-        SectionHeader("Quick access")
+        SectionHeader(stringResource(R.string.quick_access))
     }
 }
 
@@ -313,7 +316,7 @@ private fun EventSummaryCard(
         Spacer(Modifier.size(Spacing.md))
         Column(Modifier.weight(1f)) {
             Text(
-                "NEXT EVENT",
+                stringResource(R.string.next_event),
                 style = MaterialTheme.typography.labelMedium,
                 color = accentOverride ?: FeatureAccent.Calendar.stroke(),
                 fontWeight = FontWeight.SemiBold,
@@ -368,7 +371,7 @@ private fun HomeHeader(
 ) {
     val user = state.user
     val firstName = user?.name?.substringBefore(' ').orEmpty()
-    val greeting = remember { timeBasedGreeting() }
+    val greeting = stringResource(remember { timeBasedGreeting() })
     val avatarColor =
         if (user != null && user.avatarColor != 0) Color(user.avatarColor) else MaterialTheme.colorScheme.primary
 
@@ -386,7 +389,7 @@ private fun HomeHeader(
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
-                    text = "Here's everything your family shares.",
+                    text = stringResource(R.string.here_s_everything_your_family_shares),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -464,7 +467,12 @@ private fun FamilyCard(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "$memberCount member${if (memberCount == 1) "" else "s"}",
+                        text =
+                            if (memberCount == 1) {
+                                stringResource(R.string.one_member)
+                            } else {
+                                stringResource(R.string.member_count, memberCount)
+                            },
                         color = Color.White.copy(alpha = 0.85f),
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -490,13 +498,13 @@ private fun NoFamilyBanner(onOpenFamily: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "No family yet",
+                    text = stringResource(R.string.no_family_yet),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Text(
-                    text = "Join or create a family to get started",
+                    text = stringResource(R.string.join_or_create_a_family_to_get_started),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                 )
@@ -505,7 +513,7 @@ private fun NoFamilyBanner(onOpenFamily: () -> Unit) {
                 onClick = onOpenFamily,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
             ) {
-                Text("Get started", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.get_started), fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -523,6 +531,8 @@ private fun FeatureTile(
         targetValue = if (isPressed) PRESSED_TILE_SCALE else 1f,
         label = "tile-press",
     )
+    val featureTitle = stringResource(feature.titleRes)
+    val featureContentDescription = stringResource(R.string.feature_named, featureTitle)
 
     Column(
         Modifier
@@ -533,21 +543,21 @@ private fun FeatureTile(
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
             .semantics {
                 role = Role.Button
-                contentDescription = "${feature.title} feature"
+                contentDescription = featureContentDescription
             }.padding(Spacing.md),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         FeatureBadge(icon = feature.icon, feature = feature.accent, size = 40.dp, cornerRadius = Radius.badgeLarge)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = feature.title,
+                text = featureTitle,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
             )
             Text(
-                text = feature.subtitle,
+                text = stringResource(feature.subtitleRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

@@ -27,10 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.theme.Radius
 
 /** Standard back-navigable top bar used by every detail/feature screen. */
@@ -60,7 +62,7 @@ fun FeatureTopBar(
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.navigate_back))
                 }
             }
         },
@@ -90,7 +92,7 @@ fun AppTopBar(
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.navigate_back))
                 }
             }
         },
@@ -112,7 +114,7 @@ fun InputDialog(
     title: String,
     label: String,
     initial: String = "",
-    confirmText: String = "Save",
+    confirmText: String = stringResource(R.string.save),
     keyboardType: KeyboardType = KeyboardType.Text,
     secondLabel: String? = null,
     secondInitial: String = "",
@@ -171,6 +173,6 @@ fun InputDialog(
                 modifier = Modifier.semantics { contentDescription = confirmText },
             ) { Text(confirmText) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

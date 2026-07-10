@@ -63,11 +63,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ShoppingItemModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.ColorPickerRow
@@ -116,7 +118,7 @@ fun ShoppingScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = { FeatureTopBar("Shopping lists", onBack) },
+        topBar = { FeatureTopBar(stringResource(R.string.shopping_lists), onBack) },
         floatingActionButton = {
             AppFab(text = "New list", icon = Icons.Filled.Add, onClick = { showAdd = true })
         },

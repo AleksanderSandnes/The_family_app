@@ -32,6 +32,7 @@ class SessionManager
         private val notifyDaysBeforeKey = intPreferencesKey("notify_days_before")
         private val locationVisibleKey = booleanPreferencesKey("location_visible")
         private val permissionsRequestedKey = booleanPreferencesKey("permissions_requested")
+        private val appLanguageKey = stringPreferencesKey("app_language")
 
         val currentUserId: Flow<String?> =
             context.dataStore.data.map { prefs ->
@@ -67,6 +68,13 @@ class SessionManager
                 prefs[permissionsRequestedKey] ?: false
             }
 
+        // In-app language override, independent of the device locale.
+        // Values: "system" (follow device) | "en" | "nb". Default "system".
+        val appLanguage: Flow<String> =
+            context.dataStore.data.map { prefs ->
+                prefs[appLanguageKey] ?: "system"
+            }
+
         suspend fun setThemeMode(mode: ThemeMode) {
             context.dataStore.edit { it[themeModeKey] = mode.name }
         }
@@ -85,6 +93,10 @@ class SessionManager
 
         suspend fun setPermissionsRequested() {
             context.dataStore.edit { it[permissionsRequestedKey] = true }
+        }
+
+        suspend fun setAppLanguage(tag: String) {
+            context.dataStore.edit { it[appLanguageKey] = tag }
         }
 
         suspend fun signIn(userId: String) {

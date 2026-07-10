@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -77,6 +78,7 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.UserLocationModel
 import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.ui.components.EmptyState
@@ -240,7 +242,7 @@ fun FamilyMapScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { FeatureTopBar("Family Map", onBack) },
+        topBar = { FeatureTopBar(stringResource(R.string.family_map), onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
