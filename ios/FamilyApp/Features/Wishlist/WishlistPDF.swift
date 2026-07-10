@@ -7,6 +7,10 @@ import UIKit
 enum WishlistPDF {
     private static let pageSize = CGSize(width: 595.2, height: 841.8) // A4 at 72 dpi
     private static let margin: CGFloat = 48
+    // Fixed dark inks — the page is always white, so we must NOT use dynamic colors like
+    // .label/.secondaryLabel: in the app's dark mode those resolve near-white and vanish.
+    private static let inkColor = UIColor.black
+    private static let metaColor = UIColor(white: 0.32, alpha: 1)
 
     /// Writes the wishlist to a temp-directory PDF and returns its file URL, or nil on failure.
     static func make(name: String, ownerName: String, wishes: [WishModel]) -> URL? {
@@ -23,13 +27,13 @@ enum WishlistPDF {
 
                 cursorY += draw(
                     name, at: CGPoint(x: margin, y: cursorY), width: contentWidth,
-                    font: .systemFont(ofSize: 26, weight: .bold), color: .label
+                    font: .systemFont(ofSize: 26, weight: .bold), color: Self.inkColor
                 )
                 if !ownerName.isEmpty {
                     cursorY += 6
                     cursorY += draw(
                         L("By \(ownerName)"), at: CGPoint(x: margin, y: cursorY), width: contentWidth,
-                        font: .systemFont(ofSize: 13, weight: .regular), color: .secondaryLabel
+                        font: .systemFont(ofSize: 13, weight: .regular), color: Self.metaColor
                     )
                 }
                 cursorY += 24
@@ -40,18 +44,18 @@ enum WishlistPDF {
                     cursorY = startPageIfNeeded(cursorY, ctx: ctx, needed: 40)
                     cursorY += draw(
                         "•  \(wish.text)", at: CGPoint(x: margin, y: cursorY), width: contentWidth,
-                        font: bodyFont, color: .label
+                        font: bodyFont, color: Self.inkColor
                     )
                     if let price = wish.price, !price.trimmingCharacters(in: .whitespaces).isEmpty {
                         cursorY += draw(
                             price, at: CGPoint(x: margin + 18, y: cursorY), width: contentWidth - 18,
-                            font: metaFont, color: .secondaryLabel
+                            font: metaFont, color: Self.metaColor
                         )
                     }
                     if let link = wish.link, !link.trimmingCharacters(in: .whitespaces).isEmpty {
                         cursorY += draw(
                             link, at: CGPoint(x: margin + 18, y: cursorY), width: contentWidth - 18,
-                            font: metaFont, color: .secondaryLabel
+                            font: metaFont, color: Self.metaColor
                         )
                     }
                     cursorY += 12

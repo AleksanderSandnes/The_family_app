@@ -111,15 +111,17 @@ struct MainTabView: View {
             // Invite deep link routes the user to Family, which opens the join flow.
             if code != nil { openFamily() }
         }
-        .onChange(of: FamilyRepository.shared.pendingWishlistShareToken) { _, token in
+        .onChange(of: deepLinks.pendingWishlistShareToken) { _, token in
             if token != nil { Task { await redeemPendingWishlistShare() } }
         }
     }
 
-    /// Redeems a wishlist share link opened while signed in: grants access and opens the
-    /// shared wishlist. Whoever opens the link gains access to that one wishlist — only them.
+    /// Redeems a wishlist share link (from the observable DeepLinkRouter): grants access and
+    /// opens the shared wishlist. Whoever opens the link gains access to that one wishlist —
+    /// only them, not their whole family.
     private func redeemPendingWishlistShare() async {
-        guard let token = FamilyRepository.shared.consumePendingWishlistShareToken() else { return }
+        guard let token = deepLinks.pendingWishlistShareToken else { return }
+        deepLinks.pendingWishlistShareToken = nil
         guard let wishlistId = await wishlistViewModel.acceptShare(token: token) else { return }
         selectedTab = .home
         homePath = [.wishlist, .wishlistDetail(wishlistId: wishlistId)]

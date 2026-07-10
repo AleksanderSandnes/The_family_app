@@ -41,6 +41,9 @@ enum DeepLink: Equatable {
 final class DeepLinkRouter {
     /// Conversation to open once the chat tab is up (push tap / chat link).
     var pendingConversationId: String?
+    /// Wishlist share token to redeem once the app shell is up. Lives here (not on the
+    /// non-observable FamilyRepository) so MainTabView's onChange actually fires.
+    var pendingWishlistShareToken: String?
 
     private let repo: FamilyRepositoryProtocol
 
@@ -60,7 +63,7 @@ final class DeepLinkRouter {
         case let .join(code):
             repo.setPendingJoinCode(code)
         case let .wishlistShare(token):
-            repo.setPendingWishlistShareToken(token)
+            pendingWishlistShareToken = token
         case nil:
             break
         }
