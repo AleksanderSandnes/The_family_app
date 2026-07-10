@@ -109,10 +109,19 @@ struct WishlistDetailScreen: View {
     @State private var showRename = false
     @State private var showChangeIcon = false
     @State private var renameText = ""
+    @State private var shareItem: ShareItem?
 
     private var isOwner: Bool {
         viewModel.currentUserId != nil
             && viewModel.selectedWishlist?.ownerUserId == viewModel.currentUserId
+    }
+
+    /// Builds a shareable PDF of the current wishlist and presents the system share sheet.
+    private func exportPDF() {
+        let name = viewModel.selectedWishlist?.name ?? L("Wishlist")
+        let ownerName = viewModel.selectedWishlist?.ownerName ?? ""
+        guard let url = WishlistPDF.make(name: name, ownerName: ownerName, wishes: sortedWishes) else { return }
+        shareItem = ShareItem(items: [url])
     }
 
     private var sortedWishes: [WishModel] {
@@ -186,10 +195,14 @@ struct WishlistDetailScreen: View {
         .ambientBackground()
         .featureTopBar(viewModel.selectedWishlist?.name ?? L("Wishlist"))
         .toolbar {
-            // Only the wishlist's creator (owner) can rename it or change its icon.
-            if isOwner {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    // Anyone viewing the list can export it to share with people off-app.
+                    Button { exportPDF() } label: {
+                        Label(L("Export PDF"), systemImage: "square.and.arrow.up")
+                    }
+                    // Only the wishlist's creator (owner) can rename it or change its icon.
+                    if isOwner {
                         Button {
                             renameText = viewModel.selectedWishlist?.name ?? ""
                             showRename = true
@@ -199,13 +212,14 @@ struct WishlistDetailScreen: View {
                         Button { showChangeIcon = true } label: {
                             Label(L("Change icon"), systemImage: "star")
                         }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .accessibilityLabel("More options")
                     }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .accessibilityLabel("More options")
                 }
             }
         }
+        .sheet(item: $shareItem) { ShareSheet(items: $0.items) }
         .task(id: wishlistId) { viewModel.loadWishlistDetail(wishlistId) }
         .inputDialog(
             isPresented: $showRename,
