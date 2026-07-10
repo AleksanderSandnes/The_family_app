@@ -7,12 +7,20 @@ options:
     iOS: "26.0"
   createIntermediateGroups: true
   developmentLanguage: en
+  # XcodeGen force-writes an old LastUpgradeCheck default, which makes Xcode nag
+  # "Update to recommended settings". Stamp it to the current toolchain (26.6 -> 2660).
+  postGenCommand: sed -i '' -E 's/LastUpgradeCheck = [0-9]+;/LastUpgradeCheck = 2660;/' FamilyApp.xcodeproj/project.pbxproj
 # The app ships English + Norwegian Bokmål localizations; the in-app language picker
 # overrides the system language via the root \.locale environment.
 knownRegions:
   - en
   - nb
   - Base
+
+# Marks the project as reviewed for the current Xcode toolchain (bump with the Xcode
+# version). LastUpgradeCheck is stamped by the postGenCommand above, which XcodeGen honours.
+attributes:
+  LastSwiftUpdateCheck: 2660
 
 configFiles:
   Debug: Config/Shared.xcconfig
