@@ -77,6 +77,22 @@ val Warning = Amber500
 val Danger = Rose500
 
 /**
+ * The 8 user-selectable item colours (0xRRGGBB), shared by the calendar/shopping/meal/wishlist/
+ * birthday colour pickers. Mirrors iOS `calendarEventColorPalette` — keep in sync.
+ */
+val AppColorPalette: List<Int> =
+    listOf(
+        0x6366F1, // indigo
+        0x8B5CF6, // violet
+        0xEC4899, // pink
+        0x3B82F6, // blue
+        0x14B8A6, // teal
+        0x22C55E, // green
+        0xF59E0B, // amber
+        0xEF4444, // red
+    )
+
+/**
  * A user-picked colour stored as a 0xRRGGBB int (calendar/meal/shopping/wishlist/birthday
  * `color` columns) → opaque [Color]. Returns null when the value is null so call sites can
  * fall back to the feature accent. Mirrors iOS `hexColor(_:)`.
