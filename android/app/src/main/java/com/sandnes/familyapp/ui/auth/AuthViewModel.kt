@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val MIN_PASSWORD_LENGTH = 6
+internal const val MIN_PASSWORD_LENGTH = 6
+private const val STRONG_PASSWORD_LENGTH = 8
+private const val MAX_PASSWORD_SCORE = 3
 
 data class AuthUiState(
     val loading: Boolean = false,
@@ -118,10 +120,7 @@ class AuthViewModel
             email: String,
             password: String,
         ): Boolean {
-            if (!android.util.Patterns.EMAIL_ADDRESS
-                    .matcher(email.trim())
-                    .matches()
-            ) {
+            if (!isValidEmail(email.trim())) {
                 setError("Please enter a valid email address.")
                 return false
             }
@@ -132,6 +131,22 @@ class AuthViewModel
             return true
         }
     }
+
+// Pure, framework-free email check (mirrors iOS `isValidEmail`). Kept off `android.util.Patterns`
+// so it runs — and is unit-testable — in a plain JVM test without Robolectric.
+private val EMAIL_REGEX = Regex("^[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}$")
+
+internal fun isValidEmail(email: String): Boolean = EMAIL_REGEX.matches(email)
+
+/** Password strength score 0–3 based on length and character variety. Mirrors iOS. */
+internal fun passwordStrength(password: String): Int {
+    if (password.length < MIN_PASSWORD_LENGTH) return 0
+    var score = 1 // at least 6 chars = minimum score of 1
+    if (password.length >= STRONG_PASSWORD_LENGTH) score++
+    if (password.any { it.isUpperCase() } && password.any { it.isLowerCase() }) score++
+    if (password.any { !it.isLetterOrDigit() }) score++
+    return score.coerceIn(0, MAX_PASSWORD_SCORE)
+}
 
 // Ordered keyword → message table. The first entry whose keywords appear in the raw
 // error message wins. Keeps friendlyAuthError simple (data-driven, not a giant when).
@@ -145,7 +160,7 @@ private val AUTH_ERROR_MESSAGES: List<Pair<List<String>, String>> =
         listOf("network", "unable to resolve", "connect") to "Network error. Please check your connection.",
     )
 
-private fun friendlyAuthError(
+internal fun friendlyAuthError(
     e: Throwable,
     isLogin: Boolean,
 ): String {

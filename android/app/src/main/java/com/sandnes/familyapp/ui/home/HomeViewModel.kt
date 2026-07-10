@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
@@ -31,11 +32,12 @@ data class HomeUiState(
     val user: UserModel? = null,
     val family: FamilyModel? = null,
     val memberCount: Int = 0,
+    val familyMembers: List<UserModel> = emptyList(),
     val isLoading: Boolean = true,
     val loadError: Boolean = false,
     // Glanceable summary (D4) — null/0 when there's nothing to show.
     val tonightMeal: String? = null,
-    val nextEventTitle: String? = null,
+    val nextEvent: CalendarEventModel? = null,
     val nextEventWhen: String? = null,
     val nextBirthdayName: String? = null,
     val nextBirthdayWhen: String? = null,
@@ -43,12 +45,12 @@ data class HomeUiState(
 ) {
     /** True when at least one summary card has content to render. */
     val hasSummary: Boolean
-        get() = tonightMeal != null || nextEventTitle != null || nextBirthdayName != null || shoppingRemaining > 0
+        get() = tonightMeal != null || nextEvent != null || nextBirthdayName != null || shoppingRemaining > 0
 }
 
 private data class HomeSummary(
     val tonightMeal: String? = null,
-    val nextEventTitle: String? = null,
+    val nextEvent: CalendarEventModel? = null,
     val nextEventWhen: String? = null,
     val nextBirthdayName: String? = null,
     val nextBirthdayWhen: String? = null,
@@ -94,29 +96,27 @@ class HomeViewModel
                 }
                 val family = user.familyId?.let { repo.getFamily(it) }
                 val familyId = user.familyId
-                var memberCount = 0
+                var members: List<UserModel> = emptyList()
                 var summary = HomeSummary()
                 // Only touch the network when the user is actually in a family.
                 if (familyId != null) {
-                    val db = SupabaseManager.client.postgrest
-                    memberCount =
-                        db
-                            .from("users")
-                            .select { filter { eq("family_id", familyId) } }
-                            .decodeList<UserModel>()
-                            .size
+                    members = repo.getFamilyMembers(familyId)
                     // Summary is best-effort — a failure here must not blank the whole screen.
-                    summary = runCatching { loadSummary(db, familyId) }.getOrDefault(HomeSummary())
+                    summary =
+                        runCatching {
+                            loadSummary(SupabaseManager.client.postgrest, familyId)
+                        }.getOrDefault(HomeSummary())
                 }
 
                 _state.value =
                     HomeUiState(
                         user = user,
                         family = family,
-                        memberCount = memberCount,
+                        memberCount = members.size,
+                        familyMembers = members,
                         isLoading = false,
                         tonightMeal = summary.tonightMeal,
-                        nextEventTitle = summary.nextEventTitle,
+                        nextEvent = summary.nextEvent,
                         nextEventWhen = summary.nextEventWhen,
                         nextBirthdayName = summary.nextBirthdayName,
                         nextBirthdayWhen = summary.nextBirthdayWhen,
@@ -136,7 +136,7 @@ class HomeViewModel
             val birthday = loadNextBirthday(db, familyId, today)
             return HomeSummary(
                 tonightMeal = loadTonightMeal(db, familyId, today),
-                nextEventTitle = event?.activity,
+                nextEvent = event,
                 nextEventWhen = event?.let { eventWhen(it, today) },
                 nextBirthdayName = birthday?.first?.name,
                 nextBirthdayWhen = birthday?.let { birthdayWhen(it.first, it.second, today) },
@@ -177,24 +177,29 @@ class HomeViewModel
                 }
             }.getOrNull()
 
-        /** Next upcoming event (ends today or later). */
+        /**
+         * Next upcoming or ongoing event. Drops events that have already ended — including a timed
+         * event earlier today — so it falls off the dashboard once it's over.
+         */
         private suspend fun loadNextEvent(
             db: Postgrest,
             familyId: String,
             today: LocalDate,
         ): CalendarEventModel? =
             runCatching {
+                val nowMinutes = LocalTime.now().let { it.hour * MINUTES_PER_HOUR + it.minute }
                 db
                     .from("calendar_events")
                     .select { filter { eq("family_id", familyId) } }
                     .decodeList<CalendarEventModel>()
-                    .filter {
-                        val end = runCatching { LocalDate.parse(it.dateTo.ifBlank { it.dateFrom }) }.getOrNull()
-                        end != null && !end.isBefore(today)
-                    }.minByOrNull { runCatching { LocalDate.parse(it.dateFrom) }.getOrNull() ?: LocalDate.MAX }
+                    .filterNot { eventHasEnded(it, today, nowMinutes) }
+                    .minByOrNull { runCatching { LocalDate.parse(it.dateFrom) }.getOrNull() ?: LocalDate.MAX }
             }.getOrNull()
 
-        /** Soonest upcoming birthday paired with its next occurrence date. */
+        /**
+         * Soonest upcoming birthday paired with its next occurrence date, only when it's within a
+         * week — matching the iOS dashboard.
+         */
         private suspend fun loadNextBirthday(
             db: Postgrest,
             familyId: String,
@@ -208,6 +213,7 @@ class HomeViewModel
             }.getOrNull()
                 .orEmpty()
                 .mapNotNull { b -> nextBirthdayDate(b.date, today)?.let { b to it } }
+                .filter { (it.second.toEpochDay() - today.toEpochDay()) <= BIRTHDAY_HORIZON_DAYS }
                 .minByOrNull { it.second }
 
         /** Items left to buy across all family lists. */
@@ -238,9 +244,46 @@ class HomeViewModel
             }.getOrDefault(0)
     }
 
+private const val MINUTES_PER_HOUR = 60
+private const val BIRTHDAY_HORIZON_DAYS = 7L
+
 private val EVENT_DATE_FMT = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
 
-private fun eventWhen(
+/** Minutes since midnight for an "HH:mm" string, or null if it isn't a valid time. */
+@Suppress("MagicNumber") // 23:59 upper bounds for hours/minutes — self-describing
+internal fun minutesSinceMidnight(hhmm: String): Int? {
+    val parts = hhmm.split(":").mapNotNull { it.toIntOrNull() }
+    if (parts.size != 2) return null
+    val (h, m) = parts
+    if (h !in 0..23 || m !in 0..59) return null
+    return h * MINUTES_PER_HOUR + m
+}
+
+/**
+ * True once an event has finished, so the dashboard drops it from "next event". Past days are
+ * over and future days are not; an event ending today is over only once its end time has passed.
+ * All-day events and events with no end time stay visible until the day rolls over.
+ */
+internal fun eventHasEnded(
+    event: CalendarEventModel,
+    today: LocalDate,
+    nowMinutes: Int,
+): Boolean {
+    val endIso = event.dateTo.ifBlank { event.dateFrom }
+    val endDate = runCatching { LocalDate.parse(endIso) }.getOrNull()
+    return when {
+        endDate == null -> false
+        endDate.isBefore(today) -> true
+        endDate.isAfter(today) -> false
+        event.allDay -> false
+        else -> {
+            val endMinutes = minutesSinceMidnight(event.timeTo)
+            endMinutes != null && endMinutes <= nowMinutes
+        }
+    }
+}
+
+internal fun eventWhen(
     e: CalendarEventModel,
     today: LocalDate,
 ): String {
@@ -254,7 +297,7 @@ private fun eventWhen(
     return if (e.allDay || e.timeFrom.isBlank()) datePart else "$datePart · ${e.timeFrom}"
 }
 
-private fun birthdayWhen(
+internal fun birthdayWhen(
     b: BirthdayModel,
     next: LocalDate,
     today: LocalDate,

@@ -332,19 +332,7 @@ private fun StepIndicator(
     }
 }
 
-private const val MIN_PASSWORD_LENGTH = 6
-private const val STRONG_PASSWORD_LENGTH = 8
-private const val MAX_PASSWORD_SCORE = 3
-
-/** Calculates password strength score 0-3 based on length and character variety. */
-private fun passwordStrength(password: String): Int {
-    if (password.length < MIN_PASSWORD_LENGTH) return 0
-    var score = 1 // at least 6 chars = minimum score of 1
-    if (password.length >= STRONG_PASSWORD_LENGTH) score++
-    if (password.any { it.isUpperCase() } && password.any { it.isLowerCase() }) score++
-    if (password.any { !it.isLetterOrDigit() }) score++
-    return score.coerceIn(0, MAX_PASSWORD_SCORE)
-}
+// passwordStrength(...) lives in AuthViewModel.kt (internal, pure, unit-tested).
 
 @Composable
 private fun PasswordStrengthBar(password: String) {

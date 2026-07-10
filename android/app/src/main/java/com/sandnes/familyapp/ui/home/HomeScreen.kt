@@ -5,6 +5,7 @@ package com.sandnes.familyapp.ui.home
 import android.content.res.Configuration
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -49,7 +50,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -66,38 +66,44 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.sandnes.familyapp.data.CalendarEventModel
+import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.ui.components.ErrorBanner
 import com.sandnes.familyapp.ui.components.InitialAvatar
-import com.sandnes.familyapp.ui.components.ListCard
 import com.sandnes.familyapp.ui.components.ListSkeleton
 import com.sandnes.familyapp.ui.components.RefreshOnResume
 import com.sandnes.familyapp.ui.components.SectionHeader
-import com.sandnes.familyapp.ui.theme.Amber500
-import com.sandnes.familyapp.ui.theme.Emerald500
-import com.sandnes.familyapp.ui.theme.Indigo500
-import com.sandnes.familyapp.ui.theme.Pink500
-import com.sandnes.familyapp.ui.theme.Teal500
-import com.sandnes.familyapp.ui.theme.Violet500
+import com.sandnes.familyapp.ui.navigation.Routes
+import com.sandnes.familyapp.ui.theme.FeatureAccent
+import com.sandnes.familyapp.ui.theme.FeatureBadge
+import com.sandnes.familyapp.ui.theme.IconKeyMap
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.heroGradient
+import com.sandnes.familyapp.ui.theme.hexColor
 
 private data class Feature(
     val title: String,
     val subtitle: String,
     val icon: ImageVector,
-    val color: Color,
+    val accent: FeatureAccent,
     val route: String,
 )
 
 // All feature values are compile-time constants — hoisted to avoid reallocating on every recomposition.
 private val features =
     listOf(
-        Feature("Shopping", "Shared lists", Icons.Filled.ShoppingCart, Indigo500, "shopping"),
-        Feature("Meals", "Plan the week", Icons.Filled.Restaurant, Amber500, "meal"),
-        Feature("Calendar", "Family events", Icons.Filled.CalendarMonth, Teal500, "calendar"),
-        Feature("Birthdays", "Never miss one", Icons.Filled.Cake, Pink500, "birthday"),
-        Feature("Wishlists", "Gift ideas", Icons.Filled.CardGiftcard, Violet500, "wishlist"),
-        Feature("Family Map", "See where everyone is", Icons.Filled.Map, Emerald500, "family_map"),
+        Feature("Shopping", "Shared lists", Icons.Filled.ShoppingCart, FeatureAccent.Shopping, Routes.SHOPPING),
+        Feature("Meals", "Plan the week", Icons.Filled.Restaurant, FeatureAccent.Meals, Routes.MEAL),
+        Feature("Calendar", "Family events", Icons.Filled.CalendarMonth, FeatureAccent.Calendar, Routes.CALENDAR),
+        Feature("Birthdays", "Never miss one", Icons.Filled.Cake, FeatureAccent.Birthdays, Routes.BIRTHDAY),
+        Feature("Wishlists", "Gift ideas", Icons.Filled.CardGiftcard, FeatureAccent.Wishlists, Routes.WISHLIST),
+        Feature("Family Map", "See where everyone is", Icons.Filled.Map, FeatureAccent.Map, Routes.FAMILY_MAP),
     )
+
+private const val PRESSED_TILE_SCALE = 0.97f
+private const val MAX_ATTENDEE_AVATARS = 3
 
 @Composable
 fun HomeScreen(
@@ -124,11 +130,8 @@ fun HomeScreen(
     val isTablet = configuration.smallestScreenWidthDp >= 600
     // Compact width: 2 columns. Medium/Expanded (wide window): 3 columns.
     val columns = if (isWideWindow) 3 else 2
-    val horizontalPadding = if (isTablet) 32.dp else 20.dp
+    val horizontalPadding = if (isTablet) Spacing.xxxl else Spacing.screenEdge
 
-    // Tiles must be shorter on larger screens so all 6 fit without scrolling.
-    // 1.15 on phone portrait: tile ≈143dp tall with 14dp padding leaves 115dp for content
-    // (44dp icon + 8dp gap + ~36dp text = 88dp) — fits with room to spare, no clipping.
     val tileAspectRatio =
         when {
             isLandscape && isTablet -> 2.2f
@@ -137,25 +140,21 @@ fun HomeScreen(
             else -> 1.15f
         }
 
+    // Transparent so the app-level AmbientBackground shows through the glass surfaces.
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding(),
-        contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = Spacing.screenEdge),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column {
-                HomeHeader(
-                    state = state,
-                    dark = dark,
-                    onOpenFamily = onOpenFamily,
-                )
-                Spacer(Modifier.height(6.dp))
+                HomeHeader(state = state, dark = dark, onOpenFamily = onOpenFamily)
+                Spacer(Modifier.height(Spacing.xs))
             }
         }
 
@@ -168,43 +167,7 @@ fun HomeScreen(
             else -> {
                 if (state.hasSummary) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        val tonight = state.tonightMeal
-                        val eventTitle = state.nextEventTitle
-                        val birthdayName = state.nextBirthdayName
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            if (tonight != null) {
-                                SummaryCard(Icons.Filled.Restaurant, Amber500, "TONIGHT", tonight, null) { onOpen("meal") }
-                            }
-                            if (eventTitle != null) {
-                                SummaryCard(
-                                    Icons.Filled.CalendarMonth,
-                                    Teal500,
-                                    "NEXT EVENT",
-                                    eventTitle,
-                                    state.nextEventWhen,
-                                ) { onOpen("calendar") }
-                            }
-                            if (state.shoppingRemaining > 0) {
-                                SummaryCard(
-                                    Icons.Filled.ShoppingCart,
-                                    Indigo500,
-                                    "SHOPPING",
-                                    "${state.shoppingRemaining} left to buy",
-                                    null,
-                                ) { onOpen("shopping") }
-                            }
-                            if (birthdayName != null) {
-                                SummaryCard(
-                                    Icons.Filled.Cake,
-                                    Pink500,
-                                    "NEXT BIRTHDAY",
-                                    birthdayName,
-                                    state.nextBirthdayWhen,
-                                ) { onOpen("birthday") }
-                            }
-                            Spacer(Modifier.height(4.dp))
-                            SectionHeader("Quick access")
-                        }
+                        SummarySection(state = state, onOpen = onOpen)
                     }
                 }
                 items(features) { feature ->
@@ -220,30 +183,78 @@ fun HomeScreen(
 }
 
 @Composable
+private fun SummarySection(
+    state: HomeUiState,
+    onOpen: (String) -> Unit,
+) {
+    val tonight = state.tonightMeal
+    val event = state.nextEvent
+    val birthdayName = state.nextBirthdayName
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        if (tonight != null) {
+            SummaryCard(
+                icon = Icons.Filled.Restaurant,
+                accent = FeatureAccent.Meals,
+                label = "TODAY",
+                value = tonight,
+                detail = null,
+            ) { onOpen(Routes.MEAL) }
+        }
+        if (event != null) {
+            EventSummaryCard(
+                event = event,
+                detail = state.nextEventWhen,
+                members = state.familyMembers,
+            ) { onOpen(Routes.CALENDAR) }
+        }
+        if (state.shoppingRemaining > 0) {
+            SummaryCard(
+                icon = Icons.Filled.ShoppingCart,
+                accent = FeatureAccent.Shopping,
+                label = "SHOPPING",
+                value = "${state.shoppingRemaining} left to buy",
+                detail = null,
+            ) { onOpen(Routes.SHOPPING) }
+        }
+        if (birthdayName != null) {
+            SummaryCard(
+                icon = Icons.Filled.Cake,
+                accent = FeatureAccent.Birthdays,
+                label = "NEXT BIRTHDAY",
+                value = birthdayName,
+                detail = state.nextBirthdayWhen,
+            ) { onOpen(Routes.BIRTHDAY) }
+        }
+        Spacer(Modifier.height(Spacing.xs))
+        SectionHeader("Quick access")
+    }
+}
+
+@Composable
 private fun SummaryCard(
     icon: ImageVector,
-    accent: Color,
+    accent: FeatureAccent,
     label: String,
     value: String,
     detail: String?,
     onClick: () -> Unit,
 ) {
-    val iconBrush = remember(accent) { Brush.linearGradient(listOf(accent, accent.copy(alpha = 0.7f))) }
-    ListCard(onClick = onClick) {
-        Box(
-            Modifier
-                .size(44.dp)
-                .background(iconBrush, RoundedCornerShape(14.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
-        }
-        Spacer(Modifier.size(14.dp))
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .glassCard(cornerRadius = Radius.overviewCard)
+            .clickable(onClick = onClick)
+            .padding(Spacing.cardPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        FeatureBadge(icon = icon, feature = accent, size = 44.dp, cornerRadius = Radius.badgeLarge)
+        Spacer(Modifier.size(Spacing.md))
         Column(Modifier.weight(1f)) {
             Text(
                 label,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = accent.stroke(),
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 value,
@@ -267,6 +278,88 @@ private fun SummaryCard(
     }
 }
 
+/** NEXT EVENT card — shows the event's own icon, colour and attendee avatars. */
+@Composable
+private fun EventSummaryCard(
+    event: CalendarEventModel,
+    detail: String?,
+    members: List<UserModel>,
+    onClick: () -> Unit,
+) {
+    val accentOverride = hexColor(event.color)
+    // Creator first, then everyone tagged as "going with".
+    val people =
+        remember(event, members) {
+            (listOf(event.userId) + event.attendeeIds)
+                .distinct()
+                .mapNotNull { id -> members.firstOrNull { it.id == id } }
+                .take(MAX_ATTENDEE_AVATARS)
+        }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .glassCard(cornerRadius = Radius.overviewCard)
+            .clickable(onClick = onClick)
+            .padding(Spacing.cardPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        FeatureBadge(
+            icon = IconKeyMap.calendar(event.icon),
+            feature = FeatureAccent.Calendar,
+            size = 44.dp,
+            cornerRadius = Radius.badgeLarge,
+            colorOverride = accentOverride,
+        )
+        Spacer(Modifier.size(Spacing.md))
+        Column(Modifier.weight(1f)) {
+            Text(
+                "NEXT EVENT",
+                style = MaterialTheme.typography.labelMedium,
+                color = accentOverride ?: FeatureAccent.Calendar.stroke(),
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                event.activity,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (detail != null) {
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (people.isNotEmpty()) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy((-10).dp),
+                modifier = Modifier.padding(end = Spacing.sm),
+            ) {
+                people.forEach { person ->
+                    val color =
+                        if (person.avatarColor != 0) Color(person.avatarColor) else MaterialTheme.colorScheme.primary
+                    Box(
+                        Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        InitialAvatar(name = person.name, color = color, avatarUri = person.avatarUrl, size = 30)
+                    }
+                }
+            }
+        }
+        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 @Composable
 private fun HomeHeader(
     state: HomeUiState,
@@ -275,18 +368,11 @@ private fun HomeHeader(
 ) {
     val user = state.user
     val firstName = user?.name?.substringBefore(' ').orEmpty()
-    // Computed once per composition — changes at most twice per day
     val greeting = remember { timeBasedGreeting() }
-    // Use a visible fallback color when avatarColor is 0 (never configured)
     val avatarColor =
-        if (user != null && user.avatarColor != 0) {
-            Color(user.avatarColor)
-        } else {
-            MaterialTheme.colorScheme.primary
-        }
+        if (user != null && user.avatarColor != 0) Color(user.avatarColor) else MaterialTheme.colorScheme.primary
 
     Column {
-        // Greeting row with avatar
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -306,20 +392,13 @@ private fun HomeHeader(
                 )
             }
             if (user != null) {
-                Spacer(Modifier.size(12.dp))
-                InitialAvatar(
-                    name = user.name,
-                    color = avatarColor,
-                    avatarUri = user.avatarUrl,
-                    size = 48,
-                )
+                Spacer(Modifier.size(Spacing.md))
+                InitialAvatar(name = user.name, color = avatarColor, avatarUri = user.avatarUrl, size = 48)
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(Spacing.lg))
 
-        // Family card — gradient hero if family exists, CTA banner if signed-in but no family,
-        // or nothing while still loading (user == null)
         if (user != null) {
             if (state.family != null) {
                 FamilyCard(
@@ -344,13 +423,10 @@ private fun FamilyCard(
     photoUrl: String?,
     onClick: () -> Unit,
 ) {
-    // Surface provides the click handler and ripple; Box carries the gradient background.
-    // shadowElevation on Surface requires an opaque color — use primaryContainer as the
-    // surface color so the shadow renders, then overdraw with the gradient inside.
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(Radius.bigCard),
         color = MaterialTheme.colorScheme.primaryContainer,
         shadowElevation = 4.dp,
     ) {
@@ -358,7 +434,7 @@ private fun FamilyCard(
             Modifier
                 .fillMaxWidth()
                 .background(heroGradient(dark))
-                .padding(20.dp),
+                .padding(Spacing.xl),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -379,7 +455,7 @@ private fun FamilyCard(
                         Icon(Icons.Filled.Groups, null, tint = Color.White, modifier = Modifier.size(28.dp))
                     }
                 }
-                Spacer(Modifier.size(14.dp))
+                Spacer(Modifier.size(Spacing.md))
                 Column(Modifier.weight(1f)) {
                     Text(
                         text = familyName,
@@ -393,6 +469,7 @@ private fun FamilyCard(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
+                Icon(Icons.Filled.ChevronRight, null, tint = Color.White.copy(alpha = 0.9f))
             }
         }
     }
@@ -402,12 +479,12 @@ private fun FamilyCard(
 private fun NoFamilyBanner(onOpenFamily: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(Radius.medium),
         color = MaterialTheme.colorScheme.primaryContainer,
         tonalElevation = 1.dp,
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Spacing.lg),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -426,10 +503,7 @@ private fun NoFamilyBanner(onOpenFamily: () -> Unit) {
             }
             TextButton(
                 onClick = onOpenFamily,
-                colors =
-                    ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                    ),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text("Get started", fontWeight = FontWeight.SemiBold)
             }
@@ -446,60 +520,39 @@ private fun FeatureTile(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
+        targetValue = if (isPressed) PRESSED_TILE_SCALE else 1f,
         label = "tile-press",
     )
-    // Memoised per feature color — avoids allocation on every animation frame
-    val iconBrush =
-        remember(feature.color) {
-            Brush.linearGradient(listOf(feature.color, feature.color.copy(alpha = 0.7f)))
-        }
 
-    Surface(
-        onClick = onClick,
-        interactionSource = interactionSource,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(aspectRatio)
-                .scale(scale)
-                .semantics {
-                    role = Role.Button
-                    contentDescription = "${feature.title} feature"
-                },
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        shadowElevation = 2.dp,
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(aspectRatio)
+            .scale(scale)
+            .glassCard(cornerRadius = Radius.row)
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
+            .semantics {
+                role = Role.Button
+                contentDescription = "${feature.title} feature"
+            }.padding(Spacing.md),
+        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column(
-            Modifier.padding(14.dp).fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .background(iconBrush, RoundedCornerShape(14.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(feature.icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = feature.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                )
-                Text(
-                    text = feature.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+        FeatureBadge(icon = feature.icon, feature = feature.accent, size = 40.dp, cornerRadius = Radius.badgeLarge)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = feature.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+            Text(
+                text = feature.subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

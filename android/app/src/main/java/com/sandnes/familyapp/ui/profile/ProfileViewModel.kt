@@ -16,16 +16,21 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import javax.inject.Inject
 
 private const val MAX_IMAGE_DIM = 1024
 private const val JPEG_QUALITY = 85
+private const val STOP_TIMEOUT_MS = 5000L
 
 @HiltViewModel
 class ProfileViewModel
@@ -42,9 +47,53 @@ class ProfileViewModel
         private val _isUploading = MutableStateFlow(false)
         val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
 
+        // One-time "complete your profile" prompt after a Google sign-up: Google doesn't provide
+        // phone/birthday. Dismissed for the session once the user saves or skips.
+        private val dismissedCompletion = MutableStateFlow(false)
+        val needsProfileCompletion: StateFlow<Boolean> =
+            combine(_user, dismissedCompletion) { user, dismissed ->
+                !dismissed &&
+                    user != null &&
+                    isGoogleSignedIn() &&
+                    (user.mobile.isBlank() || user.birthday.isBlank())
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+
         fun clearError() {
             _error.value = null
         }
+
+        fun dismissProfileCompletion() {
+            dismissedCompletion.value = true
+        }
+
+        /** Saves the phone/birthday collected by the one-time Google completion prompt. */
+        fun completeGoogleProfile(
+            mobile: String,
+            birthday: String,
+        ) = viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            val current = _user.value ?: return@launch
+            val newMobile = mobile.trim().ifBlank { current.mobile }
+            val newBirthday = birthday.trim().ifBlank { current.birthday }
+            repo.updateProfile(
+                userId,
+                ProfileUpdate(current.name, current.email, newBirthday, newMobile, current.avatarUrl),
+            )
+            _user.value = current.copy(mobile = newMobile, birthday = newBirthday)
+            dismissedCompletion.value = true
+        }
+
+        /** True when the active auth session was created via the Google OAuth provider. */
+        private fun isGoogleSignedIn(): Boolean =
+            runCatching {
+                val meta =
+                    SupabaseManager.client.auth
+                        .currentSessionOrNull()
+                        ?.user
+                        ?.appMetadata
+                val provider = meta?.get("provider")?.jsonPrimitive?.content
+                provider == "google"
+            }.getOrDefault(false)
 
         fun refresh() {
             viewModelScope.launch {

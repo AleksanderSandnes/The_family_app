@@ -37,7 +37,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -67,6 +66,10 @@ import com.sandnes.familyapp.ui.components.FamilyTextField
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.components.RefreshOnResume
+import com.sandnes.familyapp.ui.components.SecondaryButton
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.heroGradient
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -81,6 +84,7 @@ fun ProfileScreen(
     val user by viewModel.user.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val isUploading by viewModel.isUploading.collectAsStateWithLifecycle()
+    val needsCompletion by viewModel.needsProfileCompletion.collectAsStateWithLifecycle()
     val dark = androidx.compose.foundation.isSystemInDarkTheme()
     val context = LocalContext.current
 
@@ -106,7 +110,7 @@ fun ProfileScreen(
         }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         topBar = { AppTopBar("Profile") },
     ) { padding ->
         Column(
@@ -114,16 +118,16 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, end = 20.dp, top = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(start = Spacing.screenEdge, end = Spacing.screenEdge, top = Spacing.screenEdge),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             ErrorBanner(error)
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp))
+                    .clip(RoundedCornerShape(Radius.bigCard))
                     .background(heroGradient(dark))
-                    .padding(24.dp),
+                    .padding(Spacing.xxl),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Avatar circle — clickable to change photo (disabled during upload)
@@ -188,17 +192,20 @@ fun ProfileScreen(
                 }
             }
 
-            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(6.dp)) {
-                    InfoRow(Icons.Filled.Mail, "Email", user?.email.orEmpty().ifBlank { "—" })
-                    InfoRow(Icons.Filled.Phone, "Mobile", user?.mobile.orEmpty().ifBlank { "—" })
-                    InfoRow(Icons.Filled.Cake, "Birthday", formatBirthday(user?.birthday))
-                }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .glassCard(cornerRadius = Radius.overviewCard)
+                    .padding(Spacing.xs),
+            ) {
+                InfoRow(Icons.Filled.Mail, "Email", user?.email.orEmpty().ifBlank { "—" })
+                InfoRow(Icons.Filled.Phone, "Mobile", user?.mobile.orEmpty().ifBlank { "—" })
+                InfoRow(Icons.Filled.Cake, "Birthday", formatBirthday(user?.birthday))
             }
 
             ActionRow(Icons.Filled.Edit, "Edit profile", onEdit)
             ActionRow(Icons.Filled.Settings, "Settings", onSettings)
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(Spacing.xs))
             DestructiveButton(
                 "Sign out",
                 onClick = { viewModel.signOut(onSignedOut) },
@@ -206,6 +213,13 @@ fun ProfileScreen(
                 leadingIcon = Icons.AutoMirrored.Filled.Logout,
             )
         }
+    }
+
+    if (needsCompletion) {
+        ProfileCompletionDialog(
+            onSave = { mobile, birthday -> viewModel.completeGoogleProfile(mobile, birthday) },
+            onSkip = { viewModel.dismissProfileCompletion() },
+        )
     }
 
     if (showAvatarPicker) {
@@ -296,14 +310,62 @@ private fun ActionRow(
     label: String,
     onClick: () -> Unit,
 ) {
-    Surface(onClick = onClick, shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.size(14.dp))
-            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .glassCard(cornerRadius = Radius.row)
+            .clickable(onClick = onClick)
+            .padding(Spacing.cardPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.size(14.dp))
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+/**
+ * One-time prompt shown after a Google sign-up (Google doesn't provide phone/birthday). Saving is
+ * enabled once at least one field is filled; "Skip for now" dismisses it for the session.
+ */
+@Composable
+private fun ProfileCompletionDialog(
+    onSave: (String, String) -> Unit,
+    onSkip: () -> Unit,
+) {
+    var mobile by remember { mutableStateOf("") }
+    var birthday by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onSkip,
+        shape = RoundedCornerShape(Radius.sheet),
+        title = { Text("Complete your profile", style = MaterialTheme.typography.titleLarge) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                Text(
+                    "Add your phone and birthday so your family can reach you and celebrate you.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FamilyTextField(
+                    mobile,
+                    { mobile = it },
+                    "Mobile",
+                    leadingIcon = Icons.Filled.Phone,
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone,
+                )
+                BirthdayPickerField(value = birthday, onChange = { birthday = it }, label = "Birthday")
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                "Save",
+                onClick = { onSave(mobile, birthday) },
+                enabled = mobile.isNotBlank() || birthday.isNotBlank(),
+            )
+        },
+        dismissButton = { SecondaryButton("Skip for now", onClick = onSkip) },
+    )
 }
 
 @Composable
@@ -320,7 +382,7 @@ fun ProfileEditScreen(
     val saveEnabled = name.isNotBlank() && email.isNotBlank() && mobile.isNotBlank() && birthday.isNotBlank()
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         topBar = { FeatureTopBar("Edit profile", onBack) },
     ) { padding ->
         Column(
