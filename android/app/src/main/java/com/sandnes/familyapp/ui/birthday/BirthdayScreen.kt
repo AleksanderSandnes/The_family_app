@@ -70,7 +70,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val BIRTH_DATE_FMT = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
+private val BIRTH_DATE_FMT = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault())
 
 @Composable
 fun BirthdayScreen(

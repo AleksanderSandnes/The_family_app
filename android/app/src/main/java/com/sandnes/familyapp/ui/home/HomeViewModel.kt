@@ -247,7 +247,7 @@ class HomeViewModel
 private const val MINUTES_PER_HOUR = 60
 private const val BIRTHDAY_HORIZON_DAYS = 7L
 
-private val EVENT_DATE_FMT = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
+private val EVENT_DATE_FMT = DateTimeFormatter.ofPattern("EEE d MMM", Locale.getDefault())
 
 /** Minutes since midnight for an "HH:mm" string, or null if it isn't a valid time. */
 @Suppress("MagicNumber") // 23:59 upper bounds for hours/minutes — self-describing

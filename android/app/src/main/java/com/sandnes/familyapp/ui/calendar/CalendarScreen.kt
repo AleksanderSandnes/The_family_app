@@ -104,10 +104,10 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val SHORT_DATE_DAY = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
-private val MONTH_YEAR_FMT = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
-private val SECTION_DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)
-private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
+private val SHORT_DATE_DAY = DateTimeFormatter.ofPattern("EEE d MMM", Locale.getDefault())
+private val MONTH_YEAR_FMT = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
+private val SECTION_DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
+private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
 private val WEEKDAY_LABELS = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
 
 private const val MAX_HOUR = 23

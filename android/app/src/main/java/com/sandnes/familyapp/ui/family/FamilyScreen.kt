@@ -164,7 +164,7 @@ fun FamilyScreen(
         }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         topBar = {
             AppTopBar(
                 title = "Family",

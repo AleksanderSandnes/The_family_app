@@ -99,7 +99,7 @@ import java.util.Locale
 
 // ── Date formatting ────────────────────────────────────────────────────────
 
-private val MEAL_DATE_FMT = DateTimeFormatter.ofPattern("dd MMM", Locale.ENGLISH)
+private val MEAL_DATE_FMT = DateTimeFormatter.ofPattern("dd MMM", Locale.getDefault())
 
 private fun formatMealDate(stored: String): String =
     runCatching { LocalDate.parse(stored).format(MEAL_DATE_FMT) }.getOrDefault(stored)
