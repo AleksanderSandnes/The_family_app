@@ -96,11 +96,12 @@ import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.hexColor
 import com.sandnes.familyapp.ui.theme.rowSurface
 
+@Composable
 private fun shoppingProgressLabel(p: ListProgress?): String =
     when {
-        p == null || p.total == 0 -> "No items yet"
-        p.bought == p.total -> "All bought"
-        else -> "${p.bought} of ${p.total} bought"
+        p == null || p.total == 0 -> stringResource(R.string.no_items_yet)
+        p.bought == p.total -> stringResource(R.string.all_bought)
+        else -> stringResource(R.string.count_of_count_bought, p.bought, p.total)
     }
 
 @Composable
@@ -120,7 +121,7 @@ fun ShoppingScreen(
         containerColor = Color.Transparent,
         topBar = { FeatureTopBar(stringResource(R.string.shopping_lists), onBack) },
         floatingActionButton = {
-            AppFab(text = "New list", icon = Icons.Filled.Add, onClick = { showAdd = true })
+            AppFab(text = stringResource(R.string.new_list), icon = Icons.Filled.Add, onClick = { showAdd = true })
         },
     ) { padding ->
         PullRefresh(
@@ -133,10 +134,8 @@ fun ShoppingScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
                         Icons.Filled.ShoppingCart,
-                        "No lists yet",
-                        "Create a shared shopping list for your family.",
-                        actionLabel = "New list",
-                        onAction = { showAdd = true },
+                        stringResource(R.string.no_lists_yet),
+                        stringResource(R.string.create_a_shared_shopping_list_for_your_family),
                     )
                 }
             } else {
@@ -275,10 +274,10 @@ fun ShoppingDetailScreen(
         modifier = Modifier.imePadding(),
         containerColor = Color.Transparent,
         topBar = {
-            FeatureTopBar(list?.title ?: "List", onBack) {
+            FeatureTopBar(list?.title ?: stringResource(R.string.list_label), onBack) {
                 if (items.isNotEmpty()) {
                     PillTag(
-                        "$remaining left",
+                        stringResource(R.string.count_left, remaining),
                         MaterialTheme.colorScheme.primaryContainer,
                         MaterialTheme.colorScheme.onPrimaryContainer,
                         Modifier.padding(end = Spacing.xs),
@@ -286,21 +285,21 @@ fun ShoppingDetailScreen(
                 }
                 Box {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Rename list") },
+                            text = { Text(stringResource(R.string.rename_list)) },
                             onClick = {
                                 showMenu = false
                                 showRename = true
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Change icon") },
+                            text = { Text(stringResource(R.string.change_icon)) },
                             onClick = {
                                 showMenu = false
                                 showChangeIcon = true
@@ -308,7 +307,7 @@ fun ShoppingDetailScreen(
                         )
                         if (completed.isNotEmpty()) {
                             DropdownMenuItem(
-                                text = { Text("Clear completed (${completed.size})") },
+                                text = { Text(stringResource(R.string.clear_completed_count, completed.size)) },
                                 onClick = {
                                     showMenu = false
                                     viewModel.clearCompleted(listId)
@@ -329,7 +328,11 @@ fun ShoppingDetailScreen(
     ) { padding ->
         if (items.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                EmptyState(Icons.Filled.ShoppingCart, "Empty list", "Tap the field below to add your first item.")
+                EmptyState(
+                    Icons.Filled.ShoppingCart,
+                    stringResource(R.string.empty_list),
+                    stringResource(R.string.tap_the_field_below_to_add_your_first_item),
+                )
             }
         } else {
             LazyColumn(
@@ -362,8 +365,8 @@ fun ShoppingDetailScreen(
 
     if (showRename) {
         InputDialog(
-            title = "Rename list",
-            label = "List name",
+            title = stringResource(R.string.rename_list),
+            label = stringResource(R.string.list_name),
             initial = list?.title ?: "",
             onDismiss = { showRename = false },
             onConfirm = { value, _ ->
@@ -409,7 +412,7 @@ private fun AddItemBar(
         ) {
             if (value.isEmpty()) {
                 Text(
-                    "Add item…",
+                    stringResource(R.string.add_item_field),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -437,7 +440,7 @@ private fun AddItemBar(
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Add item",
+                contentDescription = stringResource(R.string.add_item),
                 tint = Color.White,
                 modifier = Modifier.size(20.dp),
             )
@@ -540,14 +543,19 @@ private fun CompletedHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "Completed ($count)",
+            stringResource(R.string.completed_count, count).uppercase(),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         Icon(
             if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-            contentDescription = if (expanded) "Hide completed items" else "Show completed items",
+            contentDescription =
+                if (expanded) {
+                    stringResource(R.string.hide_completed_items)
+                } else {
+                    stringResource(R.string.show_completed_items)
+                },
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -563,11 +571,11 @@ private fun NewListDialog(
     var selectedColor by remember { mutableStateOf(AppColorPalette.first()) }
 
     IconColorDialog(
-        heading = "New shopping list",
-        confirmLabel = "Create",
+        heading = stringResource(R.string.new_list),
+        confirmLabel = stringResource(R.string.create),
         title = title,
         onTitleChange = { title = it },
-        titlePlaceholder = "List name",
+        titlePlaceholder = stringResource(R.string.list_name),
         selectedIcon = selectedIcon,
         onIconSelect = { selectedIcon = it },
         selectedColor = selectedColor,
@@ -589,8 +597,8 @@ private fun ChangeIconDialog(
     var selectedColor by remember { mutableStateOf(currentColor ?: AppColorPalette.first()) }
 
     IconColorDialog(
-        heading = "Change icon",
-        confirmLabel = "Save",
+        heading = stringResource(R.string.change_icon),
+        confirmLabel = stringResource(R.string.save),
         title = null,
         onTitleChange = {},
         titlePlaceholder = "",
@@ -647,7 +655,7 @@ private fun IconColorDialog(
                     )
                 }
                 Text(
-                    "ICON",
+                    stringResource(R.string.icon).uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -659,7 +667,7 @@ private fun IconColorDialog(
                     colorOverride = hexColor(selectedColor),
                 )
                 Text(
-                    "COLOR",
+                    stringResource(R.string.color).uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -670,7 +678,7 @@ private fun IconColorDialog(
             TextButton(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmLabel) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

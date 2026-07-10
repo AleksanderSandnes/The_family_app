@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -283,6 +284,64 @@ class MealViewModelTest {
             advanceUntilIdle()
 
             assertTrue("plans should stay empty when userId is null", vm.plans.value.isEmpty())
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 4b. hasFamily gate + createPlan error surfacing
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `hasFamily is false initially`() {
+        assertFalse("hasFamily must start false", vm.hasFamily.value)
+    }
+
+    @Test
+    fun `errorRes is null initially`() {
+        assertNull("errorRes must start null", vm.errorRes.value)
+    }
+
+    @Test
+    fun `hasFamily becomes true when the user has a family`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.getUser("user-1") } returns UserModel(id = "user-1", familyId = "fam-1")
+            userId.value = "user-1"
+            advanceUntilIdle()
+            assertTrue("hasFamily should be true once the user belongs to a family", vm.hasFamily.value)
+        }
+
+    @Test
+    fun `hasFamily stays false when the user has no family`() =
+        runTest(dispatcherRule.dispatcher) {
+            // Default mock returns null familyId
+            userId.value = "user-1"
+            advanceUntilIdle()
+            assertFalse("hasFamily should stay false without a family", vm.hasFamily.value)
+        }
+
+    @Test
+    fun `createPlan without a family surfaces an error and adds nothing`() =
+        runTest(dispatcherRule.dispatcher) {
+            // Default mock returns null familyId
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            vm.createPlan("No Family Plan", "2024-01-01", "2024-01-07", "restaurant")
+            advanceUntilIdle()
+
+            assertNotNull("createPlan without a family should set an error", vm.errorRes.value)
+            assertTrue("plans should stay empty without a family", vm.plans.value.isEmpty())
+        }
+
+    @Test
+    fun `clearError resets the error state`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "user-1"
+            advanceUntilIdle()
+            vm.createPlan("No Family Plan", "2024-01-01", "2024-01-07", "restaurant")
+            advanceUntilIdle()
+
+            vm.clearError()
+            assertNull("errorRes should be cleared", vm.errorRes.value)
         }
 
     // ─────────────────────────────────────────────────────────────────────────

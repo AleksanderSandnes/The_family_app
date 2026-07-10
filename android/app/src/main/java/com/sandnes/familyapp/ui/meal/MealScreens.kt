@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Restaurant
@@ -43,6 +45,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -105,13 +109,14 @@ private fun formatMealDate(stored: String): String =
     runCatching { LocalDate.parse(stored).format(MEAL_DATE_FMT) }.getOrDefault(stored)
 
 /** Plan card sub-label: "N of M dinners planned" once days exist, else the day count. */
+@Composable
 private fun mealPlanLabel(
     progress: MealProgress?,
     fromIso: String,
     toIso: String,
 ): String {
     if (progress != null && progress.total > 0) {
-        return "${progress.planned} of ${progress.total} dinners planned"
+        return stringResource(R.string.dinners_planned_count, progress.planned, progress.total)
     }
     val days =
         runCatching {
@@ -119,7 +124,7 @@ private fun mealPlanLabel(
             val to = LocalDate.parse(toIso)
             (to.toEpochDay() - from.toEpochDay() + 1).toInt().coerceAtLeast(0)
         }.getOrDefault(0)
-    return "$days days"
+    return stringResource(R.string.days_count, days)
 }
 
 // ── Create / edit dialog ───────────────────────────────────────────────────
@@ -147,7 +152,7 @@ private fun CreatePlanDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(Radius.sheet),
-        title = { Text("Create a meal plan", style = MaterialTheme.typography.titleLarge) },
+        title = { Text(stringResource(R.string.new_plan), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()),
@@ -156,7 +161,7 @@ private fun CreatePlanDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    placeholder = { Text("Plan name") },
+                    placeholder = { Text(stringResource(R.string.plan_name)) },
                     singleLine = true,
                     shape = RoundedCornerShape(Radius.field),
                     modifier = Modifier.fillMaxWidth(),
@@ -169,7 +174,7 @@ private fun CreatePlanDialog(
                         ),
                 )
                 Text(
-                    "ICON",
+                    stringResource(R.string.icon).uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -181,7 +186,7 @@ private fun CreatePlanDialog(
                     colorOverride = hexColor(selectedColor),
                 )
                 Text(
-                    "COLOR",
+                    stringResource(R.string.color).uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -191,12 +196,16 @@ private fun CreatePlanDialog(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
                     DatePickerButton(
-                        label = fromDate?.format(MEAL_DATE_FMT) ?: "Start date",
+                        label = stringResource(R.string.starts),
+                        value = fromDate?.format(MEAL_DATE_FMT) ?: stringResource(R.string.select),
+                        valueSet = fromDate != null,
                         modifier = Modifier.weight(1f),
                         onClick = { showFromPicker = true },
                     )
                     DatePickerButton(
-                        label = toDate?.format(MEAL_DATE_FMT) ?: "End date",
+                        label = stringResource(R.string.ends),
+                        value = toDate?.format(MEAL_DATE_FMT) ?: stringResource(R.string.select),
+                        valueSet = toDate != null,
                         modifier = Modifier.weight(1f),
                         onClick = { showToPicker = true },
                     )
@@ -207,9 +216,9 @@ private fun CreatePlanDialog(
             TextButton(
                 enabled = canConfirm,
                 onClick = { onCreate(name.trim(), fromDate.toString(), toDate.toString(), selectedIcon, selectedColor) },
-            ) { Text("Create") }
+            ) { Text(stringResource(R.string.create)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 
     if (showFromPicker) {
@@ -231,9 +240,9 @@ private fun CreatePlanDialog(
                         if (toDate != null && toDate!!.isBefore(picked)) toDate = picked
                     }
                     showFromPicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { showFromPicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showFromPicker = false }) { Text(stringResource(R.string.cancel)) } },
         ) { DatePicker(state = state) }
     }
 
@@ -255,16 +264,24 @@ private fun CreatePlanDialog(
                         toDate = if (fromDate != null && picked.isBefore(fromDate!!)) fromDate else picked
                     }
                     showToPicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { showToPicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showToPicker = false }) { Text(stringResource(R.string.cancel)) } },
         ) { DatePicker(state = state) }
     }
 }
 
+/**
+ * Two-line tinted date button matching iOS `PlanDatePicker`: a leading calendar icon plus an
+ * uppercase caption ([label], e.g. "STARTS"/"ENDS") over the [value] line (a formatted date or the
+ * "Select" placeholder). [valueSet] drives the value colour (onSurface when set, muted when unset).
+ */
+@Suppress("MagicNumber")
 @Composable
 private fun DatePickerButton(
     label: String,
+    value: String,
+    valueSet: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
@@ -273,12 +290,39 @@ private fun DatePickerButton(
         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
         modifier = modifier.clickable(onClick = onClick),
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.md),
-        )
+        Row(
+            Modifier
+                .heightIn(min = 58.dp)
+                .padding(horizontal = Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Icon(
+                Icons.Filled.DateRange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    label.uppercase(),
+                    style = MaterialTheme.typography.labelMedium,
+                    letterSpacing = 0.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color =
+                        if (valueSet) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                )
+            }
+        }
     }
 }
 
@@ -296,11 +340,11 @@ private fun ChangeIconColorDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(Radius.sheet),
-        title = { Text("Change icon", style = MaterialTheme.typography.titleLarge) },
+        title = { Text(stringResource(R.string.change_icon), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 Text(
-                    "ICON",
+                    stringResource(R.string.icon).uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -312,7 +356,7 @@ private fun ChangeIconColorDialog(
                     colorOverride = hexColor(selectedColor),
                 )
                 Text(
-                    "COLOR",
+                    stringResource(R.string.color).uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -320,9 +364,9 @@ private fun ChangeIconColorDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(selectedIcon, selectedColor) }) { Text("Save") }
+            TextButton(onClick = { onConfirm(selectedIcon, selectedColor) }) { Text(stringResource(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -337,15 +381,33 @@ fun MealScreen(
     val plans by viewModel.plans.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     val planProgress by viewModel.planProgress.collectAsStateWithLifecycle(emptyMap())
+    val hasFamily by viewModel.hasFamily.collectAsStateWithLifecycle(false)
+    val errorRes by viewModel.errorRes.collectAsStateWithLifecycle(null)
     var showCreate by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     RefreshOnResume { viewModel.refresh() }
 
+    errorRes?.let { res ->
+        val message = stringResource(res)
+        LaunchedEffect(res) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { FeatureTopBar(stringResource(R.string.meal_planner), onBack) },
         floatingActionButton = {
-            AppFab(text = "Create a meal plan", icon = Icons.Filled.Add, onClick = { showCreate = true })
+            if (hasFamily) {
+                AppFab(
+                    text = stringResource(R.string.create_a_meal_plan),
+                    icon = Icons.Filled.Add,
+                    onClick = { showCreate = true },
+                )
+            }
         },
     ) { padding ->
         PullRefresh(
@@ -358,10 +420,8 @@ fun MealScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
                         Icons.Filled.Restaurant,
-                        "No meal plans yet",
-                        "Plan your family's meals for the week ahead.",
-                        actionLabel = "Create a meal plan",
-                        onAction = { showCreate = true },
+                        stringResource(R.string.no_meal_plans_yet),
+                        stringResource(R.string.plan_your_family_s_meals_for_the_week_ahead),
                     )
                 }
             } else {
@@ -377,7 +437,7 @@ fun MealScreen(
                             shape = RoundedCornerShape(Radius.overviewCard),
                         ) {
                             MealPlanCard(
-                                name = plan.name.ifBlank { "Meal plan" },
+                                name = plan.name.ifBlank { stringResource(R.string.meal_plan) },
                                 iconKey = plan.icon,
                                 color = plan.color,
                                 dateRange = "${formatMealDate(plan.fromDate)} – ${formatMealDate(plan.toDate)}",
@@ -482,21 +542,22 @@ fun MealDetailScreen(
         containerColor = Color.Transparent,
         modifier = Modifier.imePadding(),
         topBar = {
-            FeatureTopBar(plan?.name?.ifBlank { "Meal plan" } ?: "Meal plan", onBack) {
+            val defaultTitle = stringResource(R.string.meal_plan)
+            FeatureTopBar(plan?.name?.ifBlank { defaultTitle } ?: defaultTitle, onBack) {
                 Box {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
-                            text = { Text("Rename") },
+                            text = { Text(stringResource(R.string.rename_plan)) },
                             onClick = {
                                 showMenu = false
                                 showRename = true
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Change icon") },
+                            text = { Text(stringResource(R.string.change_icon)) },
                             onClick = {
                                 showMenu = false
                                 showIconPicker = true
@@ -540,8 +601,8 @@ fun MealDetailScreen(
     if (showRename) {
         plan?.let { p ->
             InputDialog(
-                title = "Rename plan",
-                label = "Name",
+                title = stringResource(R.string.rename_plan),
+                label = stringResource(R.string.name),
                 initial = p.name,
                 onDismiss = { showRename = false },
                 onConfirm = { v, _ ->
@@ -617,7 +678,7 @@ private fun MealDayRow(
                 OutlinedTextField(
                     value = draft,
                     onValueChange = onDraftChange,
-                    placeholder = { Text("What's for ${day.day}?") },
+                    placeholder = { Text(stringResource(R.string.whats_for_meal, day.day)) },
                     singleLine = true,
                     shape = RoundedCornerShape(Radius.extraSmall),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -632,13 +693,13 @@ private fun MealDayRow(
                         ),
                 )
                 Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                    TextButton(onClick = onCancel) { Text("Cancel") }
-                    TextButton(onClick = onSave) { Text("Save") }
+                    TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onSave) { Text(stringResource(R.string.save)) }
                 }
             }
         } else {
             Text(
-                text = if (day.food.isBlank()) "No plan yet" else day.food,
+                text = if (day.food.isBlank()) stringResource(R.string.no_plan_yet) else day.food,
                 style = MaterialTheme.typography.bodyLarge,
                 color =
                     if (day.food.isBlank()) {
@@ -649,9 +710,13 @@ private fun MealDayRow(
                 modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(Spacing.sm))
+            val editMealDesc = stringResource(R.string.edit_meal_named, day.day)
             IconButton(
                 onClick = onStartEdit,
-                modifier = Modifier.size(40.dp).semantics { contentDescription = "Edit ${day.day} meal" },
+                modifier =
+                    Modifier.size(40.dp).semantics {
+                        contentDescription = editMealDesc
+                    },
             ) {
                 Icon(
                     Icons.Filled.Edit,

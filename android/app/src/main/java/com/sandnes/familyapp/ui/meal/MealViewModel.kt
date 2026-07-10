@@ -2,6 +2,7 @@ package com.sandnes.familyapp.ui.meal
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.MealPlanDayModel
 import com.sandnes.familyapp.data.MealPlanModel
@@ -58,6 +59,21 @@ class MealViewModel
         private val _isLoading = MutableStateFlow(false)
         val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+        /** Whether the current user belongs to a family. Gates plan creation — with no
+         *  family, an insert would silently no-op (RLS/family scoping), so the UI hides
+         *  the create action and points the user at joining/creating a family instead. */
+        private val _hasFamily = MutableStateFlow(false)
+        val hasFamily: StateFlow<Boolean> = _hasFamily.asStateFlow()
+
+        /** One-shot, user-visible error as a string resource id. Cleared via [clearError]
+         *  once shown so a failed create surfaces instead of presenting as "nothing happened". */
+        private val _errorRes = MutableStateFlow<Int?>(null)
+        val errorRes: StateFlow<Int?> = _errorRes.asStateFlow()
+
+        fun clearError() {
+            _errorRes.value = null
+        }
+
         private val _selectedPlan = MutableStateFlow<MealPlanModel?>(null)
         val selectedPlan: StateFlow<MealPlanModel?> = _selectedPlan.asStateFlow()
 
@@ -75,6 +91,7 @@ class MealViewModel
                 repo.currentUserId.collect { userId ->
                     if (userId != null) {
                         val user = repo.getUser(userId)
+                        _hasFamily.value = user?.familyId != null
                         if (user?.familyId != null) {
                             loadPlansOnly(user.familyId)
                             subscribeToPlansOnce(user.familyId)
@@ -82,6 +99,7 @@ class MealViewModel
                             _plans.value = emptyList()
                         }
                     } else {
+                        _hasFamily.value = false
                         _plans.value = emptyList()
                     }
                 }
@@ -90,6 +108,7 @@ class MealViewModel
                 repo.familyChanged.collect {
                     val userId = repo.currentUserId.first() ?: return@collect
                     val user = repo.getUser(userId)
+                    _hasFamily.value = user?.familyId != null
                     if (user?.familyId != null) {
                         loadPlansOnly(user.familyId)
                         subscribeToPlansOnce(user.familyId)
@@ -106,6 +125,7 @@ class MealViewModel
             viewModelScope.launch {
                 val userId = repo.currentUserId.first() ?: return@launch
                 val user = repo.getUser(userId)
+                _hasFamily.value = user?.familyId != null
                 if (user?.familyId != null) loadPlansOnly(user.familyId)
             }
 
@@ -210,9 +230,16 @@ class MealViewModel
             icon: String,
             color: Int? = null,
         ) = viewModelScope.launch {
-            val userId = repo.currentUserId.first() ?: return@launch
-            val user = repo.getUser(userId) ?: return@launch
-            val familyId = user.familyId ?: return@launch
+            val userId = repo.currentUserId.first()
+            val user = userId?.let { repo.getUser(it) }
+            val familyId = user?.familyId
+            if (familyId == null) {
+                // No family → creation cannot be scoped and would silently no-op. Surface it
+                // instead of pretending the plan was created.
+                _hasFamily.value = false
+                _errorRes.value = R.string.join_or_create_a_family_to_get_started
+                return@launch
+            }
 
             val from = LocalDate.parse(fromIso)
             val to = LocalDate.parse(toIso)
@@ -222,10 +249,9 @@ class MealViewModel
                 }
             val week = cal.get(Calendar.WEEK_OF_YEAR)
 
-            val tempId = "temp-${java.util.UUID.randomUUID()}"
-            _plans.value = _plans.value +
+            val optimistic =
                 MealPlanModel(
-                    id = tempId,
+                    id = "temp-${java.util.UUID.randomUUID()}",
                     familyId = familyId,
                     name = name,
                     icon = icon,
@@ -234,38 +260,52 @@ class MealViewModel
                     week = week,
                     color = color,
                 )
+            _plans.value = _plans.value + optimistic
 
-            runCatching {
-                val plan =
-                    db
-                        .from("meal_plans")
-                        .insert(
-                            buildJsonObject {
-                                put("family_id", familyId)
-                                put("name", name)
-                                put("icon", icon)
-                                put("from_date", fromIso)
-                                put("to_date", toIso)
-                                put("week", week)
-                                if (color != null) put("color", color)
-                            },
-                        ) { select() }
-                        .decodeList<MealPlanModel>()
-                        .first()
-
-                var current = from
-                while (!current.isAfter(to)) {
-                    db.from("meal_plan_days").insert(
-                        buildJsonObject {
-                            put("meal_plan_id", plan.id)
-                            put("day", current.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()))
-                            put("date", current.toString())
-                        },
-                    )
-                    current = current.plusDays(1)
-                }
+            val result = runCatching { insertPlanWithDays(optimistic, from, to) }
+            // Don't let a failed insert present as "nothing happened": surface it so the
+            // reload below (which drops the optimistic temp row) isn't silently confusing.
+            result.onFailure {
+                _plans.value = _plans.value.filterNot { it.id == optimistic.id }
+                _errorRes.value = R.string.couldnt_save
             }
             loadPlansOnly(familyId)
+        }
+
+        /** Inserts the meal plan row (from [draft]) and one day row per calendar day in the range. */
+        private suspend fun insertPlanWithDays(
+            draft: MealPlanModel,
+            from: LocalDate,
+            to: LocalDate,
+        ) {
+            val plan =
+                db
+                    .from("meal_plans")
+                    .insert(
+                        buildJsonObject {
+                            put("family_id", draft.familyId)
+                            put("name", draft.name)
+                            put("icon", draft.icon)
+                            put("from_date", draft.fromDate)
+                            put("to_date", draft.toDate)
+                            put("week", draft.week)
+                            draft.color?.let { put("color", it) }
+                        },
+                    ) { select() }
+                    .decodeList<MealPlanModel>()
+                    .first()
+
+            var current = from
+            while (!current.isAfter(to)) {
+                db.from("meal_plan_days").insert(
+                    buildJsonObject {
+                        put("meal_plan_id", plan.id)
+                        put("day", current.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()))
+                        put("date", current.toString())
+                    },
+                )
+                current = current.plusDays(1)
+            }
         }
 
         fun renamePlan(
