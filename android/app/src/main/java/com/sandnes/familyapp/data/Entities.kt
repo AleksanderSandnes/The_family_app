@@ -37,6 +37,8 @@ data class ShoppingListModel(
     @SerialName("owner_user_id") val ownerUserId: String = "",
     @SerialName("family_id") val familyId: String? = null,
     val icon: String = "shopping_cart",
+    // User-picked 0xRRGGBB colour (add_color_to_meal_shopping_wishlist.sql). Null → feature accent.
+    val color: Int? = null,
 )
 
 @Serializable
@@ -56,6 +58,8 @@ data class MealPlanModel(
     val week: Int = 0,
     val name: String = "",
     val icon: String = "restaurant",
+    // User-picked 0xRRGGBB colour (add_color_to_meal_shopping_wishlist.sql). Null → feature accent.
+    val color: Int? = null,
 )
 
 @Serializable
@@ -79,6 +83,12 @@ data class CalendarEventModel(
     val activity: String = "",
     @SerialName("all_day") val allDay: Boolean = false,
     val icon: String = "schedule",
+    // Private events are visible/editable only by their creator (add_calendar_private_and_color.sql).
+    @SerialName("is_private") val isPrivate: Boolean = false,
+    // User-picked 0xRRGGBB colour. Null → colour derived from the icon (calendarIconColorIndex).
+    val color: Int? = null,
+    // "Going with" — public.users.id values of the members the creator attends with.
+    @SerialName("attendee_ids") val attendeeIds: List<String> = emptyList(),
 )
 
 @Serializable
@@ -89,6 +99,9 @@ data class BirthdayModel(
     @SerialName("family_id") val familyId: String? = null,
     @SerialName("user_id") val userId: String? = null,
     @SerialName("made_by_user_id") val madeByUserId: String = "",
+    // Custom icon + colour; editing restricted to the creator (add_birthday_icon_color_and_owner_rls.sql).
+    val icon: String = "cake",
+    val color: Int? = null,
 )
 
 @Serializable
@@ -98,7 +111,13 @@ data class WishlistModel(
     @SerialName("family_id") val familyId: String? = null,
     val name: String = "",
     val icon: String = "card_giftcard",
+    // User-picked 0xRRGGBB colour (add_color_to_meal_shopping_wishlist.sql). Null → feature accent.
+    val color: Int? = null,
+    // Share-link token; null until the owner mints one (add_wishlist_share_links.sql).
+    @SerialName("share_token") val shareToken: String? = null,
     @kotlinx.serialization.Transient val ownerName: String = "",
+    // True when this wishlist appears via a redeemed share link (cross-family), not family membership.
+    @kotlinx.serialization.Transient val sharedWithMe: Boolean = false,
 )
 
 @Serializable
@@ -179,4 +198,27 @@ data class ConversationWithPreview(
     val lastSenderName: String?,
     val unreadCount: Int,
     val participants: List<UserModel>,
+)
+
+/**
+ * Directional family relation: [fromUserId]'s relation label TO [toUserId] (e.g. "Dad").
+ * Each viewer sets/edits their own perspective; RLS enforces `from_user_id = me`.
+ * See add_family_relations.sql.
+ */
+@Serializable
+data class FamilyRelationModel(
+    val id: String = "",
+    @SerialName("family_id") val familyId: String = "",
+    @SerialName("from_user_id") val fromUserId: String = "",
+    @SerialName("to_user_id") val toUserId: String = "",
+    val relation: String = "",
+)
+
+/** A redeemed wishlist share grant — which user gained cross-family read access to which
+ *  wishlist. Drives the "Shared with me" list. See add_wishlist_share_links.sql. */
+@Serializable
+data class WishlistShareModel(
+    val id: String = "",
+    @SerialName("wishlist_id") val wishlistId: String = "",
+    @SerialName("user_id") val userId: String = "",
 )

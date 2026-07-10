@@ -27,12 +27,30 @@ object Elevation {
     val raised = 6.dp
 }
 
-/** Component corner-radius tokens (complement [AppShapes]). */
+/** Component corner-radius tokens (complement [AppShapes]). Mirrors iOS `Radius`. */
 object Radius {
+    val extraSmall = 10.dp
+    val small = 14.dp
+    val medium = 20.dp
+    val large = 28.dp
+    val extraLarge = 36.dp
+
     val card = 20.dp
     val field = 16.dp
     val button = 18.dp
     val sheet = 28.dp
+
+    // ── Liquid Glass scale (1c) ───────────────────────────────────────────────
+    val badge = 12.dp // icon badges (12–14)
+    val badgeLarge = 14.dp
+    val row = 20.dp // list rows / grid tiles / bubbles
+    val overviewCard = 22.dp // overview cards
+    val bigCard = 26.dp // family card, month grid, hero, meal-week header
+    val tabBar = 33.dp // floating tab bar
+    val fab = 26.dp // extended FAB (h52)
+    val segment = 14.dp // segmented control track
+    val segmentThumb = 11.dp
+    val menu = 18.dp // ⋯ popover menus
 }
 
 /** Motion duration tokens (ms). Mirrors the M18 navigation transitions. */

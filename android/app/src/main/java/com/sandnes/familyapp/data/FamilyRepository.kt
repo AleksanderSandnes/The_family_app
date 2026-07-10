@@ -1,6 +1,7 @@
 package com.sandnes.familyapp.data
 
 import android.content.Context
+import com.google.firebase.messaging.FirebaseMessaging
 import com.sandnes.familyapp.data.remote.DEEP_LINK_HOST
 import com.sandnes.familyapp.data.remote.DEEP_LINK_SCHEME
 import com.sandnes.familyapp.data.remote.SupabaseManager
@@ -12,11 +13,9 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
-import com.google.firebase.messaging.FirebaseMessaging
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.time.Instant

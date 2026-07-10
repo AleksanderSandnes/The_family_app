@@ -125,6 +125,12 @@ dependencies {
     implementation 'io.coil-kt.coil3:coil-compose:3.5.0'
     implementation 'io.coil-kt.coil3:coil-network-okhttp:3.5.0'
 
+    // Haze — real-time blur behind glass surfaces (Liquid Glass design layer).
+    // RenderEffect-backed on API 31+; the glass helpers fall back to a translucent
+    // fill below 31 (see ui/theme/Glass.kt). haze-materials provides tuned tints.
+    implementation 'dev.chrisbanes.haze:haze:1.6.10'
+    implementation 'dev.chrisbanes.haze:haze-materials:1.6.10'
+
     // Firebase Cloud Messaging — push notifications (events, birthdays, messages).
     // BoM-managed versions; requires app/google-services.json (see Firebase setup).
     implementation platform('com.google.firebase:firebase-bom:33.7.0')

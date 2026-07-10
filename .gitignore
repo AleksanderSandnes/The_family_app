@@ -26,3 +26,6 @@ ios/FamilyApp/Resources/GoogleService-Info.plist
 # sourcekit-lsp build server config (machine-specific absolute paths)
 buildServer.json
 .DS_Store
+
+# Obsidian vault (tracked docs/*.md; ignore volatile per-machine UI state)
+obsidian/.obsidian/workspace.json

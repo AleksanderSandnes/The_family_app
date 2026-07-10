@@ -1,0 +1,223 @@
+@file:Suppress("ktlint:standard:function-naming")
+
+package com.sandnes.familyapp.ui.theme
+
+import android.os.Build
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.materials.HazeMaterials
+
+/*
+ * Liquid Glass design layer for Android (mirrors iOS `DesignSystem/Glass.swift`).
+ *
+ * Look: translucent blurred "glass" surfaces floating over an ambient radial-wash background.
+ * On API 31+ the blur is real (Haze → RenderEffect). Below 31 every glass helper degrades to a
+ * translucent solid surface + elevation, so the UI stays legible and on-brand without blur.
+ *
+ * Usage: wrap a screen (or the app scaffold) in [AmbientBackground], then apply
+ * [glassCard]/[glassChrome]/etc. to surfaces inside it.
+ */
+
+/** Whether the platform can render real-time blur (Haze needs RenderEffect, API 31+). */
+val supportsBlur: Boolean
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+/**
+ * Shared [HazeState] for the current [AmbientBackground] subtree. Null when no ambient
+ * background is present (e.g. previews) — glass helpers then use the fallback path.
+ */
+val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+/**
+ * Ambient canvas — three soft radial washes (violet top-right, indigo left, teal bottom) over a
+ * near-white / near-black base. Provides the shared [HazeState] and marks itself as the blur
+ * source, so [glassCard] surfaces inside [content] blur the wash behind them.
+ */
+@Composable
+fun AmbientBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val hazeState = remember { HazeState() }
+    val dark = isSystemInDarkTheme()
+    val base = if (dark) AmbientBaseDark else AmbientBaseLight
+
+    CompositionLocalProvider(LocalHazeState provides hazeState) {
+        Box(modifier.fillMaxSize()) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .hazeSource(hazeState)
+                    .drawBehind {
+                        drawRect(base)
+                        drawWash(Color(0xFF7C3AED), if (dark) 0.32f else 0.17f, Offset(0.88f * size.width, 0.06f * size.height), 0.85f * size.width)
+                        drawWash(Color(0xFF5457E8), if (dark) 0.28f else 0.16f, Offset(-0.05f * size.width, 0.30f * size.height), 1.05f * size.width)
+                        drawWash(Color(0xFF14B8A6), if (dark) 0.18f else 0.13f, Offset(0.60f * size.width, 1.02f * size.height), 0.98f * size.width)
+                    },
+            )
+            content()
+        }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWash(
+    color: Color,
+    alpha: Float,
+    center: Offset,
+    radius: Float,
+) {
+    val tinted = color.copy(alpha = alpha)
+    val brush =
+        Brush.radialGradient(
+            colors = listOf(tinted, tinted.copy(alpha = 0f)),
+            center = Offset(radius, radius),
+            radius = radius,
+        )
+    drawRect(
+        brush = brush,
+        topLeft = Offset(center.x - radius, center.y - radius),
+        size = Size(radius * 2, radius * 2),
+        blendMode = BlendMode.Plus,
+    )
+}
+
+// ── Glass surface modifiers ──────────────────────────────────────────────────
+
+private val glassShadow = Color(0xFF141A3C)
+
+@Composable
+@ReadOnlyComposable
+private fun glassFallbackFill(dark: Boolean): Color =
+    if (dark) MaterialTheme.colorScheme.surface.copy(alpha = 0.86f) else Color.White.copy(alpha = 0.82f)
+
+@Composable
+@ReadOnlyComposable
+private fun glassHairline(dark: Boolean): Color =
+    if (dark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.55f)
+
+/** Content card / list row / grid tile — the workhorse glass surface (recipe A). */
+@Composable
+fun Modifier.glassCard(cornerRadius: Dp = Radius.card): Modifier = glassSurface(cornerRadius, tint = null)
+
+/** Accent-tinted glass card — for selected / active surfaces. */
+@Composable
+fun Modifier.glassCardTinted(
+    tint: Color,
+    cornerRadius: Dp = Radius.card,
+): Modifier =
+    glassSurface(cornerRadius, tint = tint)
+
+/** Nav / chrome pill or floating control (recipe B) — thinner material feel. */
+@Composable
+fun Modifier.glassChrome(cornerRadius: Dp): Modifier = glassSurface(cornerRadius, tint = null, chrome = true)
+
+/**
+ * Marks scrollable content as a blur source so floating chrome (tab bar, top bar) blurs it.
+ * No-op when no [AmbientBackground] is present.
+ */
+@Composable
+fun Modifier.glassSource(): Modifier {
+    val haze = LocalHazeState.current
+    return if (haze != null) this.hazeSource(haze, zIndex = 0f) else this
+}
+
+@Composable
+private fun Modifier.glassSurface(
+    cornerRadius: Dp,
+    tint: Color?,
+    chrome: Boolean = false,
+): Modifier {
+    val shape = RoundedCornerShape(cornerRadius)
+    val haze = LocalHazeState.current
+    val dark = isSystemInDarkTheme()
+    val shadowColor = tint ?: glassShadow
+    val shadowAlpha = if (tint != null) 0.20f else 0.06f
+    val hairline = glassHairline(dark)
+
+    val base =
+        this
+            .shadow(
+                elevation = if (chrome) Elevation.raised else Elevation.resting + 6.dp,
+                shape = shape,
+                clip = false,
+                ambientColor = shadowColor.copy(alpha = shadowAlpha),
+                spotColor = shadowColor.copy(alpha = shadowAlpha),
+            ).clip(shape)
+
+    val filled =
+        if (supportsBlur && haze != null) {
+            val style = if (chrome) HazeMaterials.thin() else HazeMaterials.regular()
+            base
+                .hazeEffect(state = haze, style = style)
+                .then(if (tint != null) Modifier.background(tint.copy(alpha = 0.16f)) else Modifier)
+        } else {
+            base.background(tint?.copy(alpha = 0.20f) ?: glassFallbackFill(dark))
+        }
+
+    return filled.drawBehind {
+        val r = cornerRadius.toPx()
+        drawRoundRect(color = hairline, cornerRadius = CornerRadius(r, r), style = Stroke(width = 1f))
+    }
+}
+
+/** Glass (active) or dashed ghost (completed / empty) for a list-row surface. */
+@Composable
+fun Modifier.rowSurface(
+    ghost: Boolean,
+    cornerRadius: Dp = Radius.row,
+): Modifier =
+    if (ghost) ghostSurface(cornerRadius) else glassCard(cornerRadius)
+
+/**
+ * Ghost / empty surface — completed or unplanned items recede: no glass material, a translucent
+ * fill and a dashed hairline, no drop shadow. Mirrors iOS `ghostSurface`.
+ */
+@Composable
+fun Modifier.ghostSurface(cornerRadius: Dp = Radius.card): Modifier {
+    val shape = RoundedCornerShape(cornerRadius)
+    val dark = isSystemInDarkTheme()
+    val fill = if (dark) Color.White.copy(alpha = 0.04f) else Color.White.copy(alpha = 0.36f)
+    val stroke = if (dark) Color.White.copy(alpha = 0.12f) else Color(0xFF5F6780).copy(alpha = 0.28f)
+    return this
+        .clip(shape)
+        .background(fill)
+        .drawBehind {
+            val r = cornerRadius.toPx()
+            drawRoundRect(
+                color = stroke,
+                cornerRadius = CornerRadius(r, r),
+                style =
+                    Stroke(
+                        width = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()), 0f),
+                    ),
+            )
+        }
+}

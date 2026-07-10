@@ -11,6 +11,7 @@ android/    # Android app — the Gradle root (settings.gradle, app/, config/, g
 ios/        # native iOS app (SwiftUI + supabase-swift, XcodeGen) — in development
 supabase/   # shared backend: schema.sql baseline, incremental migrations, edge functions
 maestro/    # Maestro UI end-to-end flows
+obsidian/   # Obsidian vault — #1 source of truth (project docs, plans, architecture)
 ```
 
 All Gradle commands run from `android/`. `local.properties`, `google-services.json`, and `release.keystore` live inside `android/` (gitignored).
@@ -26,7 +27,7 @@ Always run `cd android && ./gradlew assembleDebug`, `./gradlew build`, or any bu
 4. Never commit directly to `master` or `test`.
 5. Push all branches
 
-**After plan-related implementation:** Update the Obsidian vault at `/home/aleksander/Obsidian/The_family_app/`. Change milestone status from ⏳ to ✅ in `05_Implementation_Plan/Implementation Plan.md`, update `00 Home.md` current status, and update any relevant architecture notes.
+**After plan-related implementation:** Update the Obsidian vault at `obsidian/` (in-repo — the #1 source of truth). Change milestone status from ⏳ to ✅ in `obsidian/05_Implementation_Plan/Implementation Plan.md`, update `obsidian/00 Home.md` current status, and update any relevant architecture notes. Commit vault changes alongside the code they document.
 
 ## Tech stack
 
