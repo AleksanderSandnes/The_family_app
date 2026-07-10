@@ -14,7 +14,7 @@ final class WishlistPDFTests: XCTestCase {
     func testMakeProducesValidPDFFile() throws {
         let url = try XCTUnwrap(WishlistPDF.make(
             name: "Birthday",
-            ownerName: "Test Nine",
+            subtitle: "By Test Nine",
             wishes: [wish("AirPods", price: "1990 kr", link: "apple.com/airpods"), wish("Cookbook")]
         ))
         addTeardownBlock { try? FileManager.default.removeItem(at: url) }
@@ -27,7 +27,7 @@ final class WishlistPDFTests: XCTestCase {
     }
 
     func testFileNameUsesWishlistNameAndSanitizes() throws {
-        let url = try XCTUnwrap(WishlistPDF.make(name: "Mom's / Dad's list", ownerName: "", wishes: []))
+        let url = try XCTUnwrap(WishlistPDF.make(name: "Mom's / Dad's list", subtitle: "", wishes: []))
         addTeardownBlock { try? FileManager.default.removeItem(at: url) }
         XCTAssertEqual(url.pathExtension, "pdf")
         // Path separators must not leak into the file name.
@@ -36,7 +36,7 @@ final class WishlistPDFTests: XCTestCase {
     }
 
     func testEmptyWishesStillProducesPDF() throws {
-        let url = try XCTUnwrap(WishlistPDF.make(name: "Empty", ownerName: "Owner", wishes: []))
+        let url = try XCTUnwrap(WishlistPDF.make(name: "Empty", subtitle: "By Owner", wishes: []))
         addTeardownBlock { try? FileManager.default.removeItem(at: url) }
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
     }
