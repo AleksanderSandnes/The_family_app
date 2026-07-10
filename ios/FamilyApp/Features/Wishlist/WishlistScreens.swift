@@ -216,7 +216,6 @@ struct WishlistDetailScreen: View {
             if isOwner {
                 PrimaryButton(text: L("Add a wish"), systemImage: "plus") { showAddWish = true }
                     .padding(Spacing.lg)
-                    .background(.ultraThinMaterial)
             }
         }
         .ambientBackground()
