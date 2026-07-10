@@ -46,6 +46,9 @@ struct ChatScreen: View {
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
+                    // Breathing room so the first row's glass glow doesn't streak against
+                    // the header (a blue line in light mode).
+                    .contentMargins(.top, Spacing.sm, for: .scrollContent)
                     .refreshable { await viewModel.refreshConversations() }
                 }
             }
