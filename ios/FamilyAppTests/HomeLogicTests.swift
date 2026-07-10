@@ -125,6 +125,68 @@ final class HomeFormattingTests: XCTestCase {
         XCTAssertEqual(eventWhen(event(from: "sometime"), today: today), "sometime")
     }
 
+    // MARK: - eventHasEnded (dashboard "next event" drop-off)
+
+    private func timedEvent(
+        from: String, to: String? = nil, timeTo: String = "", allDay: Bool = false
+    ) -> CalendarEventModel {
+        var event = CalendarEventModel()
+        event.dateFrom = from
+        event.dateTo = to ?? from
+        event.timeTo = timeTo
+        event.allDay = allDay
+        return event
+    }
+
+    func testEventEndedEarlierTodayIsOver() {
+        // Ends 10:00, now 12:00 -> over.
+        let event = timedEvent(from: "2026-07-05", timeTo: "10:00")
+        XCTAssertTrue(eventHasEnded(event, today: today, nowMinutes: 12 * 60))
+    }
+
+    func testEventOngoingOrLaterTodayIsNotOver() {
+        let event = timedEvent(from: "2026-07-05", timeTo: "18:00")
+        XCTAssertFalse(eventHasEnded(event, today: today, nowMinutes: 12 * 60))
+    }
+
+    func testEventEndingExactlyNowIsOver() {
+        let event = timedEvent(from: "2026-07-05", timeTo: "12:00")
+        XCTAssertTrue(eventHasEnded(event, today: today, nowMinutes: 12 * 60))
+    }
+
+    func testFutureDayEventIsNotOver() {
+        let event = timedEvent(from: "2026-07-06", timeTo: "08:00")
+        XCTAssertFalse(eventHasEnded(event, today: today, nowMinutes: 23 * 60 + 59))
+    }
+
+    func testPastDayEventIsOver() {
+        let event = timedEvent(from: "2026-07-04", timeTo: "18:00")
+        XCTAssertTrue(eventHasEnded(event, today: today, nowMinutes: 0))
+    }
+
+    func testAllDayTodayStaysUntilDayEnd() {
+        let event = timedEvent(from: "2026-07-05", timeTo: "09:00", allDay: true)
+        XCTAssertFalse(eventHasEnded(event, today: today, nowMinutes: 23 * 60))
+    }
+
+    func testTodayWithoutEndTimeStaysUntilDayEnd() {
+        let event = timedEvent(from: "2026-07-05", timeTo: "")
+        XCTAssertFalse(eventHasEnded(event, today: today, nowMinutes: 23 * 60))
+    }
+
+    func testMultiDayEventEndingTomorrowIsNotOver() {
+        let event = timedEvent(from: "2026-07-04", to: "2026-07-06", timeTo: "08:00")
+        XCTAssertFalse(eventHasEnded(event, today: today, nowMinutes: 23 * 60))
+    }
+
+    func testMinutesSinceMidnight() {
+        XCTAssertEqual(minutesSinceMidnight("18:30"), 18 * 60 + 30)
+        XCTAssertEqual(minutesSinceMidnight("00:00"), 0)
+        XCTAssertNil(minutesSinceMidnight(""))
+        XCTAssertNil(minutesSinceMidnight("24:00"))
+        XCTAssertNil(minutesSinceMidnight("noon"))
+    }
+
     func testBirthdayWhenTodayTomorrowAndDays() {
         var birthday = BirthdayModel()
         birthday.date = "1990-07-05"
