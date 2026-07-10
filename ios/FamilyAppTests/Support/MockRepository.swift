@@ -7,6 +7,7 @@ import Foundation
 final class MockRepository: FamilyRepositoryProtocol {
     let session: SessionStore
     var pendingJoinCode: String?
+    var pendingWishlistShareToken: String?
 
     // Canned reads (set by the test)
     var users: [String: UserModel] = [:]
@@ -190,6 +191,15 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func setPendingJoinCode(_ code: String) {
         pendingJoinCode = code
+    }
+
+    func consumePendingWishlistShareToken() -> String? {
+        defer { pendingWishlistShareToken = nil }
+        return pendingWishlistShareToken
+    }
+
+    func setPendingWishlistShareToken(_ token: String) {
+        pendingWishlistShareToken = token
     }
 
     /// Chat
@@ -701,6 +711,27 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func deleteWishReservation(wishId: String, reservedBy: String) async {
         deletedReservations.append(ReservationRecord(wishId: wishId, reservedBy: reservedBy))
+    }
+
+    // Wishlist share links
+    var sharedWishlistsResult: [WishlistModel] = []
+    var ensureShareTokenResult: String?
+    var acceptShareResult: String?
+    private(set) var ensuredShareTokenWishlistIds: [String] = []
+    private(set) var acceptedShareTokens: [String] = []
+
+    func fetchSharedWishlists(userId _: String) async throws -> [WishlistModel] {
+        sharedWishlistsResult
+    }
+
+    func ensureWishlistShareToken(wishlistId: String) async throws -> String? {
+        ensuredShareTokenWishlistIds.append(wishlistId)
+        return ensureShareTokenResult
+    }
+
+    func acceptWishlistShare(token: String) async throws -> String? {
+        acceptedShareTokens.append(token)
+        return acceptShareResult
     }
 
     // Map

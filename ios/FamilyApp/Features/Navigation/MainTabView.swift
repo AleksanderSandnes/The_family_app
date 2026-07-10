@@ -80,6 +80,7 @@ struct MainTabView: View {
         .task {
             LocationSharingService.shared.startIfEnabled()
             await checkProfileCompletion()
+            await redeemPendingWishlistShare()
         }
         .sheet(item: $completionUser) { user in
             ProfileCompletionSheet(
@@ -110,6 +111,18 @@ struct MainTabView: View {
             // Invite deep link routes the user to Family, which opens the join flow.
             if code != nil { openFamily() }
         }
+        .onChange(of: FamilyRepository.shared.pendingWishlistShareToken) { _, token in
+            if token != nil { Task { await redeemPendingWishlistShare() } }
+        }
+    }
+
+    /// Redeems a wishlist share link opened while signed in: grants access and opens the
+    /// shared wishlist. Whoever opens the link gains access to that one wishlist — only them.
+    private func redeemPendingWishlistShare() async {
+        guard let token = FamilyRepository.shared.consumePendingWishlistShareToken() else { return }
+        guard let wishlistId = await wishlistViewModel.acceptShare(token: token) else { return }
+        selectedTab = .home
+        homePath = [.wishlist, .wishlistDetail(wishlistId: wishlistId)]
     }
 
     /// Family lives on the Home dashboard now — surface it by pushing onto the home stack.

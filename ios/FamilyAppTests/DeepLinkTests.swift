@@ -29,6 +29,16 @@ final class DeepLinkTests: XCTestCase {
         XCTAssertNil(DeepLink.parse(URL(string: "familyapp://join?code=")!))
     }
 
+    func testWishlistShareLinkParsesToken() {
+        let url = URL(string: "familyapp://wishlist?token=abc-123")!
+        XCTAssertEqual(DeepLink.parse(url), .wishlistShare(token: "abc-123"))
+    }
+
+    func testWishlistShareLinkWithoutTokenIsRejected() {
+        XCTAssertNil(DeepLink.parse(URL(string: "familyapp://wishlist")!))
+        XCTAssertNil(DeepLink.parse(URL(string: "familyapp://wishlist?token=")!))
+    }
+
     func testForeignSchemeIsRejected() {
         XCTAssertNil(DeepLink.parse(URL(string: "https://example.com/join?code=X")!))
         XCTAssertNil(DeepLink.parse(URL(string: "otherapp://auth")!))

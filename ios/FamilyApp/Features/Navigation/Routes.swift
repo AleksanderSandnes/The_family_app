@@ -41,4 +41,11 @@ enum DeepLinkURL {
         }
         return url
     }
+
+    static func sharedWishlist(token: String) -> URL {
+        guard let url = URL(string: "familyapp://wishlist?token=\(token)") else {
+            preconditionFailure("Invalid wishlist share deep-link URL for token: \(token)")
+        }
+        return url
+    }
 }

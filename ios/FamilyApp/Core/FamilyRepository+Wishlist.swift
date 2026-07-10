@@ -156,4 +156,47 @@ extension FamilyRepository {
             .eq("reserved_by", value: reservedBy)
             .execute()
     }
+
+    // MARK: - Share links (cross-family, single-user access)
+
+    /// Wishlists shared TO the current user via a redeemed link (RLS returns them by grant).
+    /// Two-step: read my grant rows, then load those wishlists by id.
+    func fetchSharedWishlists(userId: String) async throws -> [WishlistModel] {
+        let grants: [WishlistShareRow] = try await client.from("wishlist_shares")
+            .select("wishlist_id")
+            .eq("user_id", value: userId)
+            .execute()
+            .value
+        let ids = grants.map(\.wishlistId)
+        guard !ids.isEmpty else { return [] }
+        return try await client.from("wishlists")
+            .select()
+            .in("id", values: ids)
+            .execute()
+            .value
+    }
+
+    /// Owner-only: mint (or return the existing) share token for a wishlist. Returns the
+    /// token string, or nil if the caller isn't the owner / the wishlist is gone.
+    func ensureWishlistShareToken(wishlistId: String) async throws -> String? {
+        try await client
+            .rpc("ensure_wishlist_share_token", params: ["p_wishlist_id": wishlistId])
+            .execute()
+            .value
+    }
+
+    /// Redeem a share token: grants the current user access and returns the wishlist id
+    /// (nil for an invalid/revoked token).
+    func acceptWishlistShare(token: String) async throws -> String? {
+        try await client
+            .rpc("accept_wishlist_share", params: ["p_token": token])
+            .execute()
+            .value
+    }
+}
+
+/// Minimal decode shape for a `wishlist_shares` grant row (only the id is needed).
+private struct WishlistShareRow: Decodable {
+    let wishlistId: String
+    enum CodingKeys: String, CodingKey { case wishlistId = "wishlist_id" }
 }

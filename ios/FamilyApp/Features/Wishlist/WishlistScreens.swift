@@ -16,7 +16,7 @@ struct WishlistScreen: View {
             Group {
                 if viewModel.isLoading {
                     LoadingState().frame(maxHeight: .infinity, alignment: .top)
-                } else if viewModel.wishlists.isEmpty {
+                } else if viewModel.wishlists.isEmpty, viewModel.sharedWishlists.isEmpty {
                     EmptyState(
                         systemImage: "gift.fill",
                         title: L("No wishlists yet"),
@@ -25,13 +25,7 @@ struct WishlistScreen: View {
                 } else {
                     List {
                         ForEach(viewModel.wishlists) { wishlist in
-                            WishlistRow(wishlist: wishlist) { onOpen(wishlist.id) }
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(
-                                    top: 6, leading: Spacing.screenEdge,
-                                    bottom: 6, trailing: Spacing.screenEdge
-                                ))
+                            wishlistRow(wishlist)
                                 .swipeActions(edge: .trailing) {
                                     Button(role: .destructive) {
                                         viewModel.deleteWishlist(wishlist)
@@ -39,6 +33,17 @@ struct WishlistScreen: View {
                                         Label("Delete", systemImage: "trash")
                                     }
                                 }
+                        }
+                        if !viewModel.sharedWishlists.isEmpty {
+                            Section {
+                                ForEach(viewModel.sharedWishlists) { wishlist in
+                                    wishlistRow(wishlist)
+                                }
+                            } header: {
+                                Text(L("Shared with me"))
+                                    .font(.eyebrow)
+                                    .foregroundStyle(Color.appCaption)
+                            }
                         }
                     }
                     .listStyle(.plain)
@@ -59,6 +64,16 @@ struct WishlistScreen: View {
                 showAdd = false
             }
         }
+    }
+
+    /// Shared row styling for both the family and the "Shared with me" sections.
+    private func wishlistRow(_ wishlist: WishlistModel) -> some View {
+        WishlistRow(wishlist: wishlist) { onOpen(wishlist.id) }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(
+                top: 6, leading: Spacing.screenEdge, bottom: 6, trailing: Spacing.screenEdge
+            ))
     }
 }
 
@@ -122,6 +137,17 @@ struct WishlistDetailScreen: View {
         let ownerName = viewModel.selectedWishlist?.ownerName ?? ""
         guard let url = WishlistPDF.make(name: name, ownerName: ownerName, wishes: sortedWishes) else { return }
         shareItem = ShareItem(items: [url])
+    }
+
+    /// Owner action: mint a share link and present the system share sheet. Whoever opens
+    /// the link gains access to this one wishlist (only them, not their whole family).
+    private func shareWishlistLink() {
+        let name = viewModel.selectedWishlist?.name ?? L("Wishlist")
+        Task {
+            guard let url = await viewModel.shareLink(for: wishlistId) else { return }
+            let message = "\(L("See my wishlist \(name) in The Family App:"))\n\(url.absoluteString)"
+            shareItem = ShareItem(items: [message])
+        }
     }
 
     private var sortedWishes: [WishModel] {
@@ -201,8 +227,11 @@ struct WishlistDetailScreen: View {
                     Button { exportPDF() } label: {
                         Label(L("Export PDF"), systemImage: "square.and.arrow.up")
                     }
-                    // Only the wishlist's creator (owner) can rename it or change its icon.
+                    // Only the wishlist's creator (owner) shares a link, renames, or re-icons.
                     if isOwner {
+                        Button { shareWishlistLink() } label: {
+                            Label(L("Share link"), systemImage: "link")
+                        }
                         Button {
                             renameText = viewModel.selectedWishlist?.name ?? ""
                             showRename = true
@@ -402,130 +431,5 @@ private struct MemberWishRow: View {
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, 12)
         .rowSurface(ghost: state == .reservedByOther, cornerRadius: Radius.row)
-    }
-}
-
-// MARK: - Sheets
-
-private struct NewWishlistSheet: View {
-    let onCreate: (String, String, Int?) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var selectedIcon = "card_giftcard"
-    @State private var color: Int? = calendarEventColorPalette.first
-
-    private var canCreate: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) {
-            SheetHeader(title: L("New wishlist"), confirmTitle: L("Create"), confirmEnabled: canCreate) {
-                dismiss()
-            } onConfirm: {
-                onCreate(name.trimmingCharacters(in: .whitespaces), selectedIcon, color)
-                dismiss()
-            }
-            GlassField(systemImage: "gift", placeholder: L("Wishlist name"), text: $name)
-            SectionHeader(text: L("Icon"))
-            IconGrid(
-                options: IconOptions.wishlist,
-                selected: selectedIcon,
-                symbolFor: IconKeyMap.wishlistSymbol
-            ) { selectedIcon = $0 }
-            SectionHeader(text: L("Color"))
-            EventColorPicker(selection: $color)
-        }
-        .padding(.horizontal, Spacing.screenEdge)
-        .padding(.top, Spacing.lg)
-        .padding(.bottom, Spacing.xl)
-        .huggingSheet()
-    }
-}
-
-/// Rich add-wish flow: title (required) + optional link, price and photo.
-private struct AddWishSheet: View {
-    /// When set, the sheet edits this wish instead of adding a new one.
-    var initial: WishModel?
-    let onConfirm: (WishDraft) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var text = ""
-    @State private var link = ""
-    @State private var price = ""
-    @State private var photoItem: PhotosPickerItem?
-    @State private var imageData: Data?
-
-    private var canAdd: Bool {
-        !text.trimmingCharacters(in: .whitespaces).isEmpty
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            SheetHeader(
-                title: initial != nil ? L("Edit wish") : L("Add a wish"),
-                confirmTitle: initial != nil ? L("Save") : L("Add"),
-                confirmEnabled: canAdd
-            ) {
-                dismiss()
-            } onConfirm: {
-                onConfirm(WishDraft(
-                    text: text.trimmingCharacters(in: .whitespaces),
-                    link: link.isEmpty ? nil : link,
-                    price: price.isEmpty ? nil : price,
-                    imageData: imageData
-                ))
-                dismiss()
-            }
-            .padding(.bottom, Spacing.xs)
-            GlassField(systemImage: "gift", placeholder: L("What do you wish for?"), text: $text)
-            GlassField(systemImage: "link", placeholder: L("Link (optional)"), text: $link)
-            GlassField(systemImage: "tag", placeholder: L("Price (optional)"), text: $price)
-
-            PhotosPicker(selection: $photoItem, matching: .images) {
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "photo")
-                    Text(LocalizedStringKey(
-                        imageData != nil ? "Photo selected"
-                            : (initial?.imageUrl?.isEmpty == false ? "Change photo" : "Add photo (optional)")
-                    ))
-                }
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(Color.appPrimary)
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.field, style: .continuous)
-                        .strokeBorder(
-                            Color.appPrimary.opacity(0.4),
-                            style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])
-                        )
-                )
-            }
-            if let imageData, let image = UIImage(data: imageData) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 140)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
-            }
-        }
-        .padding(.horizontal, Spacing.screenEdge)
-        .padding(.top, Spacing.lg)
-        .padding(.bottom, Spacing.xl)
-        .huggingSheet()
-        .onChange(of: photoItem) { _, item in
-            Task {
-                imageData = try? await item?.loadTransferable(type: Data.self)
-            }
-        }
-        .onAppear {
-            if let initial {
-                text = initial.text
-                link = initial.link ?? ""
-                price = initial.price ?? ""
-            }
-        }
     }
 }

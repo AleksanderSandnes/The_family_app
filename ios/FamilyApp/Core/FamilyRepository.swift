@@ -67,6 +67,20 @@ final class FamilyRepository {
         return pendingJoinCode
     }
 
+    // MARK: - Pending wishlist share token (familyapp://wishlist?token=...)
+
+    /// Wishlist share token captured from a deep link, redeemed once the user is signed in.
+    private(set) var pendingWishlistShareToken: String?
+
+    func setPendingWishlistShareToken(_ token: String) {
+        pendingWishlistShareToken = token
+    }
+
+    func consumePendingWishlistShareToken() -> String? {
+        defer { pendingWishlistShareToken = nil }
+        return pendingWishlistShareToken
+    }
+
     // MARK: - Presence
 
     /// Bumps the current user's last_active_at — called when the app foregrounds.
