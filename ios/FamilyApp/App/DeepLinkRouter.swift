@@ -7,6 +7,7 @@ enum DeepLink: Equatable {
     case auth(URL)
     case chat(conversationId: String)
     case join(code: String)
+    case wishlistShare(token: String)
 
     static func parse(_ url: URL) -> DeepLink? {
         guard url.scheme == SupabaseClientProvider.deepLinkScheme else { return nil }
@@ -17,14 +18,21 @@ enum DeepLink: Equatable {
             let id = url.pathComponents.dropFirst().first ?? ""
             return id.isEmpty ? nil : .chat(conversationId: id)
         case "join":
-            let code = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-                .queryItems?
-                .first(where: { $0.name == "code" })?
-                .value ?? ""
+            let code = queryValue(url, "code")
             return code.isEmpty ? nil : .join(code: code)
+        case "wishlist":
+            let token = queryValue(url, "token")
+            return token.isEmpty ? nil : .wishlistShare(token: token)
         default:
             return nil
         }
+    }
+
+    private static func queryValue(_ url: URL, _ name: String) -> String {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?
+            .first(where: { $0.name == name })?
+            .value ?? ""
     }
 }
 
@@ -51,6 +59,8 @@ final class DeepLinkRouter {
             pendingConversationId = conversationId
         case let .join(code):
             repo.setPendingJoinCode(code)
+        case let .wishlistShare(token):
+            repo.setPendingWishlistShareToken(token)
         case nil:
             break
         }

@@ -271,4 +271,59 @@ final class WishlistViewModelTests: XCTestCase {
         XCTAssertEqual(record?.link, "https://x.com")
         XCTAssertEqual(record?.price, "99")
     }
+
+    // MARK: - Share links
+
+    func testLoadWishlistsAlsoLoadsSharedWishlists() async {
+        let mock = makeMock()
+        var shared = WishlistModel()
+        shared.id = "shared1"
+        shared.name = "Grandma's list"
+        shared.familyId = "other-family"
+        mock.sharedWishlistsResult = [shared]
+        let vm = makeVM(mock)
+        await waitUntil { vm.sharedWishlists.contains { $0.id == "shared1" } }
+        // Shared list is kept separate from my own/family wishlists.
+        XCTAssertFalse(vm.wishlists.contains { $0.id == "shared1" })
+    }
+
+    func testShareLinkReturnsDeepLinkWithMintedToken() async {
+        let mock = makeMock()
+        mock.ensureShareTokenResult = "tok-123"
+        let vm = makeVM(mock)
+        await waitUntil { true }
+
+        let url = await vm.shareLink(for: "w1")
+        XCTAssertEqual(url, DeepLinkURL.sharedWishlist(token: "tok-123"))
+        XCTAssertEqual(mock.ensuredShareTokenWishlistIds, ["w1"])
+    }
+
+    func testShareLinkReturnsNilWhenTokenUnavailable() async {
+        let mock = makeMock()
+        mock.ensureShareTokenResult = nil // e.g. caller isn't the owner
+        let vm = makeVM(mock)
+        await waitUntil { true }
+        let url = await vm.shareLink(for: "w1")
+        XCTAssertNil(url)
+    }
+
+    func testAcceptShareRedeemsTokenAndReturnsWishlistId() async {
+        let mock = makeMock()
+        mock.acceptShareResult = "shared-wl"
+        let vm = makeVM(mock)
+        await waitUntil { true }
+
+        let wishlistId = await vm.acceptShare(token: "tok-abc")
+        XCTAssertEqual(wishlistId, "shared-wl")
+        XCTAssertEqual(mock.acceptedShareTokens, ["tok-abc"])
+    }
+
+    func testAcceptShareReturnsNilForInvalidToken() async {
+        let mock = makeMock()
+        mock.acceptShareResult = nil
+        let vm = makeVM(mock)
+        await waitUntil { true }
+        let wishlistId = await vm.acceptShare(token: "bad")
+        XCTAssertNil(wishlistId)
+    }
 }

@@ -11,6 +11,7 @@ protocol FamilyRepositoryProtocol: AnyObject {
     // Session / prefs
     var session: SessionStore { get }
     var pendingJoinCode: String? { get }
+    var pendingWishlistShareToken: String? { get }
 
     // Users / family reads
     func getUser(_ userId: String) async -> UserModel?
@@ -47,6 +48,8 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func authSignedInEvents() -> AsyncStream<Void>
     func consumePendingJoinCode() -> String?
     func setPendingJoinCode(_ code: String)
+    func consumePendingWishlistShareToken() -> String?
+    func setPendingWishlistShareToken(_ token: String)
 
     // Chat
     func getLastMessage(conversationId: String) async -> MessageModel?
@@ -155,6 +158,9 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func deleteWish(id: String) async
     func insertWishReservation(wishId: String, reservedBy: String) async
     func deleteWishReservation(wishId: String, reservedBy: String) async
+    func fetchSharedWishlists(userId: String) async throws -> [WishlistModel]
+    func ensureWishlistShareToken(wishlistId: String) async throws -> String?
+    func acceptWishlistShare(token: String) async throws -> String?
 
     // Map (migrated out of FamilyMapViewModel)
     func fetchUserLocations(familyId: String) async throws -> [UserLocationModel]
