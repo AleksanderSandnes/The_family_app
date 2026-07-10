@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -131,7 +132,7 @@ class BirthdayViewModelTest {
             userId.value = "user-1"
             advanceUntilIdle()
 
-            vm.add("Alice", "1990-05-15")
+            vm.add("Alice", "1990-05-15", "cake", null)
             advanceUntilIdle()
 
             val items = vm.birthdays.value
@@ -148,7 +149,7 @@ class BirthdayViewModelTest {
             userId.value = "user-1"
             advanceUntilIdle()
 
-            vm.add("Bob", "1985-12-01")
+            vm.add("Bob", "1985-12-01", "cake", null)
             advanceUntilIdle()
 
             assertEquals(
@@ -165,7 +166,7 @@ class BirthdayViewModelTest {
             userId.value = "user-1"
             advanceUntilIdle()
 
-            vm.add("Ghost", "2000-01-01")
+            vm.add("Ghost", "2000-01-01", "cake", null)
             advanceUntilIdle()
 
             assertTrue("List must stay empty when getUser returns null", vm.birthdays.value.isEmpty())
@@ -183,11 +184,11 @@ class BirthdayViewModelTest {
             userId.value = "user-1"
             advanceUntilIdle()
 
-            vm.add("Original", "1990-01-01")
+            vm.add("Original", "1990-01-01", "cake", null)
             advanceUntilIdle()
 
             val item = vm.birthdays.value.first()
-            vm.update(item.id, "Updated", "2000-06-15")
+            vm.update(item.id, "Updated", "2000-06-15", "star", 0xEC4899)
             advanceUntilIdle()
 
             val updated = vm.birthdays.value.first()
@@ -203,16 +204,16 @@ class BirthdayViewModelTest {
             userId.value = "user-1"
             advanceUntilIdle()
 
-            vm.add("Alice", "1990-01-01")
+            vm.add("Alice", "1990-01-01", "cake", null)
             advanceUntilIdle()
-            vm.add("Bob", "1985-06-15")
+            vm.add("Bob", "1985-06-15", "cake", null)
             advanceUntilIdle()
 
             val aliceId =
                 vm.birthdays.value
                     .first { it.name == "Alice" }
                     .id
-            vm.update(aliceId, "Alice-Renamed", "1990-01-02")
+            vm.update(aliceId, "Alice-Renamed", "1990-01-02", "cake", null)
             advanceUntilIdle()
 
             val bob = vm.birthdays.value.first { it.name == "Bob" }
@@ -231,7 +232,7 @@ class BirthdayViewModelTest {
             userId.value = "user-1"
             advanceUntilIdle()
 
-            vm.add("ToDelete", "1980-03-10")
+            vm.add("ToDelete", "1980-03-10", "cake", null)
             advanceUntilIdle()
 
             val item = vm.birthdays.value.first()
@@ -249,9 +250,9 @@ class BirthdayViewModelTest {
             userId.value = "user-1"
             advanceUntilIdle()
 
-            vm.add("Alice", "1990-01-01")
+            vm.add("Alice", "1990-01-01", "cake", null)
             advanceUntilIdle()
-            vm.add("Bob", "1985-06-15")
+            vm.add("Bob", "1985-06-15", "cake", null)
             advanceUntilIdle()
 
             val alice = vm.birthdays.value.first { it.name == "Alice" }
@@ -312,7 +313,7 @@ class BirthdayViewModelTest {
 
                 userId.value = "user-1"
                 // Queue add alongside init so both run in one advanceUntilIdle()
-                vm.add("Alice", "1990-05-15")
+                vm.add("Alice", "1990-05-15", "cake", null)
                 advanceUntilIdle()
 
                 // The optimistic add emits a new list; reload() fails silently so the
@@ -322,5 +323,77 @@ class BirthdayViewModelTest {
 
                 cancelAndIgnoreRemainingEvents()
             }
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 10. icon + colour — optimistic item carries the custom icon/colour
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `add carries the custom icon and colour into the optimistic item`() =
+        runTest(dispatcherRule.dispatcher) {
+            val user = UserModel(id = "user-1", familyId = null)
+            coEvery { repo.getUser("user-1") } returns user
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            vm.add("Cara", "1992-03-03", "star", 0xEC4899)
+            advanceUntilIdle()
+
+            val item = vm.birthdays.value.first()
+            assertEquals("icon should match", "star", item.icon)
+            assertEquals("colour should match", 0xEC4899, item.color)
+        }
+
+    @Test
+    fun `add defaults keep the cake icon and null colour`() =
+        runTest(dispatcherRule.dispatcher) {
+            val user = UserModel(id = "user-1", familyId = null)
+            coEvery { repo.getUser("user-1") } returns user
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            vm.add("Dan", "1980-07-07", "cake", null)
+            advanceUntilIdle()
+
+            val item = vm.birthdays.value.first()
+            assertEquals("icon should default to cake", "cake", item.icon)
+            assertNull("colour should be null", item.color)
+        }
+
+    @Test
+    fun `update applies optimistic icon and colour change`() =
+        runTest(dispatcherRule.dispatcher) {
+            val user = UserModel(id = "user-1", familyId = null)
+            coEvery { repo.getUser("user-1") } returns user
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            vm.add("Eve", "1991-02-02", "cake", null)
+            advanceUntilIdle()
+
+            val id =
+                vm.birthdays.value
+                    .first()
+                    .id
+            vm.update(id, "Eve", "1991-02-02", "favorite", 0x14B8A6)
+            advanceUntilIdle()
+
+            val updated = vm.birthdays.value.first()
+            assertEquals("icon should be updated", "favorite", updated.icon)
+            assertEquals("colour should be updated", 0x14B8A6, updated.color)
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 11. currentUserId — mirrors the repo flow (drives creator-only edit gating)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `currentUserId reflects the repo user id`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            assertEquals("currentUserId should track the repo flow", "user-1", vm.currentUserId.value)
         }
 }

@@ -615,4 +615,92 @@ class CalendarViewModelTest {
                 cancelAndIgnoreRemainingEvents()
             }
         }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 13. Private / colour / attendees — optimistic item carries the new fields
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `addEvent carries private colour and attendee ids into the optimistic item`() =
+        runTest(dispatcherRule.dispatcher) {
+            val user = UserModel(id = "user-1", familyId = null)
+            coEvery { repo.getUser("user-1") } returns user
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            vm.addEvent(
+                EventDraft(
+                    activity = "Dinner",
+                    allDay = false,
+                    dateFrom = "2025-07-10",
+                    dateTo = "2025-07-10",
+                    timeFrom = "18:00",
+                    timeTo = "20:00",
+                    icon = "restaurant",
+                    isPrivate = true,
+                    color = 0xEC4899,
+                    attendeeIds = listOf("u2", "u3"),
+                ),
+            )
+            advanceUntilIdle()
+
+            val item = vm.events.value.first()
+            assertTrue("isPrivate should be true", item.isPrivate)
+            assertEquals("colour should match", 0xEC4899, item.color)
+            assertEquals("attendee ids should match", listOf("u2", "u3"), item.attendeeIds)
+        }
+
+    @Test
+    fun `addEvent defaults leave the event non-private with no colour or attendees`() =
+        runTest(dispatcherRule.dispatcher) {
+            val user = UserModel(id = "user-1", familyId = null)
+            coEvery { repo.getUser("user-1") } returns user
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            vm.addEvent(
+                EventDraft(
+                    activity = "Solo",
+                    allDay = false,
+                    dateFrom = "2025-07-10",
+                    dateTo = "2025-07-10",
+                    timeFrom = "09:00",
+                    timeTo = "10:00",
+                ),
+            )
+            advanceUntilIdle()
+
+            val item = vm.events.value.first()
+            assertFalse("isPrivate should default false", item.isPrivate)
+            assertEquals("colour should default null", null, item.color)
+            assertTrue("attendee ids should default empty", item.attendeeIds.isEmpty())
+        }
+
+    @Test
+    fun `updateEvent applies optimistic private colour and attendee changes`() =
+        runTest(dispatcherRule.dispatcher) {
+            val original =
+                CalendarEventModel(
+                    id = "upd-priv",
+                    userId = "u1",
+                    activity = "Meeting",
+                    dateFrom = "2025-07-01",
+                    dateTo = "2025-07-01",
+                )
+            seedEvents(original)
+
+            val updated =
+                original.copy(
+                    isPrivate = true,
+                    color = 0x22C55E,
+                    attendeeIds = listOf("u9"),
+                )
+            vm.updateEvent(updated)
+            advanceUntilIdle()
+
+            val item = vm.events.value.first()
+            assertTrue("isPrivate should be updated", item.isPrivate)
+            assertEquals("colour should be updated", 0x22C55E, item.color)
+            assertEquals("attendee ids should be updated", listOf("u9"), item.attendeeIds)
+        }
 }

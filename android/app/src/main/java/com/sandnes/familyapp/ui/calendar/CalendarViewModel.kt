@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sandnes.familyapp.data.CalendarEventModel
 import com.sandnes.familyapp.data.FamilyRepository
+import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.data.remote.SupabaseManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
@@ -21,8 +22,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -36,6 +40,12 @@ data class EventDraft(
     val timeFrom: String,
     val timeTo: String,
     val icon: String = "schedule",
+    // Private events are visible/editable only by their creator (RLS enforced).
+    val isPrivate: Boolean = false,
+    // User-picked 0xRRGGBB colour; null falls back to the icon-derived accent.
+    val color: Int? = null,
+    // "Going with" — public.users.id values of the members the creator attends with.
+    val attendeeIds: List<String> = emptyList(),
 )
 
 @HiltViewModel
@@ -62,8 +72,15 @@ class CalendarViewModel
         private val _isLoading = MutableStateFlow(false)
         val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+        /** Family members — the selectable "Going with" list and creator/attendee avatar lookup. */
+        private val _familyMembers = MutableStateFlow<List<UserModel>>(emptyList())
+        val familyMembers: StateFlow<List<UserModel>> = _familyMembers.asStateFlow()
+
+        /** The current app user id (public.users.id); used to derive the "other members" list. */
+        val currentUserId: StateFlow<String?> =
+            repo.currentUserId.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
         private var realtimeChannel: RealtimeChannel? = null
-        private var currentUserId: String? = null
 
         val eventsForSelectedDate: StateFlow<List<CalendarEventModel>> =
             combine(
@@ -80,7 +97,6 @@ class CalendarViewModel
         init {
             viewModelScope.launch {
                 repo.currentUserId.collect { userId ->
-                    currentUserId = userId
                     if (userId != null) loadEvents(userId) else _events.value = emptyList()
                 }
             }
@@ -105,6 +121,9 @@ class CalendarViewModel
             runCatching {
                 val user = repo.getUser(userId)
                 if (user != null) {
+                    if (user.familyId != null) {
+                        _familyMembers.value = repo.getFamilyMembers(user.familyId)
+                    }
                     val result =
                         if (user.familyId != null) {
                             db
@@ -187,6 +206,9 @@ class CalendarViewModel
                         timeFrom = if (draft.allDay) "" else draft.timeFrom,
                         timeTo = if (draft.allDay) "" else draft.timeTo,
                         icon = draft.icon,
+                        isPrivate = draft.isPrivate,
+                        color = draft.color,
+                        attendeeIds = draft.attendeeIds,
                     )
                 runCatching {
                     db.from("calendar_events").insert(
@@ -200,6 +222,9 @@ class CalendarViewModel
                             put("time_from", if (draft.allDay) "" else draft.timeFrom)
                             put("time_to", if (draft.allDay) "" else draft.timeTo)
                             put("icon", draft.icon)
+                            put("is_private", draft.isPrivate)
+                            draft.color?.let { put("color", it) }
+                            putJsonArray("attendee_ids") { draft.attendeeIds.forEach { add(it) } }
                         },
                     )
                 }
@@ -218,6 +243,9 @@ class CalendarViewModel
                         set("time_from", event.timeFrom)
                         set("time_to", event.timeTo)
                         set("icon", event.icon)
+                        set("is_private", event.isPrivate)
+                        event.color?.let { set("color", it) } ?: setToNull("color")
+                        set("attendee_ids", buildJsonArray { event.attendeeIds.forEach { add(it) } })
                     }) { filter { eq("id", event.id) } }
                 }
                 val userId = repo.currentUserId.first() ?: return@launch

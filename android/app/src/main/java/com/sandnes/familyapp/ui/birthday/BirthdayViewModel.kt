@@ -14,9 +14,11 @@ import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -40,8 +42,11 @@ class BirthdayViewModel
         private val _isLoading = MutableStateFlow(false)
         val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+        /** The current app user id (public.users.id) — gates creator-only edit affordances. */
+        val currentUserId: StateFlow<String?> =
+            repo.currentUserId.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
         private var realtimeChannel: RealtimeChannel? = null
-        private var currentUserId: String? = null
 
         /** Tracks which familyId is currently subscribed so subscription is set up only once per family. */
         private var subscribedFamilyId: String? = null
@@ -49,7 +54,6 @@ class BirthdayViewModel
         init {
             viewModelScope.launch {
                 repo.currentUserId.collect { userId ->
-                    currentUserId = userId
                     if (userId != null) load(userId) else _birthdays.value = emptyList()
                 }
             }
@@ -138,6 +142,8 @@ class BirthdayViewModel
         fun add(
             name: String,
             date: String,
+            icon: String,
+            color: Int?,
         ) =
             viewModelScope.launch {
                 val userId = repo.currentUserId.first() ?: return@launch
@@ -150,6 +156,8 @@ class BirthdayViewModel
                         date = date,
                         familyId = user.familyId,
                         madeByUserId = userId,
+                        icon = icon,
+                        color = color,
                     )
                 runCatching {
                     db.from("birthdays").insert(
@@ -158,6 +166,8 @@ class BirthdayViewModel
                             put("date", date)
                             if (user.familyId != null) put("family_id", user.familyId)
                             put("made_by_user_id", userId)
+                            put("icon", icon)
+                            color?.let { put("color", it) }
                         },
                     )
                 }
@@ -168,18 +178,25 @@ class BirthdayViewModel
             id: String,
             name: String,
             date: String,
+            icon: String,
+            color: Int?,
         ) = viewModelScope.launch {
             // Optimistic update
-            _birthdays.value = _birthdays.value.map { if (it.id == id) it.copy(name = name, date = date) else it }
+            _birthdays.value =
+                _birthdays.value.map {
+                    if (it.id == id) it.copy(name = name, date = date, icon = icon, color = color) else it
+                }
             runCatching {
                 db.from("birthdays").update({
                     set("name", name)
                     set("date", date)
+                    set("icon", icon)
+                    color?.let { set("color", it) } ?: setToNull("color")
                 }) {
                     filter { eq("id", id) }
                 }
             }
-            val userId = currentUserId ?: repo.currentUserId.first() ?: return@launch
+            val userId = currentUserId.value ?: repo.currentUserId.first() ?: return@launch
             reload(userId)
         }
 
