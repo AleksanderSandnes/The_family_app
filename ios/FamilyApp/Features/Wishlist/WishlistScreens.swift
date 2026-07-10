@@ -135,7 +135,8 @@ struct WishlistDetailScreen: View {
     private func exportPDF() {
         let name = viewModel.selectedWishlist?.name ?? L("Wishlist")
         let ownerName = viewModel.selectedWishlist?.ownerName ?? ""
-        guard let url = WishlistPDF.make(name: name, ownerName: ownerName, wishes: sortedWishes) else { return }
+        let subtitle = ownerName.isEmpty ? "" : L("By \(ownerName)")
+        guard let url = WishlistPDF.make(name: name, subtitle: subtitle, wishes: sortedWishes) else { return }
         shareItem = ShareItem(items: [url])
     }
 
