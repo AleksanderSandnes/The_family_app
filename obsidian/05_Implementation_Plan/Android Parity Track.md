@@ -29,7 +29,9 @@ to the iOS-era feature set and the Liquid Glass look, after the iOS app shipped 
 | M4 | In-app EN/NB localization — 396 strings each in `values/` + `values-nb/`; live switch via `AppCompatDelegate.setApplicationLocales`; Settings language picker; core screens extracted (feature-body strings a documented follow-up) | ✅ |
 | M5 | Backend verification via Supabase MCP — all 16 objects present in prod; advisors only pre-existing WARNs; no migrations needed | ✅ |
 | M6 | Lint/CI gate (`android-lint.yml`) + Kotlin pre-commit hooks + detekt baseline + `android/LINTING.md`; test gaps filled (AuthViewModelTest, FamilyMapViewModelTest) | ✅ |
-| M7 | Final review + emulator/Maestro verification | ⏳ (review in progress) |
+| M7 | Final review + emulator/Maestro verification | ✅ |
+
+**M7 review (2026-07-10):** multi-agent code review over the branch diff surfaced 3 real bugs, all fixed + re-verified: (1) **missing `familyapp://wishlist` manifest intent-filter** — the share-link feature was unreachable (HIGH); (2) FamilyScreen opaque background broke the glass look; (3) Calendar/Birthday/Meal/Home date formatters pinned to `Locale.ENGLISH` didn't localize. Three lower/latent items left documented (nullable-colour `setToNull` harmonization; share-token consumed on redeem failure; feature-body string extraction still pending). The wishlist deep link was re-tested on the emulator after the manifest fix and now opens the Wishlist screen.
 
 ## Verification evidence (2026-07-10)
 - **Build/static**: `spotlessCheck` + `detekt` + `lintDebug` + `assembleDebug` all green; **440 unit tests pass** (was ~382).
