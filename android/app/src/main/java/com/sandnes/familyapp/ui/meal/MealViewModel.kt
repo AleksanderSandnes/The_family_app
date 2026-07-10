@@ -208,6 +208,7 @@ class MealViewModel
             fromIso: String,
             toIso: String,
             icon: String,
+            color: Int? = null,
         ) = viewModelScope.launch {
             val userId = repo.currentUserId.first() ?: return@launch
             val user = repo.getUser(userId) ?: return@launch
@@ -231,6 +232,7 @@ class MealViewModel
                     fromDate = fromIso,
                     toDate = toIso,
                     week = week,
+                    color = color,
                 )
 
             runCatching {
@@ -245,6 +247,7 @@ class MealViewModel
                                 put("from_date", fromIso)
                                 put("to_date", toIso)
                                 put("week", week)
+                                if (color != null) put("color", color)
                             },
                         ) { select() }
                         .decodeList<MealPlanModel>()
@@ -288,6 +291,19 @@ class MealViewModel
             cache = _plans.value
             runCatching {
                 db.from("meal_plans").update({ set("icon", newIcon) }) { filter { eq("id", plan.id) } }
+            }
+        }
+
+        fun setPlanColor(
+            plan: MealPlanModel,
+            newColor: Int?,
+        ) = viewModelScope.launch {
+            val updated = plan.copy(color = newColor)
+            _selectedPlan.value = updated
+            _plans.value = _plans.value.map { if (it.id == plan.id) updated else it }
+            cache = _plans.value
+            runCatching {
+                db.from("meal_plans").update({ set("color", newColor) }) { filter { eq("id", plan.id) } }
             }
         }
 

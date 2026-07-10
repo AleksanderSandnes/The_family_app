@@ -226,6 +226,43 @@ class MealViewModelTest {
         }
 
     @Test
+    fun `createPlan stores the specified color on the optimistic item`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            coEvery { repo.getUser("user-1") } returns UserModel(id = "user-1", familyId = "fam-1")
+            vm.createPlan("Colored Plan", "2024-04-01", "2024-04-07", "restaurant", 0x14B8A6)
+            advanceUntilIdle()
+
+            assertEquals(
+                "color should be stored on the optimistic plan",
+                0x14B8A6,
+                vm.plans.value
+                    .first()
+                    .color,
+            )
+        }
+
+    @Test
+    fun `createPlan without color defaults to null color`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "user-1"
+            advanceUntilIdle()
+
+            coEvery { repo.getUser("user-1") } returns UserModel(id = "user-1", familyId = "fam-1")
+            vm.createPlan("Plain Plan", "2024-05-01", "2024-05-07", "restaurant")
+            advanceUntilIdle()
+
+            assertNull(
+                "color should default to null",
+                vm.plans.value
+                    .first()
+                    .color,
+            )
+        }
+
+    @Test
     fun `createPlan when user has null familyId does not add to plans`() =
         runTest(dispatcherRule.dispatcher) {
             // Default mock returns null familyId — early return inside createPlan
@@ -373,6 +410,48 @@ class MealViewModelTest {
 
             val plan2After = vm.plans.value.first { it.id == "plan-2" }
             assertEquals("Plan 2 icon should be unchanged", "restaurant", plan2After.icon)
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 7b. setPlanColor — optimistic colour update
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `setPlanColor updates the color in the plans list`() =
+        runTest(dispatcherRule.dispatcher) {
+            val plan = MealPlanModel(id = "plan-1", familyId = "fam-1", name = "Plan", color = null)
+            seedPlans(listOf(plan))
+
+            vm.setPlanColor(plan, 0x8B5CF6)
+            advanceUntilIdle()
+
+            assertEquals("Colour should be updated in list", 0x8B5CF6, vm.plans.value[0].color)
+        }
+
+    @Test
+    fun `setPlanColor also updates selectedPlan`() =
+        runTest(dispatcherRule.dispatcher) {
+            val plan = MealPlanModel(id = "plan-1", familyId = "fam-1", name = "Plan", color = null)
+            seedPlans(listOf(plan))
+
+            vm.setPlanColor(plan, 0xF59E0B)
+            advanceUntilIdle()
+
+            assertEquals("selectedPlan colour should be updated", 0xF59E0B, vm.selectedPlan.value?.color)
+        }
+
+    @Test
+    fun `setPlanColor does not affect other plans`() =
+        runTest(dispatcherRule.dispatcher) {
+            val plan1 = MealPlanModel(id = "plan-1", familyId = "fam-1", name = "Plan 1", color = null)
+            val plan2 = MealPlanModel(id = "plan-2", familyId = "fam-1", name = "Plan 2", color = 0x6366F1)
+            seedPlans(listOf(plan1, plan2))
+
+            vm.setPlanColor(plan1, 0xEF4444)
+            advanceUntilIdle()
+
+            val plan2After = vm.plans.value.first { it.id == "plan-2" }
+            assertEquals("Plan 2 colour should be unchanged", 0x6366F1, plan2After.color)
         }
 
     // ─────────────────────────────────────────────────────────────────────────
