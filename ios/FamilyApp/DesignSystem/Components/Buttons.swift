@@ -1,5 +1,4 @@
-// Button components — mirror Components.kt (PrimaryButton / SecondaryButton /
-// DestructiveButton). Same names, same visual rules.
+// Button components: PrimaryButton / SecondaryButton / DestructiveButton.
 import SwiftUI
 
 /// Primary gradient call-to-action button with built-in loading state.
@@ -102,7 +101,7 @@ struct DestructiveButton: View {
     }
 }
 
-/// Press feedback matching Android's 0.97 scale-on-press.
+/// Press feedback: 0.97 scale-on-press.
 struct PressScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

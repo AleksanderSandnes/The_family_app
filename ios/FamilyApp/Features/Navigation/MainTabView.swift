@@ -1,7 +1,6 @@
-// Main signed-in shell — the iOS twin of MainFlow in AppNavHost.kt.
-// 5 tabs, each with its own NavigationStack; feature view models are hoisted here
-// (Android: Activity-scoped hoisting in MainFlow) so they survive tab switches and
-// start loading immediately on login. Chat list + detail will share one view model.
+// Main signed-in shell. 5 tabs, each with its own NavigationStack; feature view models
+// are hoisted here so they survive tab switches and start loading immediately on login.
+// Chat list + detail share one view model.
 import SwiftUI
 
 struct MainTabView: View {
@@ -127,7 +126,7 @@ struct MainTabView: View {
         homePath = [.wishlist, .wishlistDetail(wishlistId: wishlistId)]
     }
 
-    /// Family lives on the Home dashboard now — surface it by pushing onto the home stack.
+    /// Family lives on the Home dashboard — surface it by pushing onto the home stack.
     private func openFamily() {
         selectedTab = .home
         if homePath.last != .family { homePath.append(.family) }

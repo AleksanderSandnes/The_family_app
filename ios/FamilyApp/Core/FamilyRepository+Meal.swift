@@ -1,10 +1,9 @@
-// Meal-planning data access — moved out of MealViewModel so the VM depends only on the
-// FamilyRepositoryProtocol seam and can be unit-tested with a mock. Each method preserves
-// the exact query semantics and payload fields of the original inline `client.from(...)`
-// calls. Fetches throw so the caller can fall back to its current value (`(try? …) ?? …`).
+// Meal-planning data access behind the FamilyRepositoryProtocol seam, so the view model is
+// unit-testable with a mock. Fetches throw so the caller can fall back to its current value
+// (`(try? …) ?? …`).
 //
-// Note: `fetchMealPlans(familyId:)` and `fetchMealPlanDays(mealPlanId:date:)` already live
-// in FamilyRepository+Home.swift; the meal list reuses the former.
+// Note: `fetchMealPlans(familyId:)` and `fetchMealPlanDays(mealPlanId:date:)` live in
+// FamilyRepository+Home.swift; the meal list reuses the former.
 import Foundation
 import Supabase
 
@@ -38,7 +37,7 @@ extension FamilyRepository {
     }
 
     /// Inserts a plan and returns the persisted row (with its real id) so day rows can be
-    /// attached. Throws so the caller skips day creation on failure (parity, no rollback).
+    /// attached. Throws so the caller skips day creation on failure (no rollback).
     func insertMealPlan(_ plan: MealPlanModel) async throws -> MealPlanModel {
         try await client.from("meal_plans")
             .insert([
@@ -56,7 +55,7 @@ extension FamilyRepository {
             .value
     }
 
-    /// Inserts one day row for a plan. Throws to mirror the original loop's do/catch.
+    /// Inserts one day row for a plan. Throws so the caller's loop can handle failure.
     func insertMealPlanDay(mealPlanId: String, day: String, date: String) async throws {
         try await client.from("meal_plan_days")
             .insert([

@@ -1,6 +1,5 @@
-// Auth event access — moved out of AuthViewModel so the VM depends only on the
-// FamilyRepositoryProtocol seam and can be unit-tested with a mock (no live client). The
-// login/register/google/completeSignIn methods already live on the repo.
+// Auth event access behind the FamilyRepositoryProtocol seam, so the view model is
+// unit-testable with a mock. Login/register/google/completeSignIn live on the repo.
 import Foundation
 import Supabase
 

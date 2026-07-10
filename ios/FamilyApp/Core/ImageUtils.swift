@@ -1,7 +1,6 @@
-// Image compression with orientation normalization — the iOS twin of
-// util/ImageUtils.kt (compressImageWithOrientation): portrait camera uploads must
-// come out upright on every platform, so the image is redrawn to .up orientation,
-// downscaled to max 1024pt and encoded as JPEG (quality 0.85).
+// Image compression with orientation normalization: portrait camera uploads must come out
+// upright, so the image is redrawn to .up orientation, downscaled to max 1024pt and encoded
+// as JPEG (quality 0.85).
 import UIKit
 
 enum ImageUtils {

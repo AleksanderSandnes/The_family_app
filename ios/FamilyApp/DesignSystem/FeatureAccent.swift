@@ -1,7 +1,6 @@
 // Feature-accent palette (Liquid Glass 1c). Feature colours live ONLY in icon badges
-// and calendar event dots — never on large surfaces (the glass material does the talking).
-// One entry per domain; each resolves an icon stroke, a translucent badge fill, and a
-// calendar dot colour, all adapting light ↔ dark per the spec table.
+// and calendar event dots — never on large surfaces. One entry per domain; each resolves
+// an icon stroke, a translucent badge fill, and a calendar dot colour, all adapting light ↔ dark.
 import SwiftUI
 
 enum FeatureAccent: CaseIterable {

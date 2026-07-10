@@ -1,5 +1,4 @@
-// Voice notes — the iOS twin of the Android MediaRecorder flow + VoiceNoteMessage:
-// AVAudioRecorder producing m4a/AAC into the same chat-media bucket, AVAudioPlayer
+// Voice notes: AVAudioRecorder producing m4a/AAC into the chat-media bucket, AVAudioPlayer
 // playback with progress.
 import AVFoundation
 import Observation

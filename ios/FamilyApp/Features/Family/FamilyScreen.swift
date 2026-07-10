@@ -1,6 +1,6 @@
-// Family — the iOS twin of FamilyScreen.kt: no-family CTA state, family header card
-// (avatar stack, copyable invite code, share sheet, QR), member list with admin
-// swipe-remove, leave-family confirm, create/join dialogs, family photo change.
+// Family screen: no-family CTA state, family header card (avatar stack, copyable
+// invite code, share sheet, QR), member list with admin swipe-remove, leave-family
+// confirm, create/join dialogs, family photo change.
 import NukeUI
 import PhotosUI
 import SwiftUI

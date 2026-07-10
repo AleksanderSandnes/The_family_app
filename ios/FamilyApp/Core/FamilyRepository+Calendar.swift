@@ -1,11 +1,11 @@
-// Calendar data access — moved out of CalendarViewModel so the VM depends only on the
-// FamilyRepositoryProtocol seam and can be unit-tested with a mock.
+// Calendar data access behind the FamilyRepositoryProtocol seam, so the view model is
+// unit-testable with a mock.
 import Foundation
 import Supabase
 
 extension FamilyRepository {
     /// Calendar events visible to the user: own OR in my family. Throws on query failure so
-    /// the caller can keep the current list (no-rollback parity via `(try? …) ?? events`).
+    /// the caller keeps the current list via `(try? …) ?? events`; no rollback.
     func fetchCalendarEvents(userId: String, familyId: String?) async throws -> [CalendarEventModel] {
         if let familyId {
             let fetched: [CalendarEventModel] = try await client.from("calendar_events")
@@ -13,6 +13,7 @@ extension FamilyRepository {
                 .or("user_id.eq.\(userId),family_id.eq.\(familyId)")
                 .execute()
                 .value
+            // Filters out foreign-family rows the .or() may include.
             return fetched.filter { $0.familyId == nil || $0.familyId == familyId }
         }
         let fetched: [CalendarEventModel] = try await client.from("calendar_events")

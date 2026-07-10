@@ -1,7 +1,5 @@
-// A single chat bubble row — extracted from ConversationScreen.swift to keep that file
-// under the length limit. Purely presentational: every input arrives via `let` properties
-// and the only state is local (swipe-to-reply offset, tap-to-reveal timestamp). Behaviour
-// is identical to the inline version.
+// A single chat bubble row. Purely presentational: every input arrives via `let`
+// properties and the only state is local (swipe-to-reply offset, tap-to-reveal timestamp).
 import NukeUI
 import SwiftUI
 import UIKit

@@ -1,6 +1,4 @@
-// Member-facing sheets — extracted from FamilyScreen.swift to keep that file under the
-// length limit. Both are self-contained (inputs via `let`, no dependency on FamilyScreen's
-// private pieces): the tap-a-member profile card and the post-join relations setup.
+// Member-facing sheets: the tap-a-member profile card and the post-join relations setup.
 import SwiftUI
 
 /// Tap-a-member profile: large avatar, name, email, phone, and (for others) an editable

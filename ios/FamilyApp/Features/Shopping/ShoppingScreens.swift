@@ -1,6 +1,5 @@
-// Shopping screens — the iOS twin of ShoppingScreens.kt: list overview with progress
-// labels + swipe-to-delete, detail with active/completed sections, inline rename,
-// bottom add-item bar, rename/change-icon menu.
+// Shopping screens: list overview with progress labels + swipe-to-delete, detail with
+// active/completed sections, inline rename, bottom add-item bar, rename/change-icon menu.
 import SwiftUI
 
 struct ShoppingScreen: View {
@@ -468,7 +467,7 @@ struct IconPickerSheet: View {
     }
 }
 
-/// New-list sheet with name + icon picker — mirrors NewListDialog.
+/// New-list sheet with name + icon picker.
 private struct NewListSheet: View {
     let onCreate: (String, String, Int?) -> Void
 

@@ -1,7 +1,5 @@
-// Behaviour tests for ChatViewModel via MockRepository + NoopRealtimeObserver. The VM is
-// always built with the mock repo and a no-op realtime factory, so construction opens no
-// live Supabase channel or network. Tests that would otherwise open the raw typing/reactions
-// presence channels (which happen only inside loadConversation) deliberately avoid that path.
+// Behaviour tests for ChatViewModel via MockRepository + NoopRealtimeObserver, so construction
+// opens no live Supabase channel. Tests avoid loadConversation, which opens presence channels.
 @testable import FamilyApp
 import XCTest
 
@@ -76,7 +74,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertTrue(vm.conversations.isEmpty)
     }
 
-    // MARK: - Unread counts (the past-bug hotspot)
+    // MARK: - Unread counts
 
     func testUnreadCountsMessagesFromOthersNewerThanLastRead() async {
         let mock = makeMock()
@@ -131,11 +129,8 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(vm.conversations.first?.unreadCount, 0)
     }
 
-    /// Regression for the badge-resurrects-on-launch bug: a nil last_read_at (the state the
-    /// app was permanently stuck in when conversation_participants lacked GRANT UPDATE, so
-    /// markConversationRead's write was silently denied) falls back to the epoch and counts
-    /// every message from others. Once last_read_at persists, the same load reports zero —
-    /// which is exactly what the grant migration restores.
+    /// A nil last_read_at falls back to the epoch and counts every message from others as
+    /// unread; once last_read_at persists, the same load reports zero.
     func testUnreadFallsBackToAllWhenLastReadIsNil() async {
         let mock = makeMock()
         mock.conversationsResult = [conversation(id: "c1")]
@@ -150,10 +145,10 @@ final class ChatViewModelTests: XCTestCase {
         ]
         let vm = makeVM(mock)
         await waitUntil { vm.conversations.contains { $0.conversation.id == "c1" } }
-        // Never-read → every message from others is unread (the resurrection symptom).
+        // Never-read → every message from others is unread.
         XCTAssertEqual(vm.conversations.first?.unreadCount, 2)
 
-        // Simulate the persisted read (what the restored UPDATE grant now allows) and reload.
+        // Simulate the persisted read and reload.
         mock.participantsByConversation = [
             "c1": [participant(conv: "c1", user: "u1", lastRead: "2026-01-01T00:00:30Z")],
         ]

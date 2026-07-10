@@ -1,6 +1,5 @@
-// Add/edit sheets for the wishlist feature — extracted from WishlistScreens.swift to keep
-// each file under the length limit. NewWishlistSheet creates a list; AddWishSheet is the
-// shared add/edit-a-wish flow (title required, optional link/price/photo).
+// Add/edit sheets for the wishlist feature. NewWishlistSheet creates a list; AddWishSheet
+// is the shared add/edit-a-wish flow (title required, optional link/price/photo).
 import PhotosUI
 import SwiftUI
 

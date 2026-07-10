@@ -1,6 +1,5 @@
-// ChatViewModel — conversation/member management. Extracted from ChatViewModel.swift to
-// keep the main type's body under the length limit: create/find 1:1, add/remove member,
-// rename, group image upload/remove, and delete. Behaviour is identical.
+// ChatViewModel — conversation/member management: create/find 1:1, add/remove member,
+// rename, group image upload/remove, and delete.
 import Foundation
 
 extension ChatViewModel {

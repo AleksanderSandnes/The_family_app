@@ -1,4 +1,4 @@
-// Typed routes — the iOS twin of Routes.kt. Pushed onto per-tab NavigationStacks.
+// Typed routes pushed onto per-tab NavigationStacks.
 import Foundation
 
 enum Route: Hashable {

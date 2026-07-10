@@ -1,7 +1,6 @@
-// Settings — the iOS twin of SettingsScreen.kt/SettingsViewModel.kt: theme selector,
-// notifications toggle + reminder lead-time chips, map-visibility toggle, about card.
-// The lead time mirrors to users.notify_days_before so the server-side daily-reminders
-// function honours it.
+// Settings: theme selector, notifications toggle + reminder lead-time chips,
+// map-visibility toggle, about card. The lead time syncs to users.notify_days_before so
+// the server-side daily-reminders function honours it.
 import SwiftUI
 import UserNotifications
 

@@ -1,6 +1,5 @@
-// FamilyRepository — settings mirrors. Extracted from FamilyRepository.swift to keep the
-// main type's body under the length limit. Theme/location/permission passthroughs plus the
-// server-side mirror of notification prefs. Behaviour is identical.
+// FamilyRepository — settings mirrors: theme/location/permission passthroughs plus the
+// server-side mirror of notification prefs.
 import Foundation
 import Supabase
 
@@ -35,7 +34,7 @@ extension FamilyRepository {
             try await client.from("users").update(values).eq("id", value: userId).execute()
             invalidateUserCache()
         } catch {
-            // Best-effort mirror, same as Android's runCatching.
+            // Best-effort mirror.
         }
     }
 

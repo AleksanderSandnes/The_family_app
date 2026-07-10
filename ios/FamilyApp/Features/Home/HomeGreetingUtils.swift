@@ -1,4 +1,4 @@
-// Time-of-day greeting — mirrors HomeGreetingUtils.kt.
+// Time-of-day greeting.
 import Foundation
 
 private let lastMorningHour = 11

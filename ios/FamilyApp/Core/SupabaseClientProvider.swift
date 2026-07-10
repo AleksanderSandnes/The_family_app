@@ -1,6 +1,5 @@
-// Singleton Supabase client — the iOS twin of SupabaseManager.kt.
-// Same project, same anon key, same PKCE deep-link flow (familyapp://auth) and the
-// same Realtime heartbeat tuning the Android client needed on mobile networks.
+// Singleton Supabase client: PKCE deep-link flow (familyapp://auth) and Realtime heartbeat
+// tuning for mobile networks.
 import Foundation
 import Supabase
 

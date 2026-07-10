@@ -1,7 +1,6 @@
-// Shopping data access — moved out of ShoppingViewModel so the VM depends only on the
-// FamilyRepositoryProtocol seam and can be unit-tested with a mock. Each method preserves
-// the exact query semantics and payload fields of the original inline `client.from(...)`
-// calls. Fetches throw so the caller can fall back to its current value (`(try? …) ?? …`).
+// Shopping data access behind the FamilyRepositoryProtocol seam, so the view model is
+// unit-testable with a mock. Fetches throw so the caller can fall back to its current value
+// (`(try? …) ?? …`).
 //
 // Note: `fetchShoppingLists(familyId:)` in FamilyRepository+Home.swift is a family-only
 // query; the shopping list screen needs the owner-OR-family variant below, so it does not
@@ -12,7 +11,7 @@ import Supabase
 
 extension FamilyRepository {
     /// Lists visible to the user: own OR in my family. Throws so the caller keeps the current
-    /// list (no-rollback parity via `(try? …) ?? lists`). Filters out foreign-family rows.
+    /// list via `(try? …) ?? lists` (no rollback). Filters out foreign-family rows.
     func fetchShoppingLists(userId: String, familyId: String?) async throws -> [ShoppingListModel] {
         if let familyId {
             let fetched: [ShoppingListModel] = try await client.from("shopping_lists")
@@ -58,7 +57,7 @@ extension FamilyRepository {
             .value
     }
 
-    /// Inserts a list. Preserves the exact payload (title/icon/owner/color + optional family).
+    /// Inserts a list (payload: title/icon/owner/color + optional family).
     func insertShoppingList(_ list: ShoppingListModel) async {
         var payload: [String: AnyJSON] = [
             "title": .string(list.title),
@@ -95,7 +94,7 @@ extension FamilyRepository {
         _ = try? await client.from("shopping_lists").delete().eq("id", value: id).execute()
     }
 
-    /// Inserts one item. Preserves the exact payload (list_id + item).
+    /// Inserts one item (payload: list_id + item).
     func insertShoppingItem(_ item: ShoppingItemModel) async {
         _ = try? await client.from("shopping_items")
             .insert(["list_id": AnyJSON.string(item.listId), "item": .string(item.item)])

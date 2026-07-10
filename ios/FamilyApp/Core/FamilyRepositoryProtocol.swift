@@ -1,9 +1,6 @@
 // The dependency seam for ViewModels. Every VM depends on this protocol (injected via
 // init) rather than the concrete FamilyRepository singleton, so tests can substitute a
 // MockRepository with no live Supabase backend. FamilyRepository conforms as-is.
-//
-// Feature CRUD that currently lives as direct `client.from(...)` calls inside VMs is being
-// migrated onto this protocol (feature by feature) so those code paths become mockable too.
 import Foundation
 
 @MainActor
@@ -54,7 +51,7 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func sendMessage(conversationId: String, text: String) async throws
     func addReaction(messageId: String, conversationId: String, emoji: String) async throws
     func removeReaction(messageId: String) async throws
-    // Chat — reads/writes migrated out of ChatViewModel
+    // Chat — reads/writes
     func fetchConversations() async throws -> [ConversationModel]
     func fetchConversation(id: String) async throws -> [ConversationModel]
     func fetchMessages(conversationId: String) async throws -> [MessageModel]
@@ -89,19 +86,19 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func setNotifyDaysBefore(_ days: Int) async
     func setLocationVisible(_ visible: Bool)
 
-    // Birthdays (migrated out of BirthdayViewModel)
+    // Birthdays
     func fetchBirthdays(userId: String, familyId: String?) async throws -> [BirthdayModel]
     func insertBirthday(_ birthday: BirthdayModel) async
     func updateBirthday(id: String, name: String, date: String, icon: String, color: Int?) async
     func deleteBirthday(id: String) async
 
-    // Calendar (migrated out of CalendarViewModel)
+    // Calendar
     func fetchCalendarEvents(userId: String, familyId: String?) async throws -> [CalendarEventModel]
     func insertCalendarEvent(_ event: CalendarEventModel) async
     func updateCalendarEvent(_ event: CalendarEventModel) async
     func deleteCalendarEvent(id: String) async
 
-    // Home (migrated out of HomeViewModel)
+    // Home
     func fetchMealPlans(familyId: String) async throws -> [MealPlanModel]
     func fetchMealPlanDays(mealPlanId: String, date: String) async throws -> [MealPlanDayModel]
     func fetchFamilyCalendarEvents(familyId: String) async throws -> [CalendarEventModel]
@@ -109,7 +106,7 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func fetchShoppingLists(familyId: String) async throws -> [ShoppingListModel]
     func fetchUncheckedShoppingItems(listIds: [String]) async throws -> [ShoppingItemModel]
 
-    // Meal (migrated out of MealViewModel; fetchMealPlans(familyId:) above is reused)
+    // Meal (fetchMealPlans(familyId:) above is reused)
     func fetchMealPlanDays(mealPlanIds: [String]) async throws -> [MealPlanDayModel]
     func fetchMealPlans(planId: String) async throws -> [MealPlanModel]
     func fetchMealPlanDays(mealPlanId: String) async throws -> [MealPlanDayModel]
@@ -121,8 +118,8 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func deleteMealPlan(id: String) async
     func setMealDayFood(id: String, food: String) async
 
-    // Shopping (migrated out of ShoppingViewModel; fetchShoppingLists(familyId:) &
-    // fetchUncheckedShoppingItems(listIds:) above are family/unchecked-scoped and not reused)
+    // Shopping (fetchShoppingLists(familyId:) & fetchUncheckedShoppingItems(listIds:) above
+    // are family/unchecked-scoped and not reused)
     func fetchShoppingLists(userId: String, familyId: String?) async throws -> [ShoppingListModel]
     func fetchShoppingItems(listIds: [String]) async throws -> [ShoppingItemModel]
     func fetchShoppingList(id: String) async throws -> [ShoppingListModel]
@@ -138,7 +135,7 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func deleteShoppingItem(id: String) async
     func clearCompletedShoppingItems(listId: String) async
 
-    // Wishlist (migrated out of WishlistViewModel; reservations are insert/delete only)
+    // Wishlist (reservations are insert/delete only)
     func fetchWishlists(userId: String, familyId: String?) async throws -> [WishlistModel]
     func fetchWishlist(id: String) async throws -> [WishlistModel]
     func fetchWishes(wishlistId: String) async throws -> [WishModel]
@@ -159,11 +156,11 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func ensureWishlistShareToken(wishlistId: String) async throws -> String?
     func acceptWishlistShare(token: String) async throws -> String?
 
-    // Map (migrated out of FamilyMapViewModel)
+    // Map
     func fetchUserLocations(familyId: String) async throws -> [UserLocationModel]
     func upsertUserLocation(_ location: UserLocationModel) async
     func clearUserLocationVisibility(userId: String) async
 }
 
-/// FamilyRepository already implements every method above; this just records the conformance.
+/// FamilyRepository implements every method above; this records the conformance.
 extension FamilyRepository: FamilyRepositoryProtocol {}

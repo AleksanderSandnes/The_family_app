@@ -209,7 +209,7 @@ final class MockRepository: FamilyRepositoryProtocol {
         removedReactions.append(messageId)
     }
 
-    // Chat — reads/writes migrated out of ChatViewModel.
+    // Chat — reads/writes used by ChatViewModel.
     // Canned reads keyed so unread/preview logic can be driven declaratively.
     var conversationsResult: [ConversationModel] = []
     var messagesByConversation: [String: [MessageModel]] = [:]
@@ -273,8 +273,8 @@ final class MockRepository: FamilyRepositoryProtocol {
             .filter { $0.userId == userId }
     }
 
-    /// Faithfully reproduces the server predicate: messages from someone OTHER than me,
-    /// newer than `after`. Drives the unread-count tests from canned messages.
+    /// Counts messages from someone other than me newer than `after`, driving the
+    /// unread-count tests from canned messages.
     func countUnreadMessages(conversationId: String, userId: String, after: String) async -> Int {
         (messagesByConversation[conversationId] ?? [])
             .filter { $0.userFrom != userId && $0.sentAt > after }
