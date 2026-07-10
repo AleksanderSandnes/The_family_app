@@ -27,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.PeopleAlt
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -67,12 +66,6 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.toBitmap
-import com.sandnes.familyapp.data.UserLocationModel
-import com.sandnes.familyapp.data.UserModel
-import com.sandnes.familyapp.ui.components.EmptyState
-import com.sandnes.familyapp.ui.components.FeatureTopBar
-import com.sandnes.familyapp.ui.components.InitialAvatar
-import com.sandnes.familyapp.ui.components.LoadingState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -82,6 +75,12 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
+import com.sandnes.familyapp.data.UserLocationModel
+import com.sandnes.familyapp.data.UserModel
+import com.sandnes.familyapp.ui.components.EmptyState
+import com.sandnes.familyapp.ui.components.FeatureTopBar
+import com.sandnes.familyapp.ui.components.InitialAvatar
+import com.sandnes.familyapp.ui.components.LoadingState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

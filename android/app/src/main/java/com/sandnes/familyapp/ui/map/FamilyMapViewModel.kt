@@ -5,10 +5,6 @@ import android.app.Application
 import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.sandnes.familyapp.data.FamilyRepository
-import com.sandnes.familyapp.data.UserLocationModel
-import com.sandnes.familyapp.data.UserModel
-import com.sandnes.familyapp.data.remote.SupabaseManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -16,6 +12,10 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
+import com.sandnes.familyapp.data.FamilyRepository
+import com.sandnes.familyapp.data.UserLocationModel
+import com.sandnes.familyapp.data.UserModel
+import com.sandnes.familyapp.data.remote.SupabaseManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator

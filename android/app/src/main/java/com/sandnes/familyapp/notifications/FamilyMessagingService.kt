@@ -1,11 +1,11 @@
 package com.sandnes.familyapp.notifications
 
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
 import com.sandnes.familyapp.data.ConversationModel
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.MessageModel
 import com.sandnes.familyapp.data.UserModel
-import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -100,7 +100,12 @@ class FamilyMessagingService : FirebaseMessagingService() {
         fun firstSeen(id: String): Boolean {
             if (id.isEmpty()) return true
             if (!ids.add(id)) return false
-            if (ids.size > CAP) ids.iterator().let { it.next(); it.remove() }
+            if (ids.size > CAP) {
+                ids.iterator().let {
+                    it.next()
+                    it.remove()
+                }
+            }
             return true
         }
     }
