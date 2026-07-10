@@ -127,20 +127,23 @@ final class HomeViewModel {
         return food.isEmpty ? nil : food
     }
 
-    /// Next upcoming event (ends today or later).
+    /// Next upcoming or ongoing event. Excludes events that have already ended — including a
+    /// timed event earlier today, so it drops off the dashboard once it's over.
     private func loadNextEvent(familyId: String, today: LocalDate) async -> CalendarEventModel? {
         let events = await (try? repo.fetchFamilyCalendarEvents(familyId: familyId)) ?? []
+        let nowMinutes = currentMinutesSinceMidnight()
         return events
-            .filter { event in
-                let endIso = event.dateTo.isEmpty ? event.dateFrom : event.dateTo
-                guard let end = LocalDate(iso: endIso) else { return false }
-                return end >= today
-            }
+            .filter { !eventHasEnded($0, today: today, nowMinutes: nowMinutes) }
             .min { lhs, rhs in
                 let lhsDate = LocalDate(iso: lhs.dateFrom) ?? LocalDate(year: 9999, month: 12, day: 31)
                 let rhsDate = LocalDate(iso: rhs.dateFrom) ?? LocalDate(year: 9999, month: 12, day: 31)
                 return lhsDate < rhsDate
             }
+    }
+
+    private func currentMinutesSinceMidnight(calendar: Calendar = .current) -> Int {
+        let parts = calendar.dateComponents([.hour, .minute], from: Date())
+        return (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
     }
 
     /// Soonest upcoming birthday paired with its next occurrence date.
@@ -184,6 +187,25 @@ func eventWhen(
         from.formattedShort(locale: locale)
     }
     return (event.allDay || event.timeFrom.isEmpty) ? datePart : "\(datePart) · \(event.timeFrom)"
+}
+
+/// Minutes since midnight for an "HH:mm" string, or nil if it isn't a valid time.
+func minutesSinceMidnight(_ hhmm: String) -> Int? {
+    let parts = hhmm.split(separator: ":").compactMap { Int($0) }
+    guard parts.count == 2, (0...23).contains(parts[0]), (0...59).contains(parts[1]) else { return nil }
+    return parts[0] * 60 + parts[1]
+}
+
+/// True once an event has finished, so the dashboard drops it from "next event". Past days
+/// are over and future days are not; an event ending today is over only once its end time has
+/// passed. All-day events and events with no end time stay visible until the day rolls over.
+func eventHasEnded(_ event: CalendarEventModel, today: LocalDate, nowMinutes: Int) -> Bool {
+    let endIso = event.dateTo.isEmpty ? event.dateFrom : event.dateTo
+    guard let endDate = LocalDate(iso: endIso) else { return false }
+    if endDate < today { return true }
+    if endDate > today { return false }
+    guard !event.allDay, let endMinutes = minutesSinceMidnight(event.timeTo) else { return false }
+    return endMinutes <= nowMinutes
 }
 
 func birthdayWhen(
