@@ -7,7 +7,6 @@ import Foundation
 final class MockRepository: FamilyRepositoryProtocol {
     let session: SessionStore
     var pendingJoinCode: String?
-    var pendingWishlistShareToken: String?
 
     // Canned reads (set by the test)
     var users: [String: UserModel] = [:]
@@ -191,15 +190,6 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func setPendingJoinCode(_ code: String) {
         pendingJoinCode = code
-    }
-
-    func consumePendingWishlistShareToken() -> String? {
-        defer { pendingWishlistShareToken = nil }
-        return pendingWishlistShareToken
-    }
-
-    func setPendingWishlistShareToken(_ token: String) {
-        pendingWishlistShareToken = token
     }
 
     /// Chat

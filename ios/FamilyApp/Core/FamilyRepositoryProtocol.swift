@@ -11,7 +11,6 @@ protocol FamilyRepositoryProtocol: AnyObject {
     // Session / prefs
     var session: SessionStore { get }
     var pendingJoinCode: String? { get }
-    var pendingWishlistShareToken: String? { get }
 
     // Users / family reads
     func getUser(_ userId: String) async -> UserModel?
@@ -48,8 +47,6 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func authSignedInEvents() -> AsyncStream<Void>
     func consumePendingJoinCode() -> String?
     func setPendingJoinCode(_ code: String)
-    func consumePendingWishlistShareToken() -> String?
-    func setPendingWishlistShareToken(_ token: String)
 
     // Chat
     func getLastMessage(conversationId: String) async -> MessageModel?
