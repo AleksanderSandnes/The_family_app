@@ -1,19 +1,16 @@
-// Screen scaffolding — mirrors Scaffolding.kt (FeatureTopBar, InputDialog) plus the
-// LifecycleResumeEffect equivalent.
+// Screen scaffolding: FeatureTopBar, InputDialog, LifecycleResumeEffect.
 import SwiftUI
 
 extension View {
-    /// Standard top bar for every detail/feature screen — inline title on the
-    /// navigation stack (back button comes free from NavigationStack). On iOS 26 the
-    /// nav bar renders as system Liquid Glass; we let it float rather than forcing an
-    /// opaque fill, so content scrolls under a frosted bar.
+    /// Standard inline top bar for every detail/feature screen (back button comes free
+    /// from NavigationStack). On iOS 26 the nav bar floats as frosted Liquid Glass, so
+    /// content scrolls under it.
     func featureTopBar(_ title: String) -> some View {
         navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// Calls `action` when the app returns to the foreground AND on first appear —
-    /// the iOS twin of LifecycleResumeEffect (refresh-on-screen-return).
+    /// Calls `action` when the app returns to the foreground AND on first appear (refresh-on-screen-return).
     func resumeEffect(_ action: @escaping () -> Void) -> some View {
         modifier(ResumeEffectModifier(action: action))
     }
@@ -32,10 +29,8 @@ private struct ResumeEffectModifier: ViewModifier {
     }
 }
 
-/// Large screen header with trailing controls aligned to the title baseline —
-/// used by tab-root screens (Family, Calendar) so the title text and the top-right
-/// buttons sit on one line, matching the design spec (the system large-title bar
-/// floats trailing items in the chrome above the title instead).
+/// Large screen header with trailing controls aligned to the title baseline — used by
+/// tab-root screens (Family, Calendar) so the title and top-right buttons sit on one line.
 struct ScreenHeader<Trailing: View>: View {
     let title: String
     @ViewBuilder var trailing: () -> Trailing
@@ -57,7 +52,7 @@ struct ScreenHeader<Trailing: View>: View {
     }
 }
 
-/// Single or dual-field text-input alert — mirrors InputDialog in Scaffolding.kt.
+/// Single or dual-field text-input alert.
 /// Usage: `.inputDialog(isPresented:title:label:text:onConfirm:)`.
 extension View {
     func inputDialog(

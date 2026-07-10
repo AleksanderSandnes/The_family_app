@@ -1,5 +1,5 @@
-// Data models mirroring android/.../data/Entities.kt 1:1.
-// CodingKeys map to the snake_case Postgres columns; keep both platforms in sync.
+// Data models for the Postgres tables (Android parity).
+// CodingKeys map to the snake_case columns; keep both platforms in sync.
 import Foundation
 
 struct UserModel: Codable, Identifiable, Hashable {
@@ -174,7 +174,7 @@ struct WishlistModel: Codable, Identifiable, Hashable {
     var name = ""
     var icon = "card_giftcard"
     var color: Int?
-    /// Not a DB column (Kotlin @Transient) — resolved client-side from family members.
+    /// Not a DB column — resolved client-side from family members.
     var ownerName = ""
 
     enum CodingKeys: String, CodingKey {

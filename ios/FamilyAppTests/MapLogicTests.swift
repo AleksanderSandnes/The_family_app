@@ -1,6 +1,6 @@
 @testable import FamilyApp
 
-// Map pure-logic tests — mirror formatLastSeen in FamilyMapScreen.kt.
+// Pure-logic tests for formatLastSeen.
 import XCTest
 
 final class MapLogicTests: XCTestCase {

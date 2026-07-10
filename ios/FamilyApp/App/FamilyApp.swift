@@ -1,5 +1,5 @@
-// @main entry point — the iOS twin of MainActivity + FamilyApp() in AppNavHost.kt:
-// theme, auth gate (AuthFlow vs MainFlow) and auth deep links (familyapp://auth).
+// @main entry point: theme, auth gate (AuthFlow vs MainFlow) and auth deep links
+// (familyapp://auth).
 import SwiftUI
 import UIKit
 

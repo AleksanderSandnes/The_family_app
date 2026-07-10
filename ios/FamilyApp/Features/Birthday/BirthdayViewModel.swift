@@ -1,4 +1,4 @@
-// Birthday view model — the iOS twin of BirthdayViewModel.kt.
+// Birthday view model.
 import Foundation
 import Observation
 import Supabase
@@ -49,6 +49,7 @@ final class BirthdayViewModel {
         defer { isLoading = false }
         guard let user = await repo.getUser(userId) else { return }
 
+        // Keep the current list on fetch failure rather than clearing it.
         let result = await (try? repo.fetchBirthdays(userId: userId, familyId: user.familyId)) ?? birthdays
         Self.cache = result
         birthdays = result
@@ -123,7 +124,7 @@ final class BirthdayViewModel {
     }
 }
 
-/// Sort ascending by next occurrence — mirrors the sortedWith in BirthdayScreen.kt.
+/// Sort ascending by next occurrence.
 func sortedByNextBirthday(_ birthdays: [BirthdayModel], today: LocalDate = .today()) -> [BirthdayModel] {
     let farFuture = LocalDate(year: 9999, month: 12, day: 31)
     return birthdays.sorted { lhs, rhs in

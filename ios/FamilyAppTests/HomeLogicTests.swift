@@ -1,13 +1,12 @@
 @testable import FamilyApp
 
-// Home/date pure-logic tests — mirror HomeGreetingUtilsTest.kt, BirthdayDateUtilsTest.kt
-// and the eventWhen/birthdayWhen formatting rules in HomeViewModel.kt.
+// Home/date pure-logic tests for date math, greeting, and event/birthday formatting.
 import XCTest
 
 final class LocalDateTests: XCTestCase {
     func testParsesIsoAndPrefixes() {
         XCTAssertEqual(LocalDate(iso: "2026-07-05"), LocalDate(year: 2026, month: 7, day: 5))
-        // Timestamp prefix (like DB timestamptz strings) still parses.
+        // Timestamp prefix (like DB timestamptz strings) also parses.
         XCTAssertEqual(LocalDate(iso: "2026-07-05T10:00:00Z"), LocalDate(year: 2026, month: 7, day: 5))
     }
 

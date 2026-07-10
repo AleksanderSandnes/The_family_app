@@ -1,5 +1,4 @@
-// Shopping view model — the iOS twin of ShoppingViewModel.kt. Establishes the
-// template every realtime feature follows:
+// Shopping view model. Establishes the template every realtime feature follows:
 //   - load → subscribe-once (guarded per familyId/listId)
 //   - realtime event → pure data reload, never re-subscribe
 //   - mutations: optimistic local update (temp UUID) → network call → reload
@@ -16,7 +15,7 @@ struct ListProgress: Equatable {
 @Observable
 @MainActor
 final class ShoppingViewModel {
-    /// Session cache so re-entering the screen renders instantly (Android companion cache).
+    /// Session cache so re-entering the screen renders instantly.
     private static var cache: [ShoppingListModel] = []
 
     private(set) var lists: [ShoppingListModel] = ShoppingViewModel.cache
@@ -256,7 +255,7 @@ final class ShoppingViewModel {
     }
 }
 
-/// Progress label shown on list cards — mirrors shoppingProgressLabel in ShoppingScreens.kt.
+/// Progress label shown on list cards.
 func shoppingProgressLabel(
     _ progress: ListProgress?,
     locale: Locale = Locale(identifier: "en_US_POSIX")

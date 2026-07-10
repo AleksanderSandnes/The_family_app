@@ -1,6 +1,5 @@
-// Chat view model — the iOS twin of ChatViewModel.kt. Intentionally ONE class shared
-// by the chat list and the open thread (see CLAUDE.md): detail-screen deletes must
-// reflect in the list on pop-back.
+// Chat view model. ONE class shared by the chat list and the open thread (see CLAUDE.md):
+// detail-screen deletes must reflect in the list on pop-back.
 import Foundation
 import Observation
 import Supabase
@@ -19,8 +18,7 @@ private let userIdPreviewLength = 8
 final class ChatViewModel {
     // MARK: List state
 
-    // `internal(set)` (plain `var`) so the `+Media`/`+Members` extensions in sibling
-    // files can mutate it; still no external writers.
+    // Plain `var` so the `+Media`/`+Members` extensions in sibling files can mutate it.
     var conversations: [ConversationWithPreview] = []
     private(set) var isLoading = false
     private(set) var familyMembers: [UserModel] = []
@@ -33,8 +31,7 @@ final class ChatViewModel {
     // MARK: Thread state
 
     private(set) var currentConversationId: String?
-    // `conversation`, `messages` and `replyTo` are mutated by the `+Media`/`+Members`
-    // extensions in sibling files, so their setters must be internal (plain `var`).
+    // Plain `var` so the `+Media`/`+Members` extensions in sibling files can mutate these.
     var conversation: ConversationModel?
     var messages: [MessageModel] = []
     var replyTo: MessageModel?
@@ -43,9 +40,8 @@ final class ChatViewModel {
     private(set) var otherLastRead: String?
     /// Other users currently typing in the open conversation.
     private(set) var typingUsers: Set<String> = []
-    /// messageId → (emoji → [userId])
-    /// `internal(set)` (plain `var`) so `toggleReaction` in the `+Reactions` sibling file
-    /// can mutate it; still no external writers.
+    /// messageId → (emoji → [userId]). Plain `var` so `toggleReaction` in the `+Reactions`
+    /// sibling file can mutate it.
     var reactions: [String: [String: [String]]] = [:]
 
     /// One-shot navigation target (existing 1:1 found / group promoted).
@@ -61,9 +57,9 @@ final class ChatViewModel {
     /// Internal (not private) so the `+Media`/`+Members` extensions in sibling files
     /// can reach them.
     let repo: FamilyRepositoryProtocol
-    /// Used ONLY for the raw broadcast/presence channels (typing + reactions), which are
-    /// opened lazily from loadConversation — never at construction — so a test-built VM
-    /// (mock repo + NoopRealtimeObserver) touches no live client.
+    /// Used ONLY for the raw broadcast/presence channels (typing + reactions), opened lazily
+    /// from loadConversation so a test-built VM (mock repo + NoopRealtimeObserver) touches
+    /// no live client.
     var client: SupabaseClient {
         SupabaseClientProvider.client
     }
@@ -74,7 +70,7 @@ final class ChatViewModel {
     private let realtimeFactory: @MainActor () -> RealtimeObserving
     private let messagesObserver: RealtimeObserving
     // Not private: the reactions presence channel is opened/torn down in the `+Reactions`
-    // sibling file (loadReactions / subscribeToReactions live there to keep this body short).
+    // sibling file (loadReactions / subscribeToReactions live there).
     var reactionsChannel: RealtimeChannelV2?
     var reactionTasks: [Task<Void, Never>] = []
     private let participantsObserver: RealtimeObserving

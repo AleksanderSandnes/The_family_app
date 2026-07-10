@@ -1,13 +1,11 @@
-// Location data access — moved out of FamilyMapViewModel so the VM depends only on the
-// FamilyRepositoryProtocol seam and can be unit-tested with a mock. Each method preserves
-// the exact query semantics and payload fields of the original inline `client.from(...)`
-// calls on `user_locations`.
+// Location data access (`user_locations`) behind the FamilyRepositoryProtocol seam, so the
+// view model is unit-testable with a mock.
 import Foundation
 import Supabase
 
 extension FamilyRepository {
     /// Visible member locations for a family. Throws so the caller keeps its current list
-    /// (no-rollback parity via `(try? …) ?? locations`). The caller filters out its own row.
+    /// via `(try? …) ?? locations` (no rollback). The caller filters out its own row.
     func fetchUserLocations(familyId: String) async throws -> [UserLocationModel] {
         try await client.from("user_locations")
             .select()
@@ -17,8 +15,8 @@ extension FamilyRepository {
             .value
     }
 
-    /// Upserts the current user's location. `updated_at` is stamped server-side-parity here
-    /// (isoNow()) so call sites don't build storage payloads. Preserves the exact fields.
+    /// Upserts the current user's location. `updated_at` is stamped here (isoNow()) so call
+    /// sites don't build storage payloads.
     func upsertUserLocation(_ location: UserLocationModel) async {
         _ = try? await client.from("user_locations").upsert([
             "user_id": AnyJSON.string(location.userId),

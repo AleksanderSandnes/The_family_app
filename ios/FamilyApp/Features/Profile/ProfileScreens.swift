@@ -1,6 +1,6 @@
-// Profile — the iOS twin of ProfileScreens.kt: hero gradient card with tappable
-// avatar (camera strip / upload overlay), info rows, edit/settings actions, sign out,
-// avatar source dialog (camera / gallery / remove), and the edit screen.
+// Profile screens: hero gradient card with tappable avatar (camera strip / upload
+// overlay), info rows, edit/settings actions, sign out, avatar source dialog
+// (camera / gallery / remove), and the edit screen.
 import NukeUI
 import PhotosUI
 import SwiftUI
@@ -156,6 +156,7 @@ struct ProfileScreen: View {
                             .font(.system(size: 10))
                             .foregroundStyle(.white)
                     )
+                    // Clip to the avatar circle's arc so the strip curves along its bottom edge.
                     .clipShape(Circle().path(in: CGRect(x: 0, y: -52, width: 72, height: 72)))
             }
         }

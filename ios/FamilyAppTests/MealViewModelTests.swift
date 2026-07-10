@@ -113,7 +113,7 @@ final class MealViewModelTests: XCTestCase {
         let vm = makeVM(mock)
         await waitUntil { vm.plans.contains { $0.id == "gone" } }
 
-        // Server no longer returns the plan after the delete.
+        // After the delete, the server returns no plans.
         mock.mealPlansResult = []
         vm.deletePlan(plan)
         await waitUntil { !mock.deletedMealPlanIds.isEmpty }

@@ -1,5 +1,5 @@
-// Auth gate — the iOS twin of RootViewModel.kt. Emits Loading → SignedOut → SignedIn
-// based on the stored app user id (public.users.id, NOT the auth UUID).
+// Auth gate: emits Loading → SignedOut → SignedIn based on the stored app user id
+// (public.users.id, NOT the auth UUID).
 import Foundation
 import Observation
 
@@ -30,8 +30,7 @@ final class RootViewModel {
     }
 
     /// Restores the Supabase auth session (supabase-swift persists it in the keychain),
-    /// then opens the gate. The stored app user id is the source of truth — same as
-    /// Android's DataStore flow.
+    /// then opens the gate. The stored app user id is the source of truth.
     func bootstrap() async {
         guard !bootstrapped else { return }
         // Touch the session so token refresh happens before the first query.
@@ -43,7 +42,7 @@ final class RootViewModel {
     }
 
     /// Once fully signed in, register this device's push token and mirror the local
-    /// notification settings to the server (Android RootViewModel parity).
+    /// notification settings to the server.
     func onSignedIn() async {
         guard !didSyncAfterSignIn else { return }
         didSyncAfterSignIn = true

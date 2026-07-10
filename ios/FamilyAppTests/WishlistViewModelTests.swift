@@ -244,7 +244,7 @@ final class WishlistViewModelTests: XCTestCase {
         vm.loadWishlistDetail("w1")
         await waitUntil { vm.reservations["wish1"] != nil }
 
-        // Server no longer returns the reservation after the delete.
+        // After the delete, the server returns no reservations.
         mock.wishReservationsResult = []
         vm.unreserve(wish)
         await waitUntil { !mock.deletedReservations.isEmpty }
@@ -283,7 +283,7 @@ final class WishlistViewModelTests: XCTestCase {
         mock.sharedWishlistsResult = [shared]
         let vm = makeVM(mock)
         await waitUntil { vm.sharedWishlists.contains { $0.id == "shared1" } }
-        // Shared list is kept separate from my own/family wishlists.
+        // The shared list is separate from my own/family wishlists.
         XCTAssertFalse(vm.wishlists.contains { $0.id == "shared1" })
     }
 

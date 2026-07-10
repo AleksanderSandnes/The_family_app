@@ -1,5 +1,4 @@
-// Type scale — mirrors Type.kt (SF Pro replaces the Android sans-serif; same sizes
-// and weights: 34/28/23/19/17/15/16/14/12).
+// Type scale — SF Pro, sizes/weights 34/28/23/19/17/15/16/14/12.
 import SwiftUI
 
 extension Font {

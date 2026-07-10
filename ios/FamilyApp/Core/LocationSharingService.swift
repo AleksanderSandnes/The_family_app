@@ -1,7 +1,7 @@
 // App-scoped location sharing — publishes the user's location to `user_locations` while
 // sharing is enabled, including in the BACKGROUND when the user grants "Always" access
 // (UIBackgroundModes: location). The settings toggle drives enable/disable and reflects
-// the real system authorization status. Foreground map viewing still uses FamilyMapViewModel.
+// the real system authorization status. Foreground map viewing uses FamilyMapViewModel.
 import CoreLocation
 import Foundation
 import Observation

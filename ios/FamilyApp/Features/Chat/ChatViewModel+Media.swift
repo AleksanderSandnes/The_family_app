@@ -1,6 +1,5 @@
-// ChatViewModel — sending & media. Extracted from ChatViewModel.swift to keep the main
-// type's body under the length limit. Optimistic text send, reply state, and image/voice
-// uploads. Behaviour is identical; these were plain methods on the class.
+// ChatViewModel — sending & media: optimistic text send, reply state, and image/voice
+// uploads.
 import Foundation
 
 extension ChatViewModel {

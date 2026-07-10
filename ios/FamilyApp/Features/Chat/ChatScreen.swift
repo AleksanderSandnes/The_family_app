@@ -1,5 +1,4 @@
-// Conversation list — the iOS twin of ChatScreen/ConversationRow in ChatScreens.kt:
-// unread badges, relative times, media previews, new-conversation sheet.
+// Conversation list: unread badges, relative times, media previews, new-conversation sheet.
 import SwiftUI
 
 struct ChatScreen: View {

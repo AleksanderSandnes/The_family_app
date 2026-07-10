@@ -6,7 +6,7 @@
 // navigationTitle/accessibilityLabel, and ViewModel/util-built display strings.
 //
 // RULE: only ever localize UI CHROME. Never wrap user DATA — family/list/meal/wishlist
-// names, chat messages, invite codes, emails — those must render verbatim.
+// names, chat messages, invite codes, emails — those must render exactly as entered.
 //
 // NOTE: `String(localized:locale:)` does NOT use its `locale:` argument to choose the
 // `.strings` table — table selection follows the process/device language. To honour the

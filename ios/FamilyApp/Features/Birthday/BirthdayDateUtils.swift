@@ -1,4 +1,4 @@
-// Birthday date math — mirrors BirthdayDateUtils.kt.
+// Birthday date math.
 import Foundation
 
 /// Next occurrence of an ISO birthday on or after `today`; nil when malformed.

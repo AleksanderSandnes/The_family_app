@@ -1,5 +1,4 @@
-// Premium text field used across auth and forms — mirrors FamilyTextField in
-// Components.kt (outlined, rounded, reveal toggle for passwords).
+// Premium text field for auth and forms — outlined, rounded, reveal toggle for passwords.
 import SwiftUI
 
 struct FamilyTextField: View {

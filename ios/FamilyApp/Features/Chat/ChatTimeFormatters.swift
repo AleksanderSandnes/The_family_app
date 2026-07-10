@@ -1,5 +1,4 @@
-// Chat time/receipt helpers — the iOS twin of ChatTimeFormatters.kt. Pure and
-// unit-tested; `now` is injectable for tests.
+// Chat time/receipt helpers. Pure and unit-tested; `now` is injectable for tests.
 import Foundation
 
 private let minuteMs: Int64 = 60000

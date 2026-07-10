@@ -1,6 +1,6 @@
-// Event add/edit sheet extracted from CalendarScreen.swift: the form for creating or
-// editing a calendar event (icon picker, all-day toggle, date/time ranges) plus the
-// compact date button that opens a graphical picker.
+// Event add/edit sheet: the form for creating or editing a calendar event (icon picker,
+// all-day toggle, date/time ranges) plus the compact date button that opens a graphical
+// picker.
 import SwiftUI
 
 struct EventSheet: View {

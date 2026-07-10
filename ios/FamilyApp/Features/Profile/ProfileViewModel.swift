@@ -1,6 +1,6 @@
-// Profile view model — the iOS twin of ProfileViewModel.kt. Avatar uploads go to
-// avatars/{auth_uid}/avatar.jpg via StorageService (dual-ID rule) with a cache-busting
-// query param, EXIF-normalized and downscaled first.
+// Profile view model. Avatar uploads go to avatars/{auth_uid}/avatar.jpg via
+// StorageService (dual-ID rule) with a cache-busting query param, EXIF-normalized and
+// downscaled first.
 import Foundation
 import Observation
 import UIKit
@@ -89,7 +89,7 @@ final class ProfileViewModel {
                 updated.avatarUrl = nil
                 user = updated
             } catch {
-                // Best-effort, mirrors Android's logged runCatching.
+                // Best-effort; ignore failures.
             }
         }
     }
@@ -120,7 +120,7 @@ final class ProfileViewModel {
 }
 
 /// Long localized date (en: "December 24, 1990", nb: "24. desember 1990") or the raw
-/// string / em-dash — mirrors formatBirthday in ProfileScreens.kt. Pass `appLocale`.
+/// string / em-dash. Pass `appLocale`.
 func formatBirthday(_ raw: String?, locale: Locale = Locale(identifier: "en_US_POSIX")) -> String {
     guard let raw, !raw.isEmpty else { return "—" }
     guard let date = LocalDate(iso: raw) else { return raw }

@@ -1,5 +1,5 @@
-// Nuke image pipeline — the iOS twin of Coil. AsyncImage lacks the disk-cache control
-// chat images and avatars need, so all remote images go through Nuke's LazyImage.
+// Nuke image pipeline. AsyncImage lacks the disk-cache control chat images and avatars
+// need, so all remote images go through Nuke's LazyImage.
 import Foundation
 import Nuke
 

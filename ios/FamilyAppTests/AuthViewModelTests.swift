@@ -1,7 +1,5 @@
-// Behaviour tests for AuthViewModel via the injected MockRepository (no live backend).
-// The pure validators (isValidEmail / passwordStrength / friendlyAuthError) are covered in
-// AuthLogicTests — these assert the login/register/google flows reach the repo with the
-// entered values, and that validation short-circuits before any repo call.
+// Behaviour tests for AuthViewModel via MockRepository: login/register/google reach the
+// repo with entered values, and validation short-circuits before any repo call.
 @testable import FamilyApp
 import XCTest
 

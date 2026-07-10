@@ -1,6 +1,6 @@
-// Wishlist screens — the iOS twin of WishlistScreens.kt: wishlist cards with owner
-// names, owner view (claim toggle, add-a-wish with link/price/photo) vs member view
-// (secret Reserve / Reserved-by-you / Reserved states).
+// Wishlist screens: wishlist cards with owner names, owner view (claim toggle,
+// add-a-wish with link/price/photo) vs member view (secret Reserve / Reserved-by-you
+// / Reserved states).
 import NukeUI
 import PhotosUI
 import SwiftUI

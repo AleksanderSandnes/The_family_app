@@ -1,7 +1,6 @@
 @testable import FamilyApp
 
-// Wishlist pure-logic tests — mirror wishTitle and the MemberWishCard reservation
-// branches in WishlistScreens.kt.
+// Wishlist pure-logic tests for wishTitle and reservation-state branches.
 import XCTest
 
 final class WishlistLogicTests: XCTestCase {

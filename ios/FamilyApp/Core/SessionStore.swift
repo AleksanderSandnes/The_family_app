@@ -1,5 +1,5 @@
-// UserDefaults-backed session/preferences store — the iOS twin of SessionManager.kt.
-// Keys are IDENTICAL to the Android DataStore keys so the mental model stays 1:1.
+// UserDefaults-backed session/preferences store. Keys are IDENTICAL to the Android DataStore
+// keys so the mental model stays 1:1.
 //
 // CRITICAL dual-ID rule: `currentUserId` is the app's `public.users.id` (used in all
 // foreign keys). It is NOT the Supabase Auth UUID (`auth_id`) — that one comes from
@@ -46,6 +46,7 @@ final class SessionStore {
         let storedId = defaults.string(forKey: Keys.userId)
         currentUserId = (storedId?.isEmpty == false) ? storedId : nil
         themeMode = ThemeMode(rawValue: defaults.string(forKey: Keys.themeMode) ?? "") ?? .system
+        // object(forKey:) (not bool(forKey:)) so an unset value defaults to true, not false.
         notificationsEnabled = defaults.object(forKey: Keys.notificationsEnabled) as? Bool ?? true
         notifyDaysBefore = defaults.object(forKey: Keys.notifyDaysBefore) as? Int ?? 1
         locationVisible = defaults.bool(forKey: Keys.locationVisible)

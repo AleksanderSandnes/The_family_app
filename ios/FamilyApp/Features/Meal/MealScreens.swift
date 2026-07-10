@@ -1,6 +1,6 @@
-// Meal screens — the iOS twin of MealScreens.kt: plan overview with progress + swipe
-// delete + create sheet (name/icon/date range), detail with per-day inline editing and
-// rename/change-icon menu.
+// Meal screens: plan overview with progress + swipe delete + create sheet
+// (name/icon/date range), detail with per-day inline editing and rename/change-icon
+// menu.
 import SwiftUI
 
 struct MealScreen: View {

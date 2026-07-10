@@ -1,4 +1,4 @@
-// Signature gradients — mirrors Color.kt.
+// Signature gradients.
 // brandGradient is the ONLY sanctioned gradient and may appear only on identity
 // surfaces: hero headers, outgoing chat bubbles, the brand primary CTA, and the
 // Home family banner. Do not use as a generic card/background fill.

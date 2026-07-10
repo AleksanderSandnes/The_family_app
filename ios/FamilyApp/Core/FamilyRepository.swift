@@ -1,8 +1,7 @@
-// Application-scoped repository singleton — the iOS twin of FamilyRepository.kt.
-// Central API for auth, family management, user profile and settings. Feature CRUD that
-// lives in Android ViewModels talks straight to `SupabaseClientProvider.client` here too.
+// Application-scoped repository singleton. Central API for auth, family management, user
+// profile and settings.
 //
-// Dual-ID rule (verbatim from Android):
+// Dual-ID rule:
 //   - `SessionStore.currentUserId`  = public.users.id  → all foreign keys
 //   - `client.auth.currentSession?.user.id` = auth_id  → RLS checks + Storage paths
 import Foundation
@@ -204,8 +203,8 @@ final class FamilyRepository {
 
     // MARK: - Auth
 
-    // register / completeSignInAfterConfirmation / signInWithGoogle / login / signOut live
-    // in FamilyRepository+Auth.swift (alongside authSignedInEvents) to keep this body short.
+    // Auth methods (register / completeSignInAfterConfirmation / signInWithGoogle / login /
+    // signOut) and authSignedInEvents live in FamilyRepository+Auth.swift.
 
     // MARK: - Family
 
@@ -280,7 +279,7 @@ final class FamilyRepository {
                     .execute()
             }
         } catch {
-            // Best-effort, same as Android.
+            // Best-effort.
         }
     }
 
@@ -325,7 +324,7 @@ final class FamilyRepository {
             invalidateUserCache()
             emitFamilyChanged()
         } catch {
-            // Mirror of Android's runCatching: only emit on success.
+            // Only emit on success.
         }
     }
 
@@ -404,7 +403,7 @@ final class FamilyRepository {
 
     // MARK: - Avatar palette (parity with Android)
 
-    /// Same ARGB palette as FamilyRepository.kt.
+    /// ARGB avatar palette (matches Android so a name maps to the same color).
     static let avatarColors: [Int] = [
         Int(bitPattern: 0xFF6366F1),
         Int(bitPattern: 0xFFEC4899),

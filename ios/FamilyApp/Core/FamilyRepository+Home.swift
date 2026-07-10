@@ -1,7 +1,6 @@
-// Home dashboard data access — moved out of HomeViewModel so the VM depends only on the
-// FamilyRepositoryProtocol seam and can be unit-tested with a mock. Each method preserves
-// the exact query semantics of the original inline `client.from(...)` calls and throws on
-// failure so the caller can fall back to the existing value (`(try? …) ?? …`).
+// Home dashboard data access behind the FamilyRepositoryProtocol seam, so the view model is
+// unit-testable with a mock. Fetches throw so the caller can fall back to the existing value
+// (`(try? …) ?? …`).
 import Foundation
 import Supabase
 

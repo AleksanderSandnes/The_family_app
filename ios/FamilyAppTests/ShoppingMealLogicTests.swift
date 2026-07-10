@@ -1,7 +1,6 @@
 @testable import FamilyApp
 
-// Shopping + meal pure-logic tests — mirror the label/date rules in
-// ShoppingScreens.kt / MealScreens.kt / MealViewModel.kt.
+// Shopping + meal pure-logic tests for label/date rules.
 import XCTest
 
 final class ShoppingLogicTests: XCTestCase {

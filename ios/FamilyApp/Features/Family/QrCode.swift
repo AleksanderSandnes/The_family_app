@@ -1,4 +1,4 @@
-// QR rendering via CoreImage — the iOS twin of QrCode.kt (ZXing on Android).
+// QR rendering via CoreImage.
 import CoreImage.CIFilterBuiltins
 import UIKit
 

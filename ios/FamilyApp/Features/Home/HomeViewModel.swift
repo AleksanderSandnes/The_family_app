@@ -1,6 +1,5 @@
-// Home dashboard view model — the iOS twin of HomeViewModel.kt: user + family header
-// data plus a best-effort glanceable summary (tonight's meal, next event, next
-// birthday, shopping remaining).
+// Home dashboard view model: user + family header data plus a best-effort glanceable
+// summary (tonight's meal, next event, next birthday, shopping remaining).
 import Foundation
 import Observation
 
@@ -169,7 +168,7 @@ final class HomeViewModel {
     }
 }
 
-// MARK: - Pure formatting helpers (unit-tested, mirror HomeViewModel.kt)
+// MARK: - Pure formatting helpers (unit-tested)
 
 func eventWhen(
     _ event: CalendarEventModel,

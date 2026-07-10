@@ -1,6 +1,5 @@
-// Permissions primer — the iOS twin of PermissionsOnboardingScreen.kt: explains why
-// the app asks for notifications and location before firing the system prompts, then
-// marks onboarding complete so the gate opens.
+// Permissions primer: explains why the app asks for notifications and location before
+// firing the system prompts, then marks onboarding complete so the gate opens.
 import CoreLocation
 import SwiftUI
 import UserNotifications

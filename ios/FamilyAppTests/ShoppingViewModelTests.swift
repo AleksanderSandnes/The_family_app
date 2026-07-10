@@ -128,7 +128,7 @@ final class ShoppingViewModelTests: XCTestCase {
         let vm = makeVM(mock)
         await waitUntil { vm.lists.contains { $0.id == "gone" } }
 
-        // Server no longer returns the list after the delete.
+        // After the delete, the server returns no lists.
         mock.shoppingListsForUserResult = []
         vm.deleteList(list)
         await waitUntil { !mock.deletedShoppingListIds.isEmpty }

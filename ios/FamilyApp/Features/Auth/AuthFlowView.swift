@@ -1,6 +1,6 @@
-// Auth flow — the iOS twin of AuthScreens.kt: hero-gradient scaffold with a floating
-// form card, login screen, 2-step registration with step indicator and password
-// strength bar. Success flips the root auth gate via SessionStore.
+// Auth flow: hero-gradient scaffold with a floating form card, login screen, 2-step
+// registration with step indicator and password strength bar. Success flips the root
+// auth gate via SessionStore.
 import SwiftUI
 
 struct AuthFlowView: View {
@@ -387,8 +387,7 @@ struct PasswordStrengthBar: View {
     }
 }
 
-/// Read-only field that opens a date picker sheet; stores ISO-8601 (yyyy-MM-dd) —
-/// mirrors BirthdayPickerField in Components.kt.
+/// Read-only field that opens a date picker sheet; stores ISO-8601 (yyyy-MM-dd).
 struct BirthdayPickerField: View {
     @Binding var isoDate: String
     var label = "Birthday (optional)"
@@ -475,8 +474,7 @@ struct AuthFooter: View {
 // MARK: - Helpers
 
 extension Binding where Value == String {
-    /// Clears the view model error on every edit — mirrors the Android onValueChange
-    /// pattern of `viewModel.clearError()` alongside the state update.
+    /// Clears the view model error on every edit.
     @MainActor
     fileprivate func clearingError(_ viewModel: AuthViewModel) -> Binding<String> {
         Binding(

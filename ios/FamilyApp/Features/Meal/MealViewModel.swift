@@ -1,5 +1,4 @@
-// Meal planning view model — the iOS twin of MealViewModel.kt. Same realtime/optimistic
-// template as shopping.
+// Meal planning view model. Same realtime/optimistic template as shopping.
 import Foundation
 import Observation
 import Supabase
@@ -152,7 +151,7 @@ final class MealViewModel {
                     current = current.addingDays(1)
                 }
             } catch {
-                // Reload below drops the temp row on failure — no rollback logic (parity).
+                // Reload below drops the temp row on failure — no rollback logic.
             }
             await loadPlansOnly(familyId: familyId)
         }
@@ -216,7 +215,7 @@ final class MealViewModel {
 
 // MARK: - Pure helpers (unit-tested)
 
-/// ISO week number for a LocalDate — parity with Calendar.WEEK_OF_YEAR on Android.
+/// ISO week number for a LocalDate.
 func isoWeekNumber(of date: LocalDate) -> Int {
     var calendar = Calendar(identifier: .iso8601)
     guard let utc = TimeZone(identifier: "UTC") else {
@@ -230,7 +229,7 @@ func isoWeekNumber(of date: LocalDate) -> Int {
 /// English-stable default so unit tests keep asserting English; the UI passes `appLocale`.
 private let defaultMealLocale = Locale(identifier: "en_US_POSIX")
 
-/// "dd MMM" — mirrors MEAL_DATE_FMT ("05 Jul"); falls back to the raw string.
+/// "dd MMM" (e.g. "05 Jul"); falls back to the raw string.
 func formatMealDate(_ stored: String, locale: Locale = defaultMealLocale) -> String {
     guard let date = LocalDate(iso: stored) else { return stored }
     let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
@@ -241,7 +240,7 @@ func formatMealDate(_ stored: String, locale: Locale = defaultMealLocale) -> Str
     return formatter.string(from: instant)
 }
 
-/// Plan card sub-label — mirrors the planLabel logic in MealScreens.kt.
+/// Plan card sub-label.
 func mealPlanLabel(
     progress: MealProgress?,
     fromIso: String,
@@ -259,8 +258,7 @@ func mealPlanLabel(
 }
 
 extension LocalDate {
-    /// Full weekday name in the device locale — parity with Android's
-    /// dayOfWeek.getDisplayName(FULL, Locale.getDefault()) used for meal_plan_days.day.
+    /// Full weekday name in the device locale (stored in meal_plan_days.day).
     func fullDayName(locale: Locale = .current) -> String {
         let instant = Date(timeIntervalSince1970: TimeInterval(epochDay) * 86400)
         let formatter = DateFormatter()

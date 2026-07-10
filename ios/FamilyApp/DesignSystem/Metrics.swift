@@ -1,5 +1,4 @@
-// Spacing / radius / elevation / motion tokens — mirrors Spacing.kt (4-pt grid).
-// Screens must reference these instead of hardcoding values.
+// Spacing / radius / elevation / motion tokens — 4-pt grid. Reference these, don't hardcode.
 import SwiftUI
 
 enum Spacing {
@@ -17,7 +16,7 @@ enum Spacing {
     static let cardGap: CGFloat = 12
 }
 
-/// Corner-radius tokens — mirrors Radius + AppShapes (10/14/20/28/36).
+/// Corner-radius tokens (10/14/20/28/36).
 enum Radius {
     static let extraSmall: CGFloat = 10
     static let small: CGFloat = 14
