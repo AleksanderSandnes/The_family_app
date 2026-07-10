@@ -169,6 +169,9 @@ struct CalendarScreen: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            // Breathing room so the first card's glass glow doesn't streak against the
+            // date label above it (a blue line in light mode).
+            .contentMargins(.top, Spacing.sm, for: .scrollContent)
         }
     }
 }
@@ -397,6 +400,9 @@ private struct AgendaList: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            // Breathing room so the first card's glass glow doesn't streak against the
+            // date label above it (a blue line in light mode).
+            .contentMargins(.top, Spacing.sm, for: .scrollContent)
         }
     }
 }
