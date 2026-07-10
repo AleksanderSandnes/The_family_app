@@ -3,7 +3,6 @@
 package com.sandnes.familyapp.ui.calendar
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -37,30 +36,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Celebration
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.Flight
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -76,27 +58,44 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sandnes.familyapp.data.CalendarEventModel
+import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.ui.components.AppFabSmall
 import com.sandnes.familyapp.ui.components.AppTopBar
+import com.sandnes.familyapp.ui.components.ColorPickerRow
 import com.sandnes.familyapp.ui.components.EmptyState
+import com.sandnes.familyapp.ui.components.IconGrid
+import com.sandnes.familyapp.ui.components.InitialAvatar
 import com.sandnes.familyapp.ui.components.LoadingState
 import com.sandnes.familyapp.ui.components.RefreshOnResume
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
+import com.sandnes.familyapp.ui.theme.AppColorPalette
+import com.sandnes.familyapp.ui.theme.FeatureAccent
+import com.sandnes.familyapp.ui.theme.FeatureBadge
+import com.sandnes.familyapp.ui.theme.IconKeyMap
+import com.sandnes.familyapp.ui.theme.IconOptions
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.calendarIconColorIndex
+import com.sandnes.familyapp.ui.theme.glassCard
+import com.sandnes.familyapp.ui.theme.glassChrome
+import com.sandnes.familyapp.ui.theme.hexColor
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -115,56 +114,43 @@ private const val MAX_HOUR = 23
 private const val MAX_MINUTE = 59
 private const val DEFAULT_EVENT_HOUR = 9
 private const val DAYS_PER_WEEK = 7
+private const val MAX_MULTIDAY_SPAN = 60L
 
-/** Maps icon key → a stable index 0–5 used to pick a dot color from the Material color scheme. */
-private val ICON_COLOR_INDEX =
-    mapOf(
-        "schedule" to 0,
-        "cake" to 1,
-        "people" to 2,
-        "work" to 3,
-        "school" to 4,
-        "restaurant" to 5,
-        "flight" to 0,
-        "local_hospital" to 1,
-        "celebration" to 2,
-        "shopping_cart" to 3,
-        "music_note" to 4,
-        "fitness_center" to 5,
-        "wb_sunny" to 0,
-        "favorite" to 1,
-        "star" to 2,
-        "emoji_events" to 3,
-    )
-
-private fun iconColorIndex(key: String): Int = ICON_COLOR_INDEX[key] ?: 0
-
-private data class CalendarIconOption(
-    val key: String,
-    val vector: ImageVector,
-)
-
-private val CALENDAR_ICON_OPTIONS =
+/**
+ * Adaptive feature-derived dot colours used when an event has no custom colour. Mirrors iOS
+ * `calendarDotFallback`; indexed via [calendarIconColorIndex]. These are fixed [FeatureAccent.dot]
+ * values (identical in light/dark), so the map can be built outside composition.
+ */
+private val CALENDAR_DOT_FALLBACK: List<Color> =
     listOf(
-        CalendarIconOption("schedule", Icons.Filled.Schedule),
-        CalendarIconOption("cake", Icons.Filled.Cake),
-        CalendarIconOption("people", Icons.Filled.People),
-        CalendarIconOption("work", Icons.Filled.Work),
-        CalendarIconOption("school", Icons.Filled.School),
-        CalendarIconOption("restaurant", Icons.Filled.Restaurant),
-        CalendarIconOption("flight", Icons.Filled.Flight),
-        CalendarIconOption("local_hospital", Icons.Filled.LocalHospital),
-        CalendarIconOption("celebration", Icons.Filled.Celebration),
-        CalendarIconOption("shopping_cart", Icons.Filled.ShoppingCart),
-        CalendarIconOption("music_note", Icons.Filled.MusicNote),
-        CalendarIconOption("fitness_center", Icons.Filled.FitnessCenter),
-        CalendarIconOption("wb_sunny", Icons.Filled.WbSunny),
-        CalendarIconOption("favorite", Icons.Filled.Favorite),
-        CalendarIconOption("star", Icons.Filled.Star),
-        CalendarIconOption("emoji_events", Icons.Filled.EmojiEvents),
+        FeatureAccent.Calendar.dot,
+        FeatureAccent.Shopping.dot,
+        FeatureAccent.Birthdays.dot,
+        FeatureAccent.Meals.dot,
+        FeatureAccent.Wishlists.dot,
+        FeatureAccent.Map.dot,
     )
 
-private fun iconVector(key: String): ImageVector = CALENDAR_ICON_OPTIONS.find { it.key == key }?.vector ?: Icons.Filled.Schedule
+/** An event's display colour — the user-picked colour, else an icon-derived accent. */
+private fun calendarEventColor(event: CalendarEventModel): Color =
+    hexColor(event.color)
+        ?: CALENDAR_DOT_FALLBACK[calendarIconColorIndex(event.icon) % CALENDAR_DOT_FALLBACK.size]
+
+/** Maps each date to the display colours of events covering it (multi-day capped at 60 days). */
+private fun dateEventColors(events: List<CalendarEventModel>): Map<LocalDate, List<Color>> =
+    buildMap<LocalDate, MutableList<Color>> {
+        events.forEach { e ->
+            val from = runCatching { LocalDate.parse(e.dateFrom) }.getOrNull() ?: return@forEach
+            val to = runCatching { LocalDate.parse(e.dateTo) }.getOrElse { from }
+            val color = calendarEventColor(e)
+            var d = from
+            while (!d.isAfter(to)) {
+                getOrPut(d) { mutableListOf() }.add(color)
+                d = d.plusDays(1)
+                if (d.isAfter(from.plusDays(MAX_MULTIDAY_SPAN))) break
+            }
+        }
+    }
 
 private fun parseHh(t: String) = t.substringBefore(":").toIntOrNull()?.coerceIn(0, MAX_HOUR) ?: DEFAULT_EVENT_HOUR
 
@@ -178,32 +164,21 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     val dayEvents by viewModel.eventsForSelectedDate.collectAsStateWithLifecycle()
     val allEvents by viewModel.events.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
+    val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle(emptyList())
+    val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     var showAdd by remember { mutableStateOf(false) }
     var eventToEdit by remember { mutableStateOf<CalendarEventModel?>(null) }
     var view by remember { mutableStateOf(CalendarView.Month) }
 
     RefreshOnResume { viewModel.refresh() }
 
-    // Map each date to the list of icon keys for events on that date (max collected per day)
-    val dateEventIcons: Map<LocalDate, List<String>> =
-        remember(allEvents) {
-            buildMap<LocalDate, MutableList<String>> {
-                allEvents.forEach { e ->
-                    val from = runCatching { LocalDate.parse(e.dateFrom) }.getOrNull() ?: return@forEach
-                    val to = runCatching { LocalDate.parse(e.dateTo) }.getOrElse { from }
-                    var d = from
-                    while (!d.isAfter(to)) {
-                        getOrPut(d) { mutableListOf() }.add(e.icon)
-                        d = d.plusDays(1)
-                        // Safety: cap per-date iteration for multi-day events
-                        if (d.isAfter(from.plusDays(60))) break
-                    }
-                }
-            }
-        }
+    val otherMembers = remember(familyMembers, currentUserId) { familyMembers.filter { it.id != currentUserId } }
+
+    // Map each date to the display colours of events covering it (max 3 dots shown per day).
+    val dateColors: Map<LocalDate, List<Color>> = remember(allEvents) { dateEventColors(allEvents) }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         topBar = {
             AppTopBar(
                 title = "Calendar",
@@ -229,25 +204,24 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                     MonthCalendarSection(
                         displayedMonth = displayedMonth,
                         selectedDate = selectedDate,
-                        dateEventIcons = dateEventIcons,
+                        dateColors = dateColors,
                         onPrevMonth = viewModel::prevMonth,
                         onNextMonth = viewModel::nextMonth,
                         onDaySelected = viewModel::selectDate,
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     SelectedDateHeader(selectedDate)
-                    DayEventsList(isLoading, dayEvents, { eventToEdit = it }, { viewModel.delete(it) })
+                    DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { viewModel.delete(it) })
                 }
                 CalendarView.Week -> {
-                    WeekStrip(selectedDate, dateEventIcons, viewModel::selectDate)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    WeekStrip(selectedDate, dateColors, viewModel::selectDate)
                     SelectedDateHeader(selectedDate)
-                    DayEventsList(isLoading, dayEvents, { eventToEdit = it }, { viewModel.delete(it) })
+                    DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { viewModel.delete(it) })
                 }
                 CalendarView.Agenda ->
                     AgendaList(
                         modifier = Modifier.weight(1f),
                         events = allEvents,
+                        members = familyMembers,
                         onEdit = { eventToEdit = it },
                         onDelete = { viewModel.delete(it) },
                     )
@@ -259,9 +233,10 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         EventDialog(
             existingEvent = null,
             initialDate = selectedDate,
+            members = otherMembers,
             onDismiss = { showAdd = false },
-            onSave = { activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon ->
-                viewModel.addEvent(EventDraft(activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon))
+            onSave = { draft ->
+                viewModel.addEvent(draft)
                 showAdd = false
             },
         )
@@ -271,17 +246,21 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         EventDialog(
             existingEvent = event,
             initialDate = selectedDate,
+            members = otherMembers,
             onDismiss = { eventToEdit = null },
-            onSave = { activity, allDay, dateFrom, dateTo, timeFrom, timeTo, icon ->
+            onSave = { draft ->
                 viewModel.updateEvent(
                     event.copy(
-                        activity = activity,
-                        allDay = allDay,
-                        dateFrom = dateFrom,
-                        dateTo = dateTo,
-                        timeFrom = timeFrom,
-                        timeTo = timeTo,
-                        icon = icon,
+                        activity = draft.activity,
+                        allDay = draft.allDay,
+                        dateFrom = draft.dateFrom,
+                        dateTo = draft.dateTo,
+                        timeFrom = draft.timeFrom,
+                        timeTo = draft.timeTo,
+                        icon = draft.icon,
+                        isPrivate = draft.isPrivate,
+                        color = draft.color,
+                        attendeeIds = draft.attendeeIds,
                     ),
                 )
                 eventToEdit = null
@@ -298,21 +277,38 @@ private enum class CalendarView(
     Agenda("Agenda"),
 }
 
+/** Glass segmented control for the Month / Week / Agenda modes. */
 @Composable
 private fun CalendarViewToggle(
     view: CalendarView,
     onSelect: (CalendarView) -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.screenEdge, vertical = 6.dp)
+            .glassChrome(Radius.segment)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         CalendarView.entries.forEach { v ->
-            FilterChip(
-                selected = view == v,
-                onClick = { onSelect(v) },
-                label = { Text(v.label) },
-            )
+            val selected = v == view
+            Box(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(Radius.segmentThumb))
+                    .then(if (selected) Modifier.background(MaterialTheme.colorScheme.primary) else Modifier)
+                    .clickable { onSelect(v) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    v.label,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -320,10 +316,11 @@ private fun CalendarViewToggle(
 @Composable
 private fun SelectedDateHeader(date: LocalDate) {
     Text(
-        date.format(SECTION_DATE_FMT),
-        style = MaterialTheme.typography.labelLarge,
+        date.format(SECTION_DATE_FMT).uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+        modifier = Modifier.padding(horizontal = Spacing.screenEdge + 6.dp, vertical = 14.dp),
     )
 }
 
@@ -332,6 +329,7 @@ private fun SelectedDateHeader(date: LocalDate) {
 private fun ColumnScope.DayEventsList(
     isLoading: Boolean,
     dayEvents: List<CalendarEventModel>,
+    members: List<UserModel>,
     onEdit: (CalendarEventModel) -> Unit,
     onDelete: (CalendarEventModel) -> Unit,
 ) {
@@ -347,12 +345,12 @@ private fun ColumnScope.DayEventsList(
         else ->
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = Spacing.screenEdge, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(dayEvents, key = { it.id }) { event ->
-                    SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(20.dp)) {
-                        EventCard(event = event, onEdit = { onEdit(event) })
+                    SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(Radius.row)) {
+                        EventCard(event = event, members = members, onEdit = { onEdit(event) })
                     }
                 }
                 item { Spacer(Modifier.height(80.dp)) }
@@ -364,24 +362,19 @@ private fun ColumnScope.DayEventsList(
 @Composable
 private fun WeekStrip(
     selectedDate: LocalDate,
-    dateEventIcons: Map<LocalDate, List<String>>,
+    dateColors: Map<LocalDate, List<Color>>,
     onDaySelected: (LocalDate) -> Unit,
 ) {
     val today = LocalDate.now()
     val monday = selectedDate.minusDays((selectedDate.dayOfWeek.value - 1).toLong())
-    Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-            WEEKDAY_LABELS.forEach { label ->
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.screenEdge, vertical = 6.dp)
+            .glassCard(Radius.bigCard)
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+    ) {
+        WeekdayHeaderRow()
         Row(Modifier.fillMaxWidth()) {
             for (i in 0..6) {
                 val date = monday.plusDays(i.toLong())
@@ -389,7 +382,7 @@ private fun WeekStrip(
                     date = date,
                     isSelected = date == selectedDate,
                     isToday = date == today,
-                    eventIcons = dateEventIcons[date].orEmpty(),
+                    dotColors = dateColors[date].orEmpty(),
                     modifier = Modifier.weight(1f),
                     onClick = { onDaySelected(date) },
                 )
@@ -403,6 +396,7 @@ private fun WeekStrip(
 private fun AgendaList(
     modifier: Modifier = Modifier,
     events: List<CalendarEventModel>,
+    members: List<UserModel>,
     onEdit: (CalendarEventModel) -> Unit,
     onDelete: (CalendarEventModel) -> Unit,
 ) {
@@ -424,7 +418,7 @@ private fun AgendaList(
     }
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = Spacing.screenEdge, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         grouped.forEach { (date, dayEvents) ->
@@ -438,8 +432,8 @@ private fun AgendaList(
                 )
             }
             items(dayEvents, key = { it.id }) { event ->
-                SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(20.dp)) {
-                    EventCard(event = event, onEdit = { onEdit(event) })
+                SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(Radius.row)) {
+                    EventCard(event = event, members = members, onEdit = { onEdit(event) })
                 }
             }
         }
@@ -451,25 +445,20 @@ private fun AgendaList(
 private fun MonthCalendarSection(
     displayedMonth: YearMonth,
     selectedDate: LocalDate,
-    dateEventIcons: Map<LocalDate, List<String>>,
+    dateColors: Map<LocalDate, List<Color>>,
     onPrevMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onDaySelected: (LocalDate) -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.screenEdge, vertical = 6.dp)
+            .glassCard(Radius.bigCard)
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+    ) {
         MonthHeader(month = displayedMonth, onPrev = onPrevMonth, onNext = onNextMonth)
-        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-            WEEKDAY_LABELS.forEach { label ->
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
+        WeekdayHeaderRow()
         val today = LocalDate.now()
         AnimatedContent(
             targetState = displayedMonth,
@@ -481,21 +470,36 @@ private fun MonthCalendarSection(
             label = "MonthGrid",
         ) { month ->
             Column(Modifier.fillMaxWidth()) {
-                monthCells(month).chunked(7).forEach { week ->
+                monthCells(month).chunked(DAYS_PER_WEEK).forEach { week ->
                     Row(Modifier.fillMaxWidth()) {
                         week.forEach { date ->
-                            val eventIcons = if (date != null) dateEventIcons[date].orEmpty() else emptyList()
                             DayCell(
                                 date = date,
                                 isSelected = date == selectedDate,
                                 isToday = date == today,
-                                eventIcons = eventIcons,
+                                dotColors = if (date != null) dateColors[date].orEmpty() else emptyList(),
                                 modifier = Modifier.weight(1f),
                                 onClick = { if (date != null) onDaySelected(date) },
                             )
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekdayHeaderRow() {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        WEEKDAY_LABELS.forEach { label ->
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
@@ -532,21 +536,10 @@ private fun DayCell(
     date: LocalDate?,
     isSelected: Boolean,
     isToday: Boolean,
-    eventIcons: List<String>,
+    dotColors: List<Color>,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    // Resolve dot colors from the scheme — must be done inside composition
-    val dotColors =
-        listOf(
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.secondary,
-            MaterialTheme.colorScheme.tertiary,
-            MaterialTheme.colorScheme.error,
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.secondaryContainer,
-        )
-
     val dayName =
         date
             ?.dayOfWeek
@@ -559,7 +552,7 @@ private fun DayCell(
             ?.name
             ?.lowercase()
             ?.replaceFirstChar { it.uppercase() } ?: ""
-    val eventCount = eventIcons.size
+    val eventCount = dotColors.size
     val a11yDesc =
         if (date != null) {
             "$dayName, $monthName ${date.dayOfMonth}. $eventCount ${if (eventCount == 1) "event" else "events"}"
@@ -574,10 +567,7 @@ private fun DayCell(
                 .aspectRatio(1f)
                 .then(
                     if (date != null) {
-                        Modifier.clickable(
-                            onClickLabel = a11yDesc,
-                            onClick = onClick,
-                        )
+                        Modifier.clickable(onClickLabel = a11yDesc, onClick = onClick)
                     } else {
                         Modifier
                     },
@@ -589,7 +579,6 @@ private fun DayCell(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            // Today wins: filled primary circle. Selected-not-today: primaryContainer + border ring.
             val bgColor =
                 when {
                     isToday -> MaterialTheme.colorScheme.primary
@@ -627,21 +616,13 @@ private fun DayCell(
                 )
             }
             Spacer(Modifier.height(2.dp))
-            // Up to 3 color-coded dots
-            val dots = eventIcons.take(3)
+            // Up to 3 dots coloured by each event's display colour.
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                if (dots.isEmpty()) {
-                    // Reserve space so all cells have the same height
+                if (dotColors.isEmpty()) {
                     Spacer(Modifier.size(6.dp))
                 } else {
-                    dots.forEach { icon ->
-                        val colorIdx = iconColorIndex(icon)
-                        Box(
-                            Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(dotColors[colorIdx % dotColors.size]),
-                        )
+                    dotColors.take(3).forEach { dot ->
+                        Box(Modifier.size(6.dp).clip(CircleShape).background(dot))
                     }
                 }
             }
@@ -662,50 +643,31 @@ private fun monthCells(month: YearMonth): List<LocalDate?> {
 @Composable
 private fun EventCard(
     event: CalendarEventModel,
+    members: List<UserModel>,
     onEdit: () -> Unit,
 ) {
     val timeLabel = eventTimeLabel(event)
-    // Color-code the icon container by event type
-    val iconContainerColors =
-        listOf(
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.secondaryContainer,
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.errorContainer,
-        )
-    val iconContentColors =
-        listOf(
-            MaterialTheme.colorScheme.onPrimaryContainer,
-            MaterialTheme.colorScheme.onSecondaryContainer,
-            MaterialTheme.colorScheme.onTertiaryContainer,
-            MaterialTheme.colorScheme.onErrorContainer,
-        )
-    val idx = iconColorIndex(event.icon) % iconContainerColors.size
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth().clickable { onEdit() },
+    val accent = calendarEventColor(event)
+    // Creator first, then attendees — mirrors iOS EventCard people row.
+    val people =
+        remember(event, members) {
+            (listOf(event.userId) + event.attendeeIds).mapNotNull { id -> members.find { it.id == id } }
+        }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .glassCard(Radius.row)
+            .clickable { onEdit() }
+            .padding(horizontal = Spacing.lg, vertical = 12.dp),
     ) {
-        Row(
-            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(iconContainerColors[idx]),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    iconVector(event.icon),
-                    contentDescription = null,
-                    tint = iconContentColors[idx],
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Spacer(Modifier.width(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FeatureBadge(
+                icon = IconKeyMap.calendar(event.icon),
+                feature = FeatureAccent.Calendar,
+                size = 42.dp,
+                colorOverride = accent,
+            )
+            Spacer(Modifier.width(Spacing.md))
             Column(Modifier.weight(1f)) {
                 Text(
                     event.activity,
@@ -720,66 +682,46 @@ private fun EventCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                if (people.isNotEmpty()) {
+                    Spacer(Modifier.height(3.dp))
+                    EventPeopleRow(people)
+                }
             }
         }
     }
 }
 
-/** Returns a concise time/date label for the event card. Time is shown prominently first. */
+/** Names when there are few; overlapping avatars when they'd overflow the row. */
+@Composable
+private fun EventPeopleRow(people: List<UserModel>) {
+    if (people.size <= 2) {
+        Text(
+            people.joinToString(", ") { it.name },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy((-6).dp)) {
+            people.take(6).forEach { person ->
+                InitialAvatar(
+                    name = person.name,
+                    color = Color(person.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+                    size = 22,
+                    avatarUri = person.avatarUrl,
+                )
+            }
+        }
+    }
+}
+
+/** Returns a concise time/date label for the event card. */
 private fun eventTimeLabel(event: CalendarEventModel): String {
     if (event.allDay) return "All day"
-    val timeRange =
-        listOf(event.timeFrom, event.timeTo)
-            .filter { it.isNotBlank() }
-            .joinToString(" – ")
-    return timeRange
-}
-
-@Composable
-private fun IconPickerGrid(
-    selected: String,
-    onSelect: (String) -> Unit,
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp),
-    ) {
-        CALENDAR_ICON_OPTIONS.chunked(4).forEach { row ->
-            Row(Modifier.fillMaxWidth()) {
-                row.forEach { opt ->
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .padding(4.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(
-                                if (selected == opt.key) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                },
-                            ).clickable { onSelect(opt.key) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            opt.vector,
-                            null,
-                            modifier = Modifier.size(22.dp),
-                            tint =
-                                if (selected == opt.key) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                        )
-                    }
-                }
-                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-    }
+    return listOf(event.timeFrom, event.timeTo)
+        .filter { it.isNotBlank() }
+        .joinToString(" – ")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -787,23 +729,24 @@ private fun IconPickerGrid(
 private fun EventDialog(
     existingEvent: CalendarEventModel?,
     initialDate: LocalDate,
+    members: List<UserModel>,
     onDismiss: () -> Unit,
-    onSave: (activity: String, allDay: Boolean, dateFrom: String, dateTo: String, timeFrom: String, timeTo: String, icon: String) -> Unit,
+    onSave: (EventDraft) -> Unit,
 ) {
     val isEdit = existingEvent != null
     var activity by remember { mutableStateOf(existingEvent?.activity ?: "") }
     var allDay by remember { mutableStateOf(existingEvent?.allDay ?: false) }
+    var isPrivate by remember { mutableStateOf(existingEvent?.isPrivate ?: false) }
     var selectedIcon by remember { mutableStateOf(existingEvent?.icon ?: "schedule") }
-    var showIconPicker by remember { mutableStateOf(false) }
+    // New events default to the first palette colour; edits keep their stored colour.
+    var color by remember { mutableStateOf(existingEvent?.color ?: AppColorPalette.first()) }
+    val attendeeIds: SnapshotStateList<String> =
+        remember { mutableStateListOf<String>().apply { addAll(existingEvent?.attendeeIds ?: emptyList()) } }
     var dateFrom by remember {
-        mutableStateOf(
-            existingEvent?.let { runCatching { LocalDate.parse(it.dateFrom) }.getOrNull() } ?: initialDate,
-        )
+        mutableStateOf(existingEvent?.let { runCatching { LocalDate.parse(it.dateFrom) }.getOrNull() } ?: initialDate)
     }
     var dateTo by remember {
-        mutableStateOf(
-            existingEvent?.let { runCatching { LocalDate.parse(it.dateTo) }.getOrNull() } ?: initialDate,
-        )
+        mutableStateOf(existingEvent?.let { runCatching { LocalDate.parse(it.dateTo) }.getOrNull() } ?: initialDate)
     }
     val timeFromState =
         rememberTimePickerState(
@@ -819,71 +762,45 @@ private fun EventDialog(
     var showDateToPicker by remember { mutableStateOf(false) }
     var showTimeFromPicker by remember { mutableStateOf(false) }
     var showTimeToPicker by remember { mutableStateOf(false) }
+    val overrideColor = hexColor(color)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
-        title = {
-            Text(
-                if (isEdit) "Edit event" else "New event",
-                style = MaterialTheme.typography.titleLarge,
-            )
-        },
+        title = { Text(if (isEdit) "Edit event" else "New event", style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .clickable { showIconPicker = !showIconPicker },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            iconVector(selectedIcon),
-                            "Change icon",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    OutlinedTextField(
-                        value = activity,
-                        onValueChange = { activity = it },
-                        placeholder = { Text("Event name") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.weight(1f),
-                        colors =
-                            OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                            ),
-                    )
-                }
-                AnimatedVisibility(visible = showIconPicker) {
-                    IconPickerGrid(
-                        selected = selectedIcon,
-                        onSelect = {
-                            selectedIcon = it
-                            showIconPicker = false
-                        },
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text("All day", style = MaterialTheme.typography.bodyLarge)
-                    Switch(checked = allDay, onCheckedChange = { allDay = it })
-                }
-                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                OutlinedTextField(
+                    value = activity,
+                    onValueChange = { activity = it },
+                    placeholder = { Text("Event name") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(Radius.field),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                        ),
+                )
+
+                DialogSectionLabel("Icon")
+                IconGrid(
+                    options = IconOptions.calendar,
+                    selected = selectedIcon,
+                    onSelect = { selectedIcon = it },
+                    feature = FeatureAccent.Calendar,
+                    colorOverride = overrideColor,
+                )
+
+                DialogSectionLabel("Color")
+                ColorPickerRow(selected = color, onSelect = { color = it })
+
+                Spacer(Modifier.height(12.dp))
+                ToggleRow("Private", isPrivate) { isPrivate = it }
+                ToggleRow("All day", allDay) { allDay = it }
                 DateTimeRow(
                     label = "Starts",
                     date = dateFrom,
@@ -891,7 +808,6 @@ private fun EventDialog(
                     onDateClick = { showDateFromPicker = true },
                     onTimeClick = { showTimeFromPicker = true },
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                 DateTimeRow(
                     label = "Ends",
                     date = dateTo,
@@ -899,7 +815,23 @@ private fun EventDialog(
                     onDateClick = { showDateToPicker = true },
                     onTimeClick = { showTimeToPicker = true },
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+
+                if (members.isNotEmpty()) {
+                    DialogSectionLabel("Going with")
+                    members.forEach { member ->
+                        AttendeeRow(
+                            member = member,
+                            selected = attendeeIds.contains(member.id),
+                            onToggle = {
+                                if (attendeeIds.contains(member.id)) {
+                                    attendeeIds.remove(member.id)
+                                } else {
+                                    attendeeIds.add(member.id)
+                                }
+                            },
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -909,13 +841,18 @@ private fun EventDialog(
                     val tf = "%02d:%02d".format(timeFromState.hour, timeFromState.minute)
                     val tt = "%02d:%02d".format(timeToState.hour, timeToState.minute)
                     onSave(
-                        activity.trim(),
-                        allDay,
-                        dateFrom.toString(),
-                        dateTo.toString(),
-                        if (allDay) "" else tf,
-                        if (allDay) "" else tt,
-                        selectedIcon,
+                        EventDraft(
+                            activity = activity.trim(),
+                            allDay = allDay,
+                            dateFrom = dateFrom.toString(),
+                            dateTo = dateTo.toString(),
+                            timeFrom = if (allDay) "" else tf,
+                            timeTo = if (allDay) "" else tt,
+                            icon = selectedIcon,
+                            isPrivate = isPrivate,
+                            color = color,
+                            attendeeIds = members.map { it.id }.filter { attendeeIds.contains(it) },
+                        ),
                     )
                 },
             ) { Text("Save") }
@@ -978,6 +915,64 @@ private fun EventDialog(
             state = timeToState,
             onDismiss = { showTimeToPicker = false },
             onConfirm = { showTimeToPicker = false },
+        )
+    }
+}
+
+@Composable
+private fun DialogSectionLabel(text: String) {
+    Text(
+        text.uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 14.dp, bottom = 6.dp),
+    )
+}
+
+@Composable
+private fun ToggleRow(
+    label: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+        Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+@Composable
+private fun AttendeeRow(
+    member: UserModel,
+    selected: Boolean,
+    onToggle: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().clickable { onToggle() }.padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        InitialAvatar(
+            name = member.name,
+            color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+            size = 34,
+            avatarUri = member.avatarUrl,
+        )
+        Spacer(Modifier.width(Spacing.md))
+        Text(
+            member.name,
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Icon(
+            if (selected) Icons.Filled.Check else Icons.Filled.Add,
+            contentDescription = if (selected) "Selected" else "Add",
+            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

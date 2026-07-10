@@ -131,4 +131,32 @@ class BirthdayDateUtilsTest {
         assertNotNull(result)
         assertTrue(result!! >= 0)
     }
+
+    // ── birthdayUrgency ─────────────────────────────────────────────────────────
+
+    @Test
+    fun birthdayUrgency_zeroDays_isToday() {
+        assertEquals(BirthdayUrgency.TODAY, birthdayUrgency(0))
+    }
+
+    @Test
+    fun birthdayUrgency_oneDay_isSoon() {
+        assertEquals(BirthdayUrgency.SOON, birthdayUrgency(1))
+    }
+
+    @Test
+    fun birthdayUrgency_sevenDays_isSoon_atThreshold() {
+        // 7 days is the inclusive upper bound of the "soon" (amber) bucket.
+        assertEquals(BirthdayUrgency.SOON, birthdayUrgency(BIRTHDAY_SOON_DAYS))
+    }
+
+    @Test
+    fun birthdayUrgency_eightDays_isLater_justOverThreshold() {
+        assertEquals(BirthdayUrgency.LATER, birthdayUrgency(BIRTHDAY_SOON_DAYS + 1))
+    }
+
+    @Test
+    fun birthdayUrgency_farFuture_isLater() {
+        assertEquals(BirthdayUrgency.LATER, birthdayUrgency(365))
+    }
 }

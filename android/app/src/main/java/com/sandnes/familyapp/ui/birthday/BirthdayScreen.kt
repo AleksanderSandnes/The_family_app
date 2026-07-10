@@ -2,28 +2,30 @@
 
 package com.sandnes.familyapp.ui.birthday
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -44,17 +45,30 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sandnes.familyapp.data.BirthdayModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.BirthdayPickerField
+import com.sandnes.familyapp.ui.components.ColorPickerRow
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FamilyTextField
 import com.sandnes.familyapp.ui.components.FeatureTopBar
-import com.sandnes.familyapp.ui.components.ListCard
+import com.sandnes.familyapp.ui.components.IconGrid
 import com.sandnes.familyapp.ui.components.ListSkeleton
 import com.sandnes.familyapp.ui.components.PillTag
 import com.sandnes.familyapp.ui.components.PullRefresh
 import com.sandnes.familyapp.ui.components.RefreshOnResume
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
+import com.sandnes.familyapp.ui.theme.AppColorPalette
+import com.sandnes.familyapp.ui.theme.FeatureAccent
+import com.sandnes.familyapp.ui.theme.FeatureBadge
+import com.sandnes.familyapp.ui.theme.IconKeyMap
+import com.sandnes.familyapp.ui.theme.IconOptions
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.glassCard
+import com.sandnes.familyapp.ui.theme.hexColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+private val BIRTH_DATE_FMT = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
 
 @Composable
 fun BirthdayScreen(
@@ -63,12 +77,14 @@ fun BirthdayScreen(
 ) {
     val birthdays by viewModel.birthdays.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
+    val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<BirthdayModel?>(null) }
 
     RefreshOnResume { viewModel.refresh() }
 
     val today = remember { LocalDate.now() }
+    // List stays sorted by the next upcoming occurrence, even though each card shows the birth date.
     val sorted =
         remember(birthdays) {
             birthdays.sortedWith { a, b ->
@@ -79,7 +95,7 @@ fun BirthdayScreen(
         }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         topBar = { FeatureTopBar("Birthdays", onBack) },
         floatingActionButton = {
             AppFab(text = "Add birthday", icon = Icons.Filled.Add, onClick = { showAdd = true })
@@ -104,39 +120,53 @@ fun BirthdayScreen(
             } else {
                 LazyColumn(
                     Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(20.dp),
+                    contentPadding = PaddingValues(Spacing.screenEdge),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(sorted, key = { it.id }) { b ->
-                        SwipeToRevealDelete(
-                            onDelete = { viewModel.delete(b) },
-                            modifier = Modifier.animateItem(),
-                            shape = RoundedCornerShape(20.dp),
-                        ) {
-                            BirthdayCard(b, today, onEdit = { editing = b })
+                        // Only the creator may edit or delete (auto-birthdays belong to the person; RLS enforces).
+                        val canEdit = b.madeByUserId == currentUserId
+                        if (canEdit) {
+                            SwipeToRevealDelete(
+                                onDelete = { viewModel.delete(b) },
+                                modifier = Modifier.animateItem(),
+                                shape = RoundedCornerShape(Radius.overviewCard),
+                            ) {
+                                BirthdayCard(b, today, onEdit = { editing = b })
+                            }
+                        } else {
+                            BirthdayCard(b, today, onEdit = null, modifier = Modifier.animateItem())
                         }
                     }
+                    item { Spacer(Modifier.height(80.dp)) }
                 }
             }
         }
     }
 
     if (showAdd) {
-        AddBirthdayDialog(
+        BirthdayDialog(
+            title = "Add birthday",
+            confirmLabel = "Add",
             onDismiss = { showAdd = false },
-            onConfirm = { name, date ->
-                viewModel.add(name, date)
+            onConfirm = { name, date, icon, color ->
+                viewModel.add(name, date, icon, color)
                 showAdd = false
             },
         )
     }
 
     editing?.let { birthday ->
-        EditBirthdayDialog(
-            birthday = birthday,
+        BirthdayDialog(
+            title = "Edit birthday",
+            confirmLabel = "Save",
+            initialName = birthday.name,
+            initialDate = birthday.date,
+            initialIcon = birthday.icon,
+            initialColor = birthday.color,
             onDismiss = { editing = null },
-            onConfirm = { name, date ->
-                viewModel.update(birthday.id, name, date)
+            onConfirm = { name, date, icon, color ->
+                viewModel.update(birthday.id, name, date, icon, color)
                 editing = null
             },
         )
@@ -147,18 +177,17 @@ fun BirthdayScreen(
 private fun BirthdayCard(
     b: BirthdayModel,
     today: LocalDate,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)?,
+    modifier: Modifier = Modifier,
 ) {
     val nextDate = nextBirthdayDate(b.date, today)
     val age = turnsAge(b.date, today)
     val daysUntil = nextDate?.let { (it.toEpochDay() - today.toEpochDay()).toInt() }
-
+    // Show the actual date of birth (year included), not the next occurrence.
     val displayDate =
-        if (nextDate != null) {
-            nextDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))
-        } else {
-            b.date
-        }
+        runCatching { LocalDate.parse(b.date).format(BIRTH_DATE_FMT) }.getOrDefault(b.date)
+    val isToday = daysUntil == 0
+    val accent = hexColor(b.color) ?: FeatureAccent.Birthdays.stroke()
 
     val daysLabel =
         when {
@@ -166,28 +195,31 @@ private fun BirthdayCard(
             daysUntil != null -> "In $daysUntil days"
             else -> ""
         }
-
     val cardDescription =
         "${b.name}'s birthday, $displayDate${if (daysLabel.isNotEmpty()) ", $daysLabel" else ""}"
 
-    ListCard(
-        onClick = onEdit,
-        modifier = Modifier.semantics { contentDescription = cardDescription },
-    ) {
-        Box(
-            Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Filled.Cake,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+    // Today's birthday gets a celebratory green ring; every card is a glass surface.
+    val base =
+        modifier
+            .fillMaxWidth()
+            .glassCard(Radius.overviewCard)
+            .then(
+                if (isToday) {
+                    Modifier.border(1.5.dp, Color(0xFF22C55E).copy(alpha = 0.5f), RoundedCornerShape(Radius.overviewCard))
+                } else {
+                    Modifier
+                },
+            ).then(if (onEdit != null) Modifier.clickable { onEdit() } else Modifier)
+            .padding(Spacing.cardPadding)
+            .semantics { contentDescription = cardDescription }
+
+    Row(base, verticalAlignment = Alignment.CenterVertically) {
+        FeatureBadge(
+            icon = IconKeyMap.birthday(b.icon),
+            feature = FeatureAccent.Birthdays,
+            size = 46.dp,
+            colorOverride = hexColor(b.color),
+        )
         Spacer(Modifier.size(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
@@ -196,71 +228,101 @@ private fun BirthdayCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
             )
-            Text(
-                displayDate,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (age != null) {
-                Spacer(Modifier.height(4.dp))
-                Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.tertiaryContainer) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    displayDate,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (age != null) {
                     Text(
-                        "Turning $age",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        " · turning $age",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = accent,
                     )
                 }
             }
         }
         if (daysUntil != null) {
             Spacer(Modifier.size(8.dp))
-            when {
-                daysUntil == 0 ->
-                    PillTag(
-                        text = "Today!",
-                        container = Color(0xFF22C55E),
-                        content = Color.White,
-                    )
-                daysUntil <= 7 ->
-                    PillTag(
-                        text = "In $daysUntil days",
-                        container = Color(0xFFF59E0B).copy(alpha = 0.18f),
-                        content = Color(0xFFB45309),
-                    )
-                else ->
-                    PillTag(
-                        text = "In $daysUntil days",
-                        container = MaterialTheme.colorScheme.surfaceVariant,
-                        content = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-            }
+            DaysPill(daysUntil)
         }
     }
 }
 
+/** Urgency-tinted countdown pill: Today (green), within a week (amber), otherwise muted. */
 @Composable
-private fun AddBirthdayDialog(
+private fun DaysPill(days: Int) {
+    when (birthdayUrgency(days)) {
+        BirthdayUrgency.TODAY ->
+            PillTag(
+                text = "Today! 🎉",
+                container = Color(0xFF22C55E),
+                content = Color.White,
+            )
+        BirthdayUrgency.SOON ->
+            PillTag(
+                text = "In $days days",
+                container = Color(0xFFF59E0B).copy(alpha = 0.18f),
+                content = Color(0xFFB45309),
+            )
+        BirthdayUrgency.LATER ->
+            PillTag(
+                text = "In $days days",
+                container = MaterialTheme.colorScheme.surfaceVariant,
+                content = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+    }
+}
+
+@Composable
+private fun BirthdayDialog(
+    title: String,
+    confirmLabel: String,
+    initialName: String = "",
+    initialDate: String = "",
+    initialIcon: String = "cake",
+    initialColor: Int? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit,
+    onConfirm: (name: String, date: String, icon: String, color: Int?) -> Unit,
 ) {
-    var name by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialName) }
+    var date by remember { mutableStateOf(initialDate) }
+    var icon by remember { mutableStateOf(initialIcon) }
+    var color by remember { mutableStateOf(initialColor ?: AppColorPalette.first()) }
+    val overrideColor = hexColor(color)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
-        title = { Text("Add birthday") },
+        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 FamilyTextField(name, { name = it }, "Name")
                 BirthdayPickerField(value = date, onChange = { date = it }, label = "Birthday *")
+
+                SectionLabel("Icon")
+                IconGrid(
+                    options = IconOptions.calendar,
+                    selected = icon,
+                    onSelect = { icon = it },
+                    feature = FeatureAccent.Birthdays,
+                    colorOverride = overrideColor,
+                )
+
+                SectionLabel("Color")
+                ColorPickerRow(selected = color, onSelect = { color = it })
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(name.trim(), date) },
+                onClick = { onConfirm(name.trim(), date, icon, color) },
                 enabled = name.isNotBlank() && date.isNotBlank(),
-            ) { Text("Add") }
+            ) { Text(confirmLabel) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
@@ -269,31 +331,11 @@ private fun AddBirthdayDialog(
 }
 
 @Composable
-private fun EditBirthdayDialog(
-    birthday: BirthdayModel,
-    onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit,
-) {
-    var name by remember { mutableStateOf(birthday.name) }
-    var date by remember { mutableStateOf(birthday.date) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text("Edit birthday") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                FamilyTextField(value = name, onValueChange = { name = it }, label = "Name")
-                BirthdayPickerField(value = date, onChange = { date = it }, label = "Birthday *")
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(name.trim(), date) },
-                enabled = name.isNotBlank() && date.isNotBlank(),
-            ) { Text("Save") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
+private fun SectionLabel(text: String) {
+    Text(
+        text.uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
