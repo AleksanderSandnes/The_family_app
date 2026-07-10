@@ -40,3 +40,25 @@ repos:
         types: [swift]
         files: ^ios/(FamilyApp|FamilyAppTests)/
         args: ["lint", "--strict"]
+
+      # ── Android / Kotlin (android/ tree only) ──────────────────────────────
+      # Mirrors the Swift hooks: Spotless autofixes formatting on the whole module
+      # first, then detekt gates. Both run the Gradle wrapper from android/. The
+      # `pass_filenames: false` is required — Spotless/detekt operate on the module,
+      # not on the individual staged paths pre-commit would otherwise append.
+
+      # 4. Spotless (ktlint) — autofix Kotlin formatting, then re-stage.
+      - id: spotless-kotlin
+        name: Spotless (Kotlin autofix)
+        entry: bash -c 'cd android && ./gradlew spotlessApply -q'
+        language: system
+        files: ^android/.*\.kt$
+        pass_filenames: false
+
+      # 5. detekt — BLOCK the commit on any static-analysis violation.
+      - id: detekt-kotlin
+        name: detekt (Kotlin gate)
+        entry: bash -c 'cd android && ./gradlew detekt -q'
+        language: system
+        files: ^android/.*\.kt$
+        pass_filenames: false
