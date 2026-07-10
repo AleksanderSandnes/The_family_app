@@ -1,5 +1,5 @@
-// Birthdays — the iOS twin of BirthdayScreen.kt: countdown cards sorted by next
-// occurrence, "Turning N" chip, urgency-tinted days pill, add/edit sheets.
+// Birthdays: countdown cards sorted by next occurrence, "Turning N" chip,
+// urgency-tinted days pill, add/edit sheets.
 import SwiftUI
 
 struct BirthdayScreen: View {
@@ -172,6 +172,7 @@ private struct BirthdayCard: View {
     }
 
     private func formatFullDate(_ date: LocalDate) -> String {
+        // Format in UTC so the epoch-day date isn't shifted a day by the local timezone.
         let instant = Date(timeIntervalSince1970: TimeInterval(date.epochDay) * 86400)
         let formatter = DateFormatter()
         formatter.dateStyle = .long

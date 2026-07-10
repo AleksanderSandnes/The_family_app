@@ -1,8 +1,7 @@
-// ChatViewModel — reactions. Extracted from ChatViewModel.swift to keep the main type's
-// body under the length limit. Optimistic add/remove of the current user's emoji reaction
+// ChatViewModel — reactions. Optimistic add/remove of the current user's emoji reaction
 // (write-through to the repository), plus the reactions load + the raw realtime presence
-// channel. Behaviour is identical. The presence channel is opened only from
-// loadConversation, so a test-built VM never touches a live client.
+// channel. The presence channel is opened only from loadConversation, so a test-built VM
+// never touches a live client.
 import Foundation
 import Supabase
 

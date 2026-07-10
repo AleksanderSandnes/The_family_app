@@ -1,7 +1,6 @@
 // Liquid Glass surfaces (direction 1c), built on the native iOS 26 `.glassEffect` API.
-// The design's CSS "backdrop blur + tint + inset shine + hairline border + drop shadow"
-// recipe is exactly what the system Liquid Glass material renders — so we lean on the
-// real material and only add the soft floating drop shadow the spec calls for.
+// The system material renders blur + tint + inset shine + hairline border; we add the
+// soft floating drop shadow.
 import SwiftUI
 
 extension View {
@@ -63,7 +62,7 @@ extension View {
 }
 
 /// A rounded feature icon badge — translucent domain-coloured fill with the glyph in the
-/// domain stroke colour. Replaces gradient icon squares; feature colour lives only here.
+/// domain stroke colour. Feature colour lives only here.
 struct FeatureBadge: View {
     let systemImage: String
     let feature: FeatureAccent

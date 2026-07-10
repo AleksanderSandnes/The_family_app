@@ -1,6 +1,6 @@
-// Auth view model — the iOS twin of AuthViewModel.kt: login, 2-step registration,
-// Google OAuth, friendly error mapping. Success flips the auth gate implicitly because
-// completeSignInAfterConfirmation() persists the app user id in SessionStore.
+// Auth view model: login, 2-step registration, Google OAuth, friendly error mapping.
+// Success flips the auth gate implicitly because completeSignInAfterConfirmation()
+// persists the app user id in SessionStore.
 import Foundation
 import Observation
 
@@ -136,8 +136,7 @@ func isValidEmail(_ email: String) -> Bool {
     return email.range(of: pattern, options: .regularExpression) != nil
 }
 
-/// Password strength score 0–3 based on length and character variety — mirrors
-/// passwordStrength in AuthScreens.kt.
+/// Password strength score 0–3 based on length and character variety.
 func passwordStrength(_ password: String) -> Int {
     if password.count < minPasswordLength { return 0 }
     var score = 1
@@ -149,7 +148,7 @@ func passwordStrength(_ password: String) -> Int {
     return min(score, 3)
 }
 
-/// Ordered keyword → message table; first match wins — mirrors AUTH_ERROR_MESSAGES.
+/// Ordered keyword → message table; first match wins.
 let authErrorMessages: [(keywords: [String], message: String)] = [
     (["invalid login credentials", "invalid_credentials"], "Incorrect email or password."),
     (["user already registered", "already been registered"], "An account with this email already exists."),
@@ -162,6 +161,7 @@ let authErrorMessages: [(keywords: [String], message: String)] = [
 func friendlyAuthError(_ error: Error, isLogin: Bool) -> String {
     let raw = error.localizedDescription.lowercased()
     if raw.isEmpty { return "Something went wrong. Please try again." }
+    // OAuth redirect-allowlist misconfiguration: hide the developer detail behind a generic message.
     if raw.contains("redirect"), raw.contains("not allowed") {
         return "Something went wrong. Please try again."
     }

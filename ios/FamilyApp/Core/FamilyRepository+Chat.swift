@@ -1,6 +1,5 @@
-// FamilyRepository — chat helpers shared across screens. Extracted from
-// FamilyRepository.swift to keep the main type's body under the length limit. Last-message
-// lookup, read receipts, and message/reaction writes. Behaviour is identical.
+// FamilyRepository — chat helpers shared across screens: last-message lookup, read
+// receipts, and message/reaction writes.
 import Foundation
 import Supabase
 
@@ -61,7 +60,7 @@ extension FamilyRepository {
     // MARK: - Conversation / message reads (moved out of ChatViewModel)
 
     /// All conversations the current user participates in. RLS scopes the result, so there
-    /// is no explicit filter here — identical to the original inline select.
+    /// is no explicit filter here.
     func fetchConversations() async throws -> [ConversationModel] {
         try await client.from("conversations")
             .select()
@@ -102,9 +101,7 @@ extension FamilyRepository {
     }
 
     /// Unread count for one conversation: messages from someone OTHER than me, newer than
-    /// `after` (my last_read_at). This exact predicate (neq user_from, gt sent_at) is the
-    /// source of a past badge bug, so it stays verbatim. Swallows errors to 0, matching the
-    /// original `try? … ?? 0`.
+    /// `after` (my last_read_at). Swallows errors to 0.
     func countUnreadMessages(conversationId: String, userId: String, after: String) async -> Int {
         let count = try? await client.from("messages")
             .select("id", head: true, count: .exact)
@@ -183,7 +180,7 @@ extension FamilyRepository {
             .value
     }
 
-    /// Adds a participant. Throws so callers keep their original try / try? handling.
+    /// Adds a participant. Throws so callers can handle failure.
     func insertParticipant(conversationId: String, userId: String) async throws {
         try await client.from("conversation_participants")
             .insert([
@@ -193,7 +190,7 @@ extension FamilyRepository {
             .execute()
     }
 
-    /// Removes a participant (best-effort, matches the original try?).
+    /// Removes a participant (best-effort).
     func deleteParticipant(conversationId: String, userId: String) async {
         _ = try? await client.from("conversation_participants")
             .delete()
@@ -236,8 +233,8 @@ extension FamilyRepository {
 
     // MARK: - Message writes
 
-    /// Inserts a text message (optional reply). Preserves the exact send() payload — no
-    /// message_type key, so the DB default ('text') applies, as in the original.
+    /// Inserts a text message (optional reply). No message_type key, so the DB default
+    /// ('text') applies.
     func insertTextMessage(
         conversationId: String, userFrom: String, text: String, replyToId: String?
     ) async throws {
@@ -286,8 +283,7 @@ extension FamilyRepository {
 
     /// Uploads a group image (already compressed by the caller) to
     /// group-images/{conversationId}/image.jpg and returns a cache-busted public URL. This
-    /// path convention differs from StorageService's auth-uid rule, so it stays here to
-    /// preserve the original behaviour exactly.
+    /// path convention differs from StorageService's auth-uid rule, so it lives here.
     func uploadGroupImage(conversationId: String, data: Data) async throws -> String {
         let bucket = client.storage.from("group-images")
         let path = "\(conversationId)/image.jpg"

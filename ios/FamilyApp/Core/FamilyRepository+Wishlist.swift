@@ -1,17 +1,16 @@
-// Wishlist data access — moved out of WishlistViewModel so the VM depends only on the
-// FamilyRepositoryProtocol seam and can be unit-tested with a mock. Each method preserves
-// the exact query semantics and payload fields of the original inline `client.from(...)`
-// calls. Fetches throw so the caller can fall back to its current value (`(try? …) ?? …`).
+// Wishlist data access behind the FamilyRepositoryProtocol seam, so the view model is
+// unit-testable with a mock. Fetches throw so the caller can fall back to its current value
+// (`(try? …) ?? …`).
 //
 // Note the secret-gift reservation flow: `wish_reservations` rows are RLS-hidden from the
 // wishlist owner, so `fetchWishReservations` returns an empty set for them. Reservations are
-// insert/delete only (there is no update) — mirrored here.
+// insert/delete only (there is no update).
 import Foundation
 import Supabase
 
 extension FamilyRepository {
     /// Wishlists visible to the user: own OR in my family. Throws so the caller keeps the
-    /// current list (no-rollback parity via `(try? …) ?? wishlists`). Filters out foreign-family
+    /// current list via `(try? …) ?? wishlists` (no rollback). Filters out foreign-family
     /// rows.
     func fetchWishlists(userId: String, familyId: String?) async throws -> [WishlistModel] {
         if let familyId {
@@ -67,7 +66,7 @@ extension FamilyRepository {
             .value
     }
 
-    /// Inserts a wishlist. Preserves the exact payload (owner/name/icon/color + optional family).
+    /// Inserts a wishlist (payload: owner/name/icon/color + optional family).
     func insertWishlist(_ list: WishlistModel) async {
         var payload: [String: AnyJSON] = [
             "owner_user_id": .string(list.ownerUserId),
@@ -104,8 +103,8 @@ extension FamilyRepository {
         _ = try? await client.from("wishlists").delete().eq("id", value: id).execute()
     }
 
-    /// Inserts one wish. Preserves the exact payload: wishlist_id/user_id/text always, plus
-    /// link/price/image_url only when present and non-empty.
+    /// Inserts one wish (payload: wishlist_id/user_id/text always, plus link/price/image_url
+    /// only when present and non-empty).
     func insertWish(_ wish: WishModel) async {
         var payload: [String: AnyJSON] = [
             "wishlist_id": .string(wish.wishlistId),
@@ -156,4 +155,47 @@ extension FamilyRepository {
             .eq("reserved_by", value: reservedBy)
             .execute()
     }
+
+    // MARK: - Share links (cross-family, single-user access)
+
+    /// Wishlists shared TO the current user via a redeemed link (RLS returns them by grant).
+    /// Two-step: read my grant rows, then load those wishlists by id.
+    func fetchSharedWishlists(userId: String) async throws -> [WishlistModel] {
+        let grants: [WishlistShareRow] = try await client.from("wishlist_shares")
+            .select("wishlist_id")
+            .eq("user_id", value: userId)
+            .execute()
+            .value
+        let ids = grants.map(\.wishlistId)
+        guard !ids.isEmpty else { return [] }
+        return try await client.from("wishlists")
+            .select()
+            .in("id", values: ids)
+            .execute()
+            .value
+    }
+
+    /// Owner-only: mint (or return the existing) share token for a wishlist. Returns the
+    /// token string, or nil if the caller isn't the owner / the wishlist is gone.
+    func ensureWishlistShareToken(wishlistId: String) async throws -> String? {
+        try await client
+            .rpc("ensure_wishlist_share_token", params: ["p_wishlist_id": wishlistId])
+            .execute()
+            .value
+    }
+
+    /// Redeem a share token: grants the current user access and returns the wishlist id
+    /// (nil for an invalid/revoked token).
+    func acceptWishlistShare(token: String) async throws -> String? {
+        try await client
+            .rpc("accept_wishlist_share", params: ["p_token": token])
+            .execute()
+            .value
+    }
+}
+
+/// Minimal decode shape for a `wishlist_shares` grant row (only the id is needed).
+private struct WishlistShareRow: Decodable {
+    let wishlistId: String
+    enum CodingKeys: String, CodingKey { case wishlistId = "wishlist_id" }
 }

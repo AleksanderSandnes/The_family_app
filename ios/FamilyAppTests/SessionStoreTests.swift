@@ -1,7 +1,6 @@
 @testable import FamilyApp
 
-// SessionStore behavior — mirrors SessionManagerTest.kt: identical keys, defaults,
-// sign-in/out semantics.
+// SessionStore behavior: keys, defaults, and sign-in/out semantics.
 import XCTest
 
 @MainActor
@@ -34,7 +33,7 @@ final class SessionStoreTests: XCTestCase {
         let store = SessionStore(defaults: defaults)
         store.signIn(userId: "user-123")
         XCTAssertEqual(store.currentUserId, "user-123")
-        // The key must stay identical to the Android DataStore key.
+        // The key matches the Android DataStore key.
         XCTAssertEqual(defaults.string(forKey: "current_user_id_v2"), "user-123")
     }
 

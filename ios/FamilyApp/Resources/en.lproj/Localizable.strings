@@ -7,7 +7,7 @@
 "Here's everything your family shares." = "Here's everything your family shares.";
 "Couldn't load your data. Pull to refresh." = "Couldn't load your data. Pull to refresh.";
 "Quick access" = "Quick access";
-"TONIGHT" = "TONIGHT";
+"TODAY" = "TODAY";
 "NEXT EVENT" = "NEXT EVENT";
 "SHOPPING" = "SHOPPING";
 "NEXT BIRTHDAY" = "NEXT BIRTHDAY";
@@ -179,6 +179,10 @@
 "Add a wish" = "Add a wish";
 "Wishlist" = "Wishlist";
 "Rename wishlist" = "Rename wishlist";
+"Export PDF" = "Export PDF";
+"Share link" = "Share link";
+"Shared with me" = "Shared with me";
+"See my wishlist %@ in The Family App:" = "See my wishlist %@ in The Family App:";
 "Open link" = "Open link";
 "Unmark as claimed" = "Unmark as claimed";
 "Mark as claimed" = "Mark as claimed";

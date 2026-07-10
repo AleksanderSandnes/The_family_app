@@ -1,4 +1,4 @@
-// Calendar view model — the iOS twin of CalendarViewModel.kt.
+// Calendar view model.
 import Foundation
 import Observation
 import Supabase
@@ -26,11 +26,12 @@ struct YearMonth: Hashable, Comparable {
 
     func plusMonths(_ count: Int) -> YearMonth {
         let zeroBased = year * 12 + (month - 1) + count
+        // Floor toward -inf so month arithmetic wraps correctly for dates before year 0.
         let newYear = zeroBased >= 0 ? zeroBased / 12 : (zeroBased - 11) / 12
         return YearMonth(year: newYear, month: zeroBased - newYear * 12 + 1)
     }
 
-    /// "MMMM yyyy" in the in-app language — mirrors MONTH_YEAR_FMT.
+    /// "MMMM yyyy" in the in-app language.
     func formatted(locale: Locale = Locale(identifier: "en_US_POSIX")) -> String {
         let instant = Date(timeIntervalSince1970: TimeInterval(atDay(1).epochDay) * 86400)
         let formatter = DateFormatter()
@@ -132,6 +133,7 @@ final class CalendarViewModel {
             familyMembers = await repo.getFamilyMembers(familyId: familyId)
         }
 
+        // Keep the current list on fetch failure rather than clearing it.
         let result = await (try? repo.fetchCalendarEvents(userId: userId, familyId: user.familyId)) ?? events
         Self.cache = result
         events = result
@@ -209,7 +211,7 @@ final class CalendarViewModel {
     }
 }
 
-// MARK: - Pure helpers (unit-tested, mirror CalendarScreen.kt)
+// MARK: - Pure helpers (unit-tested)
 
 /// Month grid cells: leading nils to Monday-align, then each day, padded to full weeks.
 func monthCells(_ month: YearMonth) -> [LocalDate?] {
@@ -226,7 +228,7 @@ func monthCells(_ month: YearMonth) -> [LocalDate?] {
     return cells
 }
 
-/// Concise time label for the event card — mirrors eventTimeLabel.
+/// Concise time label for the event card.
 func eventTimeLabel(
     _ event: CalendarEventModel,
     locale: Locale = Locale(identifier: "en_US_POSIX")
@@ -237,7 +239,7 @@ func eventTimeLabel(
         .joined(separator: " – ")
 }
 
-/// "EEEE, d MMMM" in the in-app language — mirrors SECTION_DATE_FMT.
+/// "EEEE, d MMMM" in the in-app language.
 func sectionDateLabel(
     _ date: LocalDate,
     locale: Locale = Locale(identifier: "en_US_POSIX")

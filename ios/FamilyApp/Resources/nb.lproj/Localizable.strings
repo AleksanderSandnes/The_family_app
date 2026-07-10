@@ -6,7 +6,7 @@
 "Here's everything your family shares." = "Her er alt familien din deler.";
 "Couldn't load your data. Pull to refresh." = "Kunne ikke laste inn dataene dine. Dra ned for å oppdatere.";
 "Quick access" = "Hurtigtilgang";
-"TONIGHT" = "I KVELD";
+"TODAY" = "I DAG";
 "NEXT EVENT" = "NESTE HENDELSE";
 "SHOPPING" = "HANDLING";
 "NEXT BIRTHDAY" = "NESTE BURSDAG";
@@ -178,6 +178,10 @@
 "Add a wish" = "Legg til et ønske";
 "Wishlist" = "Ønskeliste";
 "Rename wishlist" = "Gi ønskelisten nytt navn";
+"Export PDF" = "Eksporter PDF";
+"Share link" = "Del lenke";
+"Shared with me" = "Delt med meg";
+"See my wishlist %@ in The Family App:" = "Se ønskelisten min %@ i The Family App:";
 "Open link" = "Åpne lenke";
 "Unmark as claimed" = "Fjern markering som tatt";
 "Mark as claimed" = "Marker som tatt";

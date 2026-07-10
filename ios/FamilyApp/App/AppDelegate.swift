@@ -1,7 +1,6 @@
-// Push wiring — the iOS twin of FamilyMessagingService + NotificationHelper:
-// FCM registration (APNs → FCM token → device_push_tokens with platform='ios'),
-// notification categories with inline chat reply, tap → familyapp://chat deep link,
-// and foreground suppression for the currently open conversation.
+// Push wiring: FCM registration (APNs → FCM token → device_push_tokens with platform='ios'),
+// notification categories with inline chat reply, tap → familyapp://chat deep link, and
+// foreground suppression for the currently open conversation.
 import FirebaseCore
 import FirebaseMessaging
 import Supabase
@@ -48,7 +47,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Messaging.messaging().apnsToken = deviceToken
     }
 
-    /// The 3 channels from Android's NotificationHelper, as UNNotificationCategories.
+    /// Message (with inline reply), birthday and event categories.
     private static var categories: Set<UNNotificationCategory> {
         let reply = UNTextInputNotificationAction(
             identifier: NotificationCategory.replyAction,
@@ -84,7 +83,7 @@ extension AppDelegate: MessagingDelegate {
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
     /// Foreground presentation: suppress the banner for the conversation that is
-    /// currently open (ActiveChat parity); everything else shows normally.
+    /// currently open; everything else shows normally.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
@@ -96,7 +95,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let suppress = await MainActor.run { () -> Bool in
             // Never notify about my own message (same-device dual-login / stale token row).
             if let senderId, senderId == SessionStore.shared.currentUserId { return true }
-            // Suppress the conversation currently on screen (ActiveChat parity).
+            // Suppress the conversation currently on screen.
             if let conversationId, ActiveChat.conversationId == conversationId { return true }
             // Suppress duplicate deliveries of the same message.
             if let messageId, !PresentedMessages.firstSeen(messageId) { return true }
@@ -113,7 +112,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         guard let conversationId = payload["conversationId"] as? String else { return }
 
         if let textResponse = response as? UNTextInputNotificationResponse {
-            // Inline reply straight through Postgrest (ReplyReceiver parity).
+            // Inline reply straight through Postgrest.
             await sendInlineReply(conversationId: conversationId, text: textResponse.userText)
             return
         }
@@ -147,15 +146,14 @@ extension Notification.Name {
     static let openConversationDeepLink = Notification.Name("openConversationDeepLink")
 }
 
-/// The conversation currently on screen — lets pushes for it be suppressed
-/// (twin of Android's ActiveChat object).
+/// The conversation currently on screen, so pushes for it can be suppressed.
 @MainActor
 enum ActiveChat {
     static var conversationId: String?
 }
 
 /// Bounded set of recently presented message ids, so a re-delivered push (retry, or a token
-/// shared by two accounts on one device) never banners twice. Twin of Android's `Dedup`.
+/// shared by two accounts on one device) never banners twice.
 @MainActor
 enum PresentedMessages {
     private static let cap = 100

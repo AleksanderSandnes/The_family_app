@@ -1,5 +1,4 @@
-// UIImagePickerController(.camera) wrapper — the iOS twin of the Android
-// FileProvider + TakePicture camera flow.
+// UIImagePickerController(.camera) wrapper for capturing a photo.
 import SwiftUI
 import UIKit
 

@@ -1,4 +1,4 @@
-// Supabase Realtime subscription helper — the iOS twin of the Android pattern:
+// Supabase Realtime subscription helper:
 //   1. channel name "tablename-\(familyId)" (must be unique per subscription)
 //   2. any postgres change event → call the FULL reload closure (never partial merge)
 //   3. teardown removes the channel

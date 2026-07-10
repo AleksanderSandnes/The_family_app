@@ -1,7 +1,6 @@
 @testable import FamilyApp
 
-// Decoding tests for Entities.swift — verify the snake_case CodingKeys match the
-// Postgres columns exactly (mirrors EntitiesTest.kt).
+// Decoding tests for Entities.swift — verify snake_case CodingKeys match the Postgres columns.
 import XCTest
 
 final class EntitiesTests: XCTestCase {

@@ -1,5 +1,4 @@
-// Avatar with remote image or fallback initial + per-user color — mirrors
-// InitialAvatar in Components.kt (Nuke replaces Coil).
+// Avatar with remote image or fallback initial + per-user color.
 import NukeUI
 import SwiftUI
 
@@ -53,6 +52,7 @@ extension InitialAvatar {
     init(user: UserModel, size: CGFloat = 44) {
         self.init(
             name: user.name,
+            // avatarColor 0 = unset → derive a stable colour from the name.
             color: Color(argb: user.avatarColor != 0
                 ? user.avatarColor
                 : FamilyRepository.palette(user.name)),

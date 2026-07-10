@@ -1,4 +1,4 @@
-// Family view model — the iOS twin of FamilyViewModel.kt.
+// Family view model.
 import Foundation
 import Observation
 
@@ -137,7 +137,7 @@ final class FamilyViewModel {
                 return
             }
             do {
-                // Same bucket + path convention as Android: group-images/family-photos/{id}/photo.jpg
+                // Bucket + path convention: group-images/family-photos/{id}/photo.jpg
                 let url = try await repo.uploadFamilyPhotoImage(familyId: familyId, data: compressed)
                 try await repo.updateFamilyPhoto(familyId: familyId, photoUrl: url)
                 await load()
@@ -159,13 +159,13 @@ final class FamilyViewModel {
     }
 }
 
-/// 8-char uppercase invite code — mirrors generateJoinCode in FamilyViewModel.kt.
+/// 8-char uppercase invite code.
 func generateJoinCode() -> String {
     String(UUID().uuidString.prefix(joinCodeLength)).uppercased()
 }
 
-/// Share-sheet invite message — mirrors the Android share text. Pass `appLocale` so
-/// the chrome around the (verbatim) family name and code renders in the app language.
+/// Share-sheet invite message. Pass `appLocale` so the chrome around the family name
+/// and code renders in the app language.
 func inviteMessage(
     familyName: String,
     joinCode: String,

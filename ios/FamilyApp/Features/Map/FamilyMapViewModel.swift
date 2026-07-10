@@ -1,6 +1,5 @@
-// Family map view model — the iOS twin of FamilyMapViewModel.kt: publishes the own
-// location every 30 s while the map is open (foreground-only v1, matching Android's
-// Play-Store build), streams family member locations via realtime.
+// Family map view model: publishes own location every 30 s while the map is open
+// (foreground-only), streams family member locations via realtime.
 import CoreLocation
 import Foundation
 import Observation
@@ -148,8 +147,8 @@ final class FamilyMapViewModel: NSObject, CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }
 
-/// Last-seen label — mirrors formatLastSeen in FamilyMapScreen.kt. Pass `appLocale` so
-/// the relative label and fallback date render in the app language.
+/// Last-seen label. Pass `appLocale` so the relative label and fallback date render in
+/// the app language.
 func formatLastSeen(
     _ updatedAt: String?,
     nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000),

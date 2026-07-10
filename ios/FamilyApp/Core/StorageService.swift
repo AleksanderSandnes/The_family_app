@@ -36,8 +36,8 @@ enum StorageService {
         try await upload(bucket: "group-images", path: "\(authUid())/\(filename)", data: data)
     }
 
-    /// wish-images allows any authenticated write; Android's path convention is the APP
-    /// user id (public.users.id) + timestamp — kept identical for cross-platform parity.
+    /// wish-images allows any authenticated write; the path is the APP user id
+    /// (public.users.id) + timestamp, matching Android for cross-platform parity.
     @discardableResult
     static func uploadWishImage(data: Data, appUserId: String, filename: String) async throws -> String {
         try await upload(bucket: "wish-images", path: "\(appUserId)/\(filename)", data: data)
@@ -56,7 +56,7 @@ enum StorageService {
         )
     }
 
-    /// Uploads (upsert) and returns the public URL — mirrors Android's upload + publicUrl.
+    /// Uploads (upsert) and returns the public URL.
     private static func upload(bucket: String, path: String, data: Data) async throws -> String {
         let storage = client.storage.from(bucket)
         try await storage.upload(path, data: data, options: FileOptions(upsert: true))

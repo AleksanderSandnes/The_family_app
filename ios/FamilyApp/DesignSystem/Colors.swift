@@ -1,6 +1,5 @@
-// Design tokens — the iOS twin of ui/theme/Color.kt + Theme.kt. Exact same hex values.
-// Semantic tokens adapt to light/dark automatically (the ThemeMode override is applied
-// via .preferredColorScheme at the root, and dynamic colors follow it).
+// Design tokens (Android: Color.kt + Theme.kt). Semantic tokens adapt to light/dark
+// automatically — the ThemeMode override applies via .preferredColorScheme at the root.
 import SwiftUI
 import UIKit
 
@@ -40,7 +39,7 @@ extension Color {
     }
 }
 
-/// Raw palette — mirrors Color.kt exactly.
+/// Raw palette (Android: Color.kt).
 enum Palette {
     // Brand — refined indigo / violet
     static let indigo50 = Color(hex: 0xEEF0FF)
@@ -80,11 +79,11 @@ enum Palette {
     static let inkText = Color(hex: 0xE8EBF5)
     static let inkTextMuted = Color(hex: 0x9AA4BE)
 
-    // Secondary containers (Theme.kt inline values)
+    // Secondary containers
     static let violetContainerLight = Color(hex: 0xEDE4FF)
     static let violetContainerDark = Color(hex: 0x4C1D95)
 
-    // Hero gradient dark endpoints (Color.kt private values)
+    // Hero gradient dark endpoints
     static let heroDarkStart = Color(hex: 0x3730A3)
     static let heroDarkEnd = Color(hex: 0x6D28D9)
 
@@ -115,8 +114,7 @@ enum Palette {
     static let mapBase = Color(hex: 0xE7ECE3) // family-map flat base
 }
 
-/// Semantic scheme — mirrors LightColors/DarkColors in Theme.kt. Use these at call
-/// sites, never raw palette values (same rule as MaterialTheme.colorScheme.*).
+/// Semantic scheme — use these at call sites, never raw palette values.
 extension Color {
     // Accent — the single interactive colour (quieted indigo). Brightens in dark.
     static let appPrimary = Color(light: Palette.accent, dark: Palette.accentDark)

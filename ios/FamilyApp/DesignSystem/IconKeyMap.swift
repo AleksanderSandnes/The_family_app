@@ -1,6 +1,5 @@
-// DB icon keys → SF Symbols. The Android app stores Material icon keys in the DB
-// (shopping_lists.icon, meal_plans.icon, wishlists.icon, calendar_events.icon); both
-// platforms must render the same key, so this map is the single source of truth on iOS.
+// DB icon keys → SF Symbols. The DB stores Material icon keys (shopping_lists.icon,
+// meal_plans.icon, wishlists.icon, calendar_events.icon); this map renders them on iOS.
 import Foundation
 
 enum IconKeyMap {
@@ -65,7 +64,7 @@ enum IconKeyMap {
     }
 }
 
-/// Icon-picker option lists — same keys and order as the Android dialogs.
+/// Icon-picker option lists.
 enum IconOptions {
     static let shopping: [String] = [
         "shopping_cart", "restaurant", "cake", "local_hospital", "celebration", "favorite",
@@ -90,8 +89,7 @@ enum IconOptions {
     ]
 }
 
-/// Icon key → stable index 0–5 used to color event dots/containers — mirrors
-/// ICON_COLOR_INDEX in CalendarScreen.kt.
+/// Icon key → stable index 0–5 used to color event dots/containers.
 func calendarIconColorIndex(_ key: String) -> Int {
     let map: [String: Int] = [
         "schedule": 0, "cake": 1, "people": 2, "work": 3, "school": 4, "restaurant": 5,

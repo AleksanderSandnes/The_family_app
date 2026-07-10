@@ -1,7 +1,6 @@
-// Main signed-in shell — the iOS twin of MainFlow in AppNavHost.kt.
-// 5 tabs, each with its own NavigationStack; feature view models are hoisted here
-// (Android: Activity-scoped hoisting in MainFlow) so they survive tab switches and
-// start loading immediately on login. Chat list + detail will share one view model.
+// Main signed-in shell. 5 tabs, each with its own NavigationStack; feature view models
+// are hoisted here so they survive tab switches and start loading immediately on login.
+// Chat list + detail share one view model.
 import SwiftUI
 
 struct MainTabView: View {
@@ -9,9 +8,9 @@ struct MainTabView: View {
 
     @State private var selectedTab: Tab = .home
     @State private var homePath: [Route] = []
+    @State private var shoppingPath: [Route] = []
     @State private var calendarPath: [Route] = []
     @State private var chatPath: [Route] = []
-    @State private var familyPath: [Route] = []
     @State private var profilePath: [Route] = []
 
     // Hoisted feature view models — created once for the signed-in session.
@@ -36,19 +35,19 @@ struct MainTabView: View {
                     viewModel: homeViewModel,
                     onOpen: { homePath.append($0) },
                     onOpenCalendarTab: { selectedTab = .calendar },
-                    onOpenFamily: { selectedTab = .family }
+                    onOpenFamily: { openFamily() }
                 )
                 .navigationDestination(for: Route.self) { destination(for: $0) }
             }
             .tabItem { Label("Home", systemImage: "house.fill") }
             .tag(Tab.home)
 
-            NavigationStack(path: $calendarPath) {
-                CalendarScreen(viewModel: calendarViewModel)
+            NavigationStack(path: $shoppingPath) {
+                ShoppingScreen(viewModel: shoppingViewModel) { shoppingPath.append(.shoppingDetail(listId: $0)) }
                     .navigationDestination(for: Route.self) { destination(for: $0) }
             }
-            .tabItem { Label("Calendar", systemImage: "calendar") }
-            .tag(Tab.calendar)
+            .tabItem { Label("Shopping", systemImage: "cart.fill") }
+            .tag(Tab.shopping)
 
             NavigationStack(path: $chatPath) {
                 ChatScreen(viewModel: chatViewModel) { chatPath.append(.chatDetail(conversationId: $0)) }
@@ -58,12 +57,12 @@ struct MainTabView: View {
             .tag(Tab.chat)
             .badge(chatViewModel.totalUnread)
 
-            NavigationStack(path: $familyPath) {
-                FamilyScreen(viewModel: familyViewModel)
+            NavigationStack(path: $calendarPath) {
+                CalendarScreen(viewModel: calendarViewModel)
                     .navigationDestination(for: Route.self) { destination(for: $0) }
             }
-            .tabItem { Label("Family", systemImage: "person.3.fill") }
-            .tag(Tab.family)
+            .tabItem { Label("Calendar", systemImage: "calendar") }
+            .tag(Tab.calendar)
 
             NavigationStack(path: $profilePath) {
                 ProfileScreen(
@@ -80,6 +79,7 @@ struct MainTabView: View {
         .task {
             LocationSharingService.shared.startIfEnabled()
             await checkProfileCompletion()
+            await redeemPendingWishlistShare()
         }
         .sheet(item: $completionUser) { user in
             ProfileCompletionSheet(
@@ -108,8 +108,28 @@ struct MainTabView: View {
         }
         .onChange(of: FamilyRepository.shared.pendingJoinCode) { _, code in
             // Invite deep link routes the user to Family, which opens the join flow.
-            if code != nil { selectedTab = .family }
+            if code != nil { openFamily() }
         }
+        .onChange(of: deepLinks.pendingWishlistShareToken) { _, token in
+            if token != nil { Task { await redeemPendingWishlistShare() } }
+        }
+    }
+
+    /// Redeems a wishlist share link (from the observable DeepLinkRouter): grants access and
+    /// opens the shared wishlist. Whoever opens the link gains access to that one wishlist —
+    /// only them, not their whole family.
+    private func redeemPendingWishlistShare() async {
+        guard let token = deepLinks.pendingWishlistShareToken else { return }
+        deepLinks.pendingWishlistShareToken = nil
+        guard let wishlistId = await wishlistViewModel.acceptShare(token: token) else { return }
+        selectedTab = .home
+        homePath = [.wishlist, .wishlistDetail(wishlistId: wishlistId)]
+    }
+
+    /// Family lives on the Home dashboard — surface it by pushing onto the home stack.
+    private func openFamily() {
+        selectedTab = .home
+        if homePath.last != .family { homePath.append(.family) }
     }
 
     /// One-time prompt for Google sign-ups (email registration already collects these).
@@ -124,22 +144,40 @@ struct MainTabView: View {
         }
     }
 
-    /// Route → screen. Placeholders are swapped out feature phase by feature phase.
+    /// Route → screen. Feature roots live here; the pushed detail screens are split into
+    /// `detailDestination` to keep each switch under the cyclomatic-complexity limit.
     @ViewBuilder
     private func destination(for route: Route) -> some View {
         switch route {
         case .shopping:
             ShoppingScreen(viewModel: shoppingViewModel) { homePath.append(.shoppingDetail(listId: $0)) }
-        case let .shoppingDetail(listId):
-            ShoppingDetailScreen(listId: listId, viewModel: shoppingViewModel)
         case .meal:
             MealScreen(viewModel: mealViewModel) { homePath.append(.mealDetail(planId: $0)) }
-        case let .mealDetail(planId):
-            MealDetailScreen(planId: planId, viewModel: mealViewModel)
         case .birthday:
             BirthdayScreen(viewModel: birthdayViewModel)
         case .wishlist:
             WishlistScreen(viewModel: wishlistViewModel) { homePath.append(.wishlistDetail(wishlistId: $0)) }
+        case .profileEdit:
+            ProfileEditScreen(viewModel: profileViewModel)
+        case .settings:
+            SettingsScreen()
+        case .familyMap:
+            FamilyMapScreen()
+        case .family:
+            FamilyScreen(viewModel: familyViewModel)
+        default:
+            detailDestination(for: route)
+        }
+    }
+
+    /// Pushed detail screens (each opened from its feature root).
+    @ViewBuilder
+    private func detailDestination(for route: Route) -> some View {
+        switch route {
+        case let .shoppingDetail(listId):
+            ShoppingDetailScreen(listId: listId, viewModel: shoppingViewModel)
+        case let .mealDetail(planId):
+            MealDetailScreen(planId: planId, viewModel: mealViewModel)
         case let .wishlistDetail(wishlistId):
             WishlistDetailScreen(wishlistId: wishlistId, viewModel: wishlistViewModel)
         case let .chatDetail(conversationId):
@@ -150,12 +188,8 @@ struct MainTabView: View {
                     chatViewModel.navigateToConversation = nil
                     chatPath = [.chatDetail(conversationId: newId)]
                 }
-        case .profileEdit:
-            ProfileEditScreen(viewModel: profileViewModel)
-        case .settings:
-            SettingsScreen()
-        case .familyMap:
-            FamilyMapScreen()
+        default:
+            EmptyView()
         }
     }
 }

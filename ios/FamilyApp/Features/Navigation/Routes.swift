@@ -1,4 +1,4 @@
-// Typed routes — the iOS twin of Routes.kt. Pushed onto per-tab NavigationStacks.
+// Typed routes pushed onto per-tab NavigationStacks.
 import Foundation
 
 enum Route: Hashable {
@@ -14,14 +14,16 @@ enum Route: Hashable {
     case profileEdit
     case settings
     case familyMap
+    /// Family is reachable from the Home dashboard, not a bottom tab.
+    case family
 }
 
 /// Bottom tabs (Android: crossfade destinations).
 enum Tab: Hashable {
     case home
-    case calendar
+    case shopping
     case chat
-    case family
+    case calendar
     case profile
 }
 
@@ -36,6 +38,13 @@ enum DeepLinkURL {
     static func chat(conversationId: String) -> URL {
         guard let url = URL(string: "familyapp://chat/\(conversationId)") else {
             preconditionFailure("Invalid chat deep-link URL for conversation: \(conversationId)")
+        }
+        return url
+    }
+
+    static func sharedWishlist(token: String) -> URL {
+        guard let url = URL(string: "familyapp://wishlist?token=\(token)") else {
+            preconditionFailure("Invalid wishlist share deep-link URL for token: \(token)")
         }
         return url
     }

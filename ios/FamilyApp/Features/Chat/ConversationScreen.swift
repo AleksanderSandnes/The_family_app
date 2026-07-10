@@ -1,6 +1,5 @@
-// Open thread — the iOS twin of ConversationScreen in ChatScreens.kt: gradient
-// outgoing bubbles, quotes, reactions, swipe-to-reply, read receipts, typing
-// indicator, time separators, media (image/voice/camera), group management menu.
+// Open thread: gradient outgoing bubbles, quotes, reactions, swipe-to-reply, read
+// receipts, typing indicator, time separators, media (image/voice/camera), group menu.
 import NukeUI
 import PhotosUI
 import SwiftUI
@@ -229,8 +228,7 @@ struct ConversationScreen: View {
 
 // MARK: - Message list, reaction overlay, and input bar
 
-// In an extension (same file, so `private` state stays reachable) to keep the primary
-// ConversationScreen body under the type-body length limit.
+// In an extension (same file, so `private` state stays reachable).
 
 extension ConversationScreen {
     private var messagesList: some View {
@@ -260,6 +258,7 @@ extension ConversationScreen {
                                 viewModel.messages.first { $0.id == id }
                             }.map { senderName(for: $0.userFrom) },
                             reactions: viewModel.reactions[message.id] ?? [:],
+                            // "Seen" shows only on my latest message that another participant has read.
                             seen: message.userFrom == myId
                                 && message.id == viewModel.messages.last(where: { $0.userFrom == myId })?.id
                                 && messageSeen(otherLastRead: viewModel.otherLastRead, sentAt: message.sentAt),
@@ -464,7 +463,7 @@ extension ConversationScreen {
 
 /// Reports the bounds of the bubble currently targeted for a reaction, so the
 /// screen-level overlay can position the reaction bar above it. Internal (not private)
-/// so MessageRow, extracted into its own file, can set the preference.
+/// so MessageRow can set the preference.
 struct BubbleBoundsKey: PreferenceKey {
     static let defaultValue: [String: Anchor<CGRect>] = [:]
     static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {

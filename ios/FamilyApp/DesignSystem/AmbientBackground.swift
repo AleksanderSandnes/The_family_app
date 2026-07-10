@@ -1,6 +1,5 @@
-// The ambient canvas (Liquid Glass 1c) — three soft radial washes (violet top-right,
-// indigo left, teal bottom) over a near-white/near-black base. Every screen floats its
-// glass surfaces above this. Reproduces the CSS radial-gradient stack from the spec.
+// Ambient canvas (Liquid Glass 1c) — three soft radial washes (violet top-right,
+// indigo left, teal bottom) over a near-white/near-black base. Glass surfaces float above it.
 import SwiftUI
 
 struct AmbientBackground: View {

@@ -1,5 +1,4 @@
-// Theme override — mirrors ThemeMode in SessionManager.kt / TheFamilyAppTheme.
-// Applied at the root with .preferredColorScheme; all adaptive Colors follow it.
+// Theme override — applied at the root with .preferredColorScheme; all adaptive Colors follow it.
 import SwiftUI
 
 extension ThemeMode {

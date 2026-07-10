@@ -1,6 +1,6 @@
-// Wishlist view model — the iOS twin of WishlistViewModel.kt, incl. secret gift
-// reservations: RLS hides wish_reservations rows from the wishlist owner, so the
-// owner's reservations map stays empty and the surprise is preserved.
+// Wishlist view model, incl. secret gift reservations: RLS hides wish_reservations
+// rows from the wishlist owner, so the owner's reservations map stays empty and the
+// surprise is preserved.
 import Foundation
 import Observation
 import Supabase
@@ -19,6 +19,8 @@ final class WishlistViewModel {
     private static var cache: [WishlistModel] = []
 
     private(set) var wishlists: [WishlistModel] = WishlistViewModel.cache
+    /// Wishlists shared TO me via a redeemed link — from another family, not my own.
+    private(set) var sharedWishlists: [WishlistModel] = []
     private(set) var isLoading = false
     private(set) var selectedWishlist: WishlistModel?
     private(set) var wishes: [WishModel] = []
@@ -48,6 +50,22 @@ final class WishlistViewModel {
 
     func refresh() {
         Task { await loadWishlists() }
+    }
+
+    // MARK: - Share links
+
+    /// Owner action: get (minting on first use) the shareable deep link for a wishlist.
+    func shareLink(for wishlistId: String) async -> URL? {
+        guard let token = try? await repo.ensureWishlistShareToken(wishlistId: wishlistId) else { return nil }
+        return DeepLinkURL.sharedWishlist(token: token)
+    }
+
+    /// Redeem a token from an opened link: grants this user access, reloads, returns the
+    /// wishlist id (nil if the token was invalid/revoked).
+    func acceptShare(token: String) async -> String? {
+        guard let wishlistId = try? await repo.acceptWishlistShare(token: token) else { return nil }
+        await loadWishlists()
+        return wishlistId
     }
 
     private func resolveOwnerNames(_ lists: [WishlistModel]) async -> [WishlistModel] {
@@ -84,6 +102,10 @@ final class WishlistViewModel {
         let resolved = await resolveOwnerNames(result)
         Self.cache = resolved
         wishlists = resolved
+
+        // Wishlists shared to me via a redeemed link (cross-family; best-effort).
+        let shared = await (try? repo.fetchSharedWishlists(userId: userId)) ?? sharedWishlists
+        sharedWishlists = await resolveOwnerNames(shared)
 
         if let familyId, subscribedFamilyId != familyId {
             subscribedFamilyId = familyId
@@ -123,6 +145,7 @@ final class WishlistViewModel {
 
     /// Loads reservations the current user is allowed to see (none on their own wishlists).
     private func loadReservations() async {
+        // Skip optimistic temp wishes — they have no server row to hold reservations.
         let wishIds = wishes.map(\.id).filter { !$0.hasPrefix("temp-") }
         guard !wishIds.isEmpty else {
             reservations = [:]
@@ -321,7 +344,7 @@ final class WishlistViewModel {
 
 // MARK: - Pure helpers (unit-tested)
 
-/// Title with the price appended inline (e.g. "Lego set  ·  $50") — mirrors wishTitle.
+/// Title with the price appended inline (e.g. "Lego set  ·  $50").
 func wishTitle(_ wish: WishModel) -> String {
     guard let price = wish.price?.trimmingCharacters(in: .whitespaces), !price.isEmpty else {
         return wish.text
@@ -329,7 +352,7 @@ func wishTitle(_ wish: WishModel) -> String {
     return "\(wish.text)  ·  \(price)"
 }
 
-/// Member-view reservation state for a wish — mirrors the MemberWishCard branches.
+/// Member-view reservation state for a wish.
 enum WishReservationState: Equatable {
     case available
     case reservedByMe

@@ -1,7 +1,6 @@
 @testable import FamilyApp
 
-// Chat pure-logic tests — mirror ChatTimeFormattersTest.kt plus the display-name /
-// preview resolution rules from ConversationRow.
+// Pure-logic tests for chat time formatting, display-name, and preview resolution.
 import XCTest
 
 final class ChatTimeFormattersTests: XCTestCase {

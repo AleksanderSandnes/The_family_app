@@ -1,6 +1,6 @@
-// Family map — the iOS twin of FamilyMapScreen.kt on MapKit: avatar-palette member
-// pins, reverse-geocoded legend, my-location centering, permission rationale, and
-// visibility cleared on leave (foreground-only v1).
+// Family map on MapKit: avatar-palette member pins, reverse-geocoded legend,
+// my-location centering, permission rationale, and visibility cleared on leave
+// (foreground-only).
 import CoreLocation
 import MapKit
 import SwiftUI
@@ -86,7 +86,7 @@ struct FamilyMapScreen: View {
         }
         .onDisappear {
             viewModel.stopLocationUpdates()
-            // Foreground-only v1: leaving the map hides the pin (Android parity).
+            // Foreground-only: leaving the map hides the pin.
             viewModel.clearOwnLocation()
         }
         .task(id: viewModel.locations.map(\.userId)) {

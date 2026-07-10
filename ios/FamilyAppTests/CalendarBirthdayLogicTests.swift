@@ -1,7 +1,6 @@
 @testable import FamilyApp
 
-// Calendar + birthday pure-logic tests — mirror the grid/label rules in
-// CalendarScreen.kt and BirthdayScreen.kt.
+// Pure-logic tests for calendar grid/label rules and birthday sorting.
 import XCTest
 
 final class YearMonthTests: XCTestCase {

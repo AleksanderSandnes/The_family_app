@@ -1,7 +1,5 @@
-// Behaviour tests for ChatViewModel via MockRepository + NoopRealtimeObserver. The VM is
-// always built with the mock repo and a no-op realtime factory, so construction opens no
-// live Supabase channel or network. Tests that would otherwise open the raw typing/reactions
-// presence channels (which happen only inside loadConversation) deliberately avoid that path.
+// Behaviour tests for ChatViewModel via MockRepository + NoopRealtimeObserver, so construction
+// opens no live Supabase channel. Tests avoid loadConversation, which opens presence channels.
 @testable import FamilyApp
 import XCTest
 
@@ -76,7 +74,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertTrue(vm.conversations.isEmpty)
     }
 
-    // MARK: - Unread counts (the past-bug hotspot)
+    // MARK: - Unread counts
 
     func testUnreadCountsMessagesFromOthersNewerThanLastRead() async {
         let mock = makeMock()
@@ -128,6 +126,34 @@ final class ChatViewModelTests: XCTestCase {
         ]
         let vm = makeVM(mock)
         await waitUntil { vm.conversations.contains { $0.conversation.id == "c1" } }
+        XCTAssertEqual(vm.conversations.first?.unreadCount, 0)
+    }
+
+    /// A nil last_read_at falls back to the epoch and counts every message from others as
+    /// unread; once last_read_at persists, the same load reports zero.
+    func testUnreadFallsBackToAllWhenLastReadIsNil() async {
+        let mock = makeMock()
+        mock.conversationsResult = [conversation(id: "c1")]
+        mock.participantsByConversation = [
+            "c1": [participant(conv: "c1", user: "u1", lastRead: nil)],
+        ]
+        mock.messagesByConversation = [
+            "c1": [
+                message(id: "m1", conv: "c1", from: "u2", sentAt: "2026-01-01T00:00:10Z"),
+                message(id: "m2", conv: "c1", from: "u2", sentAt: "2026-01-01T00:00:20Z"),
+            ],
+        ]
+        let vm = makeVM(mock)
+        await waitUntil { vm.conversations.contains { $0.conversation.id == "c1" } }
+        // Never-read → every message from others is unread.
+        XCTAssertEqual(vm.conversations.first?.unreadCount, 2)
+
+        // Simulate the persisted read and reload.
+        mock.participantsByConversation = [
+            "c1": [participant(conv: "c1", user: "u1", lastRead: "2026-01-01T00:00:30Z")],
+        ]
+        await vm.refreshConversations()
+        await waitUntil { vm.conversations.first?.unreadCount == 0 }
         XCTAssertEqual(vm.conversations.first?.unreadCount, 0)
     }
 

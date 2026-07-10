@@ -1,5 +1,5 @@
-// Home dashboard — the iOS twin of HomeScreen.kt: greeting header with avatar,
-// gradient family card / no-family banner, glanceable summary cards, feature tile grid.
+// Home dashboard: greeting header with avatar, gradient family card / no-family banner,
+// glanceable summary cards, feature tile grid.
 import NukeUI
 import SwiftUI
 
@@ -116,7 +116,7 @@ struct HomeScreen: View {
                 SummaryCard(
                     systemImage: "fork.knife",
                     feature: .meals,
-                    label: L("TONIGHT"),
+                    label: L("TODAY"),
                     value: tonight,
                     detail: nil
                 ) { onOpen(.meal) }
@@ -190,8 +190,7 @@ private struct SummaryCard: View {
     }
 }
 
-/// NEXT EVENT card — mirrors the calendar event's own icon, colour and attendees so the
-/// dashboard reflects the real event rather than a generic calendar glyph.
+/// NEXT EVENT card — shows the event's own icon, colour and attendees.
 private struct EventSummaryCard: View {
     let event: CalendarEventModel
     let detail: String?

@@ -1,6 +1,6 @@
-// Calendar — the iOS twin of CalendarScreen.kt: Month/Week/Agenda toggle, custom
-// Monday-first month grid with color-coded event dots, selected-day list, event sheet
-// with icon picker, all-day toggle and date/time ranges.
+// Calendar: Month/Week/Agenda toggle, Monday-first month grid with color-coded event
+// dots, selected-day list, event sheet with icon picker, all-day toggle and date/time
+// ranges.
 import SwiftUI
 
 private let weekdayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
@@ -297,6 +297,7 @@ private struct DayCell: View {
                     }
                     HStack(spacing: 2) {
                         if eventDotColors.isEmpty {
+                            // Invisible placeholder keeps every cell the same height.
                             Color.clear.frame(width: 6, height: 6)
                         } else {
                             ForEach(Array(eventDotColors.prefix(3).enumerated()), id: \.offset) { _, dotColor in

@@ -1,5 +1,4 @@
-// Card + section building blocks — mirror ListCard / SectionHeader / EmptyState /
-// LoadingState from Components.kt.
+// Card + section building blocks: ListCard / SectionHeader / EmptyState / LoadingState.
 import SwiftUI
 
 /// Standard surface card for list rows. One radius, one elevation, one padding.
@@ -76,7 +75,7 @@ struct EmptyState: View {
     }
 }
 
-/// Inline error banner — mirrors ErrorBanner in Components.kt. Renders nothing when nil.
+/// Inline error banner. Renders nothing when nil.
 struct ErrorBanner: View {
     let message: String?
 

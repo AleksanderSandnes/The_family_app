@@ -1,4 +1,4 @@
-// Click-to-open date picker field — mirrors DatePickerField in Components.kt.
+// Click-to-open date picker field.
 import SwiftUI
 
 struct DatePickerField: View {

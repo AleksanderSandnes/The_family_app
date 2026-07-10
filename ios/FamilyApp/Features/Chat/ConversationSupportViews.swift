@@ -1,5 +1,5 @@
-// Support views extracted from ConversationScreen.swift: the typing-indicator row, the
-// add/select-member sheet, and the full-screen pinch-zoom image viewer with its model.
+// Chat support views: the typing-indicator row, the add/select-member sheet, and the
+// full-screen pinch-zoom image viewer with its model.
 import NukeUI
 import Photos
 import SwiftUI
@@ -105,8 +105,8 @@ struct MemberListSheet: View {
     }
 }
 
-/// Full-screen image viewer with pinch zoom — the iOS twin of ImageViewerDialog.
-/// Image is vertically centred; a download button saves the full-size image to Photos.
+/// Full-screen image viewer with pinch zoom. Image is vertically centred; a download
+/// button saves the full-size image to Photos.
 struct ImageViewer: View {
     let url: String
     let onClose: () -> Void
@@ -213,7 +213,7 @@ struct ViewerImage: Identifiable {
 
 // MARK: - Localized helpers (shared with ConversationScreen)
 
-/// Reply/quote preview label: user text verbatim, media kinds localized.
+/// Reply/quote preview label: shows the message text, or a localized kind for media.
 @MainActor
 func quotedPreviewText(_ message: MessageModel) -> String {
     switch message.messageType {

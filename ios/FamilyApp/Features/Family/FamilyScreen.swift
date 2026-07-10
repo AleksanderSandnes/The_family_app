@@ -1,6 +1,6 @@
-// Family — the iOS twin of FamilyScreen.kt: no-family CTA state, family header card
-// (avatar stack, copyable invite code, share sheet, QR), member list with admin
-// swipe-remove, leave-family confirm, create/join dialogs, family photo change.
+// Family screen: no-family CTA state, family header card (avatar stack, copyable
+// invite code, share sheet, QR), member list with admin swipe-remove, leave-family
+// confirm, create/join dialogs, family photo change.
 import NukeUI
 import PhotosUI
 import SwiftUI
@@ -33,7 +33,6 @@ struct FamilyScreen: View {
             }
         }
         .ambientBackground()
-        .toolbar(.hidden, for: .navigationBar)
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
         .sheet(item: $selectedMember) { member in
             MemberProfileSheet(
