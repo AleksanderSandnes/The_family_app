@@ -373,4 +373,74 @@ class FamilyViewModelTest {
 
             coVerify(exactly = 2) { repo.getUser("user1") }
         }
+
+    // ──────────────────────────────────────────────────────────────
+    // 10. relations
+    // ──────────────────────────────────────────────────────────────
+
+    @Test
+    fun `relations map is empty initially`() =
+        runTest(dispatcherRule.dispatcher) {
+            assertTrue("relations should be empty initially", vm.relations.value.isEmpty())
+        }
+
+    @Test
+    fun `setRelation with no family loaded is a no-op`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "user1"
+            advanceUntilIdle()
+
+            // getUser returns familyId=null (default stub) → _family is null.
+            vm.setRelation("member2", "Dad")
+            advanceUntilIdle()
+
+            assertTrue("relations should stay empty without a family", vm.relations.value.isEmpty())
+        }
+
+    @Test
+    fun `setRelation optimistically records the label`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.getUser("user1") } returns UserModel(id = "user1", familyId = "fam-id")
+            coEvery { repo.getFamily("fam-id") } returns FamilyModel(id = "fam-id", name = "Fam")
+            userId.value = "user1"
+            advanceUntilIdle()
+
+            vm.setRelation("member2", "Dad")
+            advanceUntilIdle()
+
+            assertEquals("Dad", vm.relations.value["member2"])
+        }
+
+    @Test
+    fun `setRelation with blank clears the label`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.getUser("user1") } returns UserModel(id = "user1", familyId = "fam-id")
+            coEvery { repo.getFamily("fam-id") } returns FamilyModel(id = "fam-id", name = "Fam")
+            userId.value = "user1"
+            advanceUntilIdle()
+
+            vm.setRelation("member2", "Dad")
+            advanceUntilIdle()
+            vm.setRelation("member2", "")
+            advanceUntilIdle()
+
+            assertNull("blank relation should clear the entry", vm.relations.value["member2"])
+        }
+
+    // ──────────────────────────────────────────────────────────────
+    // 11. relations-setup prompt
+    // ──────────────────────────────────────────────────────────────
+
+    @Test
+    fun `promptRelationSetup is false initially`() =
+        runTest(dispatcherRule.dispatcher) {
+            assertTrue("prompt should be off initially", !vm.promptRelationSetup.value)
+        }
+
+    @Test
+    fun `dismissRelationSetup turns the prompt off`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.dismissRelationSetup()
+            assertTrue("prompt should be off after dismiss", !vm.promptRelationSetup.value)
+        }
 }

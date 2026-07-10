@@ -9,11 +9,14 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.location.Geocoder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,18 +25,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.PeopleAlt
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -81,6 +83,11 @@ import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.InitialAvatar
 import com.sandnes.familyapp.ui.components.LoadingState
+import com.sandnes.familyapp.ui.theme.FeatureAccent
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.glassCard
+import com.sandnes.familyapp.ui.theme.glassChrome
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -197,8 +204,8 @@ fun FamilyMapScreen(
         myLocation?.let { cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 14f)) }
     }
 
-    // Build marker bitmaps for visible locations only
-    LaunchedEffect(userProfiles, locations) {
+    // Build avatar-pin bitmaps for visible members plus the current user's own pin.
+    LaunchedEffect(userProfiles, locations, currentUserId) {
         val visibleLocations = locations.filter { it.visible }
         visibleLocations.forEach { loc ->
             val profile = userProfiles[loc.userId]
@@ -208,9 +215,18 @@ fun FamilyMapScreen(
                 }
             markerBitmaps[loc.userId] = BitmapDescriptorFactory.fromBitmap(bitmap)
         }
-        // Remove stale bitmaps for users no longer visible
-        val visibleIds = visibleLocations.map { it.userId }.toSet()
-        markerBitmaps.keys.retainAll(visibleIds)
+        // The current user's own pin — same avatar treatment, never the default blue dot.
+        currentUserId?.let { myId ->
+            val myProfile = userProfiles[myId]
+            val bitmap =
+                withContext(Dispatchers.Default) {
+                    buildMarkerBitmap(context, myProfile, myProfile?.name ?: "You", markerSizePx)
+                }
+            markerBitmaps[myId] = BitmapDescriptorFactory.fromBitmap(bitmap)
+        }
+        // Remove stale bitmaps for users no longer on the map.
+        val keepIds = visibleLocations.map { it.userId }.toSet() + setOfNotNull(currentUserId)
+        markerBitmaps.keys.retainAll(keepIds)
     }
 
     DisposableEffect(Unit) {
@@ -237,13 +253,23 @@ fun FamilyMapScreen(
                             .fillMaxSize()
                             .semantics { contentDescription = "Family location map" },
                     cameraPositionState = cameraPositionState,
-                    properties = MapProperties(isMyLocationEnabled = foregroundGranted),
+                    // Own location is drawn as an avatar pin below, not the default blue dot.
+                    properties = MapProperties(isMyLocationEnabled = false),
                 ) {
                     locations.filter { it.visible }.forEach { loc ->
                         Marker(
                             state = rememberUpdatedMarkerState(position = LatLng(loc.lat, loc.lng)),
                             title = loc.displayName,
                             icon = markerBitmaps[loc.userId],
+                        )
+                    }
+                    val myId = currentUserId
+                    val myLoc = myLocation
+                    if (myId != null && myLoc != null) {
+                        Marker(
+                            state = rememberUpdatedMarkerState(position = myLoc),
+                            title = userProfiles[myId]?.name ?: "You",
+                            icon = markerBitmaps[myId],
                         )
                     }
                 }
@@ -262,33 +288,41 @@ fun FamilyMapScreen(
                     }
                 }
 
-                // Bottom-right column: My Location FAB stacked above optional cards
+                // Bottom-right column: glass center-on-me button stacked above the legend.
                 Column(
                     modifier =
                         Modifier
                             .align(Alignment.BottomEnd)
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(Spacing.lg),
                     horizontalAlignment = Alignment.End,
                 ) {
-                    FloatingActionButton(
-                        onClick = {
-                            scope.launch {
-                                myLocation?.let {
-                                    cameraPositionState.animate(
-                                        CameraUpdateFactory.newLatLngZoom(it, 15f),
-                                    )
-                                }
-                            }
-                        },
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.primary,
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(52.dp)
+                                .clip(CircleShape)
+                                .glassChrome(cornerRadius = 26.dp)
+                                .clickable {
+                                    scope.launch {
+                                        myLocation?.let {
+                                            cameraPositionState.animate(
+                                                CameraUpdateFactory.newLatLngZoom(it, 15f),
+                                            )
+                                        }
+                                    }
+                                }.semantics { contentDescription = "Center on my location" },
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Filled.MyLocation, contentDescription = "Center on my location")
+                        Icon(
+                            Icons.Filled.MyLocation,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
                     }
 
                     if (!isSolo) {
-                        Spacer(Modifier.size(8.dp))
+                        Spacer(Modifier.size(Spacing.sm))
                         MemberLegend(
                             locations = locations,
                             profiles = userProfiles,
@@ -302,6 +336,10 @@ fun FamilyMapScreen(
     }
 }
 
+/**
+ * Builds a map pin: a circular avatar (photo or initials) with a short triangular tail below,
+ * tinted with the member's avatar colour. The tail tip is the marker's anchor point.
+ */
 private suspend fun buildMarkerBitmap(
     context: Context,
     profile: UserModel?,
@@ -310,19 +348,42 @@ private suspend fun buildMarkerBitmap(
 ): Bitmap {
     val name = profile?.name?.ifBlank { displayName } ?: displayName
     val colorInt = profile?.avatarColor?.takeIf { it != 0 } ?: 0xFF6366F1.toInt()
-    if (profile?.avatarUrl != null) {
-        val photo = loadCircularBitmap(context, profile.avatarUrl, sizePx)
-        if (photo != null) return photo
-    }
-    return createInitialsBitmap(name, colorInt, sizePx)
+    val avatar =
+        profile?.avatarUrl?.let { loadCircularBitmap(context, it, sizePx) }
+            ?: createInitialsBitmap(name, colorInt, sizePx)
+    return withPinTail(avatar, colorInt, sizePx)
 }
 
 private const val AVATAR_BORDER_STROKE_RATIO = 0.07f
 private const val AVATAR_BORDER_INSET_RATIO = 0.035f
 private const val AVATAR_INITIAL_TEXT_RATIO = 0.42f
-private const val SECONDS_PER_MINUTE = 60
-private const val SECONDS_PER_HOUR = 3600
-private const val SECONDS_PER_DAY = 86400
+private const val PIN_TAIL_HEIGHT_RATIO = 0.26f
+private const val PIN_TAIL_WIDTH_RATIO = 0.34f
+
+/** Composes an avatar bitmap over a downward triangular tail so the pin points at its location. */
+private fun withPinTail(
+    avatar: Bitmap,
+    colorInt: Int,
+    sizePx: Int,
+): Bitmap {
+    val tailHeight = (sizePx * PIN_TAIL_HEIGHT_RATIO).toInt()
+    val out = createBitmap(sizePx, sizePx + tailHeight, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(out)
+    val centerX = sizePx / 2f
+    val tailWidth = sizePx * PIN_TAIL_WIDTH_RATIO
+    // Start the tail just inside the avatar so it merges seamlessly once the avatar is drawn on top.
+    val tailTop = sizePx - sizePx * AVATAR_BORDER_INSET_RATIO * 2f
+    val path =
+        Path().apply {
+            moveTo(centerX - tailWidth / 2f, tailTop)
+            lineTo(centerX + tailWidth / 2f, tailTop)
+            lineTo(centerX, (sizePx + tailHeight).toFloat())
+            close()
+        }
+    canvas.drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorInt })
+    canvas.drawBitmap(avatar, 0f, 0f, null)
+    return out
+}
 
 private fun createInitialsBitmap(
     name: String,
@@ -401,33 +462,6 @@ private suspend fun loadCircularBitmap(
     }
 }
 
-/** Formats an ISO-8601 timestamp as a human-readable "last seen" string. */
-private fun formatLastSeen(updatedAt: String?): String {
-    updatedAt ?: return "Unknown"
-    return try {
-        val instant = java.time.Instant.parse(updatedAt)
-        val seconds =
-            java.time.Duration
-                .between(instant, java.time.Instant.now())
-                .seconds
-        when {
-            seconds < SECONDS_PER_MINUTE -> "Just now" // also handles clock-skew futures (negative seconds)
-            seconds < SECONDS_PER_HOUR -> "${seconds / SECONDS_PER_MINUTE} min ago"
-            seconds < SECONDS_PER_DAY -> "${seconds / SECONDS_PER_HOUR} hours ago"
-            else ->
-                instant
-                    .atZone(java.time.ZoneId.systemDefault())
-                    .toLocalDate()
-                    .format(
-                        java.time.format.DateTimeFormatter
-                            .ofPattern("MMM d, yyyy"),
-                    )
-        }
-    } catch (_: Exception) {
-        "Location shared"
-    }
-}
-
 /** Reverse-geocodes each shared location to a short place name (locality / area), cached by
  *  user id. Runs off the main thread; returns partial results as they resolve. */
 @Composable
@@ -467,73 +501,78 @@ private fun MemberLegend(
     val locationByUserId = locations.associateBy { it.userId }
     val context = LocalContext.current
     val places = rememberGeocodedPlaces(locations, context)
+    val staleDot = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+    val liveDot = FeatureAccent.Map.dot
 
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-        shadowElevation = 2.dp,
-        modifier = modifier,
+    Column(
+        modifier
+            .glassCard(Radius.row)
+            .padding(Spacing.lg),
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                "On the map",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.size(6.dp))
-            profiles.values
-                .filter { currentUserId != null && it.id != currentUserId }
-                .forEach { member ->
-                    val loc = locationByUserId[member.id]
-                    val isSharing = loc != null
-                    val rowAlpha = if (isSharing) 1f else 0.4f
-                    val lastSeen = if (isSharing) formatLastSeen(loc.updatedAt) else "Not sharing"
-                    val place = places[member.id]
-                    val statusText =
-                        if (isSharing && !place.isNullOrBlank()) "$place · $lastSeen" else lastSeen
-                    val avatarColor =
-                        member.avatarColor
-                            .takeIf { it != 0 }
-                            ?.let { Color(it) }
-                            ?: MaterialTheme.colorScheme.primary
-                    val rowDesc =
-                        if (isSharing) {
-                            "${member.name}, last seen $statusText"
-                        } else {
-                            "${member.name}, not sharing location"
-                        }
-
-                    Row(
-                        modifier =
-                            Modifier
-                                .padding(vertical = 4.dp)
-                                .fillMaxWidth()
-                                .alpha(rowAlpha)
-                                .clearAndSetSemantics { contentDescription = rowDesc },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        InitialAvatar(
-                            name = member.name,
-                            color = avatarColor,
-                            size = 36,
-                            avatarUri = member.avatarUrl,
-                        )
-                        Spacer(Modifier.size(10.dp))
-                        Column {
-                            Text(
-                                member.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                statusText,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+        Text(
+            "On the map",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(Modifier.size(Spacing.xs))
+        profiles.values
+            .filter { currentUserId != null && it.id != currentUserId }
+            .forEach { member ->
+                val loc = locationByUserId[member.id]
+                val isSharing = loc != null
+                val rowAlpha = if (isSharing) 1f else 0.4f
+                val live = isSharing && isLocationLive(loc.updatedAt)
+                val lastSeen = if (isSharing) formatLastSeen(loc.updatedAt) else "Not sharing"
+                val statusText = formatPlaceDetail(if (isSharing) places[member.id] else null, lastSeen)
+                val avatarColor =
+                    member.avatarColor
+                        .takeIf { it != 0 }
+                        ?.let { Color(it) }
+                        ?: MaterialTheme.colorScheme.primary
+                val rowDesc =
+                    if (isSharing) {
+                        "${member.name}, ${if (live) "live" else "stale"}, last seen $statusText"
+                    } else {
+                        "${member.name}, not sharing location"
                     }
+
+                Row(
+                    modifier =
+                        Modifier
+                            .padding(vertical = Spacing.xs)
+                            .fillMaxWidth()
+                            .alpha(rowAlpha)
+                            .clearAndSetSemantics { contentDescription = rowDesc },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    InitialAvatar(
+                        name = member.name,
+                        color = avatarColor,
+                        size = 36,
+                        avatarUri = member.avatarUrl,
+                    )
+                    Spacer(Modifier.size(Spacing.sm))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            member.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            statusText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(Modifier.size(Spacing.sm))
+                    Box(
+                        Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(if (live) liveDot else staleDot),
+                    )
                 }
-        }
+            }
     }
 }
