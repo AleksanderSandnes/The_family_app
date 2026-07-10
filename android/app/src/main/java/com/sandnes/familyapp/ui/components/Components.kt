@@ -6,10 +6,12 @@ import android.content.ClipData
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -72,18 +74,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -99,6 +108,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.compose.AsyncImage
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.theme.BrandGradient
+import com.sandnes.familyapp.ui.theme.Danger
 import com.sandnes.familyapp.ui.theme.Elevation
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
@@ -608,8 +618,12 @@ fun BirthdayPickerField(
     }
 }
 
-/** Apple Mail-style swipe-left-to-reveal-delete. Wraps any content; swiping left past the halfway
- *  point reveals a red Delete button anchored to the trailing edge. */
+/**
+ * iOS-style swipe-to-delete. The row is flush by default; dragging left reveals a red delete
+ * region that **grows with the finger**, snaps open past the halfway point, and **commits the
+ * delete on a full swipe** (past ~55% of the row) — with a haptic tick at the full-swipe threshold.
+ * Mirrors iOS `.swipeActions(role: .destructive)`.
+ */
 @Composable
 fun SwipeToRevealDelete(
     onDelete: () -> Unit,
@@ -619,52 +633,102 @@ fun SwipeToRevealDelete(
 ) {
     val scope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
-    var revealed by remember { mutableStateOf(false) }
     val density = LocalDensity.current
-    val revealWidthDp = 80.dp
-    val revealPx = remember(density) { with(density) { revealWidthDp.toPx() } }
+    val haptics = LocalHapticFeedback.current
+    val openPx = remember(density) { with(density) { 84.dp.toPx() } }
+    var rowWidthPx by remember { mutableStateOf(1f) }
+    var crossedFull by remember { mutableStateOf(false) }
 
-    Box(modifier.fillMaxWidth().clip(shape)) {
-        // Red delete panel — behind the sliding content
-        Row(Modifier.matchParentSize(), horizontalArrangement = Arrangement.End) {
+    val settle: (Float) -> Unit = { velocity ->
+        val fullSwipe = -offsetX.value > rowWidthPx * 0.55f
+        val flung = velocity < -1200f
+        scope.launch {
+            when {
+                fullSwipe || (flung && -offsetX.value > openPx * 0.5f) -> {
+                    offsetX.animateTo(-rowWidthPx, tween(180))
+                    onDelete()
+                    offsetX.snapTo(0f)
+                }
+                -offsetX.value > openPx * 0.5f || flung ->
+                    offsetX.animateTo(-openPx, spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow))
+                else -> offsetX.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow))
+            }
+        }
+    }
+
+    Box(
+        modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .onSizeChanged { rowWidthPx = it.width.toFloat().coerceAtLeast(1f) },
+    ) {
+        // Red delete region — width tracks the drag, so it grows wider and wider like iOS.
+        val revealPx = (-offsetX.value).coerceAtLeast(0f)
+        val progress = (revealPx / openPx).coerceIn(0f, 1f)
+        Box(
+            Modifier
+                .matchParentSize()
+                .clip(shape)
+                .drawBehind { drawRect(color = Danger, size = Size(revealPx, size.height), topLeft = Offset(size.width - revealPx, 0f)) },
+            contentAlignment = Alignment.CenterEnd,
+        ) {
             Box(
                 Modifier
-                    .width(revealWidthDp)
+                    .width(with(density) { revealPx.toDp() })
                     .fillMaxHeight()
-                    .background(Color(0xFFE53935)),
+                    .clickable {
+                        scope.launch {
+                            offsetX.animateTo(-rowWidthPx, tween(180))
+                            onDelete()
+                            offsetX.snapTo(0f)
+                        }
+                    },
                 contentAlignment = Alignment.Center,
             ) {
-                IconButton(onClick = {
-                    scope.launch { offsetX.animateTo(0f) }
-                    revealed = false
-                    onDelete()
-                }) {
-                    Icon(Icons.Filled.Delete, stringResource(R.string.delete), tint = Color.White)
-                }
+                Icon(
+                    Icons.Filled.Delete,
+                    stringResource(R.string.delete),
+                    tint = Color.White,
+                    modifier =
+                        Modifier.graphicsLayer {
+                            alpha = progress
+                            scaleX = 0.6f + 0.4f * progress
+                            scaleY = 0.6f + 0.4f * progress
+                        },
+                )
             }
         }
 
-        // Foreground content — slides left on drag
+        // Foreground content — slides left with the drag.
         Box(
             Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(offsetX.value.roundToInt(), 0) }
                 .pointerInput(Unit) {
+                    val tracker = VelocityTracker()
                     detectHorizontalDragGestures(
+                        onDragStart = { tracker.resetTracking() },
                         onDragEnd = {
-                            scope.launch {
-                                if (offsetX.value < -(revealPx / 2)) {
-                                    offsetX.animateTo(-revealPx)
-                                    revealed = true
-                                } else {
-                                    offsetX.animateTo(0f)
-                                    revealed = false
-                                }
-                            }
+                            crossedFull = false
+                            settle(tracker.calculateVelocity().x)
                         },
-                        onHorizontalDrag = { _, delta ->
-                            scope.launch {
-                                offsetX.snapTo((offsetX.value + delta).coerceIn(-revealPx, 0f))
+                        onDragCancel = {
+                            crossedFull = false
+                            settle(0f)
+                        },
+                        onHorizontalDrag = { change, delta ->
+                            tracker.addPosition(change.uptimeMillis, change.position)
+                            // Rubber-band resistance past the open detent so it feels weighty.
+                            val raw = offsetX.value + delta
+                            val next =
+                                if (raw < -openPx) -openPx + (raw + openPx) * 0.5f else raw
+                            scope.launch { offsetX.snapTo(next.coerceIn(-rowWidthPx, 0f)) }
+                            val past = -next > rowWidthPx * 0.55f
+                            if (past && !crossedFull) {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                crossedFull = true
+                            } else if (!past) {
+                                crossedFull = false
                             }
                         },
                     )

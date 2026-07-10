@@ -115,12 +115,15 @@ private val glassShadow = Color(0xFF141A3C)
 @Composable
 @ReadOnlyComposable
 private fun glassFallbackFill(dark: Boolean): Color =
-    if (dark) MaterialTheme.colorScheme.surface.copy(alpha = 0.86f) else Color.White.copy(alpha = 0.82f)
+    if (dark) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else Color.White.copy(alpha = 0.94f)
 
+// The separator hairline. In light mode a WHITE edge is invisible on the near-white ambient
+// wash — iOS's system glass draws a dark separator on the light side, so we use a dark ink edge
+// here. That single change is the biggest fix for the "washed-out / can't distinguish cards" look.
 @Composable
 @ReadOnlyComposable
 private fun glassHairline(dark: Boolean): Color =
-    if (dark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.55f)
+    if (dark) Color.White.copy(alpha = 0.10f) else Color(0xFF16192A).copy(alpha = 0.10f)
 
 /** Content card / list row / grid tile — the workhorse glass surface (recipe A). */
 @Composable
@@ -158,13 +161,15 @@ private fun Modifier.glassSurface(
     val haze = LocalHazeState.current
     val dark = isSystemInDarkTheme()
     val shadowColor = tint ?: glassShadow
-    val shadowAlpha = if (tint != null) 0.20f else 0.06f
+    // Android renders colored elevation shadows faint; bump alpha so cards clearly lift off the
+    // light ambient wash (approximates iOS's r9/y6 soft drop shadow).
+    val shadowAlpha = if (tint != null) 0.22f else 0.12f
     val hairline = glassHairline(dark)
 
     val base =
         this
             .shadow(
-                elevation = if (chrome) Elevation.raised else Elevation.resting + 6.dp,
+                elevation = if (chrome) Elevation.raised else 10.dp,
                 shape = shape,
                 clip = false,
                 ambientColor = shadowColor.copy(alpha = shadowAlpha),
@@ -183,7 +188,16 @@ private fun Modifier.glassSurface(
 
     return filled.drawBehind {
         val r = cornerRadius.toPx()
-        drawRoundRect(color = hairline, cornerRadius = CornerRadius(r, r), style = Stroke(width = 1f))
+        // Inset the stroke by half its width so a real ~1.5dp hairline isn't clipped at the edge.
+        val w = 1.5.dp.toPx()
+        val half = w / 2
+        drawRoundRect(
+            color = hairline,
+            topLeft = Offset(half, half),
+            size = Size(size.width - w, size.height - w),
+            cornerRadius = CornerRadius(r - half, r - half),
+            style = Stroke(width = w),
+        )
     }
 }
 

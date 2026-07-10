@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,10 @@ fun FeatureBadge(
         modifier
             .size(size)
             .clip(RoundedCornerShape(cornerRadius))
+            // Opaque backing first: the pastel fill is translucent, and it otherwise composites
+            // over the translucent glass card → near-invisible. Backing on `surface` keeps the
+            // domain hue readable (identical look to iOS's badge on opaque system glass).
+            .background(MaterialTheme.colorScheme.surface)
             .background(fill),
         contentAlignment = Alignment.Center,
     ) {
