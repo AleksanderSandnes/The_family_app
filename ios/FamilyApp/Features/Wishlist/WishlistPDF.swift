@@ -13,7 +13,9 @@ enum WishlistPDF {
     private static let metaColor = UIColor(white: 0.32, alpha: 1)
 
     /// Writes the wishlist to a temp-directory PDF and returns its file URL, or nil on failure.
-    static func make(name: String, ownerName: String, wishes: [WishModel]) -> URL? {
+    /// `subtitle` (e.g. "By Alice") is passed in already localized so this stays free of the
+    /// main-actor `L` helper and can render off the main actor.
+    static func make(name: String, subtitle: String, wishes: [WishModel]) -> URL? {
         let pageRect = CGRect(origin: .zero, size: pageSize)
         let contentWidth = pageSize.width - margin * 2
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
@@ -29,10 +31,10 @@ enum WishlistPDF {
                     name, at: CGPoint(x: margin, y: cursorY), width: contentWidth,
                     font: .systemFont(ofSize: 26, weight: .bold), color: Self.inkColor
                 )
-                if !ownerName.isEmpty {
+                if !subtitle.isEmpty {
                     cursorY += 6
                     cursorY += draw(
-                        L("By \(ownerName)"), at: CGPoint(x: margin, y: cursorY), width: contentWidth,
+                        subtitle, at: CGPoint(x: margin, y: cursorY), width: contentWidth,
                         font: .systemFont(ofSize: 13, weight: .regular), color: Self.metaColor
                     )
                 }
