@@ -81,6 +81,7 @@ import com.sandnes.familyapp.ui.navigation.Routes
 
 @Composable
 fun FamilyScreen(
+    onBack: (() -> Unit)? = null,
     viewModel: FamilyViewModel = hiltViewModel(),
 ) {
     val family by viewModel.family.collectAsStateWithLifecycle()
@@ -121,6 +122,7 @@ fun FamilyScreen(
         topBar = {
             AppTopBar(
                 title = "Family",
+                onBack = onBack,
                 actions = {
                     if (family != null) {
                         Box {

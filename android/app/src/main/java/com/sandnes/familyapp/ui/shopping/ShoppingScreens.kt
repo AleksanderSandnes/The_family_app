@@ -125,8 +125,8 @@ private fun shoppingProgressLabel(p: ListProgress?): String =
 
 @Composable
 fun ShoppingScreen(
-    onBack: () -> Unit,
     onOpenList: (String) -> Unit,
+    onBack: (() -> Unit)? = null,
     viewModel: ShoppingViewModel = hiltViewModel(),
 ) {
     val lists by viewModel.lists.collectAsStateWithLifecycle(emptyList())

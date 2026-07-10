@@ -12,15 +12,16 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
@@ -71,6 +72,10 @@ import com.sandnes.familyapp.ui.settings.SettingsScreen
 import com.sandnes.familyapp.ui.shopping.ShoppingDetailScreen
 import com.sandnes.familyapp.ui.shopping.ShoppingScreen
 import com.sandnes.familyapp.ui.shopping.ShoppingViewModel
+import com.sandnes.familyapp.ui.theme.AmbientBackground
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.glassChrome
+import com.sandnes.familyapp.ui.theme.glassSource
 import com.sandnes.familyapp.ui.wishlist.WishlistDetailScreen
 import com.sandnes.familyapp.ui.wishlist.WishlistScreen
 import com.sandnes.familyapp.ui.wishlist.WishlistViewModel
@@ -81,12 +86,15 @@ private data class BottomDest(
     val icon: ImageVector,
 )
 
+// Tab-bar IA mirrors iOS (MainTabView): Home · Shopping · Chat · Calendar · Profile.
+// Family, Family Map, Wishlists, Meals, Birthdays and Settings are pushed routes reached
+// from the Home dashboard / Profile, not tabs.
 private val bottomDestinations =
     listOf(
         BottomDest(Routes.HOME, "Home", Icons.Filled.Home),
-        BottomDest(Routes.CALENDAR, "Calendar", Icons.Filled.CalendarMonth),
+        BottomDest(Routes.SHOPPING, "Shopping", Icons.Filled.ShoppingCart),
         BottomDest(Routes.CHAT, "Chat", Icons.AutoMirrored.Filled.Chat),
-        BottomDest(Routes.FAMILY, "Family", Icons.Filled.Groups),
+        BottomDest(Routes.CALENDAR, "Calendar", Icons.Filled.CalendarMonth),
         BottomDest(Routes.PROFILE, "Profile", Icons.Filled.Person),
     )
 
@@ -156,200 +164,210 @@ private fun MainFlow() {
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
-            ),
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    bottomDestinations.forEach { dest ->
-                        val isHome = dest.route == Routes.HOME
-                        val isChatDest = dest.route == Routes.CHAT
-                        NavigationBarItem(
-                            selected = currentRoute == dest.route,
-                            onClick = {
-                                navController.navigate(dest.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = !isHome
+    AmbientBackground {
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentWindowInsets =
+                WindowInsets.systemBars.only(
+                    WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+                ),
+            bottomBar = {
+                if (showBottomBar) {
+                    NavigationBar(
+                        containerColor = Color.Transparent,
+                        modifier = Modifier.fillMaxWidth().glassChrome(Radius.tabBar),
+                    ) {
+                        bottomDestinations.forEach { dest ->
+                            val isHome = dest.route == Routes.HOME
+                            val isChatDest = dest.route == Routes.CHAT
+                            NavigationBarItem(
+                                selected = currentRoute == dest.route,
+                                onClick = {
+                                    navController.navigate(dest.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = !isHome
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = !isHome
                                     }
-                                    launchSingleTop = true
-                                    restoreState = !isHome
-                                }
-                            },
-                            icon = {
-                                if (isChatDest) {
-                                    BadgedBox(
-                                        badge = {
-                                            if (chatUnread > 0) {
-                                                Badge(containerColor = Color(0xFFE53935)) {
-                                                    Text(
-                                                        text = if (chatUnread > 9) "9+" else chatUnread.toString(),
-                                                        color = Color.White,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                    )
+                                },
+                                icon = {
+                                    if (isChatDest) {
+                                        BadgedBox(
+                                            badge = {
+                                                if (chatUnread > 0) {
+                                                    Badge(containerColor = Color(0xFFE53935)) {
+                                                        Text(
+                                                            text = if (chatUnread > 9) "9+" else chatUnread.toString(),
+                                                            color = Color.White,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                        },
-                                    ) {
+                                            },
+                                        ) {
+                                            Icon(dest.icon, contentDescription = dest.label)
+                                        }
+                                    } else {
                                         Icon(dest.icon, contentDescription = dest.label)
                                     }
-                                } else {
-                                    Icon(dest.icon, contentDescription = dest.label)
-                                }
-                            },
-                            label = { Text(dest.label) },
-                            colors =
-                                NavigationBarItemDefaults.colors(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                        )
+                                },
+                                label = { Text(dest.label) },
+                                colors =
+                                    NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    ),
+                            )
+                        }
                     }
                 }
-            }
-        },
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = Routes.HOME,
-            // Consume the scaffold insets so each screen's own Scaffold doesn't re-apply the
-            // bottom navigation-bar inset (which doubled the gap below FABs above the nav bar).
-            modifier = Modifier.padding(padding).consumeWindowInsets(padding),
-            // Default: iOS-style horizontal slide for detail/feature screens
-            enterTransition = { slideInHorizontally(tween(300)) { it } + fadeIn(tween(300)) },
-            exitTransition = { slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(200)) },
-            popEnterTransition = { slideInHorizontally(tween(300)) { -it / 3 } + fadeIn(tween(300)) },
-            popExitTransition = { slideOutHorizontally(tween(300)) { it } + fadeOut(tween(200)) },
-        ) {
-            // Bottom-tab destinations: crossfade only (no slide between sibling screens)
-            composable(
-                Routes.HOME,
-                enterTransition = { fadeIn(tween(200)) },
-                exitTransition = { fadeOut(tween(200)) },
-                popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) },
+            },
+        ) { padding ->
+            NavHost(
+                navController = navController,
+                startDestination = Routes.HOME,
+                // Consume the scaffold insets so each screen's own Scaffold doesn't re-apply the
+                // bottom navigation-bar inset (which doubled the gap below FABs above the nav bar).
+                modifier = Modifier.padding(padding).consumeWindowInsets(padding).glassSource(),
+                // Default: iOS-style horizontal slide for detail/feature screens
+                enterTransition = { slideInHorizontally(tween(300)) { it } + fadeIn(tween(300)) },
+                exitTransition = { slideOutHorizontally(tween(300)) { -it / 3 } + fadeOut(tween(200)) },
+                popEnterTransition = { slideInHorizontally(tween(300)) { -it / 3 } + fadeIn(tween(300)) },
+                popExitTransition = { slideOutHorizontally(tween(300)) { it } + fadeOut(tween(200)) },
             ) {
-                HomeScreen(
-                    onOpen = { route -> navController.navigate(route) },
-                    onOpenFamily = { navController.navigate(Routes.FAMILY) },
-                )
-            }
-            composable(
-                Routes.CALENDAR,
-                enterTransition = { fadeIn(tween(200)) },
-                exitTransition = { fadeOut(tween(200)) },
-                popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) },
-            ) { CalendarScreen(viewModel = calendarVm) }
-            composable(
-                Routes.CHAT,
-                enterTransition = { fadeIn(tween(200)) },
-                exitTransition = { fadeOut(tween(200)) },
-                popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) },
-            ) { ChatScreen(onOpen = { id -> navController.navigate(Routes.chatDetail(id)) }, viewModel = chatVm) }
-            composable(
-                Routes.FAMILY,
-                enterTransition = { fadeIn(tween(200)) },
-                exitTransition = { fadeOut(tween(200)) },
-                popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) },
-            ) { FamilyScreen(viewModel = familyVm) }
-            composable(
-                Routes.PROFILE,
-                enterTransition = { fadeIn(tween(200)) },
-                exitTransition = { fadeOut(tween(200)) },
-                popEnterTransition = { fadeIn(tween(200)) },
-                popExitTransition = { fadeOut(tween(200)) },
-            ) {
-                ProfileScreen(
-                    onEdit = { navController.navigate(Routes.PROFILE_EDIT) },
-                    onSettings = { navController.navigate(Routes.SETTINGS) },
-                    onSignedOut = { /* RootViewModel reacts */ },
-                )
-            }
+                // Bottom-tab destinations: crossfade only (no slide between sibling screens)
+                composable(
+                    Routes.HOME,
+                    enterTransition = { fadeIn(tween(200)) },
+                    exitTransition = { fadeOut(tween(200)) },
+                    popEnterTransition = { fadeIn(tween(200)) },
+                    popExitTransition = { fadeOut(tween(200)) },
+                ) {
+                    HomeScreen(
+                        onOpen = { route -> navController.navigate(route) },
+                        onOpenFamily = { navController.navigate(Routes.FAMILY) },
+                    )
+                }
+                composable(
+                    Routes.CALENDAR,
+                    enterTransition = { fadeIn(tween(200)) },
+                    exitTransition = { fadeOut(tween(200)) },
+                    popEnterTransition = { fadeIn(tween(200)) },
+                    popExitTransition = { fadeOut(tween(200)) },
+                ) { CalendarScreen(viewModel = calendarVm) }
+                composable(
+                    Routes.CHAT,
+                    enterTransition = { fadeIn(tween(200)) },
+                    exitTransition = { fadeOut(tween(200)) },
+                    popEnterTransition = { fadeIn(tween(200)) },
+                    popExitTransition = { fadeOut(tween(200)) },
+                ) { ChatScreen(onOpen = { id -> navController.navigate(Routes.chatDetail(id)) }, viewModel = chatVm) }
+                composable(
+                    Routes.PROFILE,
+                    enterTransition = { fadeIn(tween(200)) },
+                    exitTransition = { fadeOut(tween(200)) },
+                    popEnterTransition = { fadeIn(tween(200)) },
+                    popExitTransition = { fadeOut(tween(200)) },
+                ) {
+                    ProfileScreen(
+                        onEdit = { navController.navigate(Routes.PROFILE_EDIT) },
+                        onSettings = { navController.navigate(Routes.SETTINGS) },
+                        onSignedOut = { /* RootViewModel reacts */ },
+                    )
+                }
 
-            // Feature/detail screens: inherit NavHost default (slide)
-            composable(Routes.SHOPPING) {
-                ShoppingScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenList = { id -> navController.navigate(Routes.shoppingDetail(id)) },
-                    viewModel = shoppingVm,
-                )
-            }
-            composable(
-                Routes.SHOPPING_DETAIL,
-                arguments = listOf(navArgument("listId") { type = NavType.StringType }),
-            ) { entry ->
-                ShoppingDetailScreen(
-                    entry.arguments!!.getString("listId")!!,
-                    onBack = { navController.popBackStack() },
-                    viewModel = shoppingVm,
-                )
-            }
+                // Shopping is now a bottom-tab destination (crossfade, no back arrow).
+                composable(
+                    Routes.SHOPPING,
+                    enterTransition = { fadeIn(tween(200)) },
+                    exitTransition = { fadeOut(tween(200)) },
+                    popEnterTransition = { fadeIn(tween(200)) },
+                    popExitTransition = { fadeOut(tween(200)) },
+                ) {
+                    ShoppingScreen(
+                        onOpenList = { id -> navController.navigate(Routes.shoppingDetail(id)) },
+                        viewModel = shoppingVm,
+                    )
+                }
 
-            composable(Routes.MEAL) {
-                MealScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpen = { id -> navController.navigate(Routes.mealDetail(id)) },
-                    viewModel = mealVm,
-                )
-            }
-            composable(
-                Routes.MEAL_DETAIL,
-                arguments = listOf(navArgument("planId") { type = NavType.StringType }),
-            ) { entry ->
-                MealDetailScreen(
-                    entry.arguments!!.getString("planId")!!,
-                    onBack = { navController.popBackStack() },
-                    viewModel = mealVm,
-                )
-            }
+                // Feature/detail screens: inherit NavHost default (slide)
+                composable(
+                    Routes.SHOPPING_DETAIL,
+                    arguments = listOf(navArgument("listId") { type = NavType.StringType }),
+                ) { entry ->
+                    ShoppingDetailScreen(
+                        entry.arguments!!.getString("listId")!!,
+                        onBack = { navController.popBackStack() },
+                        viewModel = shoppingVm,
+                    )
+                }
 
-            composable(Routes.BIRTHDAY) {
-                BirthdayScreen(onBack = { navController.popBackStack() }, viewModel = birthdayVm)
-            }
+                composable(Routes.MEAL) {
+                    MealScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpen = { id -> navController.navigate(Routes.mealDetail(id)) },
+                        viewModel = mealVm,
+                    )
+                }
+                composable(
+                    Routes.MEAL_DETAIL,
+                    arguments = listOf(navArgument("planId") { type = NavType.StringType }),
+                ) { entry ->
+                    MealDetailScreen(
+                        entry.arguments!!.getString("planId")!!,
+                        onBack = { navController.popBackStack() },
+                        viewModel = mealVm,
+                    )
+                }
 
-            composable(Routes.WISHLIST) {
-                WishlistScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpen = { id -> navController.navigate(Routes.wishlistDetail(id)) },
-                    viewModel = wishlistVm,
-                )
-            }
-            composable(
-                Routes.WISHLIST_DETAIL,
-                arguments = listOf(navArgument("wishlistId") { type = NavType.StringType }),
-            ) { entry ->
-                WishlistDetailScreen(
-                    entry.arguments!!.getString("wishlistId")!!,
-                    onBack = { navController.popBackStack() },
-                    viewModel = wishlistVm,
-                )
-            }
+                composable(Routes.BIRTHDAY) {
+                    BirthdayScreen(onBack = { navController.popBackStack() }, viewModel = birthdayVm)
+                }
 
-            composable(
-                Routes.CHAT_DETAIL,
-                arguments = listOf(navArgument("conversationId") { type = NavType.StringType }),
-                deepLinks = listOf(navDeepLink { uriPattern = Routes.CHAT_DETAIL_DEEP_LINK }),
-            ) { entry ->
-                ConversationScreen(
-                    conversationId = entry.arguments!!.getString("conversationId")!!,
-                    onBack = { navController.popBackStack() },
-                    onNavigateTo = { id -> navController.navigate(Routes.chatDetail(id)) },
-                    viewModel = chatVm,
-                )
-            }
+                composable(Routes.WISHLIST) {
+                    WishlistScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpen = { id -> navController.navigate(Routes.wishlistDetail(id)) },
+                        viewModel = wishlistVm,
+                    )
+                }
+                composable(
+                    Routes.WISHLIST_DETAIL,
+                    arguments = listOf(navArgument("wishlistId") { type = NavType.StringType }),
+                ) { entry ->
+                    WishlistDetailScreen(
+                        entry.arguments!!.getString("wishlistId")!!,
+                        onBack = { navController.popBackStack() },
+                        viewModel = wishlistVm,
+                    )
+                }
 
-            composable(Routes.PROFILE_EDIT) { ProfileEditScreen(onBack = { navController.popBackStack() }) }
-            composable(Routes.SETTINGS) { SettingsScreen(onBack = { navController.popBackStack() }) }
-            composable(Routes.FAMILY_MAP) { FamilyMapScreen(onBack = { navController.popBackStack() }) }
+                composable(
+                    Routes.CHAT_DETAIL,
+                    arguments = listOf(navArgument("conversationId") { type = NavType.StringType }),
+                    deepLinks = listOf(navDeepLink { uriPattern = Routes.CHAT_DETAIL_DEEP_LINK }),
+                ) { entry ->
+                    ConversationScreen(
+                        conversationId = entry.arguments!!.getString("conversationId")!!,
+                        onBack = { navController.popBackStack() },
+                        onNavigateTo = { id -> navController.navigate(Routes.chatDetail(id)) },
+                        viewModel = chatVm,
+                    )
+                }
+
+                // Family is reached from the Home dashboard (pushed, slide + back arrow).
+                composable(Routes.FAMILY) {
+                    FamilyScreen(onBack = { navController.popBackStack() }, viewModel = familyVm)
+                }
+
+                composable(Routes.PROFILE_EDIT) { ProfileEditScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.SETTINGS) { SettingsScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.FAMILY_MAP) { FamilyMapScreen(onBack = { navController.popBackStack() }) }
+            }
         }
     }
 }
