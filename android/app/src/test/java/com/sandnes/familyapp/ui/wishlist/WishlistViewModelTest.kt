@@ -453,4 +453,104 @@ class WishlistViewModelTest {
                 vm.wishlists.value.size,
             )
         }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 13. Colour — persisted on create and changed optimistically
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `addWishlist stores the chosen colour on the optimistic entry`() =
+        runTest(dispatcherRule.dispatcher) {
+            val user = UserModel(id = "u1", familyId = null)
+            coEvery { repo.getUser("u1") } returns user
+            userId.value = "u1"
+            advanceUntilIdle()
+
+            vm.addWishlist("Colourful", "star", 0x8B5CF6)
+            advanceUntilIdle()
+
+            assertEquals(0x8B5CF6, vm.wishlists.value[0].color)
+        }
+
+    @Test
+    fun `changeWishlistColor updates colour optimistically in wishlists`() =
+        runTest(dispatcherRule.dispatcher) {
+            val user = UserModel(id = "u1", familyId = null)
+            coEvery { repo.getUser("u1") } returns user
+            userId.value = "u1"
+            advanceUntilIdle()
+
+            vm.addWishlist("List")
+            advanceUntilIdle()
+
+            val wishlist = vm.wishlists.value.first()
+            vm.changeWishlistColor(wishlist.id, 0xEC4899)
+            advanceUntilIdle()
+
+            assertEquals(
+                0xEC4899,
+                vm.wishlists.value
+                    .first { it.id == wishlist.id }
+                    .color,
+            )
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 14. updateWish — optimistic edit of an existing wish
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `updateWish updates text price and link optimistically`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "u1"
+            advanceUntilIdle()
+
+            vm.addWish(ctx, "wl-1", WishDraft("Old"))
+            advanceUntilIdle()
+
+            val wish = vm.wishes.value.first()
+            vm.updateWish(ctx, wish.id, WishDraft("New", link = "example.com", price = "99"))
+            advanceUntilIdle()
+
+            val updated = vm.wishes.value.first { it.id == wish.id }
+            assertEquals("New", updated.text)
+            assertEquals("example.com", updated.link)
+            assertEquals("99", updated.price)
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 15. Share links
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `shareLinkFor builds the token deep link`() {
+        assertEquals(
+            "familyapp://wishlist?token=abc123",
+            WishlistViewModel.shareLinkFor("abc123"),
+        )
+    }
+
+    @Test
+    fun `shareLink returns null when the backend is unavailable`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "u1"
+            advanceUntilIdle()
+
+            // SupabaseManager.client throws in tests, so token minting fails → null link.
+            assertNull(vm.shareLink("wl-1"))
+        }
+
+    @Test
+    fun `redeemShareToken triggers a wishlist reload`() =
+        runTest(dispatcherRule.dispatcher) {
+            val user = UserModel(id = "u1", familyId = null)
+            coEvery { repo.getUser("u1") } returns user
+            userId.value = "u1"
+            advanceUntilIdle()
+
+            vm.redeemShareToken("tok")
+            advanceUntilIdle()
+
+            coVerify(atLeast = 2) { repo.getUser("u1") }
+        }
 }

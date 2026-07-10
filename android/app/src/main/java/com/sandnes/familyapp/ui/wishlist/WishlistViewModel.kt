@@ -8,6 +8,9 @@ import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.WishModel
 import com.sandnes.familyapp.data.WishReservationModel
 import com.sandnes.familyapp.data.WishlistModel
+import com.sandnes.familyapp.data.acceptWishlistShare
+import com.sandnes.familyapp.data.ensureWishlistShareToken
+import com.sandnes.familyapp.data.getSharedWishlists
 import com.sandnes.familyapp.data.remote.SupabaseManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
@@ -31,7 +34,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import javax.inject.Inject
 
-/** The user-entered details for a new wish (groups the optional rich fields). */
+/** The user-entered details for a new (or edited) wish (groups the optional rich fields). */
 data class WishDraft(
     val text: String,
     val link: String? = null,
@@ -47,12 +50,19 @@ class WishlistViewModel
     ) : ViewModel() {
         companion object {
             private var cache: List<WishlistModel> = emptyList()
+
+            /** The deep link a shared wishlist opens with. Redeemed via [redeemShareToken]. */
+            fun shareLinkFor(token: String): String = "familyapp://wishlist?token=$token"
         }
 
         private val db get() = SupabaseManager.client.postgrest
 
         private val _wishlists = MutableStateFlow(cache)
         val wishlists: StateFlow<List<WishlistModel>> = _wishlists.asStateFlow()
+
+        // Wishlists shared TO me via a redeemed link (from another family, not my own).
+        private val _sharedWishlists = MutableStateFlow<List<WishlistModel>>(emptyList())
+        val sharedWishlists: StateFlow<List<WishlistModel>> = _sharedWishlists.asStateFlow()
 
         private val _isLoading = MutableStateFlow(false)
         val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -134,6 +144,7 @@ class WishlistViewModel
                 _wishlists.value = resolved
                 if (user?.familyId != null) subscribeToWishlists(user.familyId, userId)
             }
+            loadSharedWishlists()
             _isLoading.value = false
         }
 
@@ -165,6 +176,13 @@ class WishlistViewModel
                 cache = resolved
                 _wishlists.value = resolved
             }
+            loadSharedWishlists()
+        }
+
+        /** Loads wishlists shared to me via a redeemed link (cross-family; best-effort). */
+        private suspend fun loadSharedWishlists() {
+            val shared = repo.getSharedWishlists()
+            _sharedWishlists.value = resolveOwnerNames(shared)
         }
 
         private suspend fun subscribeToWishlists(
@@ -205,7 +223,15 @@ class WishlistViewModel
                                     .select { filter { eq("wishlist_id", wishlistId) } }
                                     .decodeList<WishModel>()
                             }
-                        _selectedWishlist.value = wishlistDeferred.await()
+                        val list = wishlistDeferred.await()
+                        // Enrich the owner name (drives the "reservations hidden from …" member hint).
+                        _selectedWishlist.value =
+                            if (list != null) {
+                                val owner = ownerNameCache[list.ownerUserId] ?: repo.getUser(list.ownerUserId)?.name ?: ""
+                                list.copy(ownerName = owner)
+                            } else {
+                                null
+                            }
                         _wishes.value = wishesDeferred.await()
                     }
                     loadReservations()
@@ -291,29 +317,56 @@ class WishlistViewModel
             viewModelScope.launch { flow.collect { loadWishesOnly(wishlistId) } }
         }
 
+        // ─── Share links (cross-family, one redeeming user) ──────────────────────
+
+        /** Owner action: mint (or return the existing) share link for a wishlist, or null. */
+        suspend fun shareLink(wishlistId: String): String? {
+            val token = repo.ensureWishlistShareToken(wishlistId).getOrNull() ?: return null
+            return shareLinkFor(token)
+        }
+
+        /** Redeem a token from an opened link: grants access to this one wishlist, then refreshes.
+         *  Deep-link plumbing (AppNavHost/DeepLinkRouter) is expected to call this. */
+        fun redeemShareToken(token: String) =
+            viewModelScope.launch {
+                repo.acceptWishlistShare(token)
+                val userId = repo.currentUserId.first() ?: return@launch
+                loadWishlists(userId)
+            }
+
+        // ─── Wishlist mutations ──────────────────────────────────────────────────
+
         fun addWishlist(
             name: String,
             icon: String = "card_giftcard",
-        ) =
-            viewModelScope.launch {
-                val userId = repo.currentUserId.first() ?: return@launch
-                val user = repo.getUser(userId)
-                val tempId = "temp-${java.util.UUID.randomUUID()}"
-                _wishlists.value =
-                    _wishlists.value +
-                    WishlistModel(id = tempId, ownerUserId = userId, familyId = user?.familyId, name = name, icon = icon)
-                runCatching {
-                    db.from("wishlists").insert(
-                        buildJsonObject {
-                            put("owner_user_id", userId)
-                            if (user?.familyId != null) put("family_id", user.familyId)
-                            put("name", name)
-                            put("icon", icon)
-                        },
-                    )
-                }
-                loadWishlists(userId)
+            color: Int? = null,
+        ) = viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            val user = repo.getUser(userId)
+            val tempId = "temp-${java.util.UUID.randomUUID()}"
+            _wishlists.value =
+                _wishlists.value +
+                WishlistModel(
+                    id = tempId,
+                    ownerUserId = userId,
+                    familyId = user?.familyId,
+                    name = name,
+                    icon = icon,
+                    color = color,
+                )
+            runCatching {
+                db.from("wishlists").insert(
+                    buildJsonObject {
+                        put("owner_user_id", userId)
+                        if (user?.familyId != null) put("family_id", user.familyId)
+                        put("name", name)
+                        put("icon", icon)
+                        if (color != null) put("color", color)
+                    },
+                )
             }
+            loadWishlists(userId)
+        }
 
         fun deleteWishlist(wishlist: WishlistModel) =
             viewModelScope.launch {
@@ -347,42 +400,88 @@ class WishlistViewModel
             loadWishlistDetail(wishlistId).join()
         }
 
+        fun changeWishlistColor(
+            wishlistId: String,
+            color: Int?,
+        ) = viewModelScope.launch {
+            _wishlists.value = _wishlists.value.map { if (it.id == wishlistId) it.copy(color = color) else it }
+            _selectedWishlist.value = _selectedWishlist.value?.copy(color = color)
+            runCatching {
+                db.from("wishlists").update({ set("color", color) }) { filter { eq("id", wishlistId) } }
+            }
+            loadWishlistDetail(wishlistId).join()
+        }
+
+        // ─── Wish mutations ──────────────────────────────────────────────────────
+
         fun addWish(
             context: Context,
             wishlistId: String,
             draft: WishDraft,
-        ) =
-            viewModelScope.launch {
-                val userId = repo.currentUserId.first() ?: return@launch
-                val cleanLink = draft.link?.trim()?.takeIf { it.isNotEmpty() }
-                val cleanPrice = draft.price?.trim()?.takeIf { it.isNotEmpty() }
-                val tempId = "temp-${java.util.UUID.randomUUID()}"
-                _wishes.value =
-                    _wishes.value +
-                    WishModel(
-                        id = tempId,
-                        wishlistId = wishlistId,
-                        userId = userId,
-                        text = draft.text,
-                        checked = false,
-                        link = cleanLink,
-                        price = cleanPrice,
-                    )
-                val imageUrl = draft.imageUri?.let { uploadWishImage(context, userId, it) }
-                runCatching {
-                    db.from("wishes").insert(
-                        buildJsonObject {
-                            put("wishlist_id", wishlistId)
-                            put("user_id", userId)
-                            put("text", draft.text)
-                            if (cleanLink != null) put("link", cleanLink)
-                            if (cleanPrice != null) put("price", cleanPrice)
-                            if (imageUrl != null) put("image_url", imageUrl)
-                        },
-                    )
-                }
-                loadWishlistDetail(wishlistId).join()
+        ) = viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            val cleanLink = draft.link?.trim()?.takeIf { it.isNotEmpty() }
+            val cleanPrice = draft.price?.trim()?.takeIf { it.isNotEmpty() }
+            val tempId = "temp-${java.util.UUID.randomUUID()}"
+            _wishes.value =
+                _wishes.value +
+                WishModel(
+                    id = tempId,
+                    wishlistId = wishlistId,
+                    userId = userId,
+                    text = draft.text,
+                    checked = false,
+                    link = cleanLink,
+                    price = cleanPrice,
+                )
+            val imageUrl = draft.imageUri?.let { uploadWishImage(context, userId, it) }
+            runCatching {
+                db.from("wishes").insert(
+                    buildJsonObject {
+                        put("wishlist_id", wishlistId)
+                        put("user_id", userId)
+                        put("text", draft.text)
+                        if (cleanLink != null) put("link", cleanLink)
+                        if (cleanPrice != null) put("price", cleanPrice)
+                        if (imageUrl != null) put("image_url", imageUrl)
+                    },
+                )
             }
+            loadWishlistDetail(wishlistId).join()
+        }
+
+        /** Edits an existing wish (owner only). A newly-picked image replaces the old one. */
+        fun updateWish(
+            context: Context,
+            wishId: String,
+            draft: WishDraft,
+        ) = viewModelScope.launch {
+            val userId = repo.currentUserId.first() ?: return@launch
+            val existing = _wishes.value.firstOrNull { it.id == wishId }
+            val cleanLink = draft.link?.trim()?.takeIf { it.isNotEmpty() }
+            val cleanPrice = draft.price?.trim()?.takeIf { it.isNotEmpty() }
+            var imageUrl = existing?.imageUrl
+            if (draft.imageUri != null) {
+                imageUrl = uploadWishImage(context, userId, draft.imageUri) ?: imageUrl
+            }
+            _wishes.value =
+                _wishes.value.map {
+                    if (it.id == wishId) {
+                        it.copy(text = draft.text, link = cleanLink, price = cleanPrice, imageUrl = imageUrl)
+                    } else {
+                        it
+                    }
+                }
+            runCatching {
+                db.from("wishes").update({
+                    set("text", draft.text)
+                    set("link", cleanLink)
+                    set("price", cleanPrice)
+                    set("image_url", imageUrl)
+                }) { filter { eq("id", wishId) } }
+            }
+            existing?.wishlistId?.let { loadWishlistDetail(it).join() }
+        }
 
         /** Uploads a wish image to the dedicated wish-images bucket; returns its public URL or null. */
         private suspend fun uploadWishImage(
