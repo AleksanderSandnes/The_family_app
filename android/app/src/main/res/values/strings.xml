@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Household</string>
+    <string name="app_name">The family app</string>
     <string name="good_morning">Good morning</string>
     <string name="good_afternoon">Good afternoon</string>
     <string name="good_evening">Good evening</string>
@@ -182,7 +182,7 @@
     <string name="export_pdf">Export PDF</string>
     <string name="share_link">Share link</string>
     <string name="shared_with_me">Shared with me</string>
-    <string name="share_wishlist_message">See my wishlist %1$s in Household:</string>
+    <string name="share_wishlist_message">See my wishlist %1$s in The Family App:</string>
     <string name="open_link">Open link</string>
     <string name="unmark_as_claimed">Unmark as claimed</string>
     <string name="mark_as_claimed">Mark as claimed</string>
@@ -243,7 +243,7 @@
     <string name="family_invite_qr_code">Family invite QR code</string>
     <string name="could_not_read_the_selected_photo">Could not read the selected photo.</string>
     <string name="failed_to_update_photo_please_try_again">Failed to update photo. Please try again.</string>
-    <string name="family_invite_share_message">Join our family \"%1$s\" on Household!\n\nTap to join: %2$s\n\nOr open the app, tap \"Join with Invite Code\", and enter: %3$s</string>
+    <string name="family_invite_share_message">Join our family \"%1$s\" on The Family App!\n\nTap to join: %2$s\n\nOr open the app, tap \"Join with Invite Code\", and enter: %3$s</string>
     <string name="email">Email</string>
     <string name="mobile">Mobile</string>
     <string name="birthday">Birthday</string>
@@ -294,7 +294,7 @@
     <string name="password">Password</string>
     <string name="sign_in">Sign in</string>
     <string name="continue_with_google">Continue with Google</string>
-    <string name="new_to_the_family_app">New to Household?</string>
+    <string name="new_to_the_family_app">New to The Family App?</string>
     <string name="create_account">Create account</string>
     <string name="create_your_account">Create your account</string>
     <string name="about_you">About you</string>
@@ -333,7 +333,7 @@
     <string name="sign_in_failed">Sign in failed. Please try again.</string>
     <string name="registration_failed_please_try_again">Registration failed. Please try again.</string>
     <string name="before_we_start">Before we start</string>
-    <string name="the_family_app_works_best_with_a_couple_of_permissions_you_stay_in_control_everything_can_be_changed_later_in_settings">Household works best with a couple of permissions. You stay in control — everything can be changed later in Settings.</string>
+    <string name="the_family_app_works_best_with_a_couple_of_permissions_you_stay_in_control_everything_can_be_changed_later_in_settings">The Family App works best with a couple of permissions. You stay in control — everything can be changed later in Settings.</string>
     <string name="chat_messages_birthday_and_event_reminders">Chat messages, birthday and event reminders.</string>
     <string name="location">Location</string>
     <string name="share_where_you_are_on_the_family_map_only_with_your_family_only_when_you_choose">Share where you are on the family map — only with your family, only when you choose.</string>
@@ -386,7 +386,7 @@
     <!-- Android-only chrome (no iOS counterpart) -->
     <string name="about">About</string>
     <string name="settings_appearance_subtitle">Choose how the app looks</string>
-    <string name="the_family_app">Household</string>
+    <string name="the_family_app">The Family App</string>
     <string name="your_family_together">Your family, together</string>
     <string name="app_version_format">v%1$s (build %2$d)</string>
     <string name="english">English</string>
@@ -442,7 +442,7 @@
     <string name="perm_camera_desc">Take photos for your profile picture and to share in chat</string>
     <string name="perm_microphone_desc">Record and send voice messages to family members in chat</string>
     <string name="microphone">Microphone</string>
-    <string name="onboarding_permissions_subtitle">Household works best with these permissions</string>
+    <string name="onboarding_permissions_subtitle">The Family App works best with these permissions</string>
     <string name="share_wishlist_chooser">Share wishlist</string>
     <string name="share_wishlist_pdf_chooser">Share wishlist PDF</string>
     <string name="theme_option_a11y">%1$s theme</string>
@@ -472,6 +472,6 @@
     <string name="relation_cousin">Cousin</string>
     <string name="relation_friend">Friend</string>
     <string name="relation_other">Other</string>
-    <string name="join_family_invite_message">Join our family \"%1$s\" on Household!\n\nTap to join: %2$s\n\nOr open the app, tap \"Join with Invite Code\", and enter: %3$s</string>
+    <string name="join_family_invite_message">Join our family \"%1$s\" on The Family App!\n\nTap to join: %2$s\n\nOr open the app, tap \"Join with Invite Code\", and enter: %3$s</string>
     <string name="reply">Reply</string>
 </resources>

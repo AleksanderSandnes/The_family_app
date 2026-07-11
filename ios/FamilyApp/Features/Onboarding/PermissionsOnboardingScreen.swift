@@ -56,7 +56,7 @@ struct PermissionsOnboardingScreen: View {
                         .foregroundStyle(Color.appOnBackground)
                     Text(
                         // swiftlint:disable:next line_length
-                        "Household works best with a couple of permissions. You stay in control — everything can be changed later in Settings."
+                        "The Family App works best with a couple of permissions. You stay in control — everything can be changed later in Settings."
                     )
                     .font(.bodyMedium)
                     .foregroundStyle(Color.appOnSurfaceVariant)

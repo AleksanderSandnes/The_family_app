@@ -5,7 +5,7 @@ The project references both a general design document and a system design docume
 
 ## Current notes
 - The app concept remains centered around family coordination.
-- Household is now a **two-platform product**: native Android (Jetpack Compose + Material 3,
+- The Family App is now a **two-platform product**: native Android (Jetpack Compose + Material 3,
   package `com.sandnes.familyapp`) and native iOS (SwiftUI, iOS 26 Liquid Glass), sharing one
   Supabase backend. Repo: `android/` + `ios/` + shared `supabase/`, `maestro/`.
 - The Android codebase is fully modernized — all legacy Java / Fragment / SQLite / Room code was

@@ -1,6 +1,6 @@
-# Household
+# The Family App
 
-**Household** gives families one shared home for everyday coordination —
+The Family App gives families one shared home for everyday coordination —
 shopping, meals, calendar, birthdays, wishlists, chat, real-time location
 sharing and more — wrapped in a modern, premium interface backed by a live
 cloud backend.

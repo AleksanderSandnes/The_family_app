@@ -146,7 +146,7 @@ struct WishlistDetailScreen: View {
         let name = viewModel.selectedWishlist?.name ?? L("Wishlist")
         Task {
             guard let url = await viewModel.shareLink(for: wishlistId) else { return }
-            let message = "\(L("See my wishlist \(name) in Household:"))\n\(url.absoluteString)"
+            let message = "\(L("See my wishlist \(name) in The Family App:"))\n\(url.absoluteString)"
             shareItem = ShareItem(items: [message])
         }
     }

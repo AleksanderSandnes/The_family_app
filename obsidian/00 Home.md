@@ -1,6 +1,6 @@
-# Household
+# The Family App
 
-Welcome to the project knowledge base for Household.
+Welcome to the project knowledge base for The Family App.
 
 ## Quick links
 - [[01_Project_Overview/Project Overview]]
@@ -17,13 +17,7 @@ Welcome to the project knowledge base for Household.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
-- **🏠 Rebrand to "Household" (2026-07-11)** — new app name on both platforms (launcher label,
-  in-app branding, share/invite messages, EN + NB — the brand is not translated), new launcher
-  icon (same indigo→violet gradient, white house + heart-cutout glyph, Android adaptive +
-  legacy + iOS 1024pt). GitHub repo renamed to `Household` (old URLs redirect).
-  Unchanged on purpose: package/bundle id `com.sandnes.familyapp`, `familyapp://` deep-link
-  scheme, code/module names. Store listing title suggestion: "Household — Family Organizer".
-- **📱🤖 Household is now a TWO-platform product** — `android/` (Jetpack Compose +
+- **📱🤖 The Family App is now a TWO-platform product** — `android/` (Jetpack Compose +
   Material 3, package `com.sandnes.familyapp`) and `ios/` (native SwiftUI, iOS 26 "Liquid
   Glass") share one Supabase backend. Repo restructured into `android/` + `ios/` + shared
   `supabase/`, `maestro/`.

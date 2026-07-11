@@ -1,7 +1,7 @@
 # Project Overview
 
 ## Purpose
-Household helps families coordinate everyday life in one shared space. It is now a
+The Family App helps families coordinate everyday life in one shared space. It is now a
 **two-platform product** — a native Android app and a native iOS app — sharing a single
 Supabase backend (Postgres + Realtime + Storage + Auth).
 

@@ -174,7 +174,7 @@ func inviteMessage(
     let link = DeepLinkURL.invite(code: joinCode).absoluteString
     return L(
         """
-        Join our family "\(familyName)" on Household!
+        Join our family "\(familyName)" on The Family App!
 
         Tap to join: \(link)
 

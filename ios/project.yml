@@ -92,7 +92,7 @@ targets:
     info:
       path: FamilyApp/Info.plist
       properties:
-        CFBundleDisplayName: Household
+        CFBundleDisplayName: The Family App
         CFBundleLocalizations:
           - en
           - nb

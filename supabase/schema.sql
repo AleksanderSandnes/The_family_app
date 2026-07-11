@@ -1,4 +1,4 @@
--- Household — Supabase PostgreSQL Schema
+-- The Family App — Supabase PostgreSQL Schema
 -- Run this in the Supabase SQL Editor at https://supabase.com/dashboard → your project → SQL Editor
 -- NOTE: Supabase Auth handles the auth.users table automatically. Do not create it manually.
 
