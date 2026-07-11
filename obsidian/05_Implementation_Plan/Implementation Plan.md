@@ -5,9 +5,10 @@ This Obsidian vault is the canonical source for project plans, notes, and archit
 Update it here first and keep it current as implementation progresses.
 
 ## Active tracks
-- **🚧 [[Android Parity Track]]** — the current work (branch `feat/android-ios-parity`, started
-  2026-07-10). Brings Android up to the iOS feature set + Liquid Glass look. Milestones M0–M7,
-  M0 in progress.
+- **✅ [[Android Parity Track]]** — delivered and merged to `master` (2026-07-10 → 07-11, branch
+  `feat/android-ios-parity`). Android brought up to the iOS feature set + Liquid Glass look;
+  milestones M0–M7 all done, plus a post-parity design pass, on-device fix batches, the new
+  launcher icon/name, and a signed production APK. No active track right now.
 - **✅ [[iOS Port Plan]]** — native SwiftUI app, delivered and merged to `master` (2026-07-05 →
   07-10). All 12 authoring phases + a redesign + new IA + many features; 11 DB migrations applied
   to production.
@@ -47,6 +48,7 @@ The delivered Android milestones are grouped into linked notes rather than one l
 | 23 | Design overhaul ⛔ superseded → D1–D8 track | [[Delivered/Design & UI Polish]] |
 | 24 | Unit testing + full Hilt DI | [[Delivered/Testing & Quality]] |
 | 25 | iOS port + monorepo restructure | [[iOS Port Plan]] |
+| 26 | Android ⇄ iOS parity + Liquid Glass (M0–M7 + post-parity design pass) | [[Android Parity Track]] |
 
 ## Design track
 - **✅ UI/UX overhaul (D1–D8)** — complete & merged to master (2026-06-27, PR #11). Per-screen

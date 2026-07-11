@@ -1,8 +1,16 @@
 # Android ⇄ iOS Parity Track
 
-**Active plan.** Branch `feat/android-ios-parity` (started 2026-07-10). Brings the Android app up
-to the iOS-era feature set and the Liquid Glass look, after the iOS app shipped ahead (see
-[[iOS Port Plan]]). Part of [[Implementation Plan]].
+**Delivered & merged to master (2026-07-10 → 07-11).** Branch `feat/android-ios-parity`, merged
+via `test`; `test` and `master` both at `f2d056f`. Brought the Android app up to the iOS-era
+feature set and the Liquid Glass look, after the iOS app shipped ahead (see [[iOS Port Plan]]).
+Part of [[Implementation Plan]].
+
+**Post-M7 follow-ups (2026-07-11, all merged):** post-parity design pass fixing every page
+against the 70 live-iOS screenshots; 7-issue on-device review batch (wishlist bg, owner gating,
+photo pins, dark toggles, nav bar); compact 64dp nav bar + scrollable calendar empty state;
+calendar empty-state/OK strings moved to resources (NB support); iOS-matching launcher icon
+(gradient + family glyph) with the launcher name fixed to "The family app" in all locales;
+project-wide comment cleanup. Signed production APK built with `assembleRelease`.
 
 ## Decisions (locked with the user)
 - **Stay on Compose + Material 3**, upgrade to **Material 3 Expressive**. No rewrite — reuse all

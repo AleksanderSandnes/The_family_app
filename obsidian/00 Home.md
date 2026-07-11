@@ -9,7 +9,7 @@ Welcome to the project knowledge base for The Family App.
 - [[03_Architecture_and_Design/Backend Options and API Strategy]]
 - [[04_Features_and_Backlog/Feature Inventory]] — iOS-vs-Android feature matrix
 - [[05_Implementation_Plan/Implementation Plan]] — plan index + delivered milestones
-- [[05_Implementation_Plan/Android Parity Track]] — **active** (Android ⇄ iOS parity)
+- [[05_Implementation_Plan/Android Parity Track]] — Android ⇄ iOS parity (delivered, merged to master)
 - [[05_Implementation_Plan/iOS Port Plan]] — native SwiftUI port (delivered, merged to master)
 - [[05_Implementation_Plan/Project - UI - UX - improvements]] — UI/UX discovery, audit & plan
 - [[05_Implementation_Plan/Design_Improvements/00 Design Improvement Plan]] — design track D1–D8 (per-screen specs)
@@ -21,15 +21,17 @@ Welcome to the project knowledge base for The Family App.
   Material 3, package `com.sandnes.familyapp`) and `ios/` (native SwiftUI, iOS 26 "Liquid
   Glass") share one Supabase backend. Repo restructured into `android/` + `ios/` + shared
   `supabase/`, `maestro/`.
-- **🚧 Android ⇄ iOS parity track (IN PROGRESS, started 2026-07-10)** — branch
-  `feat/android-ios-parity`. Brings Android up to the iOS-era feature set + the Liquid Glass
-  look. Decisions locked with the user: stay on Compose + Material 3, upgrade to **Material 3
-  Expressive**, add a custom glass layer via **Haze** (`dev.chrisbanes.haze`, RenderEffect blur
-  API 31+ with graceful fallback) mirroring iOS `Glass.swift`; reuse all existing
-  ViewModels/screens (no rewrite); adopt the iOS tab-bar IA (Home / Shopping / Chat / Calendar
-  / Profile); add in-app EN/NB localization; mirror the iOS lint/CI gate with detekt+spotless
-  CI + Kotlin pre-commit hooks. Milestones **M0 vault (this) → M7 final review**; M0 in
-  progress. Full plan: [[05_Implementation_Plan/Android Parity Track]].
+- **✅ Android ⇄ iOS parity track — DELIVERED & MERGED TO MASTER (2026-07-10 → 07-11)** —
+  branch `feat/android-ios-parity`, merged via `test`; `test` and `master` both at `f2d056f`.
+  All milestones M0–M7 done: Liquid Glass layer via **Haze** on Compose + **Material 3
+  Expressive**, iOS tab-bar IA (Home / Shopping / Chat / Calendar / Profile), all iOS-era
+  features (colour/icon pickers, calendar private/colour/attendees, wishlist share links + PDF,
+  directional relations + member popup, profile-completion prompt), in-app EN/NB language
+  switch, detekt+spotless CI gate, 440 unit tests green. After M7: a post-parity design pass
+  against 70 live-iOS screenshots, a 7-issue on-device review batch, compact 64dp nav bar,
+  calendar string localization, an iOS-matching launcher icon + fixed launcher name, and a
+  comment cleanup. **Signed production APK built 2026-07-11** (`assembleRelease`,
+  `com.sandnes.familyapp`). Full plan: [[05_Implementation_Plan/Android Parity Track]].
 - **✅ iOS port + monorepo restructure — DELIVERED & MERGED TO MASTER (2026-07-05 → 07-10)** —
   branch `implementation/iosVersion`, merged `test` → `master`. Native SwiftUI + supabase-swift
   on the shared Supabase backend. All 12 authoring phases done; then the iOS app gained a
@@ -42,14 +44,10 @@ Welcome to the project knowledge base for The Family App.
   backported fixes. Full plan + phase table: [[05_Implementation_Plan/iOS Port Plan]].
 - **🚀 Play Store release prep (2026-06-27)** — in-repo changes now **committed** on
   `chore/play-store-release` and **merged into `test`** (2026-07-05): applicationId →
-  `com.sandnes.familyapp`, foreground-only location for v1, `*.aab` ignored. External setup (Play
-  account, Firebase prod app, Maps key, store listing) still to do — until the Firebase prod app
-  for `com.sandnes.familyapp` exists, `assembleDebug` fails at `processDebugGoogleServices`
-  (google-services.json only registers the old package). Full runbook:
+  `com.sandnes.familyapp`, foreground-only location for v1, `*.aab` ignored. Firebase app for
+  `com.sandnes.familyapp` is registered (debug + signed release builds pass); remaining external
+  setup: Play account + store listing. Full runbook:
   [[06_Notes_and_References/Play Store Release Guide]].
-- **🚀 Play Store release prep (2026-06-27)** — applicationId `com.sandnes.familyapp`,
-  foreground-only location for v1. External setup (Play account, Firebase prod app, Maps key, store
-  listing) still to do. Runbook: [[06_Notes_and_References/Play Store Release Guide]].
 
 ## Delivered so far (Android, all merged to master)
 Grouped into categorized notes under [[05_Implementation_Plan/Implementation Plan]]:
@@ -62,7 +60,7 @@ Grouped into categorized notes under [[05_Implementation_Plan/Implementation Pla
 - [[05_Implementation_Plan/Delivered/Chat]] — Messenger UI, participant model.
 - [[05_Implementation_Plan/Delivered/Design & UI Polish]] — M17 polish, transitions, D1–D8 design
   track (complete).
-- [[05_Implementation_Plan/Delivered/Testing & Quality]] — Hilt DI, 382/382 tests, lint/detekt,
+- [[05_Implementation_Plan/Delivered/Testing & Quality]] — Hilt DI, 440 unit tests, lint/detekt,
   Maestro flows.
 - Test users: testuser1-4@familyapp.test / TestPass123! — all in "Test Family" (join code: TESTFAM).
 

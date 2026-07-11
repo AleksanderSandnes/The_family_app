@@ -26,15 +26,15 @@ architecture map.
 - **Home dashboard** — a glanceable feed of live summary cards (tonight's meal, next event, items left to buy, next birthday) above a quick-access grid
 - **Shopping lists** — collaborative lists with check-off, a collapsible "Completed" group and per-list progress ("N of M bought")
 - **Meal planner** — plan dinners across the week, with per-plan progress
-- **Calendar** — shared family events with Month / Week / Agenda views, date/time ranges and all-day support
+- **Calendar** — shared family events with Month / Week / Agenda views, date/time ranges, all-day support, per-event colours, private events and attendees
 - **Birthdays** — keep track of everyone's special days with countdowns
-- **Wishlists** — wishes with optional link, price and image; family members can **reserve a gift** without the owner seeing it
+- **Wishlists** — wishes with optional link, price and image; family members can **reserve a gift** without the owner seeing it; shareable public link (`familyapp://wishlist` deep link) and PDF export
 - **Family chat** — group and direct conversations with images, voice notes, emoji reactions, **read receipts, typing indicators and presence**
 - **Family map** — real-time location sharing with reverse-geocoded place names and optional background tracking (Google Maps on Android, MapKit on iOS)
 - **Notifications** — birthday and calendar event reminders (WorkManager on Android; server-side `daily-reminders` pg_cron job on iOS) plus FCM push for new chat messages
 - **Profile & settings** — edit your profile and upload a photo (EXIF-orientation-correct), manage notifications and location sharing
-- **Theming** — System / Light / Dark theme persisted across launches, plus a branded splash screen and adaptive icon
-- **Localization** — English and Norwegian Bokmål throughout; iOS adds an **in-app language switch** that overrides the system language
+- **Theming** — a shared **Liquid Glass** design language on both platforms; System / Light / Dark theme persisted across launches, plus a branded splash screen and matching launcher icons
+- **Localization** — English and Norwegian Bokmål throughout, with an **in-app language switch** on both platforms that overrides the system language
 
 All features are available on both Android and iOS with matching UI and behaviour.
 
@@ -49,7 +49,7 @@ All features are available on both Android and iOS with matching UI and behaviou
 ### Android
 
 - **Language:** Kotlin 2.3.0
-- **UI:** Jetpack Compose + Material 3 (single-Activity architecture), Compose BOM 2026.06.00
+- **UI:** Jetpack Compose + Material 3 Expressive (single-Activity architecture), Compose BOM 2026.06.00, with a Liquid-Glass layer via [Haze](https://github.com/chrisbanes/haze) mirroring iOS `Glass.swift`
 - **Navigation:** Navigation Compose with an auth gate and bottom navigation
 - **DI:** Hilt — every ViewModel is `@HiltViewModel`/`@Inject`
 - **Backend SDK:** Supabase 3.6.0 · **HTTP/WebSocket:** Ktor + OkHttp engine
