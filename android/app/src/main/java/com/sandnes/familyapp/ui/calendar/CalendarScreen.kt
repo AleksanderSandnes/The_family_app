@@ -355,7 +355,11 @@ private fun ColumnScope.DayEventsList(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
                 contentAlignment = Alignment.Center,
             ) {
-                EmptyState(Icons.Filled.CalendarMonth, "No events", "Tap + to add an event.")
+                EmptyState(
+                    Icons.Filled.CalendarMonth,
+                    stringResource(R.string.no_events),
+                    stringResource(R.string.tap_to_add_an_event),
+                )
             }
         else ->
             LazyColumn(
@@ -427,7 +431,11 @@ private fun AgendaList(
         }
     if (grouped.isEmpty()) {
         Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            EmptyState(Icons.Filled.CalendarMonth, "Nothing coming up", "Tap + to add an event.")
+            EmptyState(
+                Icons.Filled.CalendarMonth,
+                stringResource(R.string.nothing_coming_up),
+                stringResource(R.string.tap_to_add_an_event),
+            )
         }
         return
     }
@@ -1055,7 +1063,7 @@ private fun TimePickerDialog(
                 ) {
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                     Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = onConfirm) { Text("OK") }
+                    TextButton(onClick = onConfirm) { Text(stringResource(R.string.ok)) }
                 }
             }
         }
