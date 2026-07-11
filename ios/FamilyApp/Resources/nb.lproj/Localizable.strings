@@ -181,7 +181,7 @@
 "Export PDF" = "Eksporter PDF";
 "Share link" = "Del lenke";
 "Shared with me" = "Delt med meg";
-"See my wishlist %@ in The Family App:" = "Se ønskelisten min %@ i The Family App:";
+"See my wishlist %@ in The Family App:" = "Se ønskelisten min %@ i Familieappen:";
 "Open link" = "Åpne lenke";
 "Unmark as claimed" = "Fjern markering som tatt";
 "Mark as claimed" = "Marker som tatt";
@@ -242,7 +242,7 @@
 "Family invite QR code" = "QR-kode for familieinvitasjon";
 "Could not read the selected photo." = "Kunne ikke lese det valgte bildet.";
 "Failed to update photo. Please try again." = "Kunne ikke oppdatere bildet. Prøv igjen.";
-"Join our family \"%@\" on The Family App!\n\nTap to join: %@\n\nOr open the app, tap \"Join with Invite Code\", and enter: %@" = "Bli med i familien vår «%@» på The Family App!\n\nTrykk for å bli med: %@\n\nEller åpne appen, trykk «Bli med med invitasjonskode», og skriv inn: %@";
+"Join our family \"%@\" on The Family App!\n\nTap to join: %@\n\nOr open the app, tap \"Join with Invite Code\", and enter: %@" = "Bli med i familien vår «%@» i Familieappen!\n\nTrykk for å bli med: %@\n\nEller åpne appen, trykk «Bli med med invitasjonskode», og skriv inn: %@";
 "Email" = "E-post";
 "Mobile" = "Mobil";
 "Birthday" = "Bursdag";
@@ -293,7 +293,8 @@
 "Password" = "Passord";
 "Sign in" = "Logg inn";
 "Continue with Google" = "Fortsett med Google";
-"New to The Family App?" = "Ny i The Family App?";
+"The Family App" = "Familieappen";
+"New to The Family App?" = "Ny i Familieappen?";
 "Create account" = "Opprett konto";
 "Create your account" = "Opprett kontoen din";
 "About you" = "Om deg";
@@ -332,7 +333,7 @@
 "Sign in failed. Please try again." = "Innlogging mislyktes. Prøv igjen.";
 "Registration failed. Please try again." = "Registrering mislyktes. Prøv igjen.";
 "Before we start" = "Før vi begynner";
-"The Family App works best with a couple of permissions. You stay in control — everything can be changed later in Settings." = "The Family App fungerer best med et par tillatelser. Du har kontrollen – alt kan endres senere i Innstillinger.";
+"The Family App works best with a couple of permissions. You stay in control — everything can be changed later in Settings." = "Familieappen fungerer best med et par tillatelser. Du har kontrollen – alt kan endres senere i Innstillinger.";
 "Chat messages, birthday and event reminders." = "Chattemeldinger, bursdags- og hendelsespåminnelser.";
 "Location" = "Posisjon";
 "Share where you are on the family map — only with your family, only when you choose." = "Del hvor du er på familiekartet – bare med familien din, bare når du velger det.";

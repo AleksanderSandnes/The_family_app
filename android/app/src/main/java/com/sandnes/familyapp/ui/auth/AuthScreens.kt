@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,7 +61,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,6 +72,8 @@ import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.components.SecondaryButton
 import com.sandnes.familyapp.ui.theme.Amber500
 import com.sandnes.familyapp.ui.theme.Emerald500
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
 import com.sandnes.familyapp.ui.theme.appDarkTheme
 import com.sandnes.familyapp.ui.theme.heroGradient
 
@@ -147,16 +149,18 @@ fun LoginScreen(
             enabled = !state.loading,
             modifier = Modifier.semantics { contentDescription = passwordFieldDescription },
         )
-        TextButton(
-            onClick = { showForgotDialog = true },
-            modifier = Modifier.align(Alignment.End),
-        ) {
-            Text(
-                stringResource(R.string.forgot_password),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
+        Text(
+            stringResource(R.string.forgot_password),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier =
+                Modifier
+                    .align(Alignment.End)
+                    .clip(RoundedCornerShape(Radius.extraSmall))
+                    .clickable { showForgotDialog = true }
+                    .padding(Spacing.xs),
+        )
         PrimaryButton(
             text = stringResource(R.string.sign_in),
             onClick = { viewModel.login(email, password) },
@@ -164,7 +168,6 @@ fun LoginScreen(
             loading = state.loading,
             modifier = Modifier.fillMaxWidth().semantics { contentDescription = signInButtonDescription },
         )
-        Spacer(Modifier.height(12.dp))
         SecondaryButton(
             text = stringResource(R.string.continue_with_google),
             onClick = { viewModel.signInWithGoogle() },
@@ -216,7 +219,6 @@ fun RegisterScreen(
 
     AuthScaffold(title = title, subtitle = subtitle) {
         StepIndicator(currentStep = step, totalSteps = 2)
-        Spacer(Modifier.height(4.dp))
         ErrorBanner(state.error)
         when (step) {
             1 ->
@@ -242,6 +244,7 @@ fun RegisterScreen(
                         viewModel.clearError()
                     },
                     loading = state.loading,
+                    onGoogle = { viewModel.signInWithGoogle() },
                     onNext = {
                         when {
                             name.isBlank() -> viewModel.setError(errEnterName)
@@ -407,6 +410,7 @@ private fun RegistrationStep1(
     onConfirmChange: (String) -> Unit,
     loading: Boolean,
     onNext: () -> Unit,
+    onGoogle: () -> Unit,
 ) {
     val emailFocus = remember { FocusRequester() }
     val passwordFocus = remember { FocusRequester() }
@@ -417,6 +421,7 @@ private fun RegistrationStep1(
     val passwordFieldDescription = stringResource(R.string.password_field)
     val confirmFieldDescription = stringResource(R.string.confirm_password_field)
     val continueButtonDescription = stringResource(R.string.continue_next_step_button)
+    val googleButtonDescription = stringResource(R.string.continue_with_google_button)
 
     FamilyTextField(
         value = name,
@@ -471,7 +476,6 @@ private fun RegistrationStep1(
                 .focusRequester(confirmFocus)
                 .semantics { contentDescription = confirmFieldDescription },
     )
-    Spacer(Modifier.height(4.dp))
     PrimaryButton(
         text = stringResource(R.string.continue_label),
         onClick = onNext,
@@ -481,6 +485,11 @@ private fun RegistrationStep1(
             Modifier
                 .fillMaxWidth()
                 .semantics { contentDescription = continueButtonDescription },
+    )
+    SecondaryButton(
+        text = stringResource(R.string.continue_with_google),
+        onClick = onGoogle,
+        modifier = Modifier.fillMaxWidth().semantics { contentDescription = googleButtonDescription },
     )
 }
 
@@ -629,7 +638,6 @@ private fun AuthScaffold(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(Modifier.height(4.dp))
                         content()
                     }
                 }
@@ -645,13 +653,21 @@ private fun AuthFooter(
     onClick: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 4.dp),
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(prompt, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        TextButton(onClick = onClick) {
-            Text(action, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        }
+        Text(
+            action,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(Radius.extraSmall))
+                    .clickable(onClick = onClick)
+                    .padding(Spacing.xs),
+        )
     }
 }

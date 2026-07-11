@@ -270,7 +270,7 @@ struct AuthScaffold<Content: View>: View {
                             )
                             .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
                     }
-                    Text("The Family App")
+                    Text(L("The Family App"))
                         .font(.system(size: 23, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.top, 16)
