@@ -350,7 +350,11 @@ private fun ColumnScope.DayEventsList(
                 LoadingState()
             }
         dayEvents.isEmpty() ->
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            // Scrollable so the empty state is never clipped under the nav bar on short screens.
+            Box(
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+                contentAlignment = Alignment.Center,
+            ) {
                 EmptyState(Icons.Filled.CalendarMonth, "No events", "Tap + to add an event.")
             }
         else ->

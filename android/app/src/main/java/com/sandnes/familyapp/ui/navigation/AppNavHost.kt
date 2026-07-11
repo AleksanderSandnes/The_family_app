@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -42,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -201,6 +203,9 @@ private fun MainFlow() {
                                 .fillMaxWidth()
                                 .navigationBarsPadding()
                                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
+                                // Compact bar: M3's NavigationBar defaults to 80dp, which eats
+                                // too much vertical space on every page.
+                                .height(64.dp)
                                 .glassBar(Radius.tabBar)
                                 // Inner inset so the first/last selection pills don't touch
                                 // the rounded ends of the floating bar (mirrors iOS).
