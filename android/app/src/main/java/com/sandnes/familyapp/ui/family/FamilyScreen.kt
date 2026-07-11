@@ -39,7 +39,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -68,6 +67,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +76,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.ui.components.AppTopBar
 import com.sandnes.familyapp.ui.components.CopyableCodeField
@@ -95,6 +96,31 @@ import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
 import com.sandnes.familyapp.ui.theme.colorFromArgb
 import com.sandnes.familyapp.ui.theme.glassCard
+
+/** Localised display name for a stored (English) relation value — mirrors iOS `L(dynamic:)`. */
+@Composable
+fun relationDisplayName(relation: String): String =
+    when (relation) {
+        "Mom" -> stringResource(R.string.relation_mom)
+        "Dad" -> stringResource(R.string.relation_dad)
+        "Son" -> stringResource(R.string.relation_son)
+        "Daughter" -> stringResource(R.string.relation_daughter)
+        "Sister" -> stringResource(R.string.relation_sister)
+        "Brother" -> stringResource(R.string.relation_brother)
+        "Wife" -> stringResource(R.string.relation_wife)
+        "Husband" -> stringResource(R.string.relation_husband)
+        "Fiancé" -> stringResource(R.string.relation_fiance)
+        "Partner" -> stringResource(R.string.relation_partner)
+        "Grandmother" -> stringResource(R.string.relation_grandmother)
+        "Grandfather" -> stringResource(R.string.relation_grandfather)
+        "Grandchild" -> stringResource(R.string.relation_grandchild)
+        "Aunt" -> stringResource(R.string.relation_aunt)
+        "Uncle" -> stringResource(R.string.relation_uncle)
+        "Cousin" -> stringResource(R.string.relation_cousin)
+        "Friend" -> stringResource(R.string.relation_friend)
+        "Other" -> stringResource(R.string.relation_other)
+        else -> relation
+    }
 
 /** Family relation options (relative to the viewer). Mirrors iOS `familyRelationOptions`. */
 val familyRelationOptions =
@@ -167,20 +193,20 @@ fun FamilyScreen(
         containerColor = Color.Transparent,
         topBar = {
             AppTopBar(
-                title = "Family",
+                title = stringResource(R.string.family),
                 onBack = onBack,
                 actions = {
                     if (family != null && isAdmin) {
                         Box {
                             IconButton(onClick = { showPhotoMenu = true }) {
-                                Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                                Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
                             }
                             DropdownMenu(
                                 expanded = showPhotoMenu,
                                 onDismissRequest = { showPhotoMenu = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Change family photo") },
+                                    text = { Text(stringResource(R.string.change_family_photo)) },
                                     onClick = {
                                         showPhotoMenu = false
                                         photoPickerLauncher.launch(
@@ -225,20 +251,23 @@ fun FamilyScreen(
                         },
                         onShare = {
                             val message =
-                                "Join our family \"${family!!.name}\" on The Family App!\n\n" +
-                                    "Tap to join: ${Routes.inviteLink(family!!.joinCode)}\n\n" +
-                                    "Or open the app, tap \"Join with Invite Code\", and enter: ${family!!.joinCode}"
+                                context.getString(
+                                    R.string.join_family_invite_message,
+                                    family!!.name,
+                                    Routes.inviteLink(family!!.joinCode),
+                                    family!!.joinCode,
+                                )
                             val send =
                                 Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
                                     putExtra(Intent.EXTRA_TEXT, message)
                                 }
-                            context.startActivity(Intent.createChooser(send, "Share invite"))
+                            context.startActivity(Intent.createChooser(send, context.getString(R.string.share_invite)))
                         },
                         onShowQr = { showQr = true },
                     )
                     ErrorBanner(error)
-                    SectionHeader("Members", modifier = Modifier.padding(top = Spacing.sm))
+                    SectionHeader(stringResource(R.string.members), modifier = Modifier.padding(top = Spacing.sm))
                 }
 
                 items(members, key = { it.id }) { member ->
@@ -264,7 +293,7 @@ fun FamilyScreen(
 
                 item {
                     DestructiveButton(
-                        text = "Leave family",
+                        text = stringResource(R.string.leave_family),
                         onClick = { showLeaveConfirm = true },
                         modifier = Modifier.fillMaxWidth().padding(top = Spacing.sm),
                         leadingIcon = Icons.AutoMirrored.Filled.Logout,
@@ -301,18 +330,18 @@ fun FamilyScreen(
         AlertDialog(
             onDismissRequest = { showLeaveConfirm = false },
             shape = RoundedCornerShape(Radius.large),
-            title = { Text("Leave family?") },
-            text = { Text("You will lose access to shared data. You can rejoin later with the invite code.") },
+            title = { Text(stringResource(R.string.leave_family_q)) },
+            text = { Text(stringResource(R.string.you_will_lose_access_to_shared_data_you_can_rejoin_later_with_the_invite_code)) },
             confirmButton = {
                 TextButton(onClick = {
                     showLeaveConfirm = false
                     viewModel.leaveFamily()
                 }) {
-                    Text("Leave", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.leave), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showLeaveConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showLeaveConfirm = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -321,18 +350,18 @@ fun FamilyScreen(
         AlertDialog(
             onDismissRequest = { memberToRemove = null },
             shape = RoundedCornerShape(Radius.large),
-            title = { Text("Remove member?") },
+            title = { Text(stringResource(R.string.remove_member_q)) },
             text = { Text("${member.name} will be removed from the family. They can rejoin later with the invite code.") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.removeMember(member.id)
                     memberToRemove = null
                 }) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.remove), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { memberToRemove = null }) { Text("Cancel") }
+                TextButton(onClick = { memberToRemove = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -350,10 +379,10 @@ fun FamilyScreen(
 
     if (showJoin) {
         InputDialog(
-            title = "Join a family",
-            label = "Invite code",
+            title = stringResource(R.string.join_a_family),
+            label = stringResource(R.string.invite_code),
             initial = joinInitial,
-            confirmText = "Join",
+            confirmText = stringResource(R.string.join),
             onDismiss = {
                 showJoin = false
                 viewModel.clearError()
@@ -371,8 +400,8 @@ fun FamilyScreen(
         AlertDialog(
             onDismissRequest = { showQr = false },
             shape = RoundedCornerShape(Radius.large),
-            confirmButton = { TextButton(onClick = { showQr = false }) { Text("Done") } },
-            title = { Text("Scan to join") },
+            confirmButton = { TextButton(onClick = { showQr = false }) { Text(stringResource(R.string.done)) } },
+            title = { Text(stringResource(R.string.scan_to_join)) },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (qr != null) {
@@ -427,21 +456,21 @@ private fun NoFamilyContent(
         ) {
             EmptyState(
                 icon = Icons.Filled.FamilyRestroom,
-                title = "Bring your family together",
-                subtitle = "Create a family space or join one with an invite code to share calendars, shopping lists, wishlists, and more.",
+                title = stringResource(R.string.bring_your_family_together),
+                subtitle = stringResource(R.string.create_a_family_space_or_join_one_with_an_invite_code_to_share_calendars_shopping_lists_wishlists_and_more),
             )
             Spacer(Modifier.height(Spacing.sm))
             ErrorBanner(error)
             if (error != null) Spacer(Modifier.height(Spacing.sm))
             PrimaryButton(
-                text = "Create a Family",
+                text = stringResource(R.string.create_a_family),
                 onClick = onCreate,
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = Icons.Filled.FamilyRestroom,
             )
             Spacer(Modifier.height(Spacing.md))
             SecondaryButton(
-                text = "Join with Invite Code",
+                text = stringResource(R.string.join_with_invite_code),
                 onClick = onJoin,
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = Icons.Filled.GroupAdd,
@@ -491,7 +520,7 @@ private fun FamilyHeaderCard(
             Spacer(Modifier.height(Spacing.xs))
             CopyableCodeField(
                 code = joinCode,
-                label = "Invite Code",
+                label = stringResource(R.string.invite_code),
                 modifier =
                     Modifier.semantics {
                         contentDescription = "Family invite code: $joinCode"
@@ -502,13 +531,13 @@ private fun FamilyHeaderCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
                 SecondaryButton(
-                    text = "Share invite",
+                    text = stringResource(R.string.share_invite),
                     onClick = onShare,
                     modifier = Modifier.weight(1f),
                     leadingIcon = Icons.Filled.Share,
                 )
                 SecondaryButton(
-                    text = "QR code",
+                    text = stringResource(R.string.qr_code),
                     onClick = onShowQr,
                     modifier = Modifier.weight(1f),
                     leadingIcon = Icons.Filled.QrCode2,
@@ -643,7 +672,8 @@ private fun MemberCard(
     onClick: () -> Unit,
 ) {
     val avatarColor = member.avatarColor.takeIf { it != 0 }?.let { colorFromArgb(it) } ?: defaultAvatarColor
-    val subtitle = relation?.takeIf { it.isNotBlank() } ?: member.email
+    // iOS shows the viewer's relation as the subtitle (never the email).
+    val subtitle = relation?.takeIf { it.isNotBlank() }?.let { relationDisplayName(it) }.orEmpty()
     val memberDescription = "${member.name}, ${if (isAdmin) "Admin" else "Member"}"
 
     Row(
@@ -667,15 +697,6 @@ private fun MemberCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                if (isAdmin) {
-                    Spacer(Modifier.width(Spacing.xs))
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = "Admin",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp),
-                    )
-                }
             }
             if (subtitle.isNotBlank()) {
                 Text(
@@ -735,13 +756,13 @@ private fun MemberProfileSheet(
             )
             Column(Modifier.fillMaxWidth().glassCard(Radius.row)) {
                 if (member.email.isNotBlank()) {
-                    InfoRow(icon = Icons.Filled.Email, label = "Email", value = member.email)
+                    InfoRow(icon = Icons.Filled.Email, label = stringResource(R.string.email), value = member.email)
                     HorizontalDivider(Modifier.padding(start = 52.dp))
                 }
                 InfoRow(
                     icon = Icons.Filled.Phone,
-                    label = "Phone",
-                    value = member.mobile.ifBlank { "Not set" },
+                    label = stringResource(R.string.phone),
+                    value = member.mobile.ifBlank { stringResource(R.string.not_set) },
                 )
                 if (!isSelf) {
                     HorizontalDivider(Modifier.padding(start = 52.dp))
@@ -788,7 +809,7 @@ private fun RelationRow(
         )
         Spacer(Modifier.width(Spacing.md))
         Column {
-            Text("Your relation", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.your_relation), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             RelationPicker(relation = relation, onSetRelation = onSetRelation)
         }
     }
@@ -807,7 +828,7 @@ private fun RelationPicker(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                relation.ifBlank { "Set relation" },
+                relationDisplayName(relation).ifBlank { stringResource(R.string.set_relation) },
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = if (relation.isBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
@@ -822,7 +843,7 @@ private fun RelationPicker(
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             familyRelationOptions.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = { Text(relationDisplayName(option)) },
                     onClick = {
                         expanded = false
                         onSetRelation(option)
@@ -832,7 +853,7 @@ private fun RelationPicker(
             if (relation.isNotBlank()) {
                 HorizontalDivider()
                 DropdownMenuItem(
-                    text = { Text("None", color = MaterialTheme.colorScheme.error) },
+                    text = { Text(stringResource(R.string.none), color = MaterialTheme.colorScheme.error) },
                     onClick = {
                         expanded = false
                         onSetRelation("")
@@ -865,15 +886,15 @@ private fun RelationsSetupSheet(
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Set your relations",
+                    stringResource(R.string.set_your_relations),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = onDismiss) { Text("Done") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) }
             }
             Text(
-                "How are you related to each member? You can change this anytime.",
+                stringResource(R.string.how_are_you_related_to_each_member_you_can_change_this_anytime),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

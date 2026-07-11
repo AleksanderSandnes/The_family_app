@@ -4,7 +4,6 @@ package com.sandnes.familyapp.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,15 +49,24 @@ val supportsBlur: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 /**
- * Shared [HazeState] for the current [AmbientBackground] subtree. Null when no ambient
- * background is present (e.g. previews) — glass helpers then use the fallback path.
+ * Shared background-only [HazeState] for the current [AmbientBackground] subtree — its single
+ * source is the ambient wash. Cards and in-screen chrome sample this, so they blur the wash
+ * behind them and never their own scroll container (self-sampling causes smudge artifacts).
+ * Null when no ambient background is present (e.g. previews) — glass helpers then use the
+ * fallback path.
  */
 val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
 
 /**
+ * [HazeState] for floating chrome (the tab bar): sources are the ambient wash **and** the
+ * screen content marked with [glassSource], so chrome blurs content scrolling beneath it.
+ */
+val LocalChromeHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+/**
  * Ambient canvas — three soft radial washes (violet top-right, indigo left, teal bottom) over a
- * near-white / near-black base. Provides the shared [HazeState] and marks itself as the blur
- * source, so [glassCard] surfaces inside [content] blur the wash behind them.
+ * near-white / near-black base. Provides the background [HazeState] (sampled by [glassCard])
+ * and the chrome [HazeState] (sampled by [glassBar]), with the wash registered in both.
  */
 @Composable
 fun AmbientBackground(
@@ -66,15 +74,20 @@ fun AmbientBackground(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val hazeState = remember { HazeState() }
-    val dark = isSystemInDarkTheme()
+    val chromeState = remember { HazeState() }
+    val dark = appDarkTheme()
     val base = if (dark) AmbientBaseDark else AmbientBaseLight
 
-    CompositionLocalProvider(LocalHazeState provides hazeState) {
+    CompositionLocalProvider(
+        LocalHazeState provides hazeState,
+        LocalChromeHazeState provides chromeState,
+    ) {
         Box(modifier.fillMaxSize()) {
             Box(
                 Modifier
                     .fillMaxSize()
                     .hazeSource(hazeState)
+                    .hazeSource(chromeState, zIndex = -1f)
                     .drawBehind {
                         drawRect(base)
                         drawWash(Color(0xFF7C3AED), if (dark) 0.32f else 0.17f, Offset(0.88f * size.width, 0.06f * size.height), 0.85f * size.width)
@@ -94,10 +107,12 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWash(
     radius: Float,
 ) {
     val tinted = color.copy(alpha = alpha)
+    // Brush coordinates are canvas-absolute, so the gradient must be centred on the wash
+    // centre itself (not rect-relative) — otherwise the washes land in the wrong place.
     val brush =
         Brush.radialGradient(
             colors = listOf(tinted, tinted.copy(alpha = 0f)),
-            center = Offset(radius, radius),
+            center = center,
             radius = radius,
         )
     drawRect(
@@ -142,12 +157,20 @@ fun Modifier.glassCardTinted(
 fun Modifier.glassChrome(cornerRadius: Dp): Modifier = glassSurface(cornerRadius, tint = null, chrome = true)
 
 /**
- * Marks scrollable content as a blur source so floating chrome (tab bar, top bar) blurs it.
+ * Floating bar chrome (the tab bar) — samples the chrome [HazeState] so it blurs screen
+ * content scrolling beneath it, not just the ambient wash.
+ */
+@Composable
+fun Modifier.glassBar(cornerRadius: Dp): Modifier =
+    glassSurface(cornerRadius, tint = null, chrome = true, state = LocalChromeHazeState.current)
+
+/**
+ * Marks scrollable content as a blur source so floating chrome (tab bar) blurs it.
  * No-op when no [AmbientBackground] is present.
  */
 @Composable
 fun Modifier.glassSource(): Modifier {
-    val haze = LocalHazeState.current
+    val haze = LocalChromeHazeState.current
     return if (haze != null) this.hazeSource(haze, zIndex = 0f) else this
 }
 
@@ -156,10 +179,11 @@ private fun Modifier.glassSurface(
     cornerRadius: Dp,
     tint: Color?,
     chrome: Boolean = false,
+    state: HazeState? = null,
 ): Modifier {
     val shape = RoundedCornerShape(cornerRadius)
-    val haze = LocalHazeState.current
-    val dark = isSystemInDarkTheme()
+    val haze = state ?: LocalHazeState.current
+    val dark = appDarkTheme()
     val shadowColor = tint ?: glassShadow
     // Android renders colored elevation shadows faint; bump alpha so cards clearly lift off the
     // light ambient wash (approximates iOS's r9/y6 soft drop shadow).
@@ -216,7 +240,7 @@ fun Modifier.rowSurface(
 @Composable
 fun Modifier.ghostSurface(cornerRadius: Dp = Radius.card): Modifier {
     val shape = RoundedCornerShape(cornerRadius)
-    val dark = isSystemInDarkTheme()
+    val dark = appDarkTheme()
     val fill = if (dark) Color.White.copy(alpha = 0.04f) else Color.White.copy(alpha = 0.36f)
     val stroke = if (dark) Color.White.copy(alpha = 0.12f) else Color(0xFF5F6780).copy(alpha = 0.28f)
     return this

@@ -29,10 +29,25 @@ private fun monthDayShort(epochMs: Long): String {
     return "$month ${cal.get(Calendar.DAY_OF_MONTH)}"
 }
 
+/**
+ * Robust ISO-8601 → [Instant]. Supabase timestamptz values carry a "+00:00" offset (and no
+ * trailing Z), which [Instant.parse] rejects on Android's desugared java.time — every chat
+ * timestamp then silently rendered as empty. Falls back to [OffsetDateTime] parsing.
+ */
+internal fun parseInstant(iso: String): Instant? =
+    runCatching { Instant.parse(iso) }.getOrNull()
+        ?: runCatching { OffsetDateTime.parse(iso).toInstant() }.getOrNull()
+        ?: runCatching {
+            java.time.LocalDateTime
+                .parse(iso)
+                .atZone(ZoneId.of("UTC"))
+                .toInstant()
+        }.getOrNull()
+
 /** Short relative time label for conversation list preview (e.g. "2m ago", "Yesterday", "Mon"). */
 internal fun relativeTime(isoString: String): String =
     runCatching {
-        val instant = Instant.parse(isoString)
+        val instant = parseInstant(isoString) ?: return ""
         val diffMs = System.currentTimeMillis() - instant.toEpochMilli()
         val diffMin = diffMs / MILLIS_PER_MINUTE
         val diffH = diffMs / MILLIS_PER_HOUR
@@ -50,7 +65,7 @@ internal fun relativeTime(isoString: String): String =
 /** Compact time label for message timestamps (e.g. "2:30 PM", "Yesterday 2:30 PM", "Mon 2:30 PM"). */
 internal fun messageTimeLabel(isoString: String): String =
     runCatching {
-        val instant = Instant.parse(isoString)
+        val instant = parseInstant(isoString) ?: return ""
         val diffD = (System.currentTimeMillis() - instant.toEpochMilli()) / MILLIS_PER_DAY
         val odt = OffsetDateTime.ofInstant(instant, ZoneId.systemDefault())
         val timePart = odt.format(DateTimeFormatter.ofPattern("h:mm a"))
@@ -66,7 +81,7 @@ internal fun messageTimeLabel(isoString: String): String =
 internal fun presenceLabel(lastActiveIso: String?): String? {
     if (lastActiveIso == null) return null
     return runCatching {
-        val instant = Instant.parse(lastActiveIso)
+        val instant = parseInstant(lastActiveIso) ?: return null
         val diffMin = (System.currentTimeMillis() - instant.toEpochMilli()) / MILLIS_PER_MINUTE
         if (diffMin < PRESENCE_ACTIVE_NOW_MINUTES) "Active now" else "Active ${relativeTime(lastActiveIso)}"
     }.getOrNull()
@@ -80,7 +95,9 @@ internal fun messageSeen(
 ): Boolean {
     if (otherLastRead == null) return false
     return runCatching {
-        !Instant.parse(otherLastRead).isBefore(Instant.parse(sentAt))
+        val a = parseInstant(otherLastRead) ?: return false
+        val b = parseInstant(sentAt) ?: return false
+        !a.isBefore(b)
     }.getOrDefault(false)
 }
 
@@ -90,7 +107,23 @@ internal fun gapExceedsTenMinutes(
     laterIso: String,
 ): Boolean =
     runCatching {
-        val earlier = Instant.parse(earlierIso).toEpochMilli()
-        val later = Instant.parse(laterIso).toEpochMilli()
+        val earlier = parseInstant(earlierIso)?.toEpochMilli() ?: return false
+        val later = parseInstant(laterIso)?.toEpochMilli() ?: return false
         (later - earlier) > MESSAGE_GROUP_GAP_MILLIS
     }.getOrDefault(false)
+
+/**
+ * Full exact timestamp revealed when a message bubble is tapped
+ * (e.g. "Jul 7, 2026, 2:30 PM" for en, "7. juli 2026, 14:30" for nb). Mirrors iOS
+ * `exactMessageTimestamp` (medium date + short time, locale-aware).
+ */
+internal fun exactMessageTimestamp(isoString: String): String {
+    val instant = parseInstant(isoString) ?: return ""
+    val formatter =
+        java.text.DateFormat.getDateTimeInstance(
+            java.text.DateFormat.MEDIUM,
+            java.text.DateFormat.SHORT,
+            Locale.getDefault(),
+        )
+    return formatter.format(java.util.Date(instant.toEpochMilli()))
+}

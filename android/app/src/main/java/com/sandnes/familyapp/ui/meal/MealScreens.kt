@@ -20,12 +20,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
@@ -33,7 +31,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -67,8 +65,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -77,6 +77,7 @@ import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.MealPlanDayModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.IconGrid
@@ -84,6 +85,8 @@ import com.sandnes.familyapp.ui.components.InputDialog
 import com.sandnes.familyapp.ui.components.ListSkeleton
 import com.sandnes.familyapp.ui.components.PullRefresh
 import com.sandnes.familyapp.ui.components.RefreshOnResume
+import com.sandnes.familyapp.ui.components.SheetField
+import com.sandnes.familyapp.ui.components.SheetSectionLabel
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
 import com.sandnes.familyapp.ui.theme.AppColorPalette
 import com.sandnes.familyapp.ui.theme.FeatureAccent
@@ -149,77 +152,50 @@ private fun CreatePlanDialog(
             toDate != null &&
             !toDate!!.isBefore(fromDate!!)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(Radius.sheet),
-        title = { Text(stringResource(R.string.new_plan), style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md),
-            ) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    placeholder = { Text(stringResource(R.string.plan_name)) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(Radius.field),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors =
-                        OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                        ),
-                )
-                Text(
-                    stringResource(R.string.icon).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                IconGrid(
-                    options = IconOptions.meal,
-                    selected = selectedIcon,
-                    onSelect = { selectedIcon = it },
-                    feature = FeatureAccent.Meals,
-                    colorOverride = hexColor(selectedColor),
-                )
-                Text(
-                    stringResource(R.string.color).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                ColorPickerRow(selected = selectedColor, onSelect = { selectedColor = it })
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    DatePickerButton(
-                        label = stringResource(R.string.starts),
-                        value = fromDate?.format(MEAL_DATE_FMT) ?: stringResource(R.string.select),
-                        valueSet = fromDate != null,
-                        modifier = Modifier.weight(1f),
-                        onClick = { showFromPicker = true },
-                    )
-                    DatePickerButton(
-                        label = stringResource(R.string.ends),
-                        value = toDate?.format(MEAL_DATE_FMT) ?: stringResource(R.string.select),
-                        valueSet = toDate != null,
-                        modifier = Modifier.weight(1f),
-                        onClick = { showToPicker = true },
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = canConfirm,
-                onClick = { onCreate(name.trim(), fromDate.toString(), toDate.toString(), selectedIcon, selectedColor) },
-            ) { Text(stringResource(R.string.create)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+    // iOS-parity creation sheet (New plan): name field, icon grid, colour row, Starts/Ends.
+    CreationSheet(
+        title = stringResource(R.string.new_plan),
+        confirmTitle = stringResource(R.string.create),
+        confirmEnabled = canConfirm,
+        onDismiss = onDismiss,
+        onConfirm = { onCreate(name.trim(), fromDate.toString(), toDate.toString(), selectedIcon, selectedColor) },
+    ) {
+        SheetField(
+            icon = IconKeyMap.meal(selectedIcon),
+            placeholder = stringResource(R.string.plan_name),
+            value = name,
+            onValueChange = { name = it },
+        )
+        SheetSectionLabel(stringResource(R.string.icon))
+        IconGrid(
+            options = IconOptions.meal,
+            selected = selectedIcon,
+            onSelect = { selectedIcon = it },
+            feature = FeatureAccent.Meals,
+            colorOverride = hexColor(selectedColor),
+        )
+        SheetSectionLabel(stringResource(R.string.color))
+        ColorPickerRow(selected = selectedColor, onSelect = { selectedColor = it })
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            DatePickerButton(
+                label = stringResource(R.string.starts),
+                value = fromDate?.format(MEAL_DATE_FMT) ?: stringResource(R.string.select),
+                valueSet = fromDate != null,
+                modifier = Modifier.weight(1f),
+                onClick = { showFromPicker = true },
+            )
+            DatePickerButton(
+                label = stringResource(R.string.ends),
+                value = toDate?.format(MEAL_DATE_FMT) ?: stringResource(R.string.select),
+                valueSet = toDate != null,
+                modifier = Modifier.weight(1f),
+                onClick = { showToPicker = true },
+            )
+        }
+    }
 
     if (showFromPicker) {
         val state =
@@ -337,37 +313,25 @@ private fun ChangeIconColorDialog(
     var selectedIcon by remember { mutableStateOf(currentIcon) }
     var selectedColor by remember { mutableStateOf(currentColor ?: AppColorPalette.first()) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(Radius.sheet),
-        title = { Text(stringResource(R.string.change_icon), style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                Text(
-                    stringResource(R.string.icon).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                IconGrid(
-                    options = IconOptions.meal,
-                    selected = selectedIcon,
-                    onSelect = { selectedIcon = it },
-                    feature = FeatureAccent.Meals,
-                    colorOverride = hexColor(selectedColor),
-                )
-                Text(
-                    stringResource(R.string.color).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                ColorPickerRow(selected = selectedColor, onSelect = { selectedColor = it })
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(selectedIcon, selectedColor) }) { Text(stringResource(R.string.save)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+    // iOS-parity icon picker sheet (IconPickerSheet).
+    CreationSheet(
+        title = stringResource(R.string.change_icon),
+        confirmTitle = stringResource(R.string.save),
+        confirmEnabled = true,
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(selectedIcon, selectedColor) },
+    ) {
+        SheetSectionLabel(stringResource(R.string.icon))
+        IconGrid(
+            options = IconOptions.meal,
+            selected = selectedIcon,
+            onSelect = { selectedIcon = it },
+            feature = FeatureAccent.Meals,
+            colorOverride = hexColor(selectedColor),
+        )
+        SheetSectionLabel(stringResource(R.string.color))
+        ColorPickerRow(selected = selectedColor, onSelect = { selectedColor = it })
+    }
 }
 
 // ── Screens ────────────────────────────────────────────────────────────────
@@ -551,6 +515,7 @@ fun MealDetailScreen(
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.rename_plan)) },
+                            trailingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 showRename = true
@@ -558,6 +523,7 @@ fun MealDetailScreen(
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.change_icon)) },
+                            trailingIcon = { Icon(Icons.Filled.Star, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 showIconPicker = true
@@ -649,8 +615,13 @@ private fun MealDayRow(
             .getOrDefault(day.date.substringAfterLast('-'))
 
     val focusRequester = remember { FocusRequester() }
+    // Local TextFieldValue so entering edit mode places the cursor at the end (like iOS).
+    var fieldValue by remember { mutableStateOf(TextFieldValue("")) }
     LaunchedEffect(isEditing) {
-        if (isEditing) focusRequester.requestFocus()
+        if (isEditing) {
+            fieldValue = TextFieldValue(draft, TextRange(draft.length))
+            focusRequester.requestFocus()
+        }
     }
 
     Row(
@@ -676,8 +647,11 @@ private fun MealDayRow(
         if (isEditing) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(
-                    value = draft,
-                    onValueChange = onDraftChange,
+                    value = fieldValue,
+                    onValueChange = {
+                        fieldValue = it
+                        onDraftChange(it.text)
+                    },
                     placeholder = { Text(stringResource(R.string.whats_for_meal, day.day)) },
                     singleLine = true,
                     shape = RoundedCornerShape(Radius.extraSmall),

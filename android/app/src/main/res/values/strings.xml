@@ -454,4 +454,24 @@
     <string name="member_count_plural">%1$d members</string>
     <string name="something_went_wrong">Something went wrong. Please try again.</string>
     <string name="that_name_is_already_taken">That name is already taken.</string>
+    <string name="relation_mom">Mom</string>
+    <string name="relation_dad">Dad</string>
+    <string name="relation_son">Son</string>
+    <string name="relation_daughter">Daughter</string>
+    <string name="relation_sister">Sister</string>
+    <string name="relation_brother">Brother</string>
+    <string name="relation_wife">Wife</string>
+    <string name="relation_husband">Husband</string>
+    <string name="relation_fiance">Fiancé</string>
+    <string name="relation_partner">Partner</string>
+    <string name="relation_grandmother">Grandmother</string>
+    <string name="relation_grandfather">Grandfather</string>
+    <string name="relation_grandchild">Grandchild</string>
+    <string name="relation_aunt">Aunt</string>
+    <string name="relation_uncle">Uncle</string>
+    <string name="relation_cousin">Cousin</string>
+    <string name="relation_friend">Friend</string>
+    <string name="relation_other">Other</string>
+    <string name="join_family_invite_message">Join our family \"%1$s\" on The Family App!\n\nTap to join: %2$s\n\nOr open the app, tap \"Join with Invite Code\", and enter: %3$s</string>
+    <string name="reply">Reply</string>
 </resources>

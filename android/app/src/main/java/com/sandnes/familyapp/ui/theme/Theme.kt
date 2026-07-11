@@ -68,6 +68,18 @@ private val DarkColors =
         onError = Color.White,
     )
 
+/**
+ * The app-resolved dark flag (in-app theme setting, falling back to the system). The design
+ * layer must read THIS — not [isSystemInDarkTheme] — or the ambient wash and glass surfaces
+ * stay light when the user picks Dark in Settings.
+ */
+val LocalAppDarkTheme = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+/** Whether the app is rendering in dark theme (respects the in-app theme setting). */
+@Composable
+@androidx.compose.runtime.ReadOnlyComposable
+fun appDarkTheme(): Boolean = LocalAppDarkTheme.current
+
 @Composable
 fun TheFamilyAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -92,10 +104,12 @@ fun TheFamilyAppTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colors,
-        typography = AppTypography,
-        shapes = AppShapes,
-        content = content,
-    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalAppDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colors,
+            typography = AppTypography,
+            shapes = AppShapes,
+            content = content,
+        )
+    }
 }

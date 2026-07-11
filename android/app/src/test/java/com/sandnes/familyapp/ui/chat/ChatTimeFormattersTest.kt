@@ -2,6 +2,7 @@ package com.sandnes.familyapp.ui.chat
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -172,5 +173,29 @@ class ChatTimeFormattersTest {
         val earlier = "2024-01-15T10:00:00Z"
         val later = "2024-01-15T11:00:00Z"
         assertTrue(gapExceedsTenMinutes(earlier, later))
+    }
+
+    // ── Supabase timestamptz format ("+00:00" offset, no trailing Z) ─────────
+
+    @Test
+    fun parseInstant_acceptsSupabaseOffsetFormat() {
+        assertNotNull(parseInstant("2026-07-11T15:08:23.123456+00:00"))
+        assertNotNull(parseInstant("2026-07-11T15:08:23+02:00"))
+        assertNotNull(parseInstant("2026-07-11T15:08:23Z"))
+    }
+
+    @Test
+    fun gapExceedsTenMinutes_supabaseOffsetFormat_works() {
+        assertTrue(gapExceedsTenMinutes("2024-01-15T10:00:00+00:00", "2024-01-15T11:00:00+00:00"))
+    }
+
+    @Test
+    fun relativeTime_supabaseOffsetFormat_notEmpty() {
+        val recent =
+            java.time.OffsetDateTime
+                .now()
+                .minusHours(2)
+                .toString()
+        assertTrue(relativeTime(recent).isNotEmpty())
     }
 }

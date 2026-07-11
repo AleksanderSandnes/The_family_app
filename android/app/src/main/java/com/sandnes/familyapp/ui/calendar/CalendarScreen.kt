@@ -2,6 +2,7 @@
 
 package com.sandnes.familyapp.ui.calendar
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -38,7 +39,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -46,8 +46,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -66,7 +64,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,16 +74,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.CalendarEventModel
 import com.sandnes.familyapp.data.UserModel
-import com.sandnes.familyapp.ui.components.AppFabSmall
 import com.sandnes.familyapp.ui.components.AppTopBar
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.IconGrid
 import com.sandnes.familyapp.ui.components.InitialAvatar
 import com.sandnes.familyapp.ui.components.LoadingState
 import com.sandnes.familyapp.ui.components.RefreshOnResume
+import com.sandnes.familyapp.ui.components.SheetField
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
 import com.sandnes.familyapp.ui.theme.AppColorPalette
 import com.sandnes.familyapp.ui.theme.FeatureAccent
@@ -180,20 +182,20 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
+            // iOS header: "Today" pill + circular "+" both in the top bar (no FAB).
             AppTopBar(
-                title = "Calendar",
+                title = stringResource(R.string.calendar),
                 actions = {
                     TextButton(onClick = { viewModel.selectDate(LocalDate.now()) }) {
-                        Text("Today")
+                        Text(stringResource(R.string.today))
+                    }
+                    IconButton(onClick = { showAdd = true }) {
+                        Icon(
+                            Icons.Filled.Add,
+                            contentDescription = stringResource(R.string.add_new_calendar_event),
+                        )
                     }
                 },
-            )
-        },
-        floatingActionButton = {
-            AppFabSmall(
-                icon = Icons.Filled.Add,
-                contentDescription = "Add new calendar event",
-                onClick = { showAdd = true },
             )
         },
     ) { padding ->
@@ -270,11 +272,11 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
 }
 
 private enum class CalendarView(
-    val label: String,
+    @StringRes val labelRes: Int,
 ) {
-    Month("Month"),
-    Week("Week"),
-    Agenda("Agenda"),
+    Month(R.string.month),
+    Week(R.string.week),
+    Agenda(R.string.agenda),
 }
 
 /** Glass segmented control for the Month / Week / Agenda modes. */
@@ -297,16 +299,24 @@ private fun CalendarViewToggle(
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(Radius.segmentThumb))
-                    .then(if (selected) Modifier.background(MaterialTheme.colorScheme.primary) else Modifier)
-                    .clickable { onSelect(v) }
+                    // iOS-style thumb: white/surface pill lifts off the glass track.
+                    .then(
+                        if (selected) {
+                            Modifier
+                                .shadow(2.dp, RoundedCornerShape(Radius.segmentThumb))
+                                .background(MaterialTheme.colorScheme.surface)
+                        } else {
+                            Modifier
+                        },
+                    ).clickable { onSelect(v) }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    v.label,
+                    stringResource(v.labelRes),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -764,101 +774,87 @@ private fun EventDialog(
     var showTimeToPicker by remember { mutableStateOf(false) }
     val overrideColor = hexColor(color)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text(if (isEdit) "Edit event" else "New event", style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                OutlinedTextField(
-                    value = activity,
-                    onValueChange = { activity = it },
-                    placeholder = { Text("Event name") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(Radius.field),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors =
-                        OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                        ),
-                )
+    // iOS-parity event sheet (New event / Edit event).
+    CreationSheet(
+        title = stringResource(if (isEdit) R.string.edit_event else R.string.new_event),
+        confirmTitle = stringResource(R.string.save),
+        confirmEnabled = activity.isNotBlank(),
+        onDismiss = onDismiss,
+        onConfirm = {
+            val tf = "%02d:%02d".format(timeFromState.hour, timeFromState.minute)
+            val tt = "%02d:%02d".format(timeToState.hour, timeToState.minute)
+            onSave(
+                EventDraft(
+                    activity = activity.trim(),
+                    allDay = allDay,
+                    dateFrom = dateFrom.toString(),
+                    dateTo = dateTo.toString(),
+                    timeFrom = if (allDay) "" else tf,
+                    timeTo = if (allDay) "" else tt,
+                    icon = selectedIcon,
+                    isPrivate = isPrivate,
+                    color = color,
+                    attendeeIds = members.map { it.id }.filter { attendeeIds.contains(it) },
+                ),
+            )
+        },
+    ) {
+        Column(Modifier.verticalScroll(rememberScrollState())) {
+            SheetField(
+                icon = IconKeyMap.calendar(selectedIcon),
+                placeholder = stringResource(R.string.event_name),
+                value = activity,
+                onValueChange = { activity = it },
+            )
 
-                DialogSectionLabel("Icon")
-                IconGrid(
-                    options = IconOptions.calendar,
-                    selected = selectedIcon,
-                    onSelect = { selectedIcon = it },
-                    feature = FeatureAccent.Calendar,
-                    colorOverride = overrideColor,
-                )
+            DialogSectionLabel(stringResource(R.string.icon))
+            IconGrid(
+                options = IconOptions.calendar,
+                selected = selectedIcon,
+                onSelect = { selectedIcon = it },
+                feature = FeatureAccent.Calendar,
+                colorOverride = overrideColor,
+            )
 
-                DialogSectionLabel("Color")
-                ColorPickerRow(selected = color, onSelect = { color = it })
+            DialogSectionLabel(stringResource(R.string.color))
+            ColorPickerRow(selected = color, onSelect = { color = it })
 
-                Spacer(Modifier.height(12.dp))
-                ToggleRow("Private", isPrivate) { isPrivate = it }
-                ToggleRow("All day", allDay) { allDay = it }
-                DateTimeRow(
-                    label = "Starts",
-                    date = dateFrom,
-                    time = if (!allDay) LocalTime.of(timeFromState.hour, timeFromState.minute) else null,
-                    onDateClick = { showDateFromPicker = true },
-                    onTimeClick = { showTimeFromPicker = true },
-                )
-                DateTimeRow(
-                    label = "Ends",
-                    date = dateTo,
-                    time = if (!allDay) LocalTime.of(timeToState.hour, timeToState.minute) else null,
-                    onDateClick = { showDateToPicker = true },
-                    onTimeClick = { showTimeToPicker = true },
-                )
+            Spacer(Modifier.height(12.dp))
+            ToggleRow(stringResource(R.string.private_label), isPrivate) { isPrivate = it }
+            ToggleRow(stringResource(R.string.all_day), allDay) { allDay = it }
+            DateTimeRow(
+                label = stringResource(R.string.starts),
+                date = dateFrom,
+                time = if (!allDay) LocalTime.of(timeFromState.hour, timeFromState.minute) else null,
+                onDateClick = { showDateFromPicker = true },
+                onTimeClick = { showTimeFromPicker = true },
+            )
+            DateTimeRow(
+                label = stringResource(R.string.ends),
+                date = dateTo,
+                time = if (!allDay) LocalTime.of(timeToState.hour, timeToState.minute) else null,
+                onDateClick = { showDateToPicker = true },
+                onTimeClick = { showTimeToPicker = true },
+            )
 
-                if (members.isNotEmpty()) {
-                    DialogSectionLabel("Going with")
-                    members.forEach { member ->
-                        AttendeeRow(
-                            member = member,
-                            selected = attendeeIds.contains(member.id),
-                            onToggle = {
-                                if (attendeeIds.contains(member.id)) {
-                                    attendeeIds.remove(member.id)
-                                } else {
-                                    attendeeIds.add(member.id)
-                                }
-                            },
-                        )
-                    }
+            if (members.isNotEmpty()) {
+                DialogSectionLabel(stringResource(R.string.going_with))
+                members.forEach { member ->
+                    AttendeeRow(
+                        member = member,
+                        selected = attendeeIds.contains(member.id),
+                        onToggle = {
+                            if (attendeeIds.contains(member.id)) {
+                                attendeeIds.remove(member.id)
+                            } else {
+                                attendeeIds.add(member.id)
+                            }
+                        },
+                    )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = activity.isNotBlank(),
-                onClick = {
-                    val tf = "%02d:%02d".format(timeFromState.hour, timeFromState.minute)
-                    val tt = "%02d:%02d".format(timeToState.hour, timeToState.minute)
-                    onSave(
-                        EventDraft(
-                            activity = activity.trim(),
-                            allDay = allDay,
-                            dateFrom = dateFrom.toString(),
-                            dateTo = dateTo.toString(),
-                            timeFrom = if (allDay) "" else tf,
-                            timeTo = if (allDay) "" else tt,
-                            icon = selectedIcon,
-                            isPrivate = isPrivate,
-                            color = color,
-                            attendeeIds = members.map { it.id }.filter { attendeeIds.contains(it) },
-                        ),
-                    )
-                },
-            ) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+        }
+    }
 
     if (showDateFromPicker) {
         val state =
@@ -874,9 +870,9 @@ private fun EventDialog(
                         if (dateTo.isBefore(dateFrom)) dateTo = dateFrom
                     }
                     showDateFromPicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { showDateFromPicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showDateFromPicker = false }) { Text(stringResource(R.string.cancel)) } },
         ) { DatePicker(state = state) }
     }
 
@@ -894,15 +890,15 @@ private fun EventDialog(
                         dateTo = if (picked.isBefore(dateFrom)) dateFrom else picked
                     }
                     showDateToPicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { showDateToPicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showDateToPicker = false }) { Text(stringResource(R.string.cancel)) } },
         ) { DatePicker(state = state) }
     }
 
     if (showTimeFromPicker) {
         TimePickerDialog(
-            title = "Start time",
+            title = stringResource(R.string.start_time),
             state = timeFromState,
             onDismiss = { showTimeFromPicker = false },
             onConfirm = { showTimeFromPicker = false },
@@ -911,7 +907,7 @@ private fun EventDialog(
 
     if (showTimeToPicker) {
         TimePickerDialog(
-            title = "End time",
+            title = stringResource(R.string.end_time),
             state = timeToState,
             onDismiss = { showTimeToPicker = false },
             onConfirm = { showTimeToPicker = false },
@@ -1052,7 +1048,7 @@ private fun TimePickerDialog(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                     Spacer(Modifier.width(8.dp))
                     TextButton(onClick = onConfirm) { Text("OK") }
                 }

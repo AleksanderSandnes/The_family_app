@@ -5,11 +5,11 @@ package com.sandnes.familyapp.ui.home
 import android.content.res.Configuration
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -80,8 +81,10 @@ import com.sandnes.familyapp.ui.navigation.Routes
 import com.sandnes.familyapp.ui.theme.FeatureAccent
 import com.sandnes.familyapp.ui.theme.FeatureBadge
 import com.sandnes.familyapp.ui.theme.IconKeyMap
+import com.sandnes.familyapp.ui.theme.Indigo600
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.appDarkTheme
 import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.heroGradient
 import com.sandnes.familyapp.ui.theme.hexColor
@@ -115,7 +118,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val dark = isSystemInDarkTheme()
+    val dark = appDarkTheme()
 
     RefreshOnResume { viewModel.refresh() }
 
@@ -138,9 +141,10 @@ fun HomeScreen(
     val tileAspectRatio =
         when {
             isLandscape && isTablet -> 2.2f
-            isLandscape -> 1.5f
-            isTablet -> 1.4f
-            else -> 1.15f
+            isLandscape -> 1.7f
+            isTablet -> 1.7f
+            // Mirrors the iOS FeatureTile (minHeight 112pt on a ~171pt-wide tile).
+            else -> 1.6f
         }
 
     // Transparent so the app-level AmbientBackground shows through the glass surfaces.
@@ -192,7 +196,17 @@ private fun SummarySection(
 ) {
     val tonight = state.tonightMeal
     val event = state.nextEvent
-    val birthdayName = state.nextBirthdayName
+    val birthday = state.nextBirthday
+    // Summary detail lines are composed here so they follow the in-app locale.
+    val labels =
+        SummaryLabels(
+            today = stringResource(R.string.today),
+            tomorrow = stringResource(R.string.tomorrow),
+            todayExclaim = stringResource(R.string.today_exclaim),
+            inDaysFormat = stringResource(R.string.in_days_lower),
+            turnsFormat = stringResource(R.string.turns_age),
+        )
+    val today = remember(state) { java.time.LocalDate.now() }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         if (tonight != null) {
             SummaryCard(
@@ -206,7 +220,7 @@ private fun SummarySection(
         if (event != null) {
             EventSummaryCard(
                 event = event,
-                detail = state.nextEventWhen,
+                detail = eventWhen(event, today, labels),
                 members = state.familyMembers,
             ) { onOpen(Routes.CALENDAR) }
         }
@@ -219,13 +233,13 @@ private fun SummarySection(
                 detail = null,
             ) { onOpen(Routes.SHOPPING) }
         }
-        if (birthdayName != null) {
+        if (birthday != null) {
             SummaryCard(
                 icon = Icons.Filled.Cake,
                 accent = FeatureAccent.Birthdays,
                 label = stringResource(R.string.next_birthday),
-                value = birthdayName,
-                detail = state.nextBirthdayWhen,
+                value = birthday.name,
+                detail = state.nextBirthdayDate?.let { birthdayWhen(birthday, it, today, labels) },
             ) { onOpen(Routes.BIRTHDAY) }
         }
         Spacer(Modifier.height(Spacing.xs))
@@ -245,12 +259,12 @@ private fun SummaryCard(
     Row(
         Modifier
             .fillMaxWidth()
-            .glassCard(cornerRadius = Radius.overviewCard)
+            .glassCard(cornerRadius = Radius.row)
             .clickable(onClick = onClick)
             .padding(Spacing.cardPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        FeatureBadge(icon = icon, feature = accent, size = 44.dp, cornerRadius = Radius.badgeLarge)
+        FeatureBadge(icon = icon, feature = accent, size = 38.dp, cornerRadius = Radius.badge)
         Spacer(Modifier.size(Spacing.md))
         Column(Modifier.weight(1f)) {
             Text(
@@ -301,7 +315,7 @@ private fun EventSummaryCard(
     Row(
         Modifier
             .fillMaxWidth()
-            .glassCard(cornerRadius = Radius.overviewCard)
+            .glassCard(cornerRadius = Radius.row)
             .clickable(onClick = onClick)
             .padding(Spacing.cardPadding),
         verticalAlignment = Alignment.CenterVertically,
@@ -309,8 +323,8 @@ private fun EventSummaryCard(
         FeatureBadge(
             icon = IconKeyMap.calendar(event.icon),
             feature = FeatureAccent.Calendar,
-            size = 44.dp,
-            cornerRadius = Radius.badgeLarge,
+            size = 38.dp,
+            cornerRadius = Radius.badge,
             colorOverride = accentOverride,
         )
         Spacer(Modifier.size(Spacing.md))
@@ -396,7 +410,7 @@ private fun HomeHeader(
             }
             if (user != null) {
                 Spacer(Modifier.size(Spacing.md))
-                InitialAvatar(name = user.name, color = avatarColor, avatarUri = user.avatarUrl, size = 48)
+                InitialAvatar(name = user.name, color = avatarColor, avatarUri = user.avatarUrl, size = 44)
             }
         }
 
@@ -426,12 +440,22 @@ private fun FamilyCard(
     photoUrl: String?,
     onClick: () -> Unit,
 ) {
+    // Identity surface — hairline shine border + soft indigo drop shadow (mirrors iOS FamilyCard).
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 12.dp,
+                    shape = RoundedCornerShape(Radius.bigCard),
+                    clip = false,
+                    ambientColor = (if (dark) Color.Black else Indigo600).copy(alpha = if (dark) 0.4f else 0.28f),
+                    spotColor = (if (dark) Color.Black else Indigo600).copy(alpha = if (dark) 0.4f else 0.28f),
+                ),
         shape = RoundedCornerShape(Radius.bigCard),
         color = MaterialTheme.colorScheme.primaryContainer,
-        shadowElevation = 4.dp,
+        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.25f)),
     ) {
         Box(
             Modifier

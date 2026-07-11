@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -58,6 +59,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -70,13 +72,10 @@ import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -114,6 +113,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -123,6 +123,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ConversationWithPreview
 import com.sandnes.familyapp.data.MessageModel
 import com.sandnes.familyapp.data.UserModel
@@ -138,6 +139,8 @@ import com.sandnes.familyapp.ui.components.InputDialog
 import com.sandnes.familyapp.ui.components.LoadingState
 import com.sandnes.familyapp.ui.components.PillTag
 import com.sandnes.familyapp.ui.theme.BrandGradient
+import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.glassCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -164,17 +167,20 @@ fun ChatScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         topBar = {
-            AppTopBar(title = "Chats")
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showMemberPicker = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-            ) {
-                Icon(Icons.Filled.Edit, contentDescription = "New conversation", tint = MaterialTheme.colorScheme.onPrimary)
-            }
+            // iOS header: compose button lives in the top bar, not a FAB.
+            AppTopBar(
+                title = stringResource(R.string.chats),
+                actions = {
+                    IconButton(onClick = { showMemberPicker = true }) {
+                        Icon(
+                            Icons.Filled.Edit,
+                            contentDescription = stringResource(R.string.new_conversation),
+                        )
+                    }
+                },
+            )
         },
     ) { padding ->
         if (isLoading && conversations.isEmpty()) {
@@ -185,8 +191,8 @@ fun ChatScreen(
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(
                     Icons.AutoMirrored.Filled.Chat,
-                    "No conversations yet",
-                    "No conversations yet. Start chatting with your family!",
+                    stringResource(R.string.no_conversations_yet),
+                    stringResource(R.string.no_conversations_yet_start_chatting_with_your_family),
                 )
             }
         } else {
@@ -246,17 +252,19 @@ private fun ConversationRow(
     val isOneOnOne = participants.size == 2 || conv.userTo != null
     val other = participants.firstOrNull { it.id != currentUserId }
 
+    val chatFallback = stringResource(R.string.chat)
+    val groupFallback = stringResource(R.string.group_chat)
     val displayName =
         remember(conv, participants, currentUserId) {
             when {
-                isOneOnOne -> other?.name ?: conv.name.takeIf { it.isNotBlank() } ?: "Chat"
+                isOneOnOne -> other?.name ?: conv.name.takeIf { it.isNotBlank() } ?: chatFallback
                 conv.name.isNotBlank() -> conv.name
                 else ->
                     participants
                         .filter { it.id != currentUserId }
                         .take(3)
                         .joinToString(", ") { it.name.split(" ").first() }
-                        .ifBlank { "Group chat" }
+                        .ifBlank { groupFallback }
             }
         }
     val avatarUri =
@@ -273,12 +281,11 @@ private fun ConversationRow(
                 ?.takeIf { it != 0 } ?: 0xFF6366F1.toInt(),
         )
 
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .glassCard(Radius.row)
+            .clickable(onClick = onClick),
     ) {
         Row(
             modifier =
@@ -320,12 +327,12 @@ private fun ConversationRow(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val previewText =
                         when {
-                            preview.lastMessage == null -> "No messages yet"
+                            preview.lastMessage == null -> stringResource(R.string.no_messages_yet)
                             preview.lastMessage.messageType == "image" ->
-                                "${preview.lastSenderName?.let { "$it: " } ?: ""}Photo"
+                                "${preview.lastSenderName?.let { "$it: " } ?: ""}" + stringResource(R.string.photo_label)
 
                             preview.lastMessage.messageType == "voice" ->
-                                "${preview.lastSenderName?.let { "$it: " } ?: ""}Voice message"
+                                "${preview.lastSenderName?.let { "$it: " } ?: ""}" + stringResource(R.string.voice_message)
 
                             preview.lastSenderName != null ->
                                 "${preview.lastSenderName}: ${preview.lastMessage.text}"
@@ -441,6 +448,7 @@ fun ConversationScreen(
         }
 
     var draft by remember { mutableStateOf("") }
+    var showAttachMenu by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showRename by remember { mutableStateOf(false) }
     var showImagePicker by remember { mutableStateOf(false) }
@@ -598,7 +606,7 @@ fun ConversationScreen(
 
     Scaffold(
         modifier = Modifier.imePadding(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             FeatureTopBar(
@@ -608,12 +616,12 @@ fun ConversationScreen(
                 actions = {
                     Box {
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "Options")
+                            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.options))
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             if (isGroup) {
                                 DropdownMenuItem(
-                                    text = { Text("Rename") },
+                                    text = { Text(stringResource(R.string.rename)) },
                                     onClick = {
                                         showMenu = false
                                         showRename = true
@@ -621,7 +629,7 @@ fun ConversationScreen(
                                 )
                             }
                             DropdownMenuItem(
-                                text = { Text("Change image") },
+                                text = { Text(stringResource(R.string.change_image)) },
                                 onClick = {
                                     showMenu = false
                                     showImagePicker = true
@@ -629,7 +637,7 @@ fun ConversationScreen(
                             )
                             if (conversation?.imageUri != null) {
                                 DropdownMenuItem(
-                                    text = { Text("Remove image", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(stringResource(R.string.remove_image), color = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
                                         viewModel.removeImage(conversationId)
@@ -639,7 +647,7 @@ fun ConversationScreen(
                             if (availableToAdd.isNotEmpty()) {
                                 HorizontalDivider()
                                 DropdownMenuItem(
-                                    text = { Text(if (isGroup) "Add member" else "Add member (creates group)") },
+                                    text = { Text(stringResource(if (isGroup) R.string.add_member else R.string.add_member_creates_group)) },
                                     leadingIcon = { Icon(Icons.Filled.GroupAdd, null, tint = MaterialTheme.colorScheme.primary) },
                                     onClick = {
                                         showMenu = false
@@ -649,7 +657,7 @@ fun ConversationScreen(
                             }
                             if (isGroup) {
                                 DropdownMenuItem(
-                                    text = { Text("Remove member", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(stringResource(R.string.remove_member), color = MaterialTheme.colorScheme.error) },
                                     leadingIcon = { Icon(Icons.Filled.PersonRemove, null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         showMenu = false
@@ -669,7 +677,7 @@ fun ConversationScreen(
                             }
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text("Delete conversation", color = MaterialTheme.colorScheme.error) },
+                                text = { Text(stringResource(R.string.delete_conversation), color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showMenu = false
@@ -682,8 +690,10 @@ fun ConversationScreen(
             )
         },
         bottomBar = {
+            // The surface itself absorbs the navigation-bar inset so the white composer
+            // background wraps all the way to the bottom edge (mirrors iOS).
             Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
-                Column {
+                Column(Modifier.navigationBarsPadding()) {
                     // Reply indicator
                     AnimatedVisibility(visible = replyTo != null) {
                         replyTo?.let { quoted ->
@@ -702,8 +712,14 @@ fun ConversationScreen(
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
+                                    val quotedName =
+                                        if (quoted.userFrom == myId) {
+                                            stringResource(R.string.you)
+                                        } else {
+                                            userProfiles[quoted.userFrom]?.name ?: ""
+                                        }
                                     Text(
-                                        "Replying",
+                                        (stringResource(R.string.replying_to) + " " + quotedName).trim(),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.SemiBold,
@@ -739,37 +755,44 @@ fun ConversationScreen(
                                     .padding(start = 4.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                             verticalAlignment = Alignment.Bottom,
                         ) {
-                            // Gallery + camera icons (hidden when typing)
+                            // "+" attach button (hidden when typing) — opens gallery/camera menu (mirrors iOS).
                             AnimatedVisibility(
                                 visible = draft.isEmpty(),
                                 enter = fadeIn() + expandHorizontally(),
                                 exit = fadeOut() + shrinkHorizontally(),
                             ) {
-                                Row {
-                                    IconButton(onClick = {
-                                        msgGalleryLauncher.launch(
-                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                                        )
-                                    }) {
+                                Box {
+                                    IconButton(onClick = { showAttachMenu = true }) {
                                         Icon(
-                                            Icons.Filled.PhotoLibrary,
-                                            contentDescription = "Send image",
+                                            Icons.Filled.Add,
+                                            contentDescription = stringResource(R.string.photo_library),
                                             tint = MaterialTheme.colorScheme.primary,
                                         )
                                     }
-                                    IconButton(onClick = {
-                                        val captureDir = java.io.File(context.cacheDir, "camera_captures").also { it.mkdirs() }
-                                        val file = java.io.File(captureDir, "chat_${System.currentTimeMillis()}.jpg")
-                                        msgCameraFile = file
-                                        val uri =
-                                            androidx.core.content.FileProvider
-                                                .getUriForFile(context, "${context.packageName}.fileprovider", file)
-                                        msgCameraLauncher.launch(uri)
-                                    }) {
-                                        Icon(
-                                            Icons.Filled.CameraAlt,
-                                            contentDescription = "Camera",
-                                            tint = MaterialTheme.colorScheme.primary,
+                                    DropdownMenu(expanded = showAttachMenu, onDismissRequest = { showAttachMenu = false }) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.photo_library)) },
+                                            leadingIcon = { Icon(Icons.Filled.PhotoLibrary, contentDescription = null) },
+                                            onClick = {
+                                                showAttachMenu = false
+                                                msgGalleryLauncher.launch(
+                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                                                )
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.camera)) },
+                                            leadingIcon = { Icon(Icons.Filled.CameraAlt, contentDescription = null) },
+                                            onClick = {
+                                                showAttachMenu = false
+                                                val captureDir = java.io.File(context.cacheDir, "camera_captures").also { it.mkdirs() }
+                                                val file = java.io.File(captureDir, "chat_${System.currentTimeMillis()}.jpg")
+                                                msgCameraFile = file
+                                                val uri =
+                                                    androidx.core.content.FileProvider
+                                                        .getUriForFile(context, "${context.packageName}.fileprovider", file)
+                                                msgCameraLauncher.launch(uri)
+                                            },
                                         )
                                     }
                                 }
@@ -785,7 +808,7 @@ fun ConversationScreen(
                                 modifier = Modifier.weight(1f),
                                 placeholder = {
                                     Text(
-                                        "Aa",
+                                        stringResource(R.string.message),
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                     )
                                 },
@@ -813,7 +836,7 @@ fun ConversationScreen(
                                     }) {
                                         Icon(
                                             Icons.AutoMirrored.Filled.Send,
-                                            contentDescription = "Send",
+                                            contentDescription = stringResource(R.string.send),
                                             tint = MaterialTheme.colorScheme.primary,
                                         )
                                     }
@@ -954,11 +977,11 @@ fun ConversationScreen(
                             msg = msg,
                             mine = mine,
                             myId = myId,
-                            timeLabel = timeLabel,
                             isFirstInGroup = isFirstInGroup,
                             isLastInGroup = isLastInGroup,
                             senderProfile = senderProfile,
                             messages = messages,
+                            userProfiles = userProfiles,
                             onReply = { viewModel.setReplyTo(msg) },
                             reactions = msgReactions,
                             onReact = { emoji -> viewModel.toggleReaction(msg.id, conversationId, emoji) },
@@ -1402,11 +1425,11 @@ private fun MessageRow(
     msg: MessageModel,
     mine: Boolean,
     myId: String?,
-    timeLabel: String,
     isFirstInGroup: Boolean,
     isLastInGroup: Boolean,
     senderProfile: UserModel?,
     messages: List<MessageModel>,
+    userProfiles: Map<String, UserModel> = emptyMap(),
     onReply: () -> Unit,
     reactions: Map<String, List<String>>,
     onReact: (String) -> Unit,
@@ -1458,6 +1481,7 @@ private fun MessageRow(
                                         mine = true,
                                         myId = myId,
                                         messages = messages,
+                                        userProfiles = userProfiles,
                                         onLongClick = { showReactionPicker = true },
                                         extraBottomPadding = if (reactions.isNotEmpty()) chipOverlap else 0.dp,
                                     )
@@ -1487,9 +1511,9 @@ private fun MessageRow(
                         )
                     }
                 }
-                if (showTime && timeLabel.isNotEmpty()) {
+                if (showTime) {
                     Text(
-                        timeLabel,
+                        exactMessageTimestamp(msg.sentAt),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp, end = 4.dp),
@@ -1574,9 +1598,9 @@ private fun MessageRow(
                             )
                         }
                     }
-                    if (showTime && timeLabel.isNotEmpty()) {
+                    if (showTime) {
                         Text(
-                            timeLabel,
+                            exactMessageTimestamp(msg.sentAt),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp, start = 4.dp),
@@ -1594,6 +1618,7 @@ private fun MessageContent(
     mine: Boolean,
     myId: String?,
     messages: List<MessageModel>,
+    userProfiles: Map<String, UserModel> = emptyMap(),
     onLongClick: (() -> Unit)? = null,
     extraBottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
@@ -1647,10 +1672,11 @@ private fun MessageContent(
                         QuoteBubble(
                             text =
                                 when (quoted.messageType) {
-                                    "image" -> "📷 Photo"
-                                    "voice" -> "🎤 Voice message"
+                                    "image" -> "📷 " + stringResource(R.string.photo_label)
+                                    "voice" -> "🎤 " + stringResource(R.string.voice_message)
                                     else -> quoted.text
                                 },
+                            senderName = userProfiles[quoted.userFrom]?.name,
                             isQuotedMine = quoted.userFrom == myId,
                             isMine = mine,
                         )
@@ -1670,6 +1696,7 @@ private fun MessageContent(
 @Composable
 private fun QuoteBubble(
     text: String,
+    senderName: String?,
     isQuotedMine: Boolean,
     isMine: Boolean,
 ) {
@@ -1686,7 +1713,7 @@ private fun QuoteBubble(
         Box(Modifier.width(3.dp).fillMaxHeight().background(accentColor, RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)))
         Column(Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
             Text(
-                if (isQuotedMine) "You" else "Reply",
+                if (isQuotedMine) stringResource(R.string.you) else senderName ?: stringResource(R.string.reply),
                 style = MaterialTheme.typography.labelSmall,
                 color = accentColor,
                 fontWeight = FontWeight.SemiBold,

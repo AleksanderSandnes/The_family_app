@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +72,7 @@ import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.components.SecondaryButton
 import com.sandnes.familyapp.ui.theme.Amber500
 import com.sandnes.familyapp.ui.theme.Emerald500
+import com.sandnes.familyapp.ui.theme.appDarkTheme
 import com.sandnes.familyapp.ui.theme.heroGradient
 
 @Composable
@@ -538,7 +538,7 @@ private fun RegistrationStep2(
                 .semantics { contentDescription = createAccountButtonDescription },
     )
     SecondaryButton(
-        text = "Back",
+        text = stringResource(R.string.back),
         onClick = onBack,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -550,7 +550,7 @@ private fun AuthScaffold(
     subtitle: String,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = appDarkTheme()
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 

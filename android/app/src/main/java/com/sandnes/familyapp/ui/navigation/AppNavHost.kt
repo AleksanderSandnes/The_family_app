@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
@@ -77,7 +78,8 @@ import com.sandnes.familyapp.ui.shopping.ShoppingScreen
 import com.sandnes.familyapp.ui.shopping.ShoppingViewModel
 import com.sandnes.familyapp.ui.theme.AmbientBackground
 import com.sandnes.familyapp.ui.theme.Radius
-import com.sandnes.familyapp.ui.theme.glassChrome
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.glassBar
 import com.sandnes.familyapp.ui.theme.glassSource
 import com.sandnes.familyapp.ui.wishlist.WishlistDetailScreen
 import com.sandnes.familyapp.ui.wishlist.WishlistScreen
@@ -156,7 +158,9 @@ private fun MainFlow() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val showBottomBar = currentRoute in bottomDestinations.map { it.route }
+    // iOS keeps the floating tab bar on every pushed screen except the conversation view
+    // (full-screen chat with its own composer). Mirror that.
+    val showBottomBar = currentRoute != null && currentRoute != Routes.CHAT_DETAIL
 
     // An invite deep link (familyapp://join?code=…) routes the user to Family,
     // which opens the join flow pre-filled with the code.
@@ -187,9 +191,17 @@ private fun MainFlow() {
                 ),
             bottomBar = {
                 if (showBottomBar) {
+                    // Floating pill tab bar, inset from the screen edges (mirrors the iOS
+                    // Liquid Glass tab bar rather than a full-width docked NavigationBar).
                     NavigationBar(
                         containerColor = Color.Transparent,
-                        modifier = Modifier.fillMaxWidth().glassChrome(Radius.tabBar),
+                        windowInsets = WindowInsets(0),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
+                                .glassBar(Radius.tabBar),
                     ) {
                         bottomDestinations.forEach { dest ->
                             val isHome = dest.route == Routes.HOME

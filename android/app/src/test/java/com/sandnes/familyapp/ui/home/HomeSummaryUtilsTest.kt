@@ -19,6 +19,16 @@ import java.time.LocalDate
 class HomeSummaryUtilsTest {
     private val today = LocalDate.of(2026, 7, 10)
 
+    /** English labels, as the UI would resolve them from resources. */
+    private val labels =
+        SummaryLabels(
+            today = "Today",
+            tomorrow = "Tomorrow",
+            todayExclaim = "Today!",
+            inDaysFormat = "in %1\$d days",
+            turnsFormat = "Turns %1\$d",
+        )
+
     // ── minutesSinceMidnight ─────────────────────────────────────────────────
 
     @Test
@@ -101,13 +111,13 @@ class HomeSummaryUtilsTest {
 
     @Test
     fun `eventWhen labels today and tomorrow`() {
-        assertEquals("Today", eventWhen(event(from = "2026-07-10", allDay = true), today))
-        assertEquals("Tomorrow", eventWhen(event(from = "2026-07-11", allDay = true), today))
+        assertEquals("Today", eventWhen(event(from = "2026-07-10", allDay = true), today, labels))
+        assertEquals("Tomorrow", eventWhen(event(from = "2026-07-11", allDay = true), today, labels))
     }
 
     @Test
     fun `eventWhen appends time for timed events`() {
-        assertEquals("Today · 14:00", eventWhen(event(from = "2026-07-10", timeFrom = "14:00"), today))
+        assertEquals("Today · 14:00", eventWhen(event(from = "2026-07-10", timeFrom = "14:00"), today, labels))
     }
 
     // ── birthdayWhen ─────────────────────────────────────────────────────────
@@ -115,14 +125,29 @@ class HomeSummaryUtilsTest {
     @Test
     fun `birthdayWhen reads today tomorrow and in-N-days`() {
         val b = BirthdayModel(name = "Sam", date = "1990-07-10")
-        assertTrue(birthdayWhen(b, today, today).contains("Today!"))
-        assertTrue(birthdayWhen(b, today.plusDays(1), today).contains("Tomorrow"))
-        assertTrue(birthdayWhen(b, today.plusDays(3), today).contains("in 3 days"))
+        assertTrue(birthdayWhen(b, today, today, labels).contains("Today!"))
+        assertTrue(birthdayWhen(b, today.plusDays(1), today, labels).contains("Tomorrow"))
+        assertTrue(birthdayWhen(b, today.plusDays(3), today, labels).contains("in 3 days"))
     }
 
     @Test
     fun `birthdayWhen includes turning age when derivable`() {
         val b = BirthdayModel(name = "Sam", date = "1990-07-10")
-        assertTrue(birthdayWhen(b, today, today).startsWith("Turns 36"))
+        assertTrue(birthdayWhen(b, today, today, labels).startsWith("Turns 36"))
+    }
+
+    @Test
+    fun `birthdayWhen uses localized labels`() {
+        val nb =
+            SummaryLabels(
+                today = "I dag",
+                tomorrow = "I morgen",
+                todayExclaim = "I dag!",
+                inDaysFormat = "om %1\$d dager",
+                turnsFormat = "Fyller %1\$d",
+            )
+        val b = BirthdayModel(name = "Sam", date = "1990-07-10")
+        assertEquals("Fyller 36 · I dag!", birthdayWhen(b, today, today, nb))
+        assertTrue(birthdayWhen(b, today.plusDays(3), today, nb).contains("om 3 dager"))
     }
 }

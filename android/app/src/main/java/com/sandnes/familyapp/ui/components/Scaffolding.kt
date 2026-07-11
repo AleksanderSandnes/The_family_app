@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,17 +26,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.theme.Radius
 
-/** Standard back-navigable top bar used by every detail/feature screen. */
+/**
+ * Standard back-navigable top bar used by every detail/feature screen. Mirrors the iOS inline
+ * nav bar: centred title on a transparent container, so the ambient wash shows through.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeatureTopBar(
@@ -44,13 +50,13 @@ fun FeatureTopBar(
     subtitle: String? = null,
     actions: @Composable () -> Unit = {},
 ) {
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = {
             if (subtitle.isNullOrBlank()) {
-                Text(title, style = MaterialTheme.typography.titleLarge)
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             } else {
-                Column {
-                    Text(title, style = MaterialTheme.typography.titleLarge)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
                         subtitle,
                         style = MaterialTheme.typography.labelMedium,
@@ -68,8 +74,8 @@ fun FeatureTopBar(
         },
         actions = { actions() },
         colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background,
+            TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = Color.Transparent,
                 titleContentColor = MaterialTheme.colorScheme.onBackground,
                 navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
                 actionIconContentColor = MaterialTheme.colorScheme.primary,
@@ -88,7 +94,8 @@ fun AppTopBar(
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
-        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+        // Large bold title, like the iOS tab-root headers (Chats / Calendar / Family).
+        title = { Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold) },
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
@@ -100,8 +107,9 @@ fun AppTopBar(
         modifier = modifier,
         colors =
             TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background,
-                scrolledContainerColor = MaterialTheme.colorScheme.background,
+                // Transparent so the ambient wash shows through (matches iOS tab-root headers).
+                containerColor = Color.Transparent,
+                scrolledContainerColor = Color.Transparent,
                 titleContentColor = MaterialTheme.colorScheme.onBackground,
                 actionIconContentColor = MaterialTheme.colorScheme.primary,
             ),

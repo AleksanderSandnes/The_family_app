@@ -136,12 +136,6 @@ fun SettingsScreen(
                 ThemeSelector(selected = themeMode, onSelect = vm::setThemeMode)
             }
 
-            // ── LANGUAGE ─────────────────────────────────────────────────────
-            SettingsSectionHeader(stringResource(R.string.language))
-            SettingsCard {
-                LanguageSelector(selected = appLanguage, onSelect = vm::setAppLanguage)
-            }
-
             // ── NOTIFICATIONS ────────────────────────────────────────────────
             SettingsSectionHeader(stringResource(R.string.notifications))
             SettingsCard {
@@ -181,6 +175,12 @@ fun SettingsScreen(
                     checked = locationVisible,
                     onChange = { vm.setLocationVisible(it) },
                 )
+            }
+
+            // ── LANGUAGE ─────────────────────────────────────────────────────
+            SettingsSectionHeader(stringResource(R.string.language))
+            SettingsCard {
+                LanguageSelector(selected = appLanguage, onSelect = vm::setAppLanguage)
             }
 
             // ── ABOUT ────────────────────────────────────────────────────────
@@ -279,12 +279,12 @@ private fun LeadTimeChip(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val bg = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-    val fg = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val bg = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val fg = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
         modifier =
             modifier
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(24.dp))
                 .background(bg)
                 .clickable(onClick = onClick)
                 .heightIn(min = 48.dp)
@@ -312,14 +312,9 @@ private fun ThemeSelector(
             Spacer(Modifier.size(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    stringResource(R.string.appearance),
+                    stringResource(R.string.theme),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    stringResource(R.string.settings_appearance_subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

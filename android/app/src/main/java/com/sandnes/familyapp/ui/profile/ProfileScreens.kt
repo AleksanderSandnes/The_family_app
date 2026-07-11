@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -69,8 +70,10 @@ import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.components.RefreshOnResume
 import com.sandnes.familyapp.ui.components.SecondaryButton
+import com.sandnes.familyapp.ui.components.SheetField
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.appDarkTheme
 import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.heroGradient
 import java.time.LocalDate
@@ -87,7 +90,7 @@ fun ProfileScreen(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val isUploading by viewModel.isUploading.collectAsStateWithLifecycle()
     val needsCompletion by viewModel.needsProfileCompletion.collectAsStateWithLifecycle()
-    val dark = androidx.compose.foundation.isSystemInDarkTheme()
+    val dark = appDarkTheme()
     val context = LocalContext.current
 
     var showAvatarPicker by remember { mutableStateOf(false) }
@@ -190,6 +193,13 @@ fun ProfileScreen(
                     Spacer(Modifier.size(16.dp))
                     Column {
                         Text(user?.name ?: "", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            user?.email.orEmpty(),
+                            color = Color.White.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
             }
@@ -200,16 +210,16 @@ fun ProfileScreen(
                     .glassCard(cornerRadius = Radius.overviewCard)
                     .padding(Spacing.xs),
             ) {
-                InfoRow(Icons.Filled.Mail, "Email", user?.email.orEmpty().ifBlank { "—" })
-                InfoRow(Icons.Filled.Phone, "Mobile", user?.mobile.orEmpty().ifBlank { "—" })
-                InfoRow(Icons.Filled.Cake, "Birthday", formatBirthday(user?.birthday))
+                InfoRow(Icons.Filled.Mail, stringResource(R.string.email), user?.email.orEmpty().ifBlank { "—" })
+                InfoRow(Icons.Filled.Phone, stringResource(R.string.mobile), user?.mobile.orEmpty().ifBlank { "—" })
+                InfoRow(Icons.Filled.Cake, stringResource(R.string.birthday), formatBirthday(user?.birthday))
             }
 
-            ActionRow(Icons.Filled.Edit, "Edit profile", onEdit)
-            ActionRow(Icons.Filled.Settings, "Settings", onSettings)
+            ActionRow(Icons.Filled.Edit, stringResource(R.string.edit_profile), onEdit)
+            ActionRow(Icons.Filled.Settings, stringResource(R.string.settings), onSettings)
             Spacer(Modifier.height(Spacing.xs))
             DestructiveButton(
-                "Sign out",
+                stringResource(R.string.sign_out),
                 onClick = { viewModel.signOut(onSignedOut) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = Icons.AutoMirrored.Filled.Logout,
@@ -255,24 +265,24 @@ private fun AvatarPickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
-        title = { Text("Profile photo", style = MaterialTheme.typography.titleLarge) },
+        title = { Text(stringResource(R.string.profile_photo), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 TextButton(onClick = onCamera, modifier = Modifier.fillMaxWidth()) {
-                    Text("Take photo", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.take_photo), style = MaterialTheme.typography.bodyLarge)
                 }
                 TextButton(onClick = onGallery, modifier = Modifier.fillMaxWidth()) {
-                    Text("Choose from gallery", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.choose_from_gallery), style = MaterialTheme.typography.bodyLarge)
                 }
                 if (hasAvatar) {
                     TextButton(onClick = onRemove, modifier = Modifier.fillMaxWidth()) {
-                        Text("Remove photo", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.remove_photo), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -341,32 +351,32 @@ private fun ProfileCompletionDialog(
     AlertDialog(
         onDismissRequest = onSkip,
         shape = RoundedCornerShape(Radius.sheet),
-        title = { Text("Complete your profile", style = MaterialTheme.typography.titleLarge) },
+        title = { Text(stringResource(R.string.complete_your_profile), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 Text(
-                    "Add your phone and birthday so your family can reach you and celebrate you.",
+                    stringResource(R.string.add_your_phone_and_birthday_so_your_family_can_reach_you_and_celebrate_you),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 FamilyTextField(
                     mobile,
                     { mobile = it },
-                    "Mobile",
+                    stringResource(R.string.mobile),
                     leadingIcon = Icons.Filled.Phone,
                     keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone,
                 )
-                BirthdayPickerField(value = birthday, onChange = { birthday = it }, label = "Birthday")
+                BirthdayPickerField(value = birthday, onChange = { birthday = it }, label = stringResource(R.string.birthday))
             }
         },
         confirmButton = {
             PrimaryButton(
-                "Save",
+                stringResource(R.string.save),
                 onClick = { onSave(mobile, birthday) },
                 enabled = mobile.isNotBlank() || birthday.isNotBlank(),
             )
         },
-        dismissButton = { SecondaryButton("Skip for now", onClick = onSkip) },
+        dismissButton = { SecondaryButton(stringResource(R.string.skip_for_now), onClick = onSkip) },
     )
 }
 
@@ -396,17 +406,33 @@ fun ProfileEditScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                "Personal information",
+                stringResource(R.string.personal_information),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            FamilyTextField(name, { name = it }, "Full name *")
-            FamilyTextField(email, { email = it }, "Email *", keyboardType = androidx.compose.ui.text.input.KeyboardType.Email)
-            FamilyTextField(mobile, { mobile = it }, "Mobile *", keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
-            BirthdayPickerField(value = birthday, onChange = { birthday = it }, label = "Birthday *")
+            // Filled glass fields with leading icons (mirrors the iOS edit-profile form).
+            SheetField(
+                icon = Icons.Filled.Person,
+                placeholder = stringResource(R.string.full_name),
+                value = name,
+                onValueChange = { name = it },
+            )
+            SheetField(
+                icon = Icons.Filled.Mail,
+                placeholder = stringResource(R.string.email),
+                value = email,
+                onValueChange = { email = it },
+            )
+            SheetField(
+                icon = Icons.Filled.Phone,
+                placeholder = stringResource(R.string.mobile),
+                value = mobile,
+                onValueChange = { mobile = it },
+            )
+            BirthdayPickerField(value = birthday, onChange = { birthday = it }, label = stringResource(R.string.birthday))
             Spacer(Modifier.height(4.dp))
             PrimaryButton(
-                "Save changes",
+                stringResource(R.string.save_changes),
                 onClick = {
                     viewModel.save(name, email, birthday, mobile)
                     onBack()

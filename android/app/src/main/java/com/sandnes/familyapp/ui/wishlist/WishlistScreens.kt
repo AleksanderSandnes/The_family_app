@@ -25,25 +25,28 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Redeem
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Circle
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -67,7 +70,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -81,6 +83,7 @@ import com.sandnes.familyapp.data.WishReservationModel
 import com.sandnes.familyapp.data.WishlistModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.IconGrid
@@ -88,8 +91,9 @@ import com.sandnes.familyapp.ui.components.ListSkeleton
 import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.components.PullRefresh
 import com.sandnes.familyapp.ui.components.RefreshOnResume
-import com.sandnes.familyapp.ui.components.SecondaryButton
 import com.sandnes.familyapp.ui.components.SectionHeader
+import com.sandnes.familyapp.ui.components.SheetField
+import com.sandnes.familyapp.ui.components.SheetSectionLabel
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
 import com.sandnes.familyapp.ui.theme.AmbientBackground
 import com.sandnes.familyapp.ui.theme.AppColorPalette
@@ -98,6 +102,8 @@ import com.sandnes.familyapp.ui.theme.FeatureBadge
 import com.sandnes.familyapp.ui.theme.IconKeyMap
 import com.sandnes.familyapp.ui.theme.IconOptions
 import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.ghostSurface
 import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.hexColor
 import com.sandnes.familyapp.ui.theme.rowSurface
@@ -125,7 +131,7 @@ fun WishlistScreen(
         containerColor = Color.Transparent,
         topBar = { FeatureTopBar(stringResource(R.string.wishlists), onBack) },
         floatingActionButton = {
-            AppFab(text = "New wishlist", icon = Icons.Filled.Add, onClick = { showAdd = true })
+            AppFab(text = stringResource(R.string.new_wishlist), icon = Icons.Filled.Add, onClick = { showAdd = true })
         },
     ) { padding ->
         AmbientBackground(Modifier.fillMaxSize()) {
@@ -139,9 +145,9 @@ fun WishlistScreen(
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             EmptyState(
                                 Icons.Filled.CardGiftcard,
-                                "No wishlists yet",
-                                "Create a wishlist to share with your family",
-                                actionLabel = "New wishlist",
+                                stringResource(R.string.no_wishlists_yet),
+                                stringResource(R.string.create_a_wishlist_to_share_with_your_family),
+                                actionLabel = stringResource(R.string.new_wishlist),
                                 onAction = { showAdd = true },
                             )
                         }
@@ -168,7 +174,7 @@ fun WishlistScreen(
                             }
                             if (sharedWishlists.isNotEmpty()) {
                                 item(key = "shared-header") {
-                                    SectionHeader("Shared with me", Modifier.padding(top = 8.dp))
+                                    SectionHeader(stringResource(R.string.shared_with_me), Modifier.padding(top = 8.dp))
                                 }
                                 items(sharedWishlists, key = { "shared-${it.id}" }) { wl ->
                                     WishlistRow(wl, Modifier.animateItem()) { onOpen(wl.id) }
@@ -224,7 +230,7 @@ private fun WishlistRow(
             )
             if (wl.ownerName.isNotEmpty()) {
                 Text(
-                    "By ${wl.ownerName}",
+                    stringResource(R.string.by_owner, wl.ownerName),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -265,16 +271,17 @@ fun WishlistDetailScreen(
         containerColor = Color.Transparent,
         topBar = {
             FeatureTopBar(
-                title = wishlist?.name ?: "Wishlist",
+                title = wishlist?.name ?: stringResource(R.string.wishlist),
                 onBack = onBack,
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         // Anyone viewing can export the list to share off-app.
                         DropdownMenuItem(
-                            text = { Text("Export PDF") },
+                            text = { Text(stringResource(R.string.export_pdf)) },
+                            trailingIcon = { Icon(Icons.Filled.PictureAsPdf, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 scope.launch { exportWishlistPdf(context, wishlist, sortedWishes) }
@@ -283,21 +290,24 @@ fun WishlistDetailScreen(
                         // Only the owner shares a link, renames, or re-icons.
                         if (isOwner) {
                             DropdownMenuItem(
-                                text = { Text("Share link") },
+                                text = { Text(stringResource(R.string.share_link)) },
+                                trailingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
                                 onClick = {
                                     showMenu = false
                                     scope.launch { shareWishlistLink(context, viewModel, wishlistId, wishlist?.name) }
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Rename wishlist") },
+                                text = { Text(stringResource(R.string.rename_wishlist)) },
+                                trailingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                                 onClick = {
                                     showMenu = false
                                     showRenameDialog = true
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Change icon") },
+                                text = { Text(stringResource(R.string.change_icon)) },
+                                trailingIcon = { Icon(Icons.Filled.Star, contentDescription = null) },
                                 onClick = {
                                     showMenu = false
                                     showAppearanceDialog = true
@@ -313,7 +323,7 @@ fun WishlistDetailScreen(
             if (isOwner) {
                 Surface(color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
                     PrimaryButton(
-                        text = "Add a wish",
+                        text = stringResource(R.string.add_a_wish),
                         onClick = { showAddWish = true },
                         leadingIcon = Icons.Filled.Add,
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -327,7 +337,7 @@ fun WishlistDetailScreen(
                 // Reassure family members that their claims stay secret from the owner.
                 if (!isOwner && ownerName.isNotEmpty()) {
                     Text(
-                        "Reservations are hidden from $ownerName 🤫",
+                        stringResource(R.string.reservations_are_hidden_from, ownerName) + " 🤫",
                         Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -336,7 +346,7 @@ fun WishlistDetailScreen(
                 }
                 if (sortedWishes.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        EmptyState(Icons.Filled.Redeem, "No wishes yet", "Add wishes to this list")
+                        EmptyState(Icons.Filled.Redeem, stringResource(R.string.no_wishes_yet), stringResource(R.string.add_wishes_to_this_list))
                     }
                 } else {
                     LazyColumn(
@@ -433,14 +443,14 @@ private suspend fun shareWishlistLink(
     name: String?,
 ) {
     val url = viewModel.shareLink(wishlistId) ?: return
-    val listName = name?.takeIf { it.isNotBlank() } ?: "Wishlist"
-    val message = "See my wishlist $listName in The Family App:\n$url"
+    val listName = name?.takeIf { it.isNotBlank() } ?: context.getString(R.string.wishlist)
+    val message = context.getString(R.string.share_wishlist_message, listName) + "\n" + url
     val intent =
         Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, message)
         }
-    context.startActivity(Intent.createChooser(intent, "Share wishlist"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_wishlist_chooser)))
 }
 
 /** Builds the PDF off the main thread, then opens the Android share sheet via FileProvider. */
@@ -449,9 +459,9 @@ private suspend fun exportWishlistPdf(
     wishlist: WishlistModel?,
     wishes: List<WishModel>,
 ) {
-    val name = wishlist?.name?.takeIf { it.isNotBlank() } ?: "Wishlist"
+    val name = wishlist?.name?.takeIf { it.isNotBlank() } ?: context.getString(R.string.wishlist)
     val ownerName = wishlist?.ownerName.orEmpty()
-    val subtitle = if (ownerName.isEmpty()) "" else "By $ownerName"
+    val subtitle = if (ownerName.isEmpty()) "" else context.getString(R.string.by_owner, ownerName)
     val file = withContext(Dispatchers.IO) { WishlistPdf.write(context, name, subtitle, wishes) } ?: return
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     val intent =
@@ -460,7 +470,7 @@ private suspend fun exportWishlistPdf(
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-    context.startActivity(Intent.createChooser(intent, "Share wishlist PDF"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_wishlist_pdf_chooser)))
 }
 
 // ─── Wish rows ─────────────────────────────────────────────────────────────────
@@ -493,7 +503,7 @@ private fun WishLinkButton(link: String?) {
         }) {
             Icon(
                 Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = "Open link",
+                contentDescription = stringResource(R.string.open_link),
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
@@ -521,7 +531,7 @@ private fun OwnerWishRow(
         IconButton(onClick = onToggle) {
             Icon(
                 if (wish.checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
-                contentDescription = if (wish.checked) "Unmark as claimed" else "Mark as claimed",
+                contentDescription = stringResource(if (wish.checked) R.string.unmark_as_claimed else R.string.mark_as_claimed),
                 tint = if (wish.checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -576,7 +586,7 @@ private fun MemberWishCard(
                 TextButton(onClick = onUnreserve) {
                     Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Reserved by you")
+                    Text(stringResource(R.string.reserved_by_you))
                 }
             reservedByOther ->
                 Row(
@@ -585,9 +595,9 @@ private fun MemberWishCard(
                 ) {
                     Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(4.dp))
-                    Text("Reserved", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.reserved), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            else -> TextButton(onClick = onReserve) { Text("Reserve") }
+            else -> TextButton(onClick = onReserve) { Text(stringResource(R.string.reserve)) }
         }
     }
 }
@@ -605,41 +615,31 @@ private fun NewWishlistDialog(
     var selectedIcon by remember { mutableStateOf("card_giftcard") }
     var color by remember { mutableStateOf<Int?>(DEFAULT_WISHLIST_COLOR) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text("New wishlist", style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    placeholder = { Text("Wishlist name") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = dialogFieldColors(),
-                )
-                SectionHeader("Icon")
-                IconGrid(
-                    options = IconOptions.wishlist,
-                    selected = selectedIcon,
-                    onSelect = { selectedIcon = it },
-                    feature = FeatureAccent.Wishlists,
-                    colorOverride = hexColor(color),
-                )
-                SectionHeader("Color")
-                ColorPickerRow(selected = color, onSelect = { color = it })
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { if (name.isNotBlank()) onConfirm(name.trim(), selectedIcon, color) },
-                enabled = name.isNotBlank(),
-            ) { Text("Create") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    // iOS-parity creation sheet (NewWishlistSheet).
+    CreationSheet(
+        title = stringResource(R.string.new_wishlist),
+        confirmTitle = stringResource(R.string.create),
+        confirmEnabled = name.isNotBlank(),
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(name.trim(), selectedIcon, color) },
+    ) {
+        SheetField(
+            icon = IconKeyMap.wishlist(selectedIcon),
+            placeholder = stringResource(R.string.wishlist_name),
+            value = name,
+            onValueChange = { name = it },
+        )
+        SheetSectionLabel(stringResource(R.string.icon))
+        IconGrid(
+            options = IconOptions.wishlist,
+            selected = selectedIcon,
+            onSelect = { selectedIcon = it },
+            feature = FeatureAccent.Wishlists,
+            colorOverride = hexColor(color),
+        )
+        SheetSectionLabel(stringResource(R.string.color))
+        ColorPickerRow(selected = color, onSelect = { color = it })
+    }
 }
 
 @Composable
@@ -650,29 +650,20 @@ private fun RenameWishlistDialog(
 ) {
     var name by remember { mutableStateOf(currentName) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text("Rename wishlist", style = MaterialTheme.typography.titleLarge) },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                placeholder = { Text("Wishlist name") },
-                singleLine = true,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth(),
-                colors = dialogFieldColors(),
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { if (name.isNotBlank()) onConfirm(name.trim()) },
-                enabled = name.isNotBlank(),
-            ) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    CreationSheet(
+        title = stringResource(R.string.rename_wishlist),
+        confirmTitle = stringResource(R.string.save),
+        confirmEnabled = name.isNotBlank(),
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(name.trim()) },
+    ) {
+        SheetField(
+            icon = Icons.Filled.Edit,
+            placeholder = stringResource(R.string.wishlist_name),
+            value = name,
+            onValueChange = { name = it },
+        )
+    }
 }
 
 /** Owner-only appearance editor: pick both icon and colour in one sheet. */
@@ -686,29 +677,24 @@ private fun WishlistAppearanceDialog(
     var selectedIcon by remember { mutableStateOf(currentIcon) }
     var color by remember { mutableStateOf(currentColor ?: DEFAULT_WISHLIST_COLOR) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text("Change icon", style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                SectionHeader("Icon")
-                IconGrid(
-                    options = IconOptions.wishlist,
-                    selected = selectedIcon,
-                    onSelect = { selectedIcon = it },
-                    feature = FeatureAccent.Wishlists,
-                    colorOverride = hexColor(color),
-                )
-                SectionHeader("Color")
-                ColorPickerRow(selected = color, onSelect = { color = it })
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(selectedIcon, color) }) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    CreationSheet(
+        title = stringResource(R.string.change_icon),
+        confirmTitle = stringResource(R.string.save),
+        confirmEnabled = true,
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(selectedIcon, color) },
+    ) {
+        SheetSectionLabel(stringResource(R.string.icon))
+        IconGrid(
+            options = IconOptions.wishlist,
+            selected = selectedIcon,
+            onSelect = { selectedIcon = it },
+            feature = FeatureAccent.Wishlists,
+            colorOverride = hexColor(color),
+        )
+        SheetSectionLabel(stringResource(R.string.color))
+        ColorPickerRow(selected = color, onSelect = { color = it })
+    }
 }
 
 /** Rich add/edit-a-wish flow: title (required) + optional link, price, and image. */
@@ -727,66 +713,71 @@ private fun AddWishDialog(
             if (uri != null) image = uri
         }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text(if (initial != null) "Edit wish" else "Add a wish", style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    placeholder = { Text("What do you wish for?") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = dialogFieldColors(),
-                )
-                OutlinedTextField(
-                    value = link,
-                    onValueChange = { link = it },
-                    placeholder = { Text("Link (optional)") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = dialogFieldColors(),
-                )
-                OutlinedTextField(
-                    value = price,
-                    onValueChange = { price = it },
-                    placeholder = { Text("Price (optional)") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = dialogFieldColors(),
-                )
-                if (image != null) {
-                    AsyncImage(
-                        model = image,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(12.dp)),
-                    )
-                }
-                SecondaryButton(
-                    text = if (image == null && initial?.imageUrl.isNullOrBlank()) "Add image" else "Change image",
-                    onClick = {
-                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    // iOS-parity wish sheet (AddWishSheet / EditWishSheet): title, link, price, photo.
+    CreationSheet(
+        title = stringResource(if (initial != null) R.string.edit_wish else R.string.add_a_wish),
+        confirmTitle = stringResource(if (initial != null) R.string.save else R.string.add),
+        confirmEnabled = title.isNotBlank(),
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(WishDraft(title.trim(), link, price, image)) },
+    ) {
+        SheetField(
+            icon = Icons.Filled.Redeem,
+            placeholder = stringResource(R.string.what_do_you_wish_for),
+            value = title,
+            onValueChange = { title = it },
+        )
+        SheetField(
+            icon = Icons.Filled.Link,
+            placeholder = stringResource(R.string.link_optional),
+            value = link,
+            onValueChange = { link = it },
+        )
+        SheetField(
+            icon = Icons.Filled.LocalOffer,
+            placeholder = stringResource(R.string.price_optional),
+            value = price,
+            onValueChange = { price = it },
+        )
+        if (image != null) {
+            AsyncImage(
+                model = image,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(12.dp)),
+            )
+        }
+        // Dashed "Add photo (optional)" row (mirrors the iOS wish sheet).
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .ghostSurface(Radius.field)
+                .clickable {
+                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }.padding(vertical = Spacing.lg),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.Image,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(Spacing.sm))
+            Text(
+                stringResource(
+                    if (image == null && initial?.imageUrl.isNullOrBlank()) {
+                        R.string.add_photo_optional
+                    } else {
+                        R.string.change_photo
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = Icons.Filled.Image,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { if (title.isNotBlank()) onConfirm(WishDraft(title.trim(), link, price, image)) },
-                enabled = title.isNotBlank(),
-            ) { Text(if (initial != null) "Save" else "Add") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
 }
 
 @Composable

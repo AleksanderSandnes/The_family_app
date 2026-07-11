@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
@@ -102,6 +103,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -494,29 +496,41 @@ fun CopyableCodeField(
 ) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
-    OutlinedTextField(
-        value = code,
-        onValueChange = {},
-        label = { Text(label) },
-        readOnly = true,
-        singleLine = true,
-        trailingIcon = {
-            IconButton(onClick = {
-                scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("", code))) }
-            }) {
-                Icon(Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.copy_code))
-            }
-        },
-        shape = RoundedCornerShape(Radius.field),
-        colors =
-            OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-            ),
-        modifier = modifier.fillMaxWidth(),
-    )
+    // Filled tinted box with an eyebrow label + spaced code (mirrors the iOS invite-code field).
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Radius.field))
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+            .padding(start = Spacing.lg, top = Spacing.md, bottom = Spacing.md, end = Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                label.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                code,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        IconButton(onClick = {
+            scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("", code))) }
+        }) {
+            Icon(
+                Icons.Filled.ContentCopy,
+                contentDescription = stringResource(R.string.copy_code),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
 }
 
 /** Birthday date picker field — read-only OutlinedTextField that opens a DatePickerDialog on tap.
@@ -572,25 +586,41 @@ fun BirthdayPickerField(
             ""
         }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = displayText,
-            onValueChange = {},
-            label = { Text(label) },
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Outlined.Cake, contentDescription = null) },
-            shape = RoundedCornerShape(Radius.field),
-            colors =
-                OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                ),
+    // Filled tap-to-pick row — leading cake icon, value/placeholder, trailing dropdown
+    // (mirrors the iOS BirthdayPickerField glass row).
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Radius.field))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .clickable { showPicker = true }
+            .padding(horizontal = Spacing.lg, vertical = Spacing.lg)
+            .semantics { contentDescription = label },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Outlined.Cake,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp),
         )
-        Box(modifier = Modifier.matchParentSize().clickable { showPicker = true })
+        Spacer(Modifier.width(Spacing.md))
+        Text(
+            text = displayText.ifEmpty { label },
+            style = MaterialTheme.typography.bodyLarge,
+            color =
+                if (displayText.isEmpty()) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            Icons.Filled.ArrowDropDown,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 
     if (showPicker) {

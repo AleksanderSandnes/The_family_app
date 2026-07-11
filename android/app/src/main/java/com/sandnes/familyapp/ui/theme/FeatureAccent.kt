@@ -1,6 +1,5 @@
 package com.sandnes.familyapp.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
@@ -28,7 +27,7 @@ enum class FeatureAccent {
     @Composable
     @ReadOnlyComposable
     fun stroke(): Color {
-        val dark = isSystemInDarkTheme()
+        val dark = appDarkTheme()
         return when (this) {
             Shopping, Chat -> if (dark) Color(0xFFA5ABFF) else Color(0xFF4F55E6)
             Meals -> if (dark) Color(0xFFFBBF24) else Color(0xFFD97706)
@@ -43,7 +42,7 @@ enum class FeatureAccent {
     @Composable
     @ReadOnlyComposable
     fun badgeFill(): Color {
-        val dark = isSystemInDarkTheme()
+        val dark = appDarkTheme()
         return when (this) {
             Shopping, Chat ->
                 if (dark) Color(0xFFA5ABFF).copy(alpha = 0.16f) else Color(0xFF6366F1).copy(alpha = 0.14f)

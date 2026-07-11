@@ -454,4 +454,24 @@
     <string name="member_count_plural">%1$d medlemmer</string>
     <string name="something_went_wrong">Noe gikk galt. Prøv igjen.</string>
     <string name="that_name_is_already_taken">Det navnet er allerede tatt.</string>
+    <string name="relation_mom">Mamma</string>
+    <string name="relation_dad">Pappa</string>
+    <string name="relation_son">Sønn</string>
+    <string name="relation_daughter">Datter</string>
+    <string name="relation_sister">Søster</string>
+    <string name="relation_brother">Bror</string>
+    <string name="relation_wife">Kone</string>
+    <string name="relation_husband">Ektemann</string>
+    <string name="relation_fiance">Forlovede</string>
+    <string name="relation_partner">Partner</string>
+    <string name="relation_grandmother">Bestemor</string>
+    <string name="relation_grandfather">Bestefar</string>
+    <string name="relation_grandchild">Barnebarn</string>
+    <string name="relation_aunt">Tante</string>
+    <string name="relation_uncle">Onkel</string>
+    <string name="relation_cousin">Søskenbarn</string>
+    <string name="relation_friend">Venn</string>
+    <string name="relation_other">Annet</string>
+    <string name="join_family_invite_message">Bli med i familien vår \"%1$s\" i The Family App!\n\nTrykk for å bli med: %2$s\n\nEller åpne appen, trykk \"Bli med via invitasjonskode\", og skriv inn: %3$s</string>
+    <string name="reply">Svar</string>
 </resources>

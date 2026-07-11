@@ -206,8 +206,36 @@ fun FamilyMapScreen(
         myLocation?.let { cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 14f)) }
     }
 
+    // No own fix yet → centre on the family's shared pins instead (mirrors iOS, which
+    // fits the member annotations rather than leaving the default world camera).
+    LaunchedEffect(locations, myLocation) {
+        if (myLocation != null) return@LaunchedEffect
+        val visible = locations.filter { it.visible }
+        when {
+            visible.size >= 2 -> {
+                val bounds =
+                    com.google.android.gms.maps.model.LatLngBounds
+                        .builder()
+                        .apply { visible.forEach { include(LatLng(it.lat, it.lng)) } }
+                        .build()
+                runCatching { cameraPositionState.animate(CameraUpdateFactory.newLatLngBounds(bounds, 150)) }
+            }
+            visible.size == 1 ->
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(LatLng(visible[0].lat, visible[0].lng), 12f),
+                )
+        }
+    }
+
     // Build avatar-pin bitmaps for visible members plus the current user's own pin.
     LaunchedEffect(userProfiles, locations, currentUserId) {
+        // The Maps SDK must be initialised before BitmapDescriptorFactory is touched —
+        // on a cold start this effect can win the race against GoogleMap's own init,
+        // which crashed with "IBitmapDescriptorFactory is not initialized".
+        runCatching {
+            com.google.android.gms.maps.MapsInitializer
+                .initialize(context)
+        }
         val visibleLocations = locations.filter { it.visible }
         visibleLocations.forEach { loc ->
             val profile = userProfiles[loc.userId]

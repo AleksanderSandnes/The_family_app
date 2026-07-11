@@ -26,27 +26,26 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Circle
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,6 +72,7 @@ import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ShoppingItemModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.IconGrid
@@ -81,6 +81,8 @@ import com.sandnes.familyapp.ui.components.ListSkeleton
 import com.sandnes.familyapp.ui.components.PillTag
 import com.sandnes.familyapp.ui.components.PullRefresh
 import com.sandnes.familyapp.ui.components.RefreshOnResume
+import com.sandnes.familyapp.ui.components.SheetField
+import com.sandnes.familyapp.ui.components.SheetSectionLabel
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
 import com.sandnes.familyapp.ui.theme.AppColorPalette
 import com.sandnes.familyapp.ui.theme.FeatureAccent
@@ -293,6 +295,7 @@ fun ShoppingDetailScreen(
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.rename_list)) },
+                            trailingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 showRename = true
@@ -300,14 +303,28 @@ fun ShoppingDetailScreen(
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.change_icon)) },
+                            trailingIcon = { Icon(Icons.Filled.Star, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 showChangeIcon = true
                             },
                         )
                         if (completed.isNotEmpty()) {
+                            // Destructive action — red, like iOS's destructive menu role.
                             DropdownMenuItem(
-                                text = { Text(stringResource(R.string.clear_completed_count, completed.size)) },
+                                text = {
+                                    Text(
+                                        stringResource(R.string.clear_completed_count, completed.size),
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Filled.DeleteSweep,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                    )
+                                },
                                 onClick = {
                                     showMenu = false
                                     viewModel.clearCompleted(listId)
@@ -439,7 +456,7 @@ private fun AddItemBar(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.AutoMirrored.Filled.ArrowForward,
+                Icons.Filled.ArrowUpward,
                 contentDescription = stringResource(R.string.add_item),
                 tint = Color.White,
                 modifier = Modifier.size(20.dp),
@@ -474,12 +491,13 @@ private fun ShoppingItemRow(
         if (isEditing) focusRequester.requestFocus()
     }
 
-    SwipeToRevealDelete(onDelete = { viewModel.deleteItem(item) }, modifier = modifier, shape = RoundedCornerShape(Radius.row)) {
+    // Full-capsule rows, like the iOS list items.
+    SwipeToRevealDelete(onDelete = { viewModel.deleteItem(item) }, modifier = modifier, shape = RoundedCornerShape(Radius.large)) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .rowSurface(ghost = item.checked, cornerRadius = Radius.row)
-                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                .rowSurface(ghost = item.checked, cornerRadius = Radius.large)
+                .padding(horizontal = Spacing.md, vertical = Spacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = {
@@ -570,20 +588,31 @@ private fun NewListDialog(
     var selectedIcon by remember { mutableStateOf("shopping_cart") }
     var selectedColor by remember { mutableStateOf(AppColorPalette.first()) }
 
-    IconColorDialog(
-        heading = stringResource(R.string.new_list),
-        confirmLabel = stringResource(R.string.create),
-        title = title,
-        onTitleChange = { title = it },
-        titlePlaceholder = stringResource(R.string.list_name),
-        selectedIcon = selectedIcon,
-        onIconSelect = { selectedIcon = it },
-        selectedColor = selectedColor,
-        onColorSelect = { selectedColor = it },
+    // iOS-parity creation sheet (NewListSheet): name field, icon grid, colour row.
+    CreationSheet(
+        title = stringResource(R.string.new_list),
+        confirmTitle = stringResource(R.string.create),
         confirmEnabled = title.isNotBlank(),
         onDismiss = onDismiss,
         onConfirm = { onConfirm(title.trim(), selectedIcon, selectedColor) },
-    )
+    ) {
+        SheetField(
+            icon = IconKeyMap.shopping(selectedIcon),
+            placeholder = stringResource(R.string.list_name),
+            value = title,
+            onValueChange = { title = it },
+        )
+        SheetSectionLabel(stringResource(R.string.icon))
+        IconGrid(
+            options = IconOptions.shopping,
+            selected = selectedIcon,
+            onSelect = { selectedIcon = it },
+            feature = FeatureAccent.Shopping,
+            colorOverride = hexColor(selectedColor),
+        )
+        SheetSectionLabel(stringResource(R.string.color))
+        ColorPickerRow(selected = selectedColor, onSelect = { selectedColor = it })
+    }
 }
 
 @Composable
@@ -596,89 +625,23 @@ private fun ChangeIconDialog(
     var selectedIcon by remember { mutableStateOf(currentIcon) }
     var selectedColor by remember { mutableStateOf(currentColor ?: AppColorPalette.first()) }
 
-    IconColorDialog(
-        heading = stringResource(R.string.change_icon),
-        confirmLabel = stringResource(R.string.save),
-        title = null,
-        onTitleChange = {},
-        titlePlaceholder = "",
-        selectedIcon = selectedIcon,
-        onIconSelect = { selectedIcon = it },
-        selectedColor = selectedColor,
-        onColorSelect = { selectedColor = it },
+    // iOS-parity icon picker sheet (IconPickerSheet).
+    CreationSheet(
+        title = stringResource(R.string.change_icon),
+        confirmTitle = stringResource(R.string.save),
         confirmEnabled = true,
         onDismiss = onDismiss,
         onConfirm = { onConfirm(selectedIcon, selectedColor) },
-    )
-}
-
-/**
- * Shared new/edit dialog body for shopping lists: optional name field, icon grid and colour row.
- * Passing a null [title] hides the name field (used by the change-icon path).
- */
-@Composable
-private fun IconColorDialog(
-    heading: String,
-    confirmLabel: String,
-    title: String?,
-    onTitleChange: (String) -> Unit,
-    titlePlaceholder: String,
-    selectedIcon: String,
-    onIconSelect: (String) -> Unit,
-    selectedColor: Int,
-    onColorSelect: (Int) -> Unit,
-    confirmEnabled: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(Radius.sheet),
-        title = { Text(heading, style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                if (title != null) {
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = onTitleChange,
-                        placeholder = { Text(titlePlaceholder) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(Radius.field),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors =
-                            OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                            ),
-                    )
-                }
-                Text(
-                    stringResource(R.string.icon).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                IconGrid(
-                    options = IconOptions.shopping,
-                    selected = selectedIcon,
-                    onSelect = onIconSelect,
-                    feature = FeatureAccent.Shopping,
-                    colorOverride = hexColor(selectedColor),
-                )
-                Text(
-                    stringResource(R.string.color).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                ColorPickerRow(selected = selectedColor, onSelect = onColorSelect)
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmLabel) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
-    )
+    ) {
+        SheetSectionLabel(stringResource(R.string.icon))
+        IconGrid(
+            options = IconOptions.shopping,
+            selected = selectedIcon,
+            onSelect = { selectedIcon = it },
+            feature = FeatureAccent.Shopping,
+            colorOverride = hexColor(selectedColor),
+        )
+        SheetSectionLabel(stringResource(R.string.color))
+        ColorPickerRow(selected = selectedColor, onSelect = { selectedColor = it })
+    }
 }

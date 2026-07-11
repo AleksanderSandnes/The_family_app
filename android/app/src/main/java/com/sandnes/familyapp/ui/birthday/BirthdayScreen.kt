@@ -2,6 +2,7 @@
 
 package com.sandnes.familyapp.ui.birthday
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,16 +19,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cake
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -48,18 +51,18 @@ import com.sandnes.familyapp.data.BirthdayModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.BirthdayPickerField
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
-import com.sandnes.familyapp.ui.components.FamilyTextField
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.IconGrid
 import com.sandnes.familyapp.ui.components.ListSkeleton
 import com.sandnes.familyapp.ui.components.PillTag
 import com.sandnes.familyapp.ui.components.PullRefresh
 import com.sandnes.familyapp.ui.components.RefreshOnResume
+import com.sandnes.familyapp.ui.components.SheetField
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
 import com.sandnes.familyapp.ui.theme.AppColorPalette
 import com.sandnes.familyapp.ui.theme.FeatureAccent
-import com.sandnes.familyapp.ui.theme.FeatureBadge
 import com.sandnes.familyapp.ui.theme.IconKeyMap
 import com.sandnes.familyapp.ui.theme.IconOptions
 import com.sandnes.familyapp.ui.theme.Radius
@@ -100,7 +103,7 @@ fun BirthdayScreen(
         containerColor = Color.Transparent,
         topBar = { FeatureTopBar(stringResource(R.string.birthdays), onBack) },
         floatingActionButton = {
-            AppFab(text = "Add birthday", icon = Icons.Filled.Add, onClick = { showAdd = true })
+            AppFab(text = stringResource(R.string.add_birthday), icon = Icons.Filled.Add, onClick = { showAdd = true })
         },
     ) { padding ->
         PullRefresh(
@@ -113,9 +116,9 @@ fun BirthdayScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
                         Icons.Filled.Cake,
-                        "No birthdays",
-                        "Add family birthdays so you never miss a celebration.",
-                        actionLabel = "Add birthday",
+                        stringResource(R.string.no_birthdays),
+                        stringResource(R.string.add_family_birthdays_so_you_never_miss_a_celebration),
+                        actionLabel = stringResource(R.string.add_birthday),
                         onAction = { showAdd = true },
                     )
                 }
@@ -148,8 +151,8 @@ fun BirthdayScreen(
 
     if (showAdd) {
         BirthdayDialog(
-            title = "Add birthday",
-            confirmLabel = "Add",
+            title = stringResource(R.string.add_birthday),
+            confirmLabel = stringResource(R.string.add),
             onDismiss = { showAdd = false },
             onConfirm = { name, date, icon, color ->
                 viewModel.add(name, date, icon, color)
@@ -160,8 +163,8 @@ fun BirthdayScreen(
 
     editing?.let { birthday ->
         BirthdayDialog(
-            title = "Edit birthday",
-            confirmLabel = "Save",
+            title = stringResource(R.string.edit_birthday),
+            confirmLabel = stringResource(R.string.save),
             initialName = birthday.name,
             initialDate = birthday.date,
             initialIcon = birthday.icon,
@@ -193,8 +196,8 @@ private fun BirthdayCard(
 
     val daysLabel =
         when {
-            daysUntil == 0 -> "Today!"
-            daysUntil != null -> "In $daysUntil days"
+            daysUntil == 0 -> stringResource(R.string.today_exclaim)
+            daysUntil != null -> stringResource(R.string.in_days, daysUntil)
             else -> ""
         }
     val cardDescription =
@@ -216,12 +219,21 @@ private fun BirthdayCard(
             .semantics { contentDescription = cardDescription }
 
     Row(base, verticalAlignment = Alignment.CenterVertically) {
-        FeatureBadge(
-            icon = IconKeyMap.birthday(b.icon),
-            feature = FeatureAccent.Birthdays,
-            size = 46.dp,
-            colorOverride = hexColor(b.color),
-        )
+        // Circular badge — accent at 16% fill with the accent glyph (mirrors the iOS row).
+        Box(
+            Modifier
+                .size(46.dp)
+                .clip(CircleShape)
+                .background(accent.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                IconKeyMap.birthday(b.icon),
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.size(22.dp),
+            )
+        }
         Spacer(Modifier.size(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
@@ -259,19 +271,19 @@ private fun DaysPill(days: Int) {
     when (birthdayUrgency(days)) {
         BirthdayUrgency.TODAY ->
             PillTag(
-                text = "Today! 🎉",
+                text = stringResource(R.string.today_exclaim) + " 🎉",
                 container = Color(0xFF22C55E),
                 content = Color.White,
             )
         BirthdayUrgency.SOON ->
             PillTag(
-                text = "In $days days",
+                text = stringResource(R.string.in_days, days),
                 container = Color(0xFFF59E0B).copy(alpha = 0.18f),
                 content = Color(0xFFB45309),
             )
         BirthdayUrgency.LATER ->
             PillTag(
-                text = "In $days days",
+                text = stringResource(R.string.in_days, days),
                 container = MaterialTheme.colorScheme.surfaceVariant,
                 content = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -295,41 +307,39 @@ private fun BirthdayDialog(
     var color by remember { mutableStateOf(initialColor ?: AppColorPalette.first()) }
     val overrideColor = hexColor(color)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                FamilyTextField(name, { name = it }, "Name")
-                BirthdayPickerField(value = date, onChange = { date = it }, label = "Birthday *")
+    // iOS-parity birthday sheet (BirthdaySheet): name, date, icon grid, colour row.
+    CreationSheet(
+        title = title,
+        confirmTitle = confirmLabel,
+        confirmEnabled = name.isNotBlank() && date.isNotBlank(),
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(name.trim(), date, icon, color) },
+    ) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SheetField(
+                icon = Icons.Filled.Person,
+                placeholder = stringResource(R.string.name),
+                value = name,
+                onValueChange = { name = it },
+            )
+            BirthdayPickerField(value = date, onChange = { date = it }, label = stringResource(R.string.birthday))
 
-                SectionLabel("Icon")
-                IconGrid(
-                    options = IconOptions.calendar,
-                    selected = icon,
-                    onSelect = { icon = it },
-                    feature = FeatureAccent.Birthdays,
-                    colorOverride = overrideColor,
-                )
+            SectionLabel(stringResource(R.string.icon))
+            IconGrid(
+                options = IconOptions.calendar,
+                selected = icon,
+                onSelect = { icon = it },
+                feature = FeatureAccent.Birthdays,
+                colorOverride = overrideColor,
+            )
 
-                SectionLabel("Color")
-                ColorPickerRow(selected = color, onSelect = { color = it })
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(name.trim(), date, icon, color) },
-                enabled = name.isNotBlank() && date.isNotBlank(),
-            ) { Text(confirmLabel) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-    )
+            SectionLabel(stringResource(R.string.color))
+            ColorPickerRow(selected = color, onSelect = { color = it })
+        }
+    }
 }
 
 @Composable

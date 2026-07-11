@@ -51,3 +51,42 @@ profile-completion prompt, background location sharing, idempotent chat unread b
 [[../03_Architecture_and_Design/Architecture and Design]] — Liquid Glass tokens (colours, SF Pro /
 type scale, 4-pt spacing, radii card 20 / field 16 / button 18 / sheet 28 / tabBar 33) and the
 planned Android glass layer.
+
+**Current-state visual source of truth (2026-07-11):** `The family app design docs/ios/` — 70
+screenshots from the **live iOS app** in light + dark, named per screen (index +
+inventory in `The family app design docs/README.md`). These replace the older loose `*.jpeg`
+reference shots, which were stale and have been deleted. When matching an Android screen, read the
+iOS **source** (`ios/FamilyApp/Features/…`) for exact strings/behaviour alongside the screenshot.
+`The family app design docs/android/` is filled in **after** each Android screen reaches parity —
+an emulator screenshot per fixed screen, same naming — as before/after evidence.
+
+### Post-parity design pass (2026-07-11) — ✅ COMPLETE
+Screen-by-screen emulator review (Maestro MCP) against the current iOS screenshots + source, all
+pages fixed and user-approved page by page. Android before/after shots (light + dark, 26 files) in
+`…/design docs/android/`. Highlights:
+- **Glass layer fixed app-wide**: split Haze states (cards no longer blur their own scroll
+  container — the "smudge" artifact), ambient-wash radial gradients drawn at the correct centres
+  (bug: brush coords were rect-relative), floating pill tab bar, transparent top bars (opaque
+  bands removed), tab bar now visible on pushed screens like iOS (except conversation).
+- **iOS creation-sheet system**: new `CreationSheet`/`SheetHeader`/`SheetField`/`SheetSectionLabel`
+  components (mirror iOS `SheetHeader`/`GlassField`); every create/edit dialog converted —
+  shopping list, meal plan, calendar event, birthday, wishlist, wish. IconGrid selected tile =
+  solid accent + white glyph, 8-colour row fits without clipping.
+- **Real bugs found & fixed on-device**: chat timestamps entirely blank on device
+  (`Instant.parse` rejects Supabase's `+00:00` offset on desugared java.time → robust
+  `parseInstant`, fixes tap-to-reveal/gap pills/list labels/presence/read receipts, +tests);
+  in-app **Dark theme left the background light** (design layer read `isSystemInDarkTheme()`;
+  now `appDarkTheme()` CompositionLocal from the theme); Family-Map cold-start crash
+  (`BitmapDescriptorFactory` before Maps SDK init); map camera never centred without own GPS fix
+  (now fits family pins); meal inline-edit cursor at start + untrimmed saves.
+- **Chat parity**: reply preview/bubble show the quoted sender's name, tap-a-bubble reveals full
+  date+time (iOS `exactMessageTimestamp`), "+"-menu composer with `Message…` placeholder, white
+  composer surface wraps to the page bottom, destructive menu items red.
+- **Feature-body localization completed** (the documented M4 follow-up): calendar, family
+  (incl. relation display names EN/NB), wishlists, chat, profile, birthdays, settings — plus
+  Home summary lines resolved in the UI layer.
+- MealViewModelTest suite repaired (rollback-on-failure semantics from the M7-era no-family
+  gate) via pure `buildOptimisticPlan`; new NB-label and timestamp-parser tests. Full unit
+  suite + detekt + spotless green.
+- Test data: family "Parityveien 7" (accounts familyapp.parity.test1/2@gmail.com) seeded in prod
+  mirroring the iOS reference shots; register → join-with-code → relations flows exercised live.

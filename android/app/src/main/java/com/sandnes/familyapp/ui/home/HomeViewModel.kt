@@ -36,24 +36,23 @@ data class HomeUiState(
     val isLoading: Boolean = true,
     val loadError: Boolean = false,
     // Glanceable summary (D4) — null/0 when there's nothing to show.
+    // Date/label strings are composed in the UI layer so they follow the in-app locale.
     val tonightMeal: String? = null,
     val nextEvent: CalendarEventModel? = null,
-    val nextEventWhen: String? = null,
-    val nextBirthdayName: String? = null,
-    val nextBirthdayWhen: String? = null,
+    val nextBirthday: BirthdayModel? = null,
+    val nextBirthdayDate: LocalDate? = null,
     val shoppingRemaining: Int = 0,
 ) {
     /** True when at least one summary card has content to render. */
     val hasSummary: Boolean
-        get() = tonightMeal != null || nextEvent != null || nextBirthdayName != null || shoppingRemaining > 0
+        get() = tonightMeal != null || nextEvent != null || nextBirthday != null || shoppingRemaining > 0
 }
 
 private data class HomeSummary(
     val tonightMeal: String? = null,
     val nextEvent: CalendarEventModel? = null,
-    val nextEventWhen: String? = null,
-    val nextBirthdayName: String? = null,
-    val nextBirthdayWhen: String? = null,
+    val nextBirthday: BirthdayModel? = null,
+    val nextBirthdayDate: LocalDate? = null,
     val shoppingRemaining: Int = 0,
 )
 
@@ -117,9 +116,8 @@ class HomeViewModel
                         isLoading = false,
                         tonightMeal = summary.tonightMeal,
                         nextEvent = summary.nextEvent,
-                        nextEventWhen = summary.nextEventWhen,
-                        nextBirthdayName = summary.nextBirthdayName,
-                        nextBirthdayWhen = summary.nextBirthdayWhen,
+                        nextBirthday = summary.nextBirthday,
+                        nextBirthdayDate = summary.nextBirthdayDate,
                         shoppingRemaining = summary.shoppingRemaining,
                     )
             }.onFailure {
@@ -132,14 +130,12 @@ class HomeViewModel
             familyId: String,
         ): HomeSummary {
             val today = LocalDate.now()
-            val event = loadNextEvent(db, familyId, today)
             val birthday = loadNextBirthday(db, familyId, today)
             return HomeSummary(
                 tonightMeal = loadTonightMeal(db, familyId, today),
-                nextEvent = event,
-                nextEventWhen = event?.let { eventWhen(it, today) },
-                nextBirthdayName = birthday?.first?.name,
-                nextBirthdayWhen = birthday?.let { birthdayWhen(it.first, it.second, today) },
+                nextEvent = loadNextEvent(db, familyId, today),
+                nextBirthday = birthday?.first,
+                nextBirthdayDate = birthday?.second,
                 shoppingRemaining = loadShoppingRemaining(db, familyId),
             )
         }
@@ -283,15 +279,27 @@ internal fun eventHasEnded(
     }
 }
 
+/** Localized labels for the summary detail lines, resolved by the UI layer (in-app locale). */
+data class SummaryLabels(
+    val today: String,
+    val tomorrow: String,
+    val todayExclaim: String,
+    /** Format string with one %1$d arg, e.g. "in %1$d days". */
+    val inDaysFormat: String,
+    /** Format string with one %1$d arg, e.g. "Turns %1$d". */
+    val turnsFormat: String,
+)
+
 internal fun eventWhen(
     e: CalendarEventModel,
     today: LocalDate,
+    labels: SummaryLabels,
 ): String {
     val from = runCatching { LocalDate.parse(e.dateFrom) }.getOrNull() ?: return e.dateFrom
     val datePart =
         when (from) {
-            today -> "Today"
-            today.plusDays(1) -> "Tomorrow"
+            today -> labels.today
+            today.plusDays(1) -> labels.tomorrow
             else -> from.format(EVENT_DATE_FMT)
         }
     return if (e.allDay || e.timeFrom.isBlank()) datePart else "$datePart · ${e.timeFrom}"
@@ -301,14 +309,15 @@ internal fun birthdayWhen(
     b: BirthdayModel,
     next: LocalDate,
     today: LocalDate,
+    labels: SummaryLabels,
 ): String {
     val days = (next.toEpochDay() - today.toEpochDay()).toInt()
     val age = turnsAge(b.date, today)
     val whenStr =
         when (days) {
-            0 -> "Today!"
-            1 -> "Tomorrow"
-            else -> "in $days days"
+            0 -> labels.todayExclaim
+            1 -> labels.tomorrow
+            else -> labels.inDaysFormat.format(days)
         }
-    return if (age != null) "Turns $age · $whenStr" else whenStr
+    return if (age != null) "${labels.turnsFormat.format(age)} · $whenStr" else whenStr
 }

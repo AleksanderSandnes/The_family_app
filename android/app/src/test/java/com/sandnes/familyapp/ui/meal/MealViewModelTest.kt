@@ -175,15 +175,45 @@ class MealViewModelTest {
         }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 4. createPlan — optimistic add
+    // 4. createPlan — optimistic add + rollback
     //
-    // Strategy: emit userId while getUser still returns null familyId (safe for init),
-    // then re-mock to return non-null familyId so createPlan's internal getUser call
-    // can satisfy the familyId guard without triggering subscribeToPlansOnce.
+    // The optimistic field mapping is covered via [buildOptimisticPlan] (pure). The
+    // ViewModel path is covered by the rollback test: in this suite the Supabase client
+    // always throws, so a createPlan that passes the family gate must roll the temp row
+    // back out of [MealViewModel.plans] and surface an error.
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    fun `createPlan adds optimistic item with correct name and icon`() =
+    fun `buildOptimisticPlan maps name icon and familyId`() {
+        val plan = buildOptimisticPlan("Week 1", "2024-01-01", "2024-01-07", "restaurant", null, "fam-1")
+        assertEquals("Plan name should match", "Week 1", plan.name)
+        assertEquals("Plan icon should match", "restaurant", plan.icon)
+        assertEquals("familyId should match", "fam-1", plan.familyId)
+        assertTrue("temp id expected", plan.id.startsWith("temp-"))
+    }
+
+    @Test
+    fun `buildOptimisticPlan stores the date range and week`() {
+        val plan = buildOptimisticPlan("Date Range Plan", "2024-03-01", "2024-03-07", "restaurant", null, "fam-1")
+        assertEquals("fromDate should match", "2024-03-01", plan.fromDate)
+        assertEquals("toDate should match", "2024-03-07", plan.toDate)
+        assertEquals("week should be derived from fromDate", 9, plan.week)
+    }
+
+    @Test
+    fun `buildOptimisticPlan stores the specified color`() {
+        val plan = buildOptimisticPlan("Colored Plan", "2024-04-01", "2024-04-07", "restaurant", 0x14B8A6, "fam-1")
+        assertEquals("color should be stored", 0x14B8A6, plan.color)
+    }
+
+    @Test
+    fun `buildOptimisticPlan without color defaults to null color`() {
+        val plan = buildOptimisticPlan("Plain Plan", "2024-05-01", "2024-05-07", "restaurant", null, "fam-1")
+        assertNull("color should default to null", plan.color)
+    }
+
+    @Test
+    fun `createPlan rolls back the optimistic item and surfaces an error when insert fails`() =
         runTest(dispatcherRule.dispatcher) {
             userId.value = "user-1"
             advanceUntilIdle() // init collector runs; null familyId → no subscription
@@ -192,74 +222,11 @@ class MealViewModelTest {
             vm.createPlan("Week 1", "2024-01-01", "2024-01-07", "restaurant")
             advanceUntilIdle()
 
-            val items = vm.plans.value
-            assertEquals("Should have exactly one plan", 1, items.size)
-            assertEquals("Plan name should match", "Week 1", items[0].name)
-            assertEquals("Plan icon should match", "restaurant", items[0].icon)
-        }
-
-    @Test
-    fun `createPlan assigns correct familyId to the optimistic item`() =
-        runTest(dispatcherRule.dispatcher) {
-            userId.value = "user-1"
-            advanceUntilIdle()
-
-            coEvery { repo.getUser("user-1") } returns UserModel(id = "user-1", familyId = "fam-1")
-            vm.createPlan("Plan X", "2024-01-08", "2024-01-14", "fastfood")
-            advanceUntilIdle()
-
-            assertEquals("familyId should match the user's family", "fam-1", vm.plans.value[0].familyId)
-        }
-
-    @Test
-    fun `createPlan stores the correct date range on the optimistic item`() =
-        runTest(dispatcherRule.dispatcher) {
-            userId.value = "user-1"
-            advanceUntilIdle()
-
-            coEvery { repo.getUser("user-1") } returns UserModel(id = "user-1", familyId = "fam-1")
-            vm.createPlan("Date Range Plan", "2024-03-01", "2024-03-07", "restaurant")
-            advanceUntilIdle()
-
-            val plan = vm.plans.value.first()
-            assertEquals("fromDate should match", "2024-03-01", plan.fromDate)
-            assertEquals("toDate should match", "2024-03-07", plan.toDate)
-        }
-
-    @Test
-    fun `createPlan stores the specified color on the optimistic item`() =
-        runTest(dispatcherRule.dispatcher) {
-            userId.value = "user-1"
-            advanceUntilIdle()
-
-            coEvery { repo.getUser("user-1") } returns UserModel(id = "user-1", familyId = "fam-1")
-            vm.createPlan("Colored Plan", "2024-04-01", "2024-04-07", "restaurant", 0x14B8A6)
-            advanceUntilIdle()
-
+            assertTrue("failed insert should roll the temp plan back out", vm.plans.value.isEmpty())
             assertEquals(
-                "color should be stored on the optimistic plan",
-                0x14B8A6,
-                vm.plans.value
-                    .first()
-                    .color,
-            )
-        }
-
-    @Test
-    fun `createPlan without color defaults to null color`() =
-        runTest(dispatcherRule.dispatcher) {
-            userId.value = "user-1"
-            advanceUntilIdle()
-
-            coEvery { repo.getUser("user-1") } returns UserModel(id = "user-1", familyId = "fam-1")
-            vm.createPlan("Plain Plan", "2024-05-01", "2024-05-07", "restaurant")
-            advanceUntilIdle()
-
-            assertNull(
-                "color should default to null",
-                vm.plans.value
-                    .first()
-                    .color,
+                "a failed create must surface an error",
+                com.sandnes.familyapp.R.string.couldnt_save,
+                vm.errorRes.value,
             )
         }
 
@@ -537,6 +504,25 @@ class MealViewModelTest {
         }
 
     @Test
+    fun `setFood trims surrounding whitespace`() =
+        runTest(dispatcherRule.dispatcher) {
+            val day =
+                MealPlanDayModel(
+                    id = "day-1",
+                    mealPlanId = "plan-1",
+                    day = "Monday",
+                    date = "2024-01-01",
+                    food = "",
+                )
+            seedDays(listOf(day))
+
+            vm.setFood(day, "  Tacograteng med mais ")
+            advanceUntilIdle()
+
+            assertEquals("Food should be trimmed", "Tacograteng med mais", vm.days.value[0].food)
+        }
+
+    @Test
     fun `setFood does not modify other days in the list`() =
         runTest(dispatcherRule.dispatcher) {
             val day1 = MealPlanDayModel(id = "day-1", mealPlanId = "plan-1", day = "Monday", date = "2024-01-01", food = "")
@@ -665,7 +651,7 @@ class MealViewModelTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    fun `plans flow emits empty initially then reflects createPlan optimistic add`() =
+    fun `plans flow emits the optimistic add then rolls it back when insert fails`() =
         runTest(dispatcherRule.dispatcher) {
             userId.value = "user-1"
             advanceUntilIdle() // init runs with null familyId → no subscription
@@ -677,12 +663,20 @@ class MealViewModelTest {
                 assertTrue("Initial emission should be empty", initial.isEmpty())
 
                 vm.createPlan("Turbine Plan", "2024-06-01", "2024-06-07", "restaurant")
-                advanceUntilIdle()
 
-                val afterCreate = expectMostRecentItem()
+                // Optimistic add lands first…
+                val afterCreate = awaitItem()
                 assertTrue(
-                    "plans flow should contain the created plan after createPlan",
+                    "plans flow should emit the optimistic plan",
                     afterCreate.any { it.name == "Turbine Plan" },
+                )
+
+                // …then the failed insert (Supabase client throws in tests) rolls it back.
+                advanceUntilIdle()
+                val afterRollback = expectMostRecentItem()
+                assertTrue(
+                    "failed insert should roll the optimistic plan back out",
+                    afterRollback.none { it.name == "Turbine Plan" },
                 )
 
                 cancelAndIgnoreRemainingEvents()

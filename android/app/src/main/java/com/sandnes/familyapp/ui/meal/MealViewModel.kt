@@ -243,23 +243,7 @@ class MealViewModel
 
             val from = LocalDate.parse(fromIso)
             val to = LocalDate.parse(toIso)
-            val cal =
-                Calendar.getInstance().also {
-                    it.time = Date.from(from.atStartOfDay(ZoneOffset.UTC).toInstant())
-                }
-            val week = cal.get(Calendar.WEEK_OF_YEAR)
-
-            val optimistic =
-                MealPlanModel(
-                    id = "temp-${java.util.UUID.randomUUID()}",
-                    familyId = familyId,
-                    name = name,
-                    icon = icon,
-                    fromDate = fromIso,
-                    toDate = toIso,
-                    week = week,
-                    color = color,
-                )
+            val optimistic = buildOptimisticPlan(name, fromIso, toIso, icon, color, familyId)
             _plans.value = _plans.value + optimistic
 
             val result = runCatching { insertPlanWithDays(optimistic, from, to) }
@@ -361,12 +345,43 @@ class MealViewModel
             food: String,
         ) =
             viewModelScope.launch {
-                _days.value = _days.value.map { if (it.id == day.id) it.copy(food = food) else it }
+                val trimmed = food.trim()
+                _days.value = _days.value.map { if (it.id == day.id) it.copy(food = trimmed) else it }
                 runCatching {
                     db.from("meal_plan_days").update({
-                        set("food", food)
+                        set("food", trimmed)
                     }) { filter { eq("id", day.id) } }
                 }
                 loadPlanDetail(day.mealPlanId).join()
             }
     }
+
+/**
+ * Builds the optimistic temp row for [MealViewModel.createPlan]. Pure — extracted so the
+ * name/icon/date/colour/week mapping stays unit-testable independent of the insert path.
+ */
+@Suppress("LongParameterList") // mirrors the MealPlanModel fields it builds
+internal fun buildOptimisticPlan(
+    name: String,
+    fromIso: String,
+    toIso: String,
+    icon: String,
+    color: Int?,
+    familyId: String,
+): MealPlanModel {
+    val from = LocalDate.parse(fromIso)
+    val cal =
+        Calendar.getInstance().also {
+            it.time = Date.from(from.atStartOfDay(ZoneOffset.UTC).toInstant())
+        }
+    return MealPlanModel(
+        id = "temp-${java.util.UUID.randomUUID()}",
+        familyId = familyId,
+        name = name,
+        icon = icon,
+        fromDate = fromIso,
+        toDate = toIso,
+        week = cal.get(Calendar.WEEK_OF_YEAR),
+        color = color,
+    )
+}
