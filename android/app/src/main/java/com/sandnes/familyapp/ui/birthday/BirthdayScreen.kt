@@ -244,7 +244,7 @@ private fun BirthdayCard(
                 fontWeight = FontWeight.SemiBold,
             )
             // FlowRow so "turning N" wraps as a whole chunk instead of mid-phrase when the
-            // localized date + countdown pill leave little width (seen on NB phones).
+            // localized date + countdown pill leave little width.
             androidx.compose.foundation.layout.FlowRow {
                 Text(
                     displayDate,

@@ -5,7 +5,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Feature-accent palette (Liquid Glass 1c). Feature colours live ONLY in icon badges and
+ * Feature-accent palette. Feature colours live ONLY in icon badges and
  * calendar event dots — never on large surfaces. One entry per domain; each resolves an icon
  * [stroke], a translucent [badgeFill], and a fixed calendar [dot], adapting light ↔ dark.
  *

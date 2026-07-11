@@ -108,8 +108,7 @@ object NotificationHelper {
         }
     }
 
-    /** Birthday reminder (server push, type=birthday). Mirrors the title wording of the
-     *  retired NotificationWorker so existing copy is preserved. */
+    /** Birthday reminder (server push, type=birthday). */
     fun postBirthdayNotification(
         context: Context,
         name: String,

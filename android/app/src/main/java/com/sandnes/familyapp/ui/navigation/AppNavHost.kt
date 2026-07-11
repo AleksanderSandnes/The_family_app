@@ -267,7 +267,7 @@ private fun MainFlow() {
                 navController = navController,
                 startDestination = Routes.HOME,
                 // Consume the scaffold insets so each screen's own Scaffold doesn't re-apply the
-                // bottom navigation-bar inset (which doubled the gap below FABs above the nav bar).
+                // bottom navigation-bar inset (that would double the gap below FABs).
                 modifier = Modifier.padding(padding).consumeWindowInsets(padding).glassSource(),
                 // Default: iOS-style horizontal slide for detail/feature screens
                 enterTransition = { slideInHorizontally(tween(300)) { it } + fadeIn(tween(300)) },
@@ -316,7 +316,7 @@ private fun MainFlow() {
                     )
                 }
 
-                // Shopping is now a bottom-tab destination (crossfade, no back arrow).
+                // Shopping is a bottom-tab destination (crossfade, no back arrow).
                 composable(
                     Routes.SHOPPING,
                     enterTransition = { fadeIn(tween(200)) },

@@ -606,7 +606,7 @@ class ChatViewModel
             }
         }
 
-        // ── Existing methods (preserved, updated for ConversationWithPreview) ────
+        // ── Conversation CRUD ────────────────────────────────────────────────────
 
         private suspend fun findExistingOneOnOne(
             userId: String,

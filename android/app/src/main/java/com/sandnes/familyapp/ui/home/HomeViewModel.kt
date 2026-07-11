@@ -35,7 +35,7 @@ data class HomeUiState(
     val familyMembers: List<UserModel> = emptyList(),
     val isLoading: Boolean = true,
     val loadError: Boolean = false,
-    // Glanceable summary (D4) — null/0 when there's nothing to show.
+    // Glanceable dashboard summary — null/0 when there's nothing to show.
     // Date/label strings are composed in the UI layer so they follow the in-app locale.
     val tonightMeal: String? = null,
     val nextEvent: CalendarEventModel? = null,

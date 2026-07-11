@@ -139,7 +139,7 @@ fun PrimaryButton(
                 .scale(scale)
                 .defaultMinSize(minHeight = 56.dp)
                 // Disabled = the SAME brand fill at 38% opacity (Material standard) —
-                // never a flat dead-gray, which reads as broken (audit C2).
+                // never a flat dead-gray, which reads as broken.
                 .alpha(if (active) 1f else 0.38f)
                 .clip(RoundedCornerShape(Radius.button))
                 .background(gradient)
@@ -871,9 +871,8 @@ fun ConfirmationDialog(
 /**
  * Runs [onResume] every time the host screen's lifecycle hits ON_RESUME — i.e.
  * each time the user navigates (back) to the screen. Needed because feature
- * ViewModels are Activity-scoped (hoisted in MainFlow), so their init{} only
- * runs once and navigating away/back no longer re-fetches. This restores the
- * refresh-on-reentry behaviour without losing the hoist's no-spinner benefit.
+ * ViewModels are Activity-scoped (hoisted in MainFlow), so their init{} runs
+ * only once; screens use this to re-fetch on every re-entry.
  */
 @Composable
 fun RefreshOnResume(onResume: () -> Unit) {

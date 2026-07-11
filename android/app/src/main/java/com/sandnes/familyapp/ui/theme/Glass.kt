@@ -133,8 +133,8 @@ private fun glassFallbackFill(dark: Boolean): Color =
     if (dark) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else Color.White.copy(alpha = 0.94f)
 
 // The separator hairline. In light mode a WHITE edge is invisible on the near-white ambient
-// wash — iOS's system glass draws a dark separator on the light side, so we use a dark ink edge
-// here. That single change is the biggest fix for the "washed-out / can't distinguish cards" look.
+// wash — iOS's system glass draws a dark separator on the light side, so we use a dark ink
+// edge here to keep cards distinguishable from the background.
 @Composable
 @ReadOnlyComposable
 private fun glassHairline(dark: Boolean): Color =

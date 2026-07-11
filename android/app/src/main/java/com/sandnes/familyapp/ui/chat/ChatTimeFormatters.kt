@@ -31,8 +31,8 @@ private fun monthDayShort(epochMs: Long): String {
 
 /**
  * Robust ISO-8601 → [Instant]. Supabase timestamptz values carry a "+00:00" offset (and no
- * trailing Z), which [Instant.parse] rejects on Android's desugared java.time — every chat
- * timestamp then silently rendered as empty. Falls back to [OffsetDateTime] parsing.
+ * trailing Z), which [Instant.parse] rejects on Android's desugared java.time — so this
+ * falls back to [OffsetDateTime] parsing rather than rendering the timestamp as empty.
  */
 internal fun parseInstant(iso: String): Instant? =
     runCatching { Instant.parse(iso) }.getOrNull()

@@ -505,7 +505,7 @@ fun ConversationScreen(
         }
     }
 
-    // Group image launchers (existing — unchanged)
+    // Group image launchers (gallery/camera for the conversation's group photo).
     val galleryLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia(),
@@ -571,7 +571,7 @@ fun ConversationScreen(
             if (granted) startRecording()
         }
 
-    // Message media launchers (new — for sending images in chat)
+    // Message media launchers (gallery/camera for sending images in chat).
     val msgGalleryLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia(),

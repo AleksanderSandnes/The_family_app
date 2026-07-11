@@ -40,7 +40,7 @@ object Radius {
     val button = 18.dp
     val sheet = 28.dp
 
-    // ── Liquid Glass scale (1c) ───────────────────────────────────────────────
+    // ── Liquid Glass scale ────────────────────────────────────────────────────
     val badge = 12.dp // icon badges (12–14)
     val badgeLarge = 14.dp
     val row = 20.dp // list rows / grid tiles / bubbles
@@ -53,7 +53,7 @@ object Radius {
     val menu = 18.dp // ⋯ popover menus
 }
 
-/** Motion duration tokens (ms). Mirrors the M18 navigation transitions. */
+/** Motion duration tokens (ms) for the navigation transitions. */
 object Motion {
     const val SLIDE_MS = 300
     const val FADE_MS = 200

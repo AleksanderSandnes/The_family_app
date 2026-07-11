@@ -33,7 +33,7 @@ private val LightColors =
         onSurface = Slate900,
         surfaceVariant = Slate100,
         // Slate600 (not Slate500): Slate500 on the light canvas is ~4.3:1, just under
-        // WCAG AA 4.5:1 for body text. Slate600 clears it for all secondary text (audit C7).
+        // WCAG AA 4.5:1 for body text. Slate600 clears it for all secondary text.
         onSurfaceVariant = Slate600,
         outline = Slate200,
         outlineVariant = Slate100,

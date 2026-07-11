@@ -41,7 +41,7 @@ val InkBorder = Color(0xFF2A3349)
 val InkText = Color(0xFFE8EBF5)
 val InkTextMuted = Color(0xFF9AA4BE)
 
-// ── Liquid Glass (direction 1c) ──────────────────────────────────────────────
+// ── Liquid Glass ─────────────────────────────────────────────────────────────
 // Single interactive accent — a quieted indigo. Brightens in dark for legibility.
 val Accent = Color(0xFF4F55E6)
 val AccentDark = Color(0xFFA5ABFF) // brightened accent for dark text/icons
@@ -51,7 +51,7 @@ val AccentActiveTab = Color(0xFFC9CDFF) // active tab glyph in dark
 val AmbientBaseLight = Color(0xFFEFF1F8)
 val AmbientBaseDark = Color(0xFF0B0D16)
 
-// Text ramp (spec 1c) — primary / secondary / caption, light & dark.
+// Text ramp — primary / secondary / caption, light & dark.
 val InkLight = Color(0xFF16192A)
 val InkDark = Color(0xFFECEEF8)
 val SecondaryLight = Color(0xFF5F6780)

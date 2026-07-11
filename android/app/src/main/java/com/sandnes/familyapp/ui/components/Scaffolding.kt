@@ -84,7 +84,7 @@ fun FeatureTopBar(
 }
 
 /** Compact top bar for top-level screens (Home, Calendar, Chat list, Family, Profile).
- *  Trailing [actions] host the avatar / notifications bell / search per D3. */
+ *  Trailing [actions] host the avatar / notifications bell / search. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(

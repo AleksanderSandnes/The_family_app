@@ -231,8 +231,8 @@ fun FamilyMapScreen(
     // Build avatar-pin bitmaps for visible members plus the current user's own pin.
     LaunchedEffect(userProfiles, locations, currentUserId) {
         // The Maps SDK must be initialised before BitmapDescriptorFactory is touched —
-        // on a cold start this effect can win the race against GoogleMap's own init,
-        // which crashed with "IBitmapDescriptorFactory is not initialized".
+        // on a cold start this effect can win the race against GoogleMap's own init and
+        // crash with "IBitmapDescriptorFactory is not initialized".
         runCatching {
             com.google.android.gms.maps.MapsInitializer
                 .initialize(context)
@@ -466,8 +466,8 @@ private suspend fun loadCircularBitmap(
                 .Builder(context)
                 .data(url)
                 .size(sizePx)
-                // Hardware bitmaps can't be drawn onto the software Canvas below — Coil's
-                // default silently threw here and every pin fell back to initials.
+                // Hardware bitmaps can't be drawn onto the software Canvas below, so
+                // force a software bitmap (Coil returns hardware bitmaps by default).
                 .allowHardware(false)
                 .build()
         val result = context.imageLoader.execute(request) as? SuccessResult ?: return null
