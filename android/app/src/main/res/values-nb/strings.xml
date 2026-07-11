@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Familieappen</string>
+    <!-- app_name is deliberately not translated: the launcher label stays "The family app"
+         in every locale. In-app branding uses the_family_app, which does localize. -->
     <string name="good_morning">God morgen</string>
     <string name="good_afternoon">God ettermiddag</string>
     <string name="good_evening">God kveld</string>

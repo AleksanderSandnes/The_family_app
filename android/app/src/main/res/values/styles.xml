@@ -9,7 +9,7 @@
     <!-- Brand splash (core-splashscreen): white logo on indigo, matching the app icon. -->
     <style name="Theme.TheFamilyApp.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.TheFamilyApp</item>
     </style>
 </resources>
