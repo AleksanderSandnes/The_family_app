@@ -5,7 +5,7 @@
 > the current picture.
 
 ## Current notes
-- The Family App is a **two-platform product**: native Android (Compose + Material 3) and native
+- Household is a **two-platform product**: native Android (Compose + Material 3) and native
   iOS (SwiftUI, Liquid Glass) on one shared Supabase backend.
 - The codebase is fully modernized — legacy Java / Fragment / SQLite / Room code was removed; there
   is no "transition" state remaining.

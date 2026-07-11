@@ -1,6 +1,6 @@
 # Maestro UI flows
 
-End-to-end UI tests for The Family App, one flow per page. Authored against the
+End-to-end UI tests for Household, one flow per page. Authored against the
 debug build on a real device (Samsung SM-A175F) — they assume the app is already
 **signed in** (auth/login/register are intentionally not covered).
 

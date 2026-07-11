@@ -1,4 +1,4 @@
-/* The Family App — English (development language). Auto-compiled from the
+/* Household — English (development language). Auto-compiled from the
    per-feature localization pass. Keys are the English source strings. */
 
 "Good morning" = "Good morning";
@@ -182,7 +182,7 @@
 "Export PDF" = "Export PDF";
 "Share link" = "Share link";
 "Shared with me" = "Shared with me";
-"See my wishlist %@ in The Family App:" = "See my wishlist %@ in The Family App:";
+"See my wishlist %@ in Household:" = "See my wishlist %@ in Household:";
 "Open link" = "Open link";
 "Unmark as claimed" = "Unmark as claimed";
 "Mark as claimed" = "Mark as claimed";
@@ -243,7 +243,7 @@
 "Family invite QR code" = "Family invite QR code";
 "Could not read the selected photo." = "Could not read the selected photo.";
 "Failed to update photo. Please try again." = "Failed to update photo. Please try again.";
-"Join our family \"%@\" on The Family App!\n\nTap to join: %@\n\nOr open the app, tap \"Join with Invite Code\", and enter: %@" = "Join our family \"%@\" on The Family App!\n\nTap to join: %@\n\nOr open the app, tap \"Join with Invite Code\", and enter: %@";
+"Join our family \"%@\" on Household!\n\nTap to join: %@\n\nOr open the app, tap \"Join with Invite Code\", and enter: %@" = "Join our family \"%@\" on Household!\n\nTap to join: %@\n\nOr open the app, tap \"Join with Invite Code\", and enter: %@";
 "Email" = "Email";
 "Mobile" = "Mobile";
 "Birthday" = "Birthday";
@@ -294,8 +294,8 @@
 "Password" = "Password";
 "Sign in" = "Sign in";
 "Continue with Google" = "Continue with Google";
-"The Family App" = "The Family App";
-"New to The Family App?" = "New to The Family App?";
+"Household" = "Household";
+"New to Household?" = "New to Household?";
 "Create account" = "Create account";
 "Create your account" = "Create your account";
 "About you" = "About you";
@@ -334,7 +334,7 @@
 "Sign in failed. Please try again." = "Sign in failed. Please try again.";
 "Registration failed. Please try again." = "Registration failed. Please try again.";
 "Before we start" = "Before we start";
-"The Family App works best with a couple of permissions. You stay in control — everything can be changed later in Settings." = "The Family App works best with a couple of permissions. You stay in control — everything can be changed later in Settings.";
+"Household works best with a couple of permissions. You stay in control — everything can be changed later in Settings." = "Household works best with a couple of permissions. You stay in control — everything can be changed later in Settings.";
 "Chat messages, birthday and event reminders." = "Chat messages, birthday and event reminders.";
 "Location" = "Location";
 "Share where you are on the family map — only with your family, only when you choose." = "Share where you are on the family map — only with your family, only when you choose.";

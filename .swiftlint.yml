@@ -1,4 +1,4 @@
-# SwiftLint configuration — The Family App (iOS)
+# SwiftLint configuration — Household (iOS)
 # =============================================================================
 # Scope: the native iOS SwiftUI target only. SwiftLint is deliberately pointed
 # at `ios/FamilyApp` + `ios/FamilyAppTests`; android/, supabase/, maestro/ are

@@ -1,6 +1,6 @@
-# The Family App Vault
+# Household Vault
 
-This vault stores project documentation, implementation notes, and planning for The Family App —
+This vault stores project documentation, implementation notes, and planning for Household —
 now a **two-platform product**: a native Android app (`android/`, Jetpack Compose + Material 3)
 and a native iOS app (`ios/`, SwiftUI, Liquid Glass) sharing one Supabase backend.
 

@@ -1,4 +1,4 @@
-# The Family App — iOS
+# Household — iOS
 
 Native SwiftUI port of the Android app with 1:1 feature and design parity. Talks to the
 **same Supabase project** (Auth, Postgrest, Realtime, Storage) as `android/`.

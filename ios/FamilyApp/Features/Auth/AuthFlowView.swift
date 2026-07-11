@@ -70,7 +70,7 @@ struct LoginScreen: View {
             }
             .accessibilityLabel("Continue with Google button")
 
-            AuthFooter(prompt: L("New to The Family App?"), action: L("Create account")) {
+            AuthFooter(prompt: L("New to Household?"), action: L("Create account")) {
                 viewModel.clearError()
                 onNavigateToRegister()
             }
@@ -270,7 +270,7 @@ struct AuthScaffold<Content: View>: View {
                             )
                             .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
                     }
-                    Text(L("The Family App"))
+                    Text(L("Household"))
                         .font(.system(size: 23, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.top, 16)

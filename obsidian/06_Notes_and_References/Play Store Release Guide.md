@@ -1,6 +1,6 @@
 # Play Store Release Guide
 
-A reusable runbook for shipping **The Family App** to the Google Play Store. Created
+A reusable runbook for shipping **Household** to the Google Play Store. Created
 2026-06-27 while preparing the first production release (branch `chore/play-store-release`).
 
 ## Current status
@@ -67,7 +67,7 @@ blank** in the Play-distributed build.
   Decide account type accordingly. If personal, budget ~2 weeks of closed testing first.
 
 ### Step 8 — Create app & enrol in Play App Signing
-- Play Console → **Create app** (name "The family app", free, declarations).
+- Play Console → **Create app** (name "Household", free, declarations).
 - Enrol in **Play App Signing** (default). Google holds the real signing key; `release.keystore`
   becomes the **upload key**. Copy the **App signing key SHA-1** from Console → use in A6 (Maps) and
   add to the Firebase app (A5) so maps/FCM work in the distributed build.

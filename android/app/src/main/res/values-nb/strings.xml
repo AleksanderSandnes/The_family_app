@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- app_name is deliberately not translated: the launcher label stays "The family app"
-         in every locale. In-app branding uses the_family_app, which does localize. -->
+    <!-- app_name is deliberately not translated: the brand name "Household" stays
+         the same in every locale (launcher label and in-app branding alike). -->
     <string name="good_morning">God morgen</string>
     <string name="good_afternoon">God ettermiddag</string>
     <string name="good_evening">God kveld</string>
@@ -183,7 +183,7 @@
     <string name="export_pdf">Eksporter PDF</string>
     <string name="share_link">Del lenke</string>
     <string name="shared_with_me">Delt med meg</string>
-    <string name="share_wishlist_message">Se ønskelisten min %1$s i Familieappen:</string>
+    <string name="share_wishlist_message">Se ønskelisten min %1$s i Household:</string>
     <string name="open_link">Åpne lenke</string>
     <string name="unmark_as_claimed">Fjern markering som tatt</string>
     <string name="mark_as_claimed">Marker som tatt</string>
@@ -244,7 +244,7 @@
     <string name="family_invite_qr_code">QR-kode for familieinvitasjon</string>
     <string name="could_not_read_the_selected_photo">Kunne ikke lese det valgte bildet.</string>
     <string name="failed_to_update_photo_please_try_again">Kunne ikke oppdatere bildet. Prøv igjen.</string>
-    <string name="family_invite_share_message">Bli med i familien vår «%1$s» i Familieappen!\n\nTrykk for å bli med: %2$s\n\nEller åpne appen, trykk «Bli med med invitasjonskode», og skriv inn: %3$s</string>
+    <string name="family_invite_share_message">Bli med i familien vår «%1$s» i Household!\n\nTrykk for å bli med: %2$s\n\nEller åpne appen, trykk «Bli med med invitasjonskode», og skriv inn: %3$s</string>
     <string name="email">E-post</string>
     <string name="mobile">Mobil</string>
     <string name="birthday">Bursdag</string>
@@ -295,7 +295,7 @@
     <string name="password">Passord</string>
     <string name="sign_in">Logg inn</string>
     <string name="continue_with_google">Fortsett med Google</string>
-    <string name="new_to_the_family_app">Ny i Familieappen?</string>
+    <string name="new_to_the_family_app">Ny i Household?</string>
     <string name="create_account">Opprett konto</string>
     <string name="create_your_account">Opprett kontoen din</string>
     <string name="about_you">Om deg</string>
@@ -334,7 +334,7 @@
     <string name="sign_in_failed">Innlogging mislyktes. Prøv igjen.</string>
     <string name="registration_failed_please_try_again">Registrering mislyktes. Prøv igjen.</string>
     <string name="before_we_start">Før vi begynner</string>
-    <string name="the_family_app_works_best_with_a_couple_of_permissions_you_stay_in_control_everything_can_be_changed_later_in_settings">Familieappen fungerer best med et par tillatelser. Du har kontrollen – alt kan endres senere i Innstillinger.</string>
+    <string name="the_family_app_works_best_with_a_couple_of_permissions_you_stay_in_control_everything_can_be_changed_later_in_settings">Household fungerer best med et par tillatelser. Du har kontrollen – alt kan endres senere i Innstillinger.</string>
     <string name="chat_messages_birthday_and_event_reminders">Chattemeldinger, bursdags- og hendelsespåminnelser.</string>
     <string name="location">Posisjon</string>
     <string name="share_where_you_are_on_the_family_map_only_with_your_family_only_when_you_choose">Del hvor du er på familiekartet – bare med familien din, bare når du velger det.</string>
@@ -387,7 +387,7 @@
     <!-- Android-only chrome (no iOS counterpart) -->
     <string name="about">Om</string>
     <string name="settings_appearance_subtitle">Velg hvordan appen ser ut</string>
-    <string name="the_family_app">Familieappen</string>
+    <string name="the_family_app">Household</string>
     <string name="your_family_together">Familien din, samlet</string>
     <string name="app_version_format">v%1$s (bygg %2$d)</string>
     <string name="english">English</string>
@@ -443,7 +443,7 @@
     <string name="perm_camera_desc">Ta bilder til profilbildet ditt og for å dele i chat</string>
     <string name="perm_microphone_desc">Ta opp og send talemeldinger til familiemedlemmer i chat</string>
     <string name="microphone">Mikrofon</string>
-    <string name="onboarding_permissions_subtitle">Familieappen fungerer best med disse tillatelsene</string>
+    <string name="onboarding_permissions_subtitle">Household fungerer best med disse tillatelsene</string>
     <string name="share_wishlist_chooser">Del ønskeliste</string>
     <string name="share_wishlist_pdf_chooser">Del ønskeliste-PDF</string>
     <string name="theme_option_a11y">%1$s-tema</string>
@@ -473,6 +473,6 @@
     <string name="relation_cousin">Søskenbarn</string>
     <string name="relation_friend">Venn</string>
     <string name="relation_other">Annet</string>
-    <string name="join_family_invite_message">Bli med i familien vår \"%1$s\" i Familieappen!\n\nTrykk for å bli med: %2$s\n\nEller åpne appen, trykk \"Bli med via invitasjonskode\", og skriv inn: %3$s</string>
+    <string name="join_family_invite_message">Bli med i familien vår \"%1$s\" i Household!\n\nTrykk for å bli med: %2$s\n\nEller åpne appen, trykk \"Bli med via invitasjonskode\", og skriv inn: %3$s</string>
     <string name="reply">Svar</string>
 </resources>

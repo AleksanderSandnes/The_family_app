@@ -9,7 +9,7 @@ Part of [[Implementation Plan]].
 against the 70 live-iOS screenshots; 7-issue on-device review batch (wishlist bg, owner gating,
 photo pins, dark toggles, nav bar); compact 64dp nav bar + scrollable calendar empty state;
 calendar empty-state/OK strings moved to resources (NB support); iOS-matching launcher icon
-(gradient + family glyph) with the launcher name fixed to "The family app" in all locales;
+(gradient + family glyph) with the launcher name unified across all locales;
 project-wide comment cleanup. Signed production APK built with `assembleRelease`.
 
 ## Decisions (locked with the user)

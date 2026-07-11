@@ -248,7 +248,7 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "The Family App works best with these permissions",
+                "Household works best with these permissions",
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.White.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
