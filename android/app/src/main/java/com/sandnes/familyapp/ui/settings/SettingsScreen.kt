@@ -59,6 +59,7 @@ import com.sandnes.familyapp.BuildConfig
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ThemeMode
 import com.sandnes.familyapp.ui.components.FeatureTopBar
+import com.sandnes.familyapp.ui.components.appSwitchColors
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.util.LocaleManager
@@ -401,6 +402,7 @@ private fun ToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onChange,
+            colors = appSwitchColors(),
             modifier = Modifier.semantics { contentDescription = description },
         )
     }

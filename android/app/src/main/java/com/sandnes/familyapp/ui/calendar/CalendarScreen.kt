@@ -87,6 +87,7 @@ import com.sandnes.familyapp.ui.components.LoadingState
 import com.sandnes.familyapp.ui.components.RefreshOnResume
 import com.sandnes.familyapp.ui.components.SheetField
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
+import com.sandnes.familyapp.ui.components.appSwitchColors
 import com.sandnes.familyapp.ui.theme.AppColorPalette
 import com.sandnes.familyapp.ui.theme.FeatureAccent
 import com.sandnes.familyapp.ui.theme.FeatureBadge
@@ -938,7 +939,7 @@ private fun ToggleRow(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-        Switch(checked = checked, onCheckedChange = onChange)
+        Switch(checked = checked, onCheckedChange = onChange, colors = appSwitchColors())
     }
 }
 

@@ -73,7 +73,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val BIRTH_DATE_FMT = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault())
+private val BIRTH_DATE_FMT =
+    DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG).withLocale(Locale.getDefault())
 
 @Composable
 fun BirthdayScreen(
@@ -242,7 +243,9 @@ private fun BirthdayCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // FlowRow so "turning N" wraps as a whole chunk instead of mid-phrase when the
+            // localized date + countdown pill leave little width (seen on NB phones).
+            androidx.compose.foundation.layout.FlowRow {
                 Text(
                     displayDate,
                     style = MaterialTheme.typography.bodyMedium,
@@ -250,10 +253,11 @@ private fun BirthdayCard(
                 )
                 if (age != null) {
                     Text(
-                        " · turning $age",
+                        " " + stringResource(R.string.turning_age, age),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = accent,
+                        maxLines = 1,
                     )
                 }
             }

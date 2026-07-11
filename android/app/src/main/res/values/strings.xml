@@ -350,7 +350,7 @@
     <string name="couldnt_save">Couldn’t save</string>
     <string name="save_image">Save image</string>
     <string name="select">Select</string>
-    <string name="reservations_are_hidden_from">Reservations are hidden from</string>
+    <string name="reservations_are_hidden_from">Reservations are hidden from %1$s</string>
     <string name="qr_code">QR code</string>
     <string name="your_relation">Your relation</string>
     <string name="set_relation">Set relation</string>

@@ -350,7 +350,7 @@
     <string name="couldnt_save">Kunne ikke lagre</string>
     <string name="save_image">Lagre bilde</string>
     <string name="select">Velg</string>
-    <string name="reservations_are_hidden_from">Reservasjoner er skjult for</string>
+    <string name="reservations_are_hidden_from">Reservasjoner er skjult for %1$s</string>
     <string name="qr_code">QR-kode</string>
     <string name="your_relation">Din relasjon</string>
     <string name="set_relation">Angi relasjon</string>

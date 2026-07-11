@@ -68,6 +68,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
+import coil3.request.allowHardware
 import coil3.toBitmap
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptor
@@ -465,6 +466,9 @@ private suspend fun loadCircularBitmap(
                 .Builder(context)
                 .data(url)
                 .size(sizePx)
+                // Hardware bitmaps can't be drawn onto the software Canvas below — Coil's
+                // default silently threw here and every pin fell back to initials.
+                .allowHardware(false)
                 .build()
         val result = context.imageLoader.execute(request) as? SuccessResult ?: return null
         val source = result.image.toBitmap()
@@ -540,7 +544,7 @@ private fun MemberLegend(
             .padding(Spacing.lg),
     ) {
         Text(
-            "On the map",
+            stringResource(R.string.on_the_map),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold,
@@ -553,7 +557,20 @@ private fun MemberLegend(
                 val isSharing = loc != null
                 val rowAlpha = if (isSharing) 1f else 0.4f
                 val live = isSharing && isLocationLive(loc.updatedAt)
-                val lastSeen = if (isSharing) formatLastSeen(loc.updatedAt) else "Not sharing"
+                val lastSeenLabels =
+                    LastSeenLabels(
+                        unknown = stringResource(R.string.unknown),
+                        locationShared = stringResource(R.string.location_shared),
+                        justNow = stringResource(R.string.just_now),
+                        minutesAgoFormat = stringResource(R.string.minutes_ago),
+                        hoursAgoFormat = stringResource(R.string.hours_ago),
+                    )
+                val lastSeen =
+                    if (isSharing) {
+                        formatLastSeen(loc.updatedAt, lastSeenLabels)
+                    } else {
+                        stringResource(R.string.not_sharing)
+                    }
                 val statusText = formatPlaceDetail(if (isSharing) places[member.id] else null, lastSeen)
                 val avatarColor =
                     member.avatarColor

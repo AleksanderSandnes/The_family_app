@@ -69,41 +69,55 @@ class FamilyMapViewModelTest {
         assertFalse(isLocationLive("garbage", nowMs = base))
     }
 
+    private val lastSeenLabels =
+        LastSeenLabels(
+            unknown = "Unknown",
+            locationShared = "Location shared",
+            justNow = "Just now",
+            minutesAgoFormat = "%1\$d min ago",
+            hoursAgoFormat = "%1\$d hours ago",
+        )
+
     // ── formatLastSeen ──────────────────────────────────────────────
 
     @Test
     fun `formatLastSeen returns Unknown for null`() {
-        assertEquals("Unknown", formatLastSeen(null, nowMs = base))
+        assertEquals("Unknown", formatLastSeen(null, lastSeenLabels, nowMs = base))
     }
 
     @Test
     fun `formatLastSeen returns Location shared for unparseable input`() {
-        assertEquals("Location shared", formatLastSeen("garbage", nowMs = base))
+        assertEquals("Location shared", formatLastSeen("garbage", lastSeenLabels, nowMs = base))
+    }
+
+    @Test
+    fun `parseInstantMs accepts Supabase offset format`() {
+        assertTrue(parseInstantMs("2026-07-11T15:08:23.123456+00:00") != null)
     }
 
     @Test
     fun `formatLastSeen returns Just now for under a minute`() {
-        assertEquals("Just now", formatLastSeen(baseIso, nowMs = base + 30_000L))
+        assertEquals("Just now", formatLastSeen(baseIso, lastSeenLabels, nowMs = base + 30_000L))
     }
 
     @Test
     fun `formatLastSeen returns Just now for clock-skew futures`() {
-        assertEquals("Just now", formatLastSeen(baseIso, nowMs = base - 30_000L))
+        assertEquals("Just now", formatLastSeen(baseIso, lastSeenLabels, nowMs = base - 30_000L))
     }
 
     @Test
     fun `formatLastSeen returns minutes for under an hour`() {
-        assertEquals("5 min ago", formatLastSeen(baseIso, nowMs = base + 5 * oneMinute))
+        assertEquals("5 min ago", formatLastSeen(baseIso, lastSeenLabels, nowMs = base + 5 * oneMinute))
     }
 
     @Test
     fun `formatLastSeen returns hours for under a day`() {
-        assertEquals("3 hours ago", formatLastSeen(baseIso, nowMs = base + 3 * oneHour))
+        assertEquals("3 hours ago", formatLastSeen(baseIso, lastSeenLabels, nowMs = base + 3 * oneHour))
     }
 
     @Test
     fun `formatLastSeen returns a date for older than a day`() {
-        val result = formatLastSeen(baseIso, nowMs = base + 2 * oneDay)
+        val result = formatLastSeen(baseIso, lastSeenLabels, nowMs = base + 2 * oneDay)
         assertFalse("should not be a relative label", result.endsWith("ago"))
         assertTrue("should look like a formatted date", result.contains("2026"))
     }

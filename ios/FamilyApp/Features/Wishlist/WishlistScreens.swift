@@ -221,14 +221,14 @@ struct WishlistDetailScreen: View {
         .ambientBackground()
         .featureTopBar(viewModel.selectedWishlist?.name ?? L("Wishlist"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    // Anyone viewing the list can export it to share with people off-app.
-                    Button { exportPDF() } label: {
-                        Label(L("Export PDF"), systemImage: "square.and.arrow.up")
-                    }
-                    // Only the wishlist's creator (owner) shares a link, renames, or re-icons.
-                    if isOwner {
+            // Only the wishlist's creator (owner) gets the menu — every action in it
+            // (export, share link, rename, change icon) is owner-only.
+            if isOwner {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { exportPDF() } label: {
+                            Label(L("Export PDF"), systemImage: "square.and.arrow.up")
+                        }
                         Button { shareWishlistLink() } label: {
                             Label(L("Share link"), systemImage: "link")
                         }
@@ -241,10 +241,10 @@ struct WishlistDetailScreen: View {
                         Button { showChangeIcon = true } label: {
                             Label(L("Change icon"), systemImage: "star")
                         }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .accessibilityLabel("More options")
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .accessibilityLabel("More options")
                 }
             }
         }

@@ -213,11 +213,19 @@ private const val SECONDS_PER_DAY = 86400
 /** Parses an ISO-8601 instant to epoch milliseconds, or null when unparseable. */
 internal fun parseInstantMs(iso: String?): Long? {
     iso ?: return null
+    // Supabase timestamptz carries a "+00:00" offset that Instant.parse rejects on
+    // Android's desugared java.time — fall back to OffsetDateTime (same fix as chat).
     return runCatching {
         java.time.Instant
             .parse(iso)
             .toEpochMilli()
     }.getOrNull()
+        ?: runCatching {
+            java.time.OffsetDateTime
+                .parse(iso)
+                .toInstant()
+                .toEpochMilli()
+        }.getOrNull()
 }
 
 /**
@@ -232,18 +240,30 @@ internal fun isLocationLive(
     return (nowMs - instantMs) < LIVE_THRESHOLD_MS
 }
 
+/** Localized labels for [formatLastSeen], resolved by the UI layer (in-app locale). */
+data class LastSeenLabels(
+    val unknown: String,
+    val locationShared: String,
+    val justNow: String,
+    /** Format string with one %1$d arg, e.g. "%1$d min ago". */
+    val minutesAgoFormat: String,
+    /** Format string with one %1$d arg, e.g. "%1$d hours ago". */
+    val hoursAgoFormat: String,
+)
+
 /** Human-readable "last seen" label for a shared location's [updatedAt]. Mirrors iOS `formatLastSeen`. */
 internal fun formatLastSeen(
     updatedAt: String?,
+    labels: LastSeenLabels,
     nowMs: Long = System.currentTimeMillis(),
 ): String {
-    updatedAt ?: return "Unknown"
-    val instantMs = parseInstantMs(updatedAt) ?: return "Location shared"
+    updatedAt ?: return labels.unknown
+    val instantMs = parseInstantMs(updatedAt) ?: return labels.locationShared
     val seconds = (nowMs - instantMs) / MILLIS_PER_SECOND
     return when {
-        seconds < SECONDS_PER_MINUTE -> "Just now" // also handles clock-skew futures (negative seconds)
-        seconds < SECONDS_PER_HOUR -> "${seconds / SECONDS_PER_MINUTE} min ago"
-        seconds < SECONDS_PER_DAY -> "${seconds / SECONDS_PER_HOUR} hours ago"
+        seconds < SECONDS_PER_MINUTE -> labels.justNow // also handles clock-skew futures (negative seconds)
+        seconds < SECONDS_PER_HOUR -> labels.minutesAgoFormat.format(seconds / SECONDS_PER_MINUTE)
+        seconds < SECONDS_PER_DAY -> labels.hoursAgoFormat.format(seconds / SECONDS_PER_HOUR)
         else ->
             java.time.Instant
                 .ofEpochMilli(instantMs)
@@ -251,7 +271,7 @@ internal fun formatLastSeen(
                 .toLocalDate()
                 .format(
                     java.time.format.DateTimeFormatter
-                        .ofPattern("MMM d, yyyy"),
+                        .ofLocalizedDate(java.time.format.FormatStyle.MEDIUM),
                 )
     }
 }

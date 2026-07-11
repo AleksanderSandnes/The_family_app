@@ -95,7 +95,6 @@ import com.sandnes.familyapp.ui.components.SectionHeader
 import com.sandnes.familyapp.ui.components.SheetField
 import com.sandnes.familyapp.ui.components.SheetSectionLabel
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
-import com.sandnes.familyapp.ui.theme.AmbientBackground
 import com.sandnes.familyapp.ui.theme.AppColorPalette
 import com.sandnes.familyapp.ui.theme.FeatureAccent
 import com.sandnes.familyapp.ui.theme.FeatureBadge
@@ -134,51 +133,49 @@ fun WishlistScreen(
             AppFab(text = stringResource(R.string.new_wishlist), icon = Icons.Filled.Add, onClick = { showAdd = true })
         },
     ) { padding ->
-        AmbientBackground(Modifier.fillMaxSize()) {
-            PullRefresh(
-                onRefresh = { viewModel.refresh().join() },
-                modifier = Modifier.fillMaxSize().padding(padding),
-            ) {
-                when {
-                    isLoading -> ListSkeleton(Modifier.fillMaxSize())
-                    wishlists.isEmpty() && sharedWishlists.isEmpty() -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            EmptyState(
-                                Icons.Filled.CardGiftcard,
-                                stringResource(R.string.no_wishlists_yet),
-                                stringResource(R.string.create_a_wishlist_to_share_with_your_family),
-                                actionLabel = stringResource(R.string.new_wishlist),
-                                onAction = { showAdd = true },
-                            )
-                        }
+        PullRefresh(
+            onRefresh = { viewModel.refresh().join() },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
+            when {
+                isLoading -> ListSkeleton(Modifier.fillMaxSize())
+                wishlists.isEmpty() && sharedWishlists.isEmpty() -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        EmptyState(
+                            Icons.Filled.CardGiftcard,
+                            stringResource(R.string.no_wishlists_yet),
+                            stringResource(R.string.create_a_wishlist_to_share_with_your_family),
+                            actionLabel = stringResource(R.string.new_wishlist),
+                            onAction = { showAdd = true },
+                        )
                     }
-                    else -> {
-                        LazyColumn(
-                            Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            items(wishlists, key = { it.id }) { wl ->
-                                // Only the owner may delete; RLS enforces it server-side too.
-                                if (wl.ownerUserId == currentUserId) {
-                                    SwipeToRevealDelete(
-                                        onDelete = { viewModel.deleteWishlist(wl) },
-                                        modifier = Modifier.animateItem(),
-                                        shape = RoundedCornerShape(Radius.overviewCard),
-                                    ) {
-                                        WishlistRow(wl) { onOpen(wl.id) }
-                                    }
-                                } else {
-                                    WishlistRow(wl, Modifier.animateItem()) { onOpen(wl.id) }
+                }
+                else -> {
+                    LazyColumn(
+                        Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(wishlists, key = { it.id }) { wl ->
+                            // Only the owner may delete; RLS enforces it server-side too.
+                            if (wl.ownerUserId == currentUserId) {
+                                SwipeToRevealDelete(
+                                    onDelete = { viewModel.deleteWishlist(wl) },
+                                    modifier = Modifier.animateItem(),
+                                    shape = RoundedCornerShape(Radius.overviewCard),
+                                ) {
+                                    WishlistRow(wl) { onOpen(wl.id) }
                                 }
+                            } else {
+                                WishlistRow(wl, Modifier.animateItem()) { onOpen(wl.id) }
                             }
-                            if (sharedWishlists.isNotEmpty()) {
-                                item(key = "shared-header") {
-                                    SectionHeader(stringResource(R.string.shared_with_me), Modifier.padding(top = 8.dp))
-                                }
-                                items(sharedWishlists, key = { "shared-${it.id}" }) { wl ->
-                                    WishlistRow(wl, Modifier.animateItem()) { onOpen(wl.id) }
-                                }
+                        }
+                        if (sharedWishlists.isNotEmpty()) {
+                            item(key = "shared-header") {
+                                SectionHeader(stringResource(R.string.shared_with_me), Modifier.padding(top = 8.dp))
+                            }
+                            items(sharedWishlists, key = { "shared-${it.id}" }) { wl ->
+                                WishlistRow(wl, Modifier.animateItem()) { onOpen(wl.id) }
                             }
                         }
                     }
@@ -274,21 +271,22 @@ fun WishlistDetailScreen(
                 title = wishlist?.name ?: stringResource(R.string.wishlist),
                 onBack = onBack,
                 actions = {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
+                    // Every menu action is owner-only, so non-owners get no ⋯ at all.
+                    if (isOwner) {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
+                        }
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        // Anyone viewing can export the list to share off-app.
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.export_pdf)) },
-                            trailingIcon = { Icon(Icons.Filled.PictureAsPdf, contentDescription = null) },
-                            onClick = {
-                                showMenu = false
-                                scope.launch { exportWishlistPdf(context, wishlist, sortedWishes) }
-                            },
-                        )
-                        // Only the owner shares a link, renames, or re-icons.
                         if (isOwner) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.export_pdf)) },
+                                trailingIcon = { Icon(Icons.Filled.PictureAsPdf, contentDescription = null) },
+                                onClick = {
+                                    showMenu = false
+                                    scope.launch { exportWishlistPdf(context, wishlist, sortedWishes) }
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.share_link)) },
                                 trailingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
@@ -332,53 +330,51 @@ fun WishlistDetailScreen(
             }
         },
     ) { padding ->
-        AmbientBackground(Modifier.fillMaxSize()) {
-            Column(Modifier.fillMaxSize().padding(padding)) {
-                // Reassure family members that their claims stay secret from the owner.
-                if (!isOwner && ownerName.isNotEmpty()) {
-                    Text(
-                        stringResource(R.string.reservations_are_hidden_from, ownerName) + " 🤫",
-                        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            // Reassure family members that their claims stay secret from the owner.
+            if (!isOwner && ownerName.isNotEmpty()) {
+                Text(
+                    stringResource(R.string.reservations_are_hidden_from, ownerName) + " 🤫",
+                    Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            if (sortedWishes.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    EmptyState(Icons.Filled.Redeem, stringResource(R.string.no_wishes_yet), stringResource(R.string.add_wishes_to_this_list))
                 }
-                if (sortedWishes.isEmpty()) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        EmptyState(Icons.Filled.Redeem, stringResource(R.string.no_wishes_yet), stringResource(R.string.add_wishes_to_this_list))
-                    }
-                } else {
-                    LazyColumn(
-                        Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        items(sortedWishes, key = { it.id }) { wish ->
-                            if (!isOwner) {
-                                MemberWishCard(
+            } else {
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(sortedWishes, key = { it.id }) { wish ->
+                        if (!isOwner) {
+                            MemberWishCard(
+                                wish = wish,
+                                reservation = reservations[wish.id],
+                                currentUserId = currentUserId,
+                                onReserve = { viewModel.reserve(wish) },
+                                onUnreserve = { viewModel.unreserve(wish) },
+                                modifier = Modifier.animateItem(),
+                            )
+                        } else {
+                            SwipeToRevealDelete(
+                                onDelete = { viewModel.deleteWish(wish) },
+                                modifier = Modifier.animateItem(),
+                                shape = RoundedCornerShape(Radius.row),
+                            ) {
+                                OwnerWishRow(
                                     wish = wish,
-                                    reservation = reservations[wish.id],
-                                    currentUserId = currentUserId,
-                                    onReserve = { viewModel.reserve(wish) },
-                                    onUnreserve = { viewModel.unreserve(wish) },
-                                    modifier = Modifier.animateItem(),
+                                    onToggle = {
+                                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        viewModel.toggle(wish)
+                                    },
+                                    onEdit = { wishToEdit = wish },
                                 )
-                            } else {
-                                SwipeToRevealDelete(
-                                    onDelete = { viewModel.deleteWish(wish) },
-                                    modifier = Modifier.animateItem(),
-                                    shape = RoundedCornerShape(Radius.row),
-                                ) {
-                                    OwnerWishRow(
-                                        wish = wish,
-                                        onToggle = {
-                                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                            viewModel.toggle(wish)
-                                        },
-                                        onEdit = { wishToEdit = wish },
-                                    )
-                                }
                             }
                         }
                     }

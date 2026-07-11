@@ -201,7 +201,10 @@ private fun MainFlow() {
                                 .fillMaxWidth()
                                 .navigationBarsPadding()
                                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
-                                .glassBar(Radius.tabBar),
+                                .glassBar(Radius.tabBar)
+                                // Inner inset so the first/last selection pills don't touch
+                                // the rounded ends of the floating bar (mirrors iOS).
+                                .padding(horizontal = Spacing.sm),
                     ) {
                         bottomDestinations.forEach { dest ->
                             val isHome = dest.route == Routes.HOME
@@ -243,7 +246,9 @@ private fun MainFlow() {
                                     NavigationBarItemDefaults.colors(
                                         selectedIconColor = MaterialTheme.colorScheme.primary,
                                         selectedTextColor = MaterialTheme.colorScheme.primary,
-                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                        // Translucent glassy pill rather than a solid container
+                                        // (approximates the iOS liquid-glass selected tab).
+                                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                                         unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                         unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                     ),

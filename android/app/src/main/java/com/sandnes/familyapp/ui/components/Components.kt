@@ -888,3 +888,17 @@ fun RefreshOnResume(onResume: () -> Unit) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 }
+
+/**
+ * iOS-style switch colours: solid muted track with a white thumb when off (no outline ring —
+ * the M3 default outline reads as broken on dark glass sheets).
+ */
+@Composable
+fun appSwitchColors() =
+    androidx.compose.material3.SwitchDefaults.colors(
+        checkedThumbColor = Color.White,
+        checkedTrackColor = MaterialTheme.colorScheme.primary,
+        uncheckedThumbColor = Color.White,
+        uncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f),
+        uncheckedBorderColor = Color.Transparent,
+    )
