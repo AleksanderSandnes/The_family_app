@@ -27,14 +27,13 @@ Note: OTP expiry is configurable under Authentication → Providers → Email
 **thefamilyapp.app** — bought 2026-07-12 through Vercel ($9.99 first year).
 DNS is managed at Vercel (Dashboard → Domains → thefamilyapp.app, or `vercel dns`).
 
-## 3. Verify the domain in Resend
+## 3. Verify the domain in Resend — DONE ✅ (2026-07-12)
 
-Resend Dashboard → Domains → Add Domain → `thefamilyapp.app`.
-Resend shows the DNS records to add (SPF TXT + DKIM CNAMEs, optionally the bounce MX).
-Add them at Vercel: Dashboard → Domains → thefamilyapp.app → DNS Records, or
-`vercel dns add thefamilyapp.app <name> <TYPE> <value>` — or paste them to Claude,
-who can add them via the Vercel CLI. Wait for status **Verified** (minutes to a few hours).
-Then Resend → API Keys → create a key with sending access. Copy it once.
+Done via Resend MCP + Vercel CLI: domain `thefamilyapp.app` created in **eu-west-1**
+(sending enabled), DKIM TXT + SPF MX/TXT records added to Vercel DNS, status **verified**.
+Test email from `auth@thefamilyapp.app` delivered successfully.
+SMTP API key `supabase-smtp-familyapp` created (sending-only, domain-restricted) —
+value held by Aleksander; it is the SMTP password for step 4.
 
 ## 4. Point Supabase at Resend
 
