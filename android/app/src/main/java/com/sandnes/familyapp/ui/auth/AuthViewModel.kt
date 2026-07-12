@@ -166,6 +166,7 @@ private val AUTH_ERROR_MESSAGES: List<Pair<List<String>, Int>> =
         listOf("user already registered", "already been registered") to R.string.an_account_with_this_email_already_exists,
         listOf("email address is invalid") to R.string.please_enter_a_valid_email_address,
         listOf("password should be at least", "weak_password") to R.string.password_must_be_at_least_6_characters,
+        listOf("otp_expired", "token has expired", "invalid token") to R.string.that_code_is_wrong_or_expired,
         listOf("rate limit", "too many requests") to R.string.too_many_attempts,
         listOf("network", "unable to resolve", "connect") to R.string.network_error_check_connection,
     )

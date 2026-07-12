@@ -9,6 +9,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -342,6 +343,28 @@ class FamilyRepository
             invalidateUserCache()
             session.signOut()
         }
+
+        suspend fun sendPasswordResetEmail(email: String): Result<Unit> =
+            runCatching {
+                SupabaseManager.client.auth.resetPasswordForEmail(email.trim().lowercase())
+            }
+
+        /** Verifies the emailed 6-digit recovery code (which signs the user in), sets the new
+         *  password, and finalizes the app session so the auth gate flips. */
+        suspend fun confirmPasswordReset(
+            email: String,
+            code: String,
+            newPassword: String,
+        ): Result<String> =
+            runCatching {
+                val client = SupabaseManager.client
+                client.auth.verifyEmailOtp(
+                    type = OtpType.Email.RECOVERY,
+                    email = email.trim().lowercase(),
+                    token = code,
+                )
+                client.auth.updateUser { password = newPassword }
+            }.mapCatching { completeSignInAfterConfirmation().getOrThrow() }
 
         // ---- Family ----
 

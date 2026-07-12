@@ -130,6 +130,18 @@ class AuthViewModelTest {
     }
 
     @Test
+    fun `friendlyAuthError maps expired or invalid otp codes`() {
+        assertEquals(
+            R.string.that_code_is_wrong_or_expired,
+            friendlyAuthError(RuntimeException("Token has expired or is invalid"), isLogin = true),
+        )
+        assertEquals(
+            R.string.that_code_is_wrong_or_expired,
+            friendlyAuthError(RuntimeException("otp_expired"), isLogin = true),
+        )
+    }
+
+    @Test
     fun `friendlyAuthError handles a null message`() {
         assertEquals(
             R.string.something_went_wrong,
