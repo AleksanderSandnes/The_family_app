@@ -327,7 +327,6 @@
     <string name="continue_with_google_button">Fortsett med Google-knapp</string>
     <string name="continue_next_step_button">Knapp for å gå til neste steg</string>
     <string name="create_account_button">Opprett konto-knapp</string>
-    <string name="password_reset_is_coming_soon_contact_support_at_support_familyapp_com">Tilbakestilling av passord kommer snart. Kontakt kundestøtte på support@familyapp.com</string>
     <string name="used_to_track_family_birthdays">Brukes til å holde styr på familiens bursdager</string>
     <string name="for_family_contact_info">For familiens kontaktinformasjon</string>
     <string name="too_short">For kort</string>

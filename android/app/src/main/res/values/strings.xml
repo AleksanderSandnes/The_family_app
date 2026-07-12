@@ -326,7 +326,6 @@
     <string name="continue_with_google_button">Continue with Google button</string>
     <string name="continue_next_step_button">Continue to next step button</string>
     <string name="create_account_button">Create account button</string>
-    <string name="password_reset_is_coming_soon_contact_support_at_support_familyapp_com">Password reset is coming soon. Contact support at support@familyapp.com</string>
     <string name="used_to_track_family_birthdays">Used to track family birthdays</string>
     <string name="for_family_contact_info">For family contact info</string>
     <string name="too_short">Too short</string>

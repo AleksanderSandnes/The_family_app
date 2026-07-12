@@ -57,6 +57,7 @@ import androidx.navigation.navDeepLink
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.auth.LoginScreen
 import com.sandnes.familyapp.ui.auth.RegisterScreen
+import com.sandnes.familyapp.ui.auth.ResetPasswordScreen
 import com.sandnes.familyapp.ui.birthday.BirthdayScreen
 import com.sandnes.familyapp.ui.birthday.BirthdayViewModel
 import com.sandnes.familyapp.ui.calendar.CalendarScreen
@@ -131,7 +132,11 @@ private fun AuthFlow() {
             LoginScreen(
                 onAuthenticated = { /* RootViewModel reacts to session change */ },
                 onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
+                onNavigateToReset = { navController.navigate(Routes.RESET_PASSWORD) },
             )
+        }
+        composable(Routes.RESET_PASSWORD) {
+            ResetPasswordScreen(onBackToLogin = { navController.popBackStack() })
         }
         composable(Routes.REGISTER) {
             RegisterScreen(

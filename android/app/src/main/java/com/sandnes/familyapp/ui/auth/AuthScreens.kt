@@ -34,12 +34,11 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -80,30 +79,14 @@ import com.sandnes.familyapp.ui.theme.glassCard
 fun LoginScreen(
     onAuthenticated: () -> Unit,
     onNavigateToRegister: () -> Unit,
+    onNavigateToReset: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var showForgotDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.success) { if (state.success) onAuthenticated() }
-
-    if (showForgotDialog) {
-        AlertDialog(
-            onDismissRequest = { showForgotDialog = false },
-            title = { Text(stringResource(R.string.forgot_password)) },
-            text = {
-                Text(
-                    stringResource(R.string.password_reset_is_coming_soon_contact_support_at_support_familyapp_com),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showForgotDialog = false }) { Text(stringResource(R.string.ok)) }
-            },
-        )
-    }
 
     AuthScaffold(
         title = stringResource(R.string.welcome_back),
@@ -157,7 +140,10 @@ fun LoginScreen(
                 Modifier
                     .align(Alignment.End)
                     .clip(RoundedCornerShape(Radius.extraSmall))
-                    .clickable { showForgotDialog = true }
+                    .clickable {
+                        viewModel.clearError()
+                        onNavigateToReset()
+                    }
                     .padding(Spacing.xs),
         )
         PrimaryButton(
@@ -273,6 +259,116 @@ fun RegisterScreen(
                 onClick = onNavigateToLogin,
             )
         }
+    }
+}
+
+@Composable
+fun ResetPasswordScreen(
+    onBackToLogin: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel(),
+) {
+    val reset by viewModel.resetState.collectAsStateWithLifecycle()
+    var email by rememberSaveable { mutableStateOf("") }
+    var code by rememberSaveable { mutableStateOf("") }
+    var newPassword by rememberSaveable { mutableStateOf("") }
+
+    DisposableEffect(Unit) { onDispose { viewModel.clearResetFlow() } }
+
+    val subtitle =
+        when (reset.step) {
+            1 -> stringResource(R.string.reset_password_subtitle)
+            else -> stringResource(R.string.enter_code_and_new_password, reset.email)
+        }
+    AuthScaffold(title = stringResource(R.string.reset_password), subtitle = subtitle) {
+        StepIndicator(currentStep = reset.step, totalSteps = 2)
+        ErrorBanner(reset.error?.let { stringResource(it) })
+        if (reset.step == 1) {
+            FamilyTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = stringResource(R.string.email),
+                leadingIcon = Icons.Outlined.Mail,
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Done,
+                keyboardActions =
+                    KeyboardActions(
+                        onDone = {
+                            if (email.isNotBlank() && !reset.loading) viewModel.sendResetCode(email)
+                        },
+                    ),
+                enabled = !reset.loading,
+            )
+            PrimaryButton(
+                text = stringResource(R.string.send_code),
+                onClick = { viewModel.sendResetCode(email) },
+                enabled = email.isNotBlank(),
+                loading = reset.loading,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            FamilyTextField(
+                value = code,
+                onValueChange = { code = it },
+                label = stringResource(R.string.reset_code),
+                leadingIcon = Icons.Outlined.Lock,
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next,
+                enabled = !reset.loading,
+            )
+            FamilyTextField(
+                value = newPassword,
+                onValueChange = { newPassword = it },
+                label = stringResource(R.string.new_password),
+                leadingIcon = Icons.Outlined.Lock,
+                isPassword = true,
+                imeAction = ImeAction.Done,
+                keyboardActions =
+                    KeyboardActions(
+                        onDone = {
+                            if (code.isNotBlank() && newPassword.isNotBlank() && !reset.loading) {
+                                viewModel.confirmPasswordReset(code, newPassword)
+                            }
+                        },
+                    ),
+                enabled = !reset.loading,
+            )
+            PasswordStrengthBar(newPassword)
+            PrimaryButton(
+                text = stringResource(R.string.set_new_password),
+                onClick = { viewModel.confirmPasswordReset(code, newPassword) },
+                enabled = code.isNotBlank() && newPassword.isNotBlank(),
+                loading = reset.loading,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                if (reset.resendCooldownSeconds > 0) {
+                    stringResource(R.string.resend_code_in_seconds, reset.resendCooldownSeconds)
+                } else {
+                    stringResource(R.string.resend_code)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                color =
+                    if (reset.resendCooldownSeconds > 0) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .clip(RoundedCornerShape(Radius.extraSmall))
+                        .clickable(enabled = reset.resendCooldownSeconds == 0 && !reset.loading) {
+                            viewModel.resendResetCode()
+                        }
+                        .padding(Spacing.xs),
+            )
+        }
+        AuthFooter(
+            prompt = stringResource(R.string.remembered_your_password),
+            action = stringResource(R.string.sign_in),
+            onClick = onBackToLogin,
+        )
     }
 }
 
