@@ -38,6 +38,10 @@ Warm, premium, calm. The app feels like a well-crafted home: inviting indigo/vio
 4. **Effortless for every age** — a kid and a grandparent both succeed on the first try. Standard platform affordances over invented ones; clarity over density.
 5. **Premium earns trust** — store-release polish everywhere: crafted empty, loading, and error states; both themes; both languages; both platforms at parity.
 
+## Trust & Permissions
+
+Any family member can create and edit shared things; destroying a shared container (a list, event, meal plan, or conversation) is reserved for its creator or the family admin, and admins never gain visibility into direct messages they're not part of. Own fine-grained rows (a shopping item, a wish, a message) delete with undo instead of confirmation. Decided 2026-07-12.
+
 ## Accessibility & Inclusion
 
 WCAG AA as the working bar for a public store release: AA contrast in both light and dark themes, respect for system font scaling and reduced-motion settings, and full TalkBack / VoiceOver labels on interactive elements. Full English and Norwegian Bokmål localization with an in-app language switch.
