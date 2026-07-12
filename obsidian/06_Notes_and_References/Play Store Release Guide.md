@@ -154,8 +154,8 @@ store-listing screenshots (believable fake data, no "test" wording anywhere).
 - Seeded data in every module: shopping (3 lists), meal plan week 29, calendar (5 events),
   birthdays (5), wishlists (2, one wish reserved), family group chat with reactions,
   map locations around Oslo.
-- DB cleanup 2026-07-13: all other test accounts and their data/storage removed; the only real
-  users are Charles, Rachel (Vardeveien) and Aleksander, Lotte (Korallveien 26).
+- DB cleanup 2026-07-13: all test accounts and their data/storage were removed from production;
+  only the four real family members' accounts remain.
 
 ## Related
 - [[02_Build_and_Environment/Build and Environment]] — toolchain, AGP/Gradle, signing config
