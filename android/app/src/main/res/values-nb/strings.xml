@@ -475,4 +475,28 @@
     <string name="relation_other">Annet</string>
     <string name="join_family_invite_message">Bli med i familien vår \"%1$s\" i Familieappen!\n\nTrykk for å bli med: %2$s\n\nEller åpne appen, trykk \"Bli med via invitasjonskode\", og skriv inn: %3$s</string>
     <string name="reply">Svar</string>
+    <!-- Polish pass 2026-07: previously hardcoded literals extracted to resources -->
+    <string name="cancel_recording">Avbryt opptak</string>
+    <string name="message_from_at">Melding fra %1$s klokka %2$s: %3$s</string>
+    <string name="scroll_to_bottom">Rull til bunnen</string>
+    <string name="cancel_reply">Avbryt svar</string>
+    <string name="tap_a_member_to_add">Trykk på et medlem for å legge dem til</string>
+    <string name="delete_list_q">Slette listen?</string>
+    <string name="delete_list_confirm">Dette sletter \u00ab%1$s\u00bb og alle varene for hele familien.</string>
+    <string name="delete_event_q">Slette hendelsen?</string>
+    <string name="delete_event_confirm">Dette fjerner \u00ab%1$s\u00bb for hele familien.</string>
+    <string name="delete_plan_q">Slette middagsplanen?</string>
+    <string name="delete_plan_confirm">Dette sletter \u00ab%1$s\u00bb og alle dagene for hele familien.</string>
+    <string name="member_count_one">1 medlem</string>
+    <string name="birthday_of">%1$s sin bursdag</string>
+    <string name="map_member_live_a11y">%1$s, direkte, sist sett %2$s</string>
+    <string name="map_member_stale_a11y">%1$s, utdatert, sist sett %2$s</string>
+    <string name="map_member_not_sharing_a11y">%1$s deler ikke posisjon</string>
+    <string name="permission_granted_a11y">%1$s-tillatelse er gitt</string>
+    <string name="permission_not_granted_a11y">Gi %1$s-tillatelse. Ikke gitt ennå</string>
+    <string name="selected">Valgt</string>
+    <string name="location_sharing_channel_name">Posisjonsdeling</string>
+    <string name="location_sharing_channel_desc">Vises mens posisjonen din deles med familien</string>
+    <string name="sharing_location_with_family">Deler posisjon med familien</string>
+    <string name="your_position_is_visible_on_the_family_map">Posisjonen din er synlig på familiekartet</string>
 </resources>

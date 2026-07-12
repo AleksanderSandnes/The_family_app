@@ -355,13 +355,16 @@ private fun ThemeOption(
 ) {
     val bg = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
     val fg = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val optionDesc =
+        stringResource(R.string.theme_option_a11y, label) +
+            if (selected) ", " + stringResource(R.string.selected) else ""
     Column(
         modifier =
             modifier
                 .clip(RoundedCornerShape(16.dp))
                 .background(bg)
                 .semantics {
-                    contentDescription = "$label theme${if (selected) ", selected" else ""}"
+                    contentDescription = optionDesc
                 }.clickable(onClick = onClick)
                 .heightIn(min = 48.dp)
                 .padding(vertical = 14.dp),

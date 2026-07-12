@@ -17,6 +17,11 @@ Welcome to the project knowledge base for The Family App.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
+- **🔍 Impeccable design review + polish (2026-07-12)** — first full critique (28/40) + native
+  audit (13/20) of both apps; polish pass on branch `fix/impeccable-polish`: TalkBack delete
+  action, delete confirmations for shared data, ~60 strings wired to EN/NB resources, reduce
+  motion, font-scale-safe chrome, AA contrast tokens, iOS Dynamic Type. Reports in
+  `.impeccable/`; details: [[06_Notes_and_References/Design Review 2026-07]].
 - **📱🤖 The Family App is now a TWO-platform product** — `android/` (Jetpack Compose +
   Material 3, package `com.sandnes.familyapp`) and `ios/` (native SwiftUI, iOS 26 "Liquid
   Glass") share one Supabase backend. Repo restructured into `android/` + `ios/` + shared

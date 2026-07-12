@@ -30,7 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.sandnes.familyapp.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -136,10 +138,13 @@ fun VoiceNoteMessage(
                 .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = ::togglePlay, modifier = Modifier.size(36.dp)) {
+        IconButton(onClick = ::togglePlay, modifier = Modifier.size(48.dp)) {
             Icon(
                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                contentDescription = if (isPlaying) "Pause" else "Play",
+                contentDescription =
+                    stringResource(
+                        if (isPlaying) R.string.pause_voice_message else R.string.play_voice_message,
+                    ),
                 tint = contentColor,
             )
         }

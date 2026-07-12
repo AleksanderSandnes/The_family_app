@@ -334,7 +334,7 @@ private struct ShoppingItemRow: View {
                         .overlay(Image(systemName: "checkmark")
                             .font(.system(size: 12, weight: .bold)).foregroundStyle(.white))
                 } else {
-                    Circle().strokeBorder(Color(hex: 0x9CA2BC), lineWidth: 1.8)
+                    Circle().strokeBorder(Color.appCaption, lineWidth: 1.8)
                         .frame(width: 24, height: 24)
                 }
             }
@@ -352,7 +352,7 @@ private struct ShoppingItemRow: View {
             } else {
                 Text(item.item)
                     .font(.system(size: 15.5))
-                    .foregroundStyle(item.checked ? Color(hex: 0xA6ACC4) : Color.appOnSurface)
+                    .foregroundStyle(item.checked ? Color.appCaption : Color.appOnSurface)
                     .strikethrough(item.checked)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())

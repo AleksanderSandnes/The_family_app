@@ -92,6 +92,8 @@ import com.sandnes.familyapp.ui.components.SecondaryButton
 import com.sandnes.familyapp.ui.components.SectionHeader
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
 import com.sandnes.familyapp.ui.navigation.Routes
+import com.sandnes.familyapp.ui.theme.BrandGradientSoft
+import com.sandnes.familyapp.ui.theme.Indigo500
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
 import com.sandnes.familyapp.ui.theme.colorFromArgb
@@ -145,7 +147,7 @@ val familyRelationOptions =
         "Other",
     )
 
-private val defaultAvatarColor = Color(0xFF6366F1)
+private val defaultAvatarColor = Indigo500
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -351,7 +353,7 @@ fun FamilyScreen(
             onDismissRequest = { memberToRemove = null },
             shape = RoundedCornerShape(Radius.large),
             title = { Text(stringResource(R.string.remove_member_q)) },
-            text = { Text("${member.name} will be removed from the family. They can rejoin later with the invite code.") },
+            text = { Text(stringResource(R.string.remove_member_confirm, member.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.removeMember(member.id)
@@ -407,7 +409,7 @@ fun FamilyScreen(
                     if (qr != null) {
                         Image(
                             bitmap = qr,
-                            contentDescription = "Family invite QR code",
+                            contentDescription = stringResource(R.string.family_invite_qr_code),
                             modifier = Modifier.size(220.dp),
                         )
                     }
@@ -511,19 +513,24 @@ private fun FamilyHeaderCard(
             fontWeight = FontWeight.Bold,
         )
         Text(
-            "${members.size} member${if (members.size == 1) "" else "s"}",
+            if (members.size == 1) {
+                stringResource(R.string.member_count_one)
+            } else {
+                stringResource(R.string.member_count, members.size)
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         AvatarStack(members = members)
         if (joinCode.isNotBlank()) {
             Spacer(Modifier.height(Spacing.xs))
+            val inviteCodeDesc = stringResource(R.string.family_invite_code_value, joinCode)
             CopyableCodeField(
                 code = joinCode,
                 label = stringResource(R.string.invite_code),
                 modifier =
                     Modifier.semantics {
-                        contentDescription = "Family invite code: $joinCode"
+                        contentDescription = inviteCodeDesc
                     },
             )
             Row(
@@ -558,16 +565,13 @@ private fun FamilyPhotoHero(
             Modifier
                 .size(PHOTO_HERO_SIZE.dp)
                 .clip(CircleShape)
-                .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF7C3AED), Color(0xFF5457E8)),
-                    ),
-                ).let { if (isAdmin) it.clickable(onClick = onChangePhoto) else it }
+                .background(BrandGradientSoft)
+                .let { if (isAdmin) it.clickable(onClick = onChangePhoto) else it }
         Box(circle, contentAlignment = Alignment.Center) {
             if (photoUrl != null) {
                 AsyncImage(
                     model = photoUrl,
-                    contentDescription = "Family photo",
+                    contentDescription = stringResource(R.string.family_photo),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(PHOTO_HERO_SIZE.dp).clip(CircleShape),
                 )
@@ -591,7 +595,7 @@ private fun FamilyPhotoHero(
             ) {
                 Icon(
                     Icons.Filled.CameraAlt,
-                    contentDescription = "Change family photo",
+                    contentDescription = stringResource(R.string.change_family_photo),
                     tint = Color.White,
                     modifier = Modifier.size(16.dp),
                 )
@@ -616,13 +620,14 @@ private fun AvatarStack(members: List<UserModel>) {
         ).dp
 
     val names = members.joinToString(", ") { it.name }
+    val membersDesc = stringResource(R.string.family_members_a11y, names)
 
     Box(
         modifier =
             Modifier
                 .width(stackWidth)
                 .height(avatarSize.dp)
-                .semantics { contentDescription = "Family members: $names" },
+                .semantics { contentDescription = membersDesc },
     ) {
         displayMembers.forEachIndexed { index, member ->
             Box(
@@ -710,7 +715,7 @@ private fun MemberCard(
         }
         if (isAdmin) {
             PillTag(
-                text = "Admin",
+                text = stringResource(R.string.admin),
                 container = MaterialTheme.colorScheme.primaryContainer,
                 content = MaterialTheme.colorScheme.onPrimaryContainer,
             )
@@ -938,13 +943,13 @@ private fun CreateFamilyDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(Radius.large),
-        title = { Text("Create a family") },
+        title = { Text(stringResource(R.string.create_a_family)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 FamilyTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = "Family name",
+                    label = stringResource(R.string.family_name),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 CopyableCodeField(code = code)
@@ -955,11 +960,11 @@ private fun CreateFamilyDialog(
                 onClick = { onConfirm(name, code) },
                 enabled = name.isNotBlank(),
             ) {
-                Text("Create")
+                Text(stringResource(R.string.create))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

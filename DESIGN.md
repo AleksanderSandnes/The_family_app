@@ -15,7 +15,7 @@ colors:
   text-secondary: "#5F6780"
   text-secondary-dark: "#98A0BC"
   caption: "#8B92AC"
-  caption-dark: "#6A7290"
+  caption-dark: "#7C84A3"
   destructive: "#E11D48"
   live-green: "#10B981"
   warning-amber: "#F59E0B"
@@ -123,7 +123,7 @@ A restrained palette: neutral glass carries the surface, Heirloom Indigo carries
 
 ### Neutral
 - **Ambient bases** (#EFF1F8 light / #0B0D16 dark): the canvas under the washes; never seen bare across a whole screen.
-- **Ink ramp (text)** — primary #16192A / #ECEEF8, secondary #5F6780 / #98A0BC, caption #8B92AC / #6A7290. Secondary text uses Slate600-strength values because Slate500 misses WCAG AA on the light canvas.
+- **Ink ramp (text)** — primary #16192A / #ECEEF8, secondary #5F6780 / #98A0BC, caption #8B92AC / #7C84A3. Secondary text uses Slate600-strength values because Slate500 misses WCAG AA on the light canvas; caption-dark and the status text colors (live-green text #047857, week-amber text #92400E) were darkened/lifted in the 2026-07 polish pass for the same reason.
 - **Dark surfaces** — cards #141A2A, nested containers #1E2638, borders #2A3349.
 
 ### Named Rules

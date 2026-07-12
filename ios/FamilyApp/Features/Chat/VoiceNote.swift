@@ -101,15 +101,19 @@ struct LiveWaveform: View {
     }
 }
 
-/// Pulsing red dot indicating an active recording.
+/// Pulsing red dot indicating an active recording. Static when Reduce Motion is on.
 struct RecordingPulse: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var on = false
     var body: some View {
         Circle()
             .fill(Color.appError)
             .frame(width: 10, height: 10)
-            .opacity(on ? 0.35 : 1)
-            .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: on)
+            .opacity(on && !reduceMotion ? 0.35 : 1)
+            .animation(
+                reduceMotion ? nil : .easeInOut(duration: 0.7).repeatForever(autoreverses: true),
+                value: on
+            )
             .onAppear { on = true }
     }
 }

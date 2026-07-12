@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ConversationModel
 import com.sandnes.familyapp.data.ConversationParticipantModel
 import com.sandnes.familyapp.data.ConversationWithPreview
@@ -249,7 +250,7 @@ class ChatViewModel
                             val lastSenderName =
                                 when {
                                     lastMsg == null -> null
-                                    lastMsg.userFrom == userId -> "You"
+                                    lastMsg.userFrom == userId -> app.getString(R.string.you)
                                     else ->
                                         _userProfiles.value[lastMsg.userFrom]?.name
                                             ?: lastMsg.userFrom.take(USER_ID_PREVIEW_LENGTH)
@@ -295,7 +296,7 @@ class ChatViewModel
                                 }
                             }
                             // Update last-message preview
-                            val senderName = _userProfiles.value[msg.userFrom]?.name ?: "Family member"
+                            val senderName = _userProfiles.value[msg.userFrom]?.name ?: app.getString(R.string.family_member)
                             _conversations.update { list ->
                                 list.map { p ->
                                     if (p.conversation.id == convId) {

@@ -150,20 +150,18 @@ fun FamilyMapScreen(
 
     // Show permission rationale dialog once per session before requesting location
     if (showRationaleDialog) {
+        val enableInSettings = stringResource(R.string.you_can_enable_location_in_settings)
         AlertDialog(
             onDismissRequest = {
                 showRationaleDialog = false
                 rationaleShown = true
                 scope.launch {
-                    snackbarHostState.showSnackbar("You can enable location in Settings")
+                    snackbarHostState.showSnackbar(enableInSettings)
                 }
             },
-            title = { Text("Location access") },
+            title = { Text(stringResource(R.string.location_access)) },
             text = {
-                Text(
-                    "This app uses your location to show your family where you are on the map. " +
-                        "Your location is only shared when you enable it.",
-                )
+                Text(stringResource(R.string.location_permission_rationale))
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -175,16 +173,16 @@ fun FamilyMapScreen(
                             Manifest.permission.ACCESS_COARSE_LOCATION,
                         ),
                     )
-                }) { Text("Allow") }
+                }) { Text(stringResource(R.string.allow)) }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showRationaleDialog = false
                     rationaleShown = true
                     scope.launch {
-                        snackbarHostState.showSnackbar("You can enable location in Settings")
+                        snackbarHostState.showSnackbar(enableInSettings)
                     }
-                }) { Text("Not now") }
+                }) { Text(stringResource(R.string.not_now)) }
             },
         )
     }
@@ -274,6 +272,8 @@ fun FamilyMapScreen(
         topBar = { FeatureTopBar(stringResource(R.string.family_map), onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
+        val mapDesc = stringResource(R.string.family_location_map)
+        val centerDesc = stringResource(R.string.center_on_my_location)
         Box(Modifier.fillMaxSize().padding(padding)) {
             if (isLoading && locations.isEmpty() && !isSolo) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LoadingState() }
@@ -282,7 +282,7 @@ fun FamilyMapScreen(
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .semantics { contentDescription = "Family location map" },
+                            .semantics { contentDescription = mapDesc },
                     cameraPositionState = cameraPositionState,
                     // Own location is drawn as an avatar pin below, not the default blue dot.
                     properties = MapProperties(isMyLocationEnabled = false),
@@ -313,8 +313,8 @@ fun FamilyMapScreen(
                     ) {
                         EmptyState(
                             icon = Icons.Filled.PeopleAlt,
-                            title = "Just you here",
-                            subtitle = "Invite family members to see their locations on the map.",
+                            title = stringResource(R.string.just_you_here),
+                            subtitle = stringResource(R.string.invite_family_to_see_locations),
                         )
                     }
                 }
@@ -342,7 +342,7 @@ fun FamilyMapScreen(
                                             )
                                         }
                                     }
-                                }.semantics { contentDescription = "Center on my location" },
+                                }.semantics { contentDescription = centerDesc },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -579,9 +579,13 @@ private fun MemberLegend(
                         ?: MaterialTheme.colorScheme.primary
                 val rowDesc =
                     if (isSharing) {
-                        "${member.name}, ${if (live) "live" else "stale"}, last seen $statusText"
+                        stringResource(
+                            if (live) R.string.map_member_live_a11y else R.string.map_member_stale_a11y,
+                            member.name,
+                            statusText,
+                        )
                     } else {
-                        "${member.name}, not sharing location"
+                        stringResource(R.string.map_member_not_sharing_a11y, member.name)
                     }
 
                 Row(

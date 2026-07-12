@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -86,7 +86,7 @@ fun SheetHeader(
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = if (confirmEnabled) 1f else 0.4f))
                 .clickable(enabled = confirmEnabled, onClick = onConfirm)
                 .padding(horizontal = Spacing.lg)
-                .height(34.dp),
+                .heightIn(min = 34.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(

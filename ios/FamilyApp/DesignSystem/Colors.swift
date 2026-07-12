@@ -103,13 +103,17 @@ enum Palette {
     static let secondaryLight = Color(hex: 0x5F6780)
     static let secondaryDark = Color(hex: 0x98A0BC)
     static let captionLight = Color(hex: 0x8B92AC)
-    static let captionDark = Color(hex: 0x6A7290)
+    // Lifted from #6A7290: caption on the dark ambient base was ~3.9:1, under WCAG AA 4.5:1.
+    // Mirrors Android Color.kt CaptionDark.
+    static let captionDark = Color(hex: 0x7C84A3)
 
     // Status
     static let destructive = Color(hex: 0xE11D48) // menu rows, leave/sign-out, delete
     static let liveGreen = Color(hex: 0x10B981) // today / live / done
-    static let liveGreenText = Color(hex: 0x059669) // "All done" text
-    static let weekAmberText = Color(hex: 0xB45309) // "this week" urgency text
+    // Status text darkened one step (from #059669 / #B45309) for WCAG AA on the light wash.
+    // Mirrors Android Color.kt LiveGreenText / WeekAmberText.
+    static let liveGreenText = Color(hex: 0x047857) // "All done" text
+    static let weekAmberText = Color(hex: 0x92400E) // "this week" urgency text
     static let staleDot = Color(hex: 0xCBD2E0) // map stale dot
     static let mapBase = Color(hex: 0xE7ECE3) // family-map flat base
 }
@@ -138,7 +142,7 @@ extension Color {
     static let appSurfaceVariant = Color(light: Palette.slate100, dark: Palette.inkSurfaceVariant)
     /// Secondary text — spec ramp (#5F6780 / #98A0BC).
     static let appOnSurfaceVariant = Color(light: Palette.secondaryLight, dark: Palette.secondaryDark)
-    // Caption / tertiary text (#8B92AC / #6A7290).
+    // Caption / tertiary text (#8B92AC / #7C84A3).
     static let appCaption = Color(light: Palette.captionLight, dark: Palette.captionDark)
     static let appOutline = Color(light: Palette.slate200, dark: Palette.inkBorder)
     static let appOutlineVariant = Color(light: Palette.slate100, dark: Palette.inkSurfaceVariant)

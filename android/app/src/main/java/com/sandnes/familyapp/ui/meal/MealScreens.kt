@@ -75,8 +75,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.MealPlanDayModel
+import com.sandnes.familyapp.data.MealPlanModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.ConfirmationDialog
 import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
@@ -348,6 +350,7 @@ fun MealScreen(
     val hasFamily by viewModel.hasFamily.collectAsStateWithLifecycle(false)
     val errorRes by viewModel.errorRes.collectAsStateWithLifecycle(null)
     var showCreate by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<MealPlanModel?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     RefreshOnResume { viewModel.refresh() }
@@ -396,7 +399,8 @@ fun MealScreen(
                 ) {
                     items(plans, key = { it.id }) { plan ->
                         SwipeToRevealDelete(
-                            onDelete = { viewModel.deletePlan(plan) },
+                            // Shared family data — confirm before destroying (no undo exists).
+                            onDelete = { pendingDelete = plan },
                             modifier = Modifier.animateItem(),
                             shape = RoundedCornerShape(Radius.overviewCard),
                         ) {
@@ -423,6 +427,18 @@ fun MealScreen(
                 viewModel.createPlan(name, from, to, icon, color)
                 showCreate = false
             },
+        )
+    }
+
+    pendingDelete?.let { plan ->
+        ConfirmationDialog(
+            title = stringResource(R.string.delete_plan_q),
+            message = stringResource(R.string.delete_plan_confirm, plan.name.ifBlank { stringResource(R.string.meal_plan) }),
+            onConfirm = {
+                viewModel.deletePlan(plan)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
         )
     }
 }
