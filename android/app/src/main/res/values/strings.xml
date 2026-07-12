@@ -502,4 +502,15 @@
     <string name="undo">Undo</string>
     <string name="item_deleted">Item deleted</string>
     <string name="wish_deleted">Wish deleted</string>
+    <string name="delete_wishlist_q">Delete wishlist?</string>
+    <string name="delete_wishlist_confirm">This deletes \u201c%1$s\u201d and all its wishes for everyone in the family.</string>
+    <string name="delete_birthday_q">Delete birthday?</string>
+    <string name="delete_birthday_confirm">This removes %1$s\u2019s birthday for everyone in the family.</string>
+    <string name="name_with_you_suffix">%1$s (You)</string>
+    <string name="members_count_title">Members (%1$d)</string>
+    <string name="one_event_a11y">1 event</string>
+    <string name="n_events_a11y">%1$d events</string>
+    <string name="toggle_on">on</string>
+    <string name="toggle_off">off</string>
+    <string name="member">Member</string>
 </resources>

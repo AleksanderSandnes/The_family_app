@@ -679,7 +679,8 @@ private fun MemberCard(
     val avatarColor = member.avatarColor.takeIf { it != 0 }?.let { colorFromArgb(it) } ?: defaultAvatarColor
     // iOS shows the viewer's relation as the subtitle (never the email).
     val subtitle = relation?.takeIf { it.isNotBlank() }?.let { relationDisplayName(it) }.orEmpty()
-    val memberDescription = "${member.name}, ${if (isAdmin) "Admin" else "Member"}"
+    val memberDescription =
+        "${member.name}, " + stringResource(if (isAdmin) R.string.admin else R.string.member)
 
     Row(
         Modifier

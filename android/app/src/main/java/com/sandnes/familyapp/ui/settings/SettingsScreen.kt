@@ -390,7 +390,7 @@ private fun ToggleRow(
     checked: Boolean,
     onChange: (Boolean) -> Unit,
 ) {
-    val description = "$title ${if (checked) "on" else "off"}"
+    val description = "$title " + stringResource(if (checked) R.string.toggle_on else R.string.toggle_off)
     Row(
         Modifier
             .fillMaxWidth()

@@ -75,6 +75,7 @@ import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.ui.components.ErrorBanner
 import com.sandnes.familyapp.ui.components.InitialAvatar
 import com.sandnes.familyapp.ui.components.ListSkeleton
+import com.sandnes.familyapp.ui.components.PullRefresh
 import com.sandnes.familyapp.ui.components.RefreshOnResume
 import com.sandnes.familyapp.ui.components.SectionHeader
 import com.sandnes.familyapp.ui.navigation.Routes
@@ -148,30 +149,34 @@ fun HomeScreen(
         }
 
     // Transparent so the app-level AmbientBackground shows through the glass surfaces.
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(columns),
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .statusBarsPadding(),
-        contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = Spacing.screenEdge),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+    // PullRefresh backs the error state's "pull to refresh" instruction (matches iOS .refreshable).
+    PullRefresh(
+        onRefresh = { viewModel.refresh().join() },
+        modifier = Modifier.fillMaxSize().statusBarsPadding(),
     ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Column {
-                HomeHeader(state = state, dark = dark, onOpenFamily = onOpenFamily)
-                Spacer(Modifier.height(Spacing.xs))
-            }
-        }
-
-        when {
-            state.isLoading -> item(span = { GridItemSpan(maxLineSpan) }) { ListSkeleton(rows = 3) }
-            state.loadError ->
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    ErrorBanner(message = stringResource(R.string.couldn_t_load_your_data_pull_to_refresh))
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = Spacing.screenEdge),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column {
+                    HomeHeader(state = state, dark = dark, onOpenFamily = onOpenFamily)
+                    Spacer(Modifier.height(Spacing.xs))
                 }
-            else -> {
+            }
+
+            if (state.isLoading) {
+                item(span = { GridItemSpan(maxLineSpan) }) { ListSkeleton(rows = 3) }
+            } else {
+                // The feature grid is static navigation — never hide it behind a load error.
+                if (state.loadError) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        ErrorBanner(message = stringResource(R.string.couldn_t_load_your_data_pull_to_refresh))
+                    }
+                }
                 if (state.hasSummary) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         SummarySection(state = state, onOpen = onOpen)
