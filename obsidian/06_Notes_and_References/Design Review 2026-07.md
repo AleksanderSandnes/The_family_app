@@ -42,6 +42,10 @@ Fresh dual-agent re-run verified every fixed item (0 hardcoded literals, 0 ungat
 
 **Third fix pass shipped** (`feat/impeccable-followups`): Home error state keeps the static feature grid + gains PullRefresh (the error copy said "pull to refresh" on a screen without it); wishlist-container and birthday deletes now confirm; profile save gate relaxed to name+email (was un-savable for Google sign-ups without birthday); final ~12 English fragments localized (+11 keys EN/NB); ChatViewModelTest updated. All checks green.
 
+## Critique run 3 — 29/40 (28 → 28 → 29)
+
+Destruction model scans clean (9/9 sites protected), Home error recovery passes, Aesthetic 4/4. New findings fixed same day (`feat/impeccable-followups`): map legend now shows your own sharing state with an inline toggle; voice recording gained slide-to-cancel + <1s discard + failed-start guard; cancelled Google sign-in no longer bricks the login form; auth errors are @StringRes (localize in NB); calendar formatters resolve per call (in-app language switch works without restart) + locale 12/24-h times + pull-to-refresh; sign-out and Clear-completed confirm; ~15 more strings localized; avatar-fallback and iOS shadow colors tokenized; remaining sub-48dp targets bumped. Snapshot: `.impeccable/critique/2026-07-12T16-21-30Z__full-app-android-ios.md`.
+
 ## Still open
 
 1. **Invite links** — `familyapp://join` is inert without the app installed; needs an HTTPS App Link domain + store-redirect page (owner decision pending).
@@ -49,4 +53,6 @@ Fresh dual-agent re-run verified every fixed item (0 hardcoded literals, 0 ungat
 3. iOS `GlassEffectContainer` — skipped deliberately: it visually merges nearby glass shapes, so it needs on-device verification on a Mac before shipping.
 4. Per-row Haze blur profiling on a mid-range Android device.
 5. iOS iPad/orientation + deploymentTarget-26 scope decision.
-6. Softer observations from run 2: Calendar/Chat create buttons top-right vs FABs elsewhere; chat timestamps at 50% alpha; EventDialog density; "No family yet" CTA weight vs empty tiles.
+6. `ChatTimeFormatters` English tokens ("Yesterday", "Active now", "m ago") — pure JVM-tested helpers; localizing needs a deliberate API shape (string params vs context).
+7. Chat as the least-glass room (stock composer/button, literal paddings) — candidate next design milestone.
+8. Softer observations: Calendar/Chat create buttons top-right vs FABs elsewhere; chat timestamps at 50% alpha; EventDialog density (~9 decisions); "No family yet" CTA weight vs empty tiles; no per-message delete/edit in chat; no role model beyond family admin (a 10-year-old can delete any conversation); iOS 138 inline fixed fonts bypass the scaled type tokens.
