@@ -10,7 +10,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -277,6 +279,128 @@ class AuthViewModelTest {
 
             assertEquals(R.string.an_account_with_this_email_already_exists, vm.state.value.error)
             assertFalse(vm.state.value.success)
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Password reset flow
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `sendResetCode with invalid email sets error and does not call repo`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.sendResetCode("not-an-email")
+            advanceUntilIdle()
+
+            assertEquals(R.string.please_enter_a_valid_email_address, vm.resetState.value.error)
+            assertEquals(1, vm.resetState.value.step)
+            coVerify(exactly = 0) { repo.sendPasswordResetEmail(any()) }
+        }
+
+    @Test
+    fun `sendResetCode success advances to step 2 and starts the resend cooldown`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.sendPasswordResetEmail("alice@example.com") } returns Result.success(Unit)
+
+            vm.sendResetCode("alice@example.com")
+            runCurrent()
+
+            assertEquals(2, vm.resetState.value.step)
+            assertEquals("alice@example.com", vm.resetState.value.email)
+            assertEquals(60, vm.resetState.value.resendCooldownSeconds)
+
+            advanceTimeBy(60_000)
+            runCurrent()
+            assertEquals(0, vm.resetState.value.resendCooldownSeconds)
+        }
+
+    @Test
+    fun `sendResetCode failure maps to a friendly error`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.sendPasswordResetEmail(any()) } returns
+                Result.failure(RuntimeException("rate limit exceeded"))
+
+            vm.sendResetCode("alice@example.com")
+            advanceUntilIdle()
+
+            assertEquals(R.string.too_many_attempts, vm.resetState.value.error)
+            assertEquals(1, vm.resetState.value.step)
+        }
+
+    @Test
+    fun `resendResetCode is blocked while the cooldown is active`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.sendPasswordResetEmail(any()) } returns Result.success(Unit)
+
+            vm.sendResetCode("alice@example.com")
+            runCurrent()
+            vm.resendResetCode()
+            runCurrent()
+
+            coVerify(exactly = 1) { repo.sendPasswordResetEmail(any()) }
+        }
+
+    @Test
+    fun `confirmPasswordReset with a short code sets error and does not call repo`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.confirmPasswordReset("123", "password1")
+            advanceUntilIdle()
+
+            assertEquals(R.string.enter_the_6_digit_code, vm.resetState.value.error)
+            coVerify(exactly = 0) { repo.confirmPasswordReset(any(), any(), any()) }
+        }
+
+    @Test
+    fun `confirmPasswordReset with a short password sets error`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.confirmPasswordReset("123456", "123")
+            advanceUntilIdle()
+
+            assertEquals(R.string.password_must_be_at_least_6_characters, vm.resetState.value.error)
+            coVerify(exactly = 0) { repo.confirmPasswordReset(any(), any(), any()) }
+        }
+
+    @Test
+    fun `confirmPasswordReset uses the email captured in step 1`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.sendPasswordResetEmail("alice@example.com") } returns Result.success(Unit)
+            coEvery { repo.confirmPasswordReset("alice@example.com", "123456", "newpass1") } returns
+                Result.success("uid")
+
+            vm.sendResetCode("alice@example.com")
+            runCurrent()
+            vm.confirmPasswordReset("123456", "newpass1")
+            runCurrent()
+
+            assertNull(vm.resetState.value.error)
+            coVerify(exactly = 1) { repo.confirmPasswordReset("alice@example.com", "123456", "newpass1") }
+        }
+
+    @Test
+    fun `confirmPasswordReset failure maps the otp error and stops loading`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.sendPasswordResetEmail(any()) } returns Result.success(Unit)
+            coEvery { repo.confirmPasswordReset(any(), any(), any()) } returns
+                Result.failure(RuntimeException("Token has expired or is invalid"))
+
+            vm.sendResetCode("alice@example.com")
+            runCurrent()
+            vm.confirmPasswordReset("123456", "newpass1")
+            advanceUntilIdle()
+
+            assertEquals(R.string.that_code_is_wrong_or_expired, vm.resetState.value.error)
+            assertFalse(vm.resetState.value.loading)
+        }
+
+    @Test
+    fun `clearResetFlow resets state to defaults`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.sendPasswordResetEmail(any()) } returns Result.success(Unit)
+            vm.sendResetCode("alice@example.com")
+            runCurrent()
+
+            vm.clearResetFlow()
+
+            assertEquals(ResetUiState(), vm.resetState.value)
         }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -8,6 +8,8 @@ import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,12 +20,23 @@ import javax.inject.Inject
 internal const val MIN_PASSWORD_LENGTH = 6
 private const val STRONG_PASSWORD_LENGTH = 8
 private const val MAX_PASSWORD_SCORE = 3
+internal const val RESET_CODE_LENGTH = 6
+private const val RESEND_COOLDOWN_SECONDS = 60
 
 data class AuthUiState(
     val loading: Boolean = false,
     // A string resource id so error copy resolves in the UI's current locale (NB support).
     @StringRes val error: Int? = null,
     val success: Boolean = false,
+)
+
+/** State for the two-step password-reset screen. Step 1 = email, step 2 = code + new password. */
+data class ResetUiState(
+    val step: Int = 1,
+    val email: String = "",
+    val loading: Boolean = false,
+    @StringRes val error: Int? = null,
+    val resendCooldownSeconds: Int = 0,
 )
 
 /** The sign-up form fields, grouped to keep register() to a single parameter. */
@@ -124,6 +137,92 @@ class AuthViewModel
                     )
                 }
             }
+        }
+
+        private val _resetState = MutableStateFlow(ResetUiState())
+        val resetState: StateFlow<ResetUiState> = _resetState.asStateFlow()
+        private var cooldownJob: Job? = null
+
+        fun sendResetCode(email: String) {
+            val norm = email.trim()
+            if (!isValidEmail(norm)) {
+                _resetState.update { it.copy(error = R.string.please_enter_a_valid_email_address) }
+                return
+            }
+            _resetState.update { it.copy(loading = true, error = null) }
+            viewModelScope.launch {
+                repo
+                    .sendPasswordResetEmail(norm)
+                    .onSuccess {
+                        _resetState.update { it.copy(loading = false, step = 2, email = norm) }
+                        startResendCooldown()
+                    }
+                    .onFailure { e ->
+                        Log.e("Auth", "Password reset email failed", e)
+                        _resetState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
+                    }
+            }
+        }
+
+        fun resendResetCode() {
+            val current = _resetState.value
+            if (current.resendCooldownSeconds > 0 || current.loading) return
+            _resetState.update { it.copy(loading = true, error = null) }
+            viewModelScope.launch {
+                repo
+                    .sendPasswordResetEmail(current.email)
+                    .onSuccess {
+                        _resetState.update { it.copy(loading = false) }
+                        startResendCooldown()
+                    }
+                    .onFailure { e ->
+                        _resetState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
+                    }
+            }
+        }
+
+        fun confirmPasswordReset(
+            code: String,
+            newPassword: String,
+        ) {
+            if (code.trim().length != RESET_CODE_LENGTH) {
+                _resetState.update { it.copy(error = R.string.enter_the_6_digit_code) }
+                return
+            }
+            if (newPassword.length < MIN_PASSWORD_LENGTH) {
+                _resetState.update { it.copy(error = R.string.password_must_be_at_least_6_characters) }
+                return
+            }
+            _resetState.update { it.copy(loading = true, error = null) }
+            viewModelScope.launch {
+                repo
+                    .confirmPasswordReset(_resetState.value.email, code.trim(), newPassword)
+                    .onFailure { e ->
+                        Log.e("Auth", "Password reset confirm failed", e)
+                        _resetState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
+                    }
+                // On success the session is persisted (completeSignInAfterConfirmation), so the
+                // root auth gate flips and unmounts this flow — keep the button spinning until then.
+            }
+        }
+
+        fun clearResetFlow() {
+            cooldownJob?.cancel()
+            _resetState.value = ResetUiState()
+        }
+
+        private fun startResendCooldown() {
+            cooldownJob?.cancel()
+            cooldownJob =
+                viewModelScope.launch {
+                    var remaining = RESEND_COOLDOWN_SECONDS
+                    while (remaining > 0) {
+                        _resetState.update { it.copy(resendCooldownSeconds = remaining) }
+                        delay(1_000)
+                        remaining--
+                    }
+                    _resetState.update { it.copy(resendCooldownSeconds = 0) }
+                }
         }
 
         private fun validate(
