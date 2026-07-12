@@ -26,6 +26,7 @@ struct ConversationScreen: View {
     @State private var showPhotoPicker = false
     @State private var showGroupPhotoPicker = false
     @State private var reactionTargetId: String?
+    @State private var messageToDelete: MessageModel?
 
     private var myId: String? {
         viewModel.currentUserId
@@ -123,6 +124,16 @@ struct ConversationScreen: View {
         }
         .sheet(isPresented: $showMembers) {
             MemberListSheet(title: L("Members"), members: viewModel.currentParticipants) { _ in }
+        }
+        .alert(L("Delete message?"), isPresented: Binding(
+            get: { messageToDelete != nil },
+            set: { if !$0 { messageToDelete = nil } }
+        )) {
+            Button(L("Delete"), role: .destructive) {
+                messageToDelete.map { viewModel.deleteMessage($0) }
+                messageToDelete = nil
+            }
+            Button(L("Cancel"), role: .cancel) { messageToDelete = nil }
         }
         .alert("Delete conversation?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) { viewModel.deleteConversation(conversationId) }
@@ -315,9 +326,38 @@ extension ConversationScreen {
                         .onTapGesture {
                             withAnimation(.easeOut(duration: 0.15)) { reactionTargetId = nil }
                         }
-                    ReactionBar { emoji in
-                        viewModel.toggleReaction(messageId: id, conversationId: conversationId, emoji: emoji)
-                        withAnimation(.easeOut(duration: 0.15)) { reactionTargetId = nil }
+                    let target = viewModel.messages.first { $0.id == id }
+                    VStack(spacing: 8) {
+                        ReactionBar { emoji in
+                            viewModel.toggleReaction(messageId: id, conversationId: conversationId, emoji: emoji)
+                            withAnimation(.easeOut(duration: 0.15)) { reactionTargetId = nil }
+                        }
+                        // Own-message actions (edit applies to text messages only).
+                        if let msg = target, msg.userFrom == myId {
+                            HStack(spacing: Spacing.md) {
+                                if msg.messageType == "text" {
+                                    Button {
+                                        withAnimation(.easeOut(duration: 0.15)) { reactionTargetId = nil }
+                                        viewModel.startEditing(msg)
+                                        draft = msg.text
+                                    } label: {
+                                        Label(L("Edit"), systemImage: "pencil")
+                                            .font(.labelLarge)
+                                    }
+                                }
+                                Button(role: .destructive) {
+                                    withAnimation(.easeOut(duration: 0.15)) { reactionTargetId = nil }
+                                    messageToDelete = msg
+                                } label: {
+                                    Label(L("Delete"), systemImage: "trash")
+                                        .font(.labelLarge)
+                                        .foregroundStyle(Palette.destructive)
+                                }
+                            }
+                            .padding(.horizontal, Spacing.lg)
+                            .padding(.vertical, Spacing.sm)
+                            .glassChrome(cornerRadius: Radius.menu)
+                        }
                     }
                     .fixedSize()
                     .position(x: min(max(rect.midX, 180), geo.size.width - 180), y: barY)
@@ -331,6 +371,29 @@ extension ConversationScreen {
 
     private var inputBar: some View {
         VStack(spacing: 0) {
+            if viewModel.editing != nil {
+                HStack(spacing: 10) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.appPrimary)
+                    Text(L("Editing message"))
+                        .font(.labelMedium.weight(.semibold))
+                        .foregroundStyle(Color.appPrimary)
+                    Spacer()
+                    Button {
+                        viewModel.cancelEditing()
+                        draft = ""
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.appOnSurfaceVariant)
+                    }
+                    .accessibilityLabel(L("Cancel"))
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.sm)
+                .background(Color.appSurfaceVariant)
+            }
             if let quoted = viewModel.replyTo {
                 HStack(spacing: 10) {
                     Rectangle().fill(Color.appPrimary).frame(width: 3, height: 36)
@@ -456,7 +519,11 @@ extension ConversationScreen {
     private func sendText() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        viewModel.send(conversationId: conversationId, text: text)
+        if viewModel.editing != nil {
+            viewModel.commitEdit(newText: text)
+        } else {
+            viewModel.send(conversationId: conversationId, text: text)
+        }
         draft = ""
         viewModel.setTyping(false)
     }

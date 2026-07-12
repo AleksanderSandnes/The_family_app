@@ -182,6 +182,8 @@ data class MessageModel(
     @SerialName("reply_to_id") val replyToId: String? = null,
     @SerialName("message_type") val messageType: String = "text",
     @SerialName("media_url") val mediaUrl: String? = null,
+    // Set when the sender edits the message (add_message_edit_delete.sql).
+    @SerialName("edited_at") val editedAt: String? = null,
 )
 
 @Serializable

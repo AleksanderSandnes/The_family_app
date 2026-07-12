@@ -86,8 +86,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -415,6 +417,16 @@ fun ConversationScreen(
     LaunchedEffect(Unit) {
         viewModel.errorEvent.collect { msg -> snackbarHostState.showSnackbar(msg) }
     }
+    val undoMessage by viewModel.undoMessage.collectAsStateWithLifecycle()
+    undoMessage?.let { deleted ->
+        val message = stringResource(R.string.message_deleted)
+        val undoLabel = stringResource(R.string.undo)
+        LaunchedEffect(deleted.id) {
+            val result = snackbarHostState.showSnackbar(message, actionLabel = undoLabel, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) viewModel.restoreMessage(deleted)
+            viewModel.clearUndoMessage()
+        }
+    }
 
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -426,6 +438,7 @@ fun ConversationScreen(
     val otherLastRead by viewModel.otherLastRead.collectAsStateWithLifecycle()
     val typingUsers by viewModel.typingUsers.collectAsStateWithLifecycle()
     val replyTo by viewModel.replyTo.collectAsStateWithLifecycle()
+    val editing by viewModel.editing.collectAsStateWithLifecycle()
     val userProfiles by viewModel.userProfiles.collectAsStateWithLifecycle()
     val currentParticipants by viewModel.currentParticipants.collectAsStateWithLifecycle()
     val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle()
@@ -458,6 +471,10 @@ fun ConversationScreen(
         }
 
     var draft by remember { mutableStateOf("") }
+    // Entering edit mode pre-fills the composer with the message's current text.
+    LaunchedEffect(editing?.id) {
+        editing?.let { draft = it.text }
+    }
     var showAttachMenu by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showRename by remember { mutableStateOf(false) }
@@ -719,6 +736,37 @@ fun ConversationScreen(
             // background wraps all the way to the bottom edge (mirrors iOS).
             Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
                 Column(Modifier.navigationBarsPadding()) {
+                    // Edit indicator — the composer is rewriting an existing message.
+                    AnimatedVisibility(visible = editing != null) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                stringResource(R.string.editing_message),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(onClick = {
+                                viewModel.cancelEditing()
+                                draft = ""
+                            }) {
+                                Icon(Icons.Filled.Close, stringResource(R.string.cancel), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
                     // Reply indicator
                     AnimatedVisibility(visible = replyTo != null) {
                         replyTo?.let { quoted ->
@@ -854,7 +902,11 @@ fun ConversationScreen(
                             ) { hasText ->
                                 if (hasText) {
                                     IconButton(onClick = {
-                                        viewModel.send(conversationId, draft.trim())
+                                        if (editing != null) {
+                                            viewModel.commitEdit(draft)
+                                        } else {
+                                            viewModel.send(conversationId, draft.trim())
+                                        }
                                         draft = ""
                                         viewModel.setTyping(false)
                                         keyboardController?.hide()
@@ -1034,6 +1086,8 @@ fun ConversationScreen(
                             reactions = msgReactions,
                             onReact = { emoji -> viewModel.toggleReaction(msg.id, conversationId, emoji) },
                             accessibilityDescription = accessibilityDesc,
+                            onEditRequest = if (mine) ({ viewModel.startEditing(msg) }) else null,
+                            onDeleteRequest = if (mine) ({ viewModel.deleteMessage(msg) }) else null,
                         )
                     }
                     item {
@@ -1483,6 +1537,8 @@ private fun MessageRow(
     reactions: Map<String, List<String>>,
     onReact: (String) -> Unit,
     accessibilityDescription: String = "",
+    onEditRequest: (() -> Unit)? = null,
+    onDeleteRequest: (() -> Unit)? = null,
 ) {
     if (msg.messageType == "system") {
         MessageContent(msg, mine = false, myId = myId, messages = messages)
@@ -1543,6 +1599,22 @@ private fun MessageRow(
                                         showReactionPicker = false
                                     },
                                     onDismiss = { showReactionPicker = false },
+                                    onEdit =
+                                        if (msg.messageType == "text" && onEditRequest != null) {
+                                            {
+                                                showReactionPicker = false
+                                                onEditRequest()
+                                            }
+                                        } else {
+                                            null
+                                        },
+                                    onDelete =
+                                        onDeleteRequest?.let { request ->
+                                            {
+                                                showReactionPicker = false
+                                                request()
+                                            }
+                                        },
                                 )
                             }
                         }
@@ -1737,6 +1809,13 @@ private fun MessageContent(
                     color = if (mine) Color.White else MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyLarge,
                 )
+                if (msg.editedAt != null) {
+                    Text(
+                        stringResource(R.string.edited),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (mine) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

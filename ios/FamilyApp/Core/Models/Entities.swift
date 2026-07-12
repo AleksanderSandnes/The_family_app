@@ -279,6 +279,8 @@ struct MessageModel: Codable, Identifiable, Hashable {
     var replyToId: String?
     var messageType = "text"
     var mediaUrl: String?
+    // Set when the sender edits the message (add_message_edit_delete.sql).
+    var editedAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, text
@@ -288,6 +290,7 @@ struct MessageModel: Codable, Identifiable, Hashable {
         case replyToId = "reply_to_id"
         case messageType = "message_type"
         case mediaUrl = "media_url"
+        case editedAt = "edited_at"
     }
 }
 

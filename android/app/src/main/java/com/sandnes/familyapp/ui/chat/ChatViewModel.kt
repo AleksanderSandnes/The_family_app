@@ -26,6 +26,7 @@ import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.broadcast
 import io.github.jan.supabase.realtime.broadcastFlow
 import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.decodeOldRecord
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
@@ -113,6 +114,26 @@ class ChatViewModel
 
         private val _replyTo = MutableStateFlow<MessageModel?>(null)
         val replyTo: StateFlow<MessageModel?> = _replyTo.asStateFlow()
+
+        /** The own message currently being edited in the composer (null = normal send mode). */
+        private val _editing = MutableStateFlow<MessageModel?>(null)
+        val editing: StateFlow<MessageModel?> = _editing.asStateFlow()
+
+        fun startEditing(msg: MessageModel) {
+            _editing.value = msg
+        }
+
+        fun cancelEditing() {
+            _editing.value = null
+        }
+
+        /** Last successfully deleted own message, offered for snackbar undo. */
+        private val _undoMessage = MutableStateFlow<MessageModel?>(null)
+        val undoMessage: StateFlow<MessageModel?> = _undoMessage.asStateFlow()
+
+        fun clearUndoMessage() {
+            _undoMessage.value = null
+        }
 
         private val _userProfiles = MutableStateFlow<Map<String, UserModel>>(emptyMap())
         val userProfiles: StateFlow<Map<String, UserModel>> = _userProfiles.asStateFlow()
@@ -464,6 +485,16 @@ class ChatViewModel
                     table = "messages"
                     filter("conversation_id", FilterOperator.EQ, conversationId)
                 }
+            val updateFlow =
+                channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+                    table = "messages"
+                    filter("conversation_id", FilterOperator.EQ, conversationId)
+                }
+            val deleteFlow =
+                channel.postgresChangeFlow<PostgresAction.Delete>(schema = "public") {
+                    table = "messages"
+                    filter("conversation_id", FilterOperator.EQ, conversationId)
+                }
             channel.subscribe()
             viewModelScope.launch {
                 val myId = repo.currentUserId.first()
@@ -472,6 +503,18 @@ class ChatViewModel
                     if (msg.userFrom != myId) {
                         _messages.update { it + msg }
                     }
+                }
+            }
+            viewModelScope.launch {
+                updateFlow.collect { change ->
+                    val msg = change.decodeRecord<MessageModel>()
+                    _messages.update { list -> list.map { if (it.id == msg.id) msg else it } }
+                }
+            }
+            viewModelScope.launch {
+                deleteFlow.collect { change ->
+                    val old = change.decodeOldRecord<MessageModel>()
+                    _messages.update { list -> list.filter { it.id != old.id } }
                 }
             }
         }
@@ -788,6 +831,56 @@ class ChatViewModel
         fun clearReplyTo() {
             _replyTo.value = null
         }
+
+        /** Commits the composer's edit: updates text + edited_at on the sender's own row. */
+        fun commitEdit(newText: String) =
+            viewModelScope.launch {
+                val msg = _editing.value ?: return@launch
+                _editing.value = null
+                val trimmed = newText.trim()
+                if (trimmed.isBlank() || trimmed == msg.text) return@launch
+                val now =
+                    java.time.Instant
+                        .now()
+                        .toString()
+                _messages.update { list ->
+                    list.map { if (it.id == msg.id) it.copy(text = trimmed, editedAt = now) else it }
+                }
+                runCatching {
+                    db.from("messages").update({
+                        set("text", trimmed)
+                        set("edited_at", now)
+                    }) { filter { eq("id", msg.id) } }
+                }.onFailure { _errorEvent.emit(app.getString(R.string.couldnt_save)) }
+            }
+
+        /** Deletes the sender's own message; offers snackbar undo via [undoMessage]. */
+        fun deleteMessage(msg: MessageModel) =
+            viewModelScope.launch {
+                _messages.update { list -> list.filter { it.id != msg.id } }
+                runCatching { db.from("messages").delete { filter { eq("id", msg.id) } } }
+                    .onSuccess { _undoMessage.value = msg }
+                    .onFailure { _errorEvent.emit(app.getString(R.string.couldnt_delete)) }
+            }
+
+        /** Re-inserts a deleted message with its original sent_at so it returns to place. */
+        fun restoreMessage(msg: MessageModel) =
+            viewModelScope.launch {
+                runCatching {
+                    db.from("messages").insert(
+                        buildJsonObject {
+                            put("conversation_id", msg.conversationId)
+                            put("user_from", msg.userFrom)
+                            put("text", msg.text)
+                            put("sent_at", msg.sentAt)
+                            put("message_type", msg.messageType)
+                            if (msg.replyToId != null) put("reply_to_id", msg.replyToId)
+                            if (msg.mediaUrl != null) put("media_url", msg.mediaUrl)
+                        },
+                    )
+                }.onFailure { _errorEvent.emit(app.getString(R.string.couldnt_save)) }
+                runCatching { loadMessages(msg.conversationId) }
+            }
 
         fun send(
             conversationId: String,

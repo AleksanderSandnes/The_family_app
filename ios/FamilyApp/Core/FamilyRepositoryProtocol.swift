@@ -50,6 +50,8 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func getLastMessage(conversationId: String) async -> MessageModel?
     func markConversationRead(conversationId: String) async
     func sendMessage(conversationId: String, text: String) async throws
+    func editMessage(messageId: String, newText: String) async throws
+    func deleteMessage(messageId: String) async throws
     func addReaction(messageId: String, conversationId: String, emoji: String) async throws
     func removeReaction(messageId: String) async throws
     // Chat — reads/writes

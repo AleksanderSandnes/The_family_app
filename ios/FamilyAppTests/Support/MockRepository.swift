@@ -206,6 +206,16 @@ final class MockRepository: FamilyRepositoryProtocol {
         sentMessages.append((conversationId, text))
     }
 
+    var editedMessages: [(String, String)] = []
+    func editMessage(messageId: String, newText: String) async throws {
+        editedMessages.append((messageId, newText))
+    }
+
+    var deletedMessages: [String] = []
+    func deleteMessage(messageId: String) async throws {
+        deletedMessages.append(messageId)
+    }
+
     func addReaction(messageId: String, conversationId _: String, emoji: String) async throws {
         addedReactions.append((messageId, emoji))
     }
