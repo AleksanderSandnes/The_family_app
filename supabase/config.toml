@@ -1,0 +1,30 @@
+# Remote auth config, applied with `supabase config push`.
+#
+# ⚠️ config push has NO dry-run and auto-applies in non-interactive shells.
+# Undeclared [auth] top-level fields are pushed as CLI DEFAULTS — every value
+# the dashboard manages must be mirrored here or it gets overwritten.
+# (External providers, e.g. [auth.external.google], are only touched when
+# declared — leave them out so dashboard-managed OAuth credentials survive.)
+project_id = "The_family_app"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+# familyapp://auth is REQUIRED: Google OAuth redirect + auth email links.
+additional_redirect_urls = ["familyapp://auth"]
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+# Signup email confirmation is OFF: the app assumes an active session right
+# after signUpWith. Flip to true ONLY together with the app-side verification
+# step (planned).
+enable_confirmations = false
+
+[auth.email.template.recovery]
+subject = "Your Family App reset code"
+content_path = "./supabase/templates/recovery.html"
