@@ -17,6 +17,10 @@ Welcome to the project knowledge base for The Family App.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
+- **🔑 Forgot-password reset shipped (2026-07-12)** — 6-digit email-code flow on Android +
+  iOS (branch `feat/forgot-password-reset`); domain **thefamilyapp.app** bought via Vercel.
+  User action pending: edit the Supabase Reset Password email template ({{ .Token }}) and run
+  the Resend SMTP runbook — [[06_Notes_and_References/Password Reset & Resend Email Setup]].
 - **🔍 Impeccable design review + polish (2026-07-12)** — first full critique (28/40) + native
   audit (13/20) of both apps; polish pass on branch `fix/impeccable-polish`: TalkBack delete
   action, delete confirmations for shared data, ~60 strings wired to EN/NB resources, reduce

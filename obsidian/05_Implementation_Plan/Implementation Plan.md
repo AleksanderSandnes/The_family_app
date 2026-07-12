@@ -5,6 +5,13 @@ This Obsidian vault is the canonical source for project plans, notes, and archit
 Update it here first and keep it current as implementation progresses.
 
 ## Active tracks
+- **✅ Forgot-password reset (Android + iOS)** — delivered 2026-07-12, branch
+  `feat/forgot-password-reset`. 6-digit OTP code flow (no deep links): repo methods +
+  reset state machine + two-step screen on both platforms, EN/NB strings, unit tests
+  (Android green; iOS authored, Mac compile pending). Email delivery upgrade to Resend
+  SMTP via **thefamilyapp.app** (bought 2026-07-12 through Vercel) is a dashboard-only
+  runbook: [[06_Notes_and_References/Password Reset & Resend Email Setup]] — the Reset
+  Password email template edit ({{ .Token }}) is required before the flow delivers codes.
 - **✅ [[Android Parity Track]]** — delivered and merged to `master` (2026-07-10 → 07-11, branch
   `feat/android-ios-parity`). Android brought up to the iOS feature set + Liquid Glass look;
   milestones M0–M7 all done, plus a post-parity design pass, on-device fix batches, the new
