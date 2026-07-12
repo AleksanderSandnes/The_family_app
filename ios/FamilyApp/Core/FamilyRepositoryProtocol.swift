@@ -42,6 +42,9 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func signInWithGoogle() async throws
     func sendPasswordResetEmail(email: String) async throws
     func confirmPasswordReset(email: String, code: String, newPassword: String) async throws -> String
+    func hasAuthSession() -> Bool
+    func confirmSignupEmail(email: String, code: String) async throws -> String
+    func resendSignupCode(email: String) async throws
     func signOut() async
     func completeSignInAfterConfirmation() async throws -> String
     func authSignedInEvents() -> AsyncStream<Void>

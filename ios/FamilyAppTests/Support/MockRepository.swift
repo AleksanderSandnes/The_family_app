@@ -60,6 +60,12 @@ final class MockRepository: FamilyRepositoryProtocol {
     private(set) var confirmResetCalls: [(email: String, code: String, newPassword: String)] = []
     var sendResetError: Error?
     var confirmResetError: Error?
+    var hasSession = false
+    private(set) var confirmSignupCalls: [(email: String, code: String)] = []
+    private(set) var resendSignupCalls: [String] = []
+    var confirmSignupError: Error?
+    var resendSignupError: Error?
+    var loginError: Error?
 
     // App lifecycle (RootViewModel)
     private(set) var touchLastActiveCalled = false
@@ -164,7 +170,21 @@ final class MockRepository: FamilyRepositoryProtocol {
     /// Auth
     func login(email: String, password: String) async throws -> String {
         loginCalls.append(LoginRecord(email: email, password: password))
+        if let loginError { throw loginError }
         return loginResult
+    }
+
+    func hasAuthSession() -> Bool { hasSession }
+
+    func confirmSignupEmail(email: String, code: String) async throws -> String {
+        confirmSignupCalls.append((email: email, code: code))
+        if let confirmSignupError { throw confirmSignupError }
+        return confirmResult
+    }
+
+    func resendSignupCode(email: String) async throws {
+        resendSignupCalls.append(email)
+        if let resendSignupError { throw resendSignupError }
     }
 
     func register(

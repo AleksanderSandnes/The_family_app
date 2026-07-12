@@ -93,6 +93,24 @@ extension FamilyRepository {
         return try await completeSignInAfterConfirmation()
     }
 
+    func hasAuthSession() -> Bool {
+        client.auth.currentSession != nil
+    }
+
+    /// Verifies the emailed 6-digit signup code (which signs the user in) and
+    /// finalizes the app session so the auth gate flips.
+    @discardableResult
+    func confirmSignupEmail(email: String, code: String) async throws -> String {
+        let norm = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        try await client.auth.verifyOTP(email: norm, token: code, type: .signup)
+        return try await completeSignInAfterConfirmation()
+    }
+
+    func resendSignupCode(email: String) async throws {
+        let norm = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        try await client.auth.resend(email: norm, type: .signup)
+    }
+
     func signOut() async {
         // Remove this device's push token while the auth session is still valid (RLS).
         await unregisterPushToken()
