@@ -36,9 +36,17 @@ Owner ruled the gradient front door **drift** → fixed; forgot-password email f
 
 Verified: `assembleDebug`, `testDebugUnitTest`, `detekt`, `spotlessCheck` green.
 
+## Critique re-run (same day) — 28/40 → 28/40, substance up
+
+Fresh dual-agent re-run verified every fixed item (0 hardcoded literals, 0 ungated animations, iOS Dynamic Type working, 5/10 delete sites protected, 8/13 VMs surfacing errors) but found new P1s the first pass missed. Snapshot: `.impeccable/critique/2026-07-12T15-44-58Z__full-app-android-ios.md`.
+
+**Third fix pass shipped** (`feat/impeccable-followups`): Home error state keeps the static feature grid + gains PullRefresh (the error copy said "pull to refresh" on a screen without it); wishlist-container and birthday deletes now confirm; profile save gate relaxed to name+email (was un-savable for Google sign-ups without birthday); final ~12 English fragments localized (+11 keys EN/NB); ChatViewModelTest updated. All checks green.
+
 ## Still open
 
-1. Forgot-password reset flow — deferred by owner ("not yet"); the coming-soon dialog stays.
-2. iOS `GlassEffectContainer` — skipped deliberately: it visually merges nearby glass shapes, so it needs on-device verification on a Mac before shipping.
-3. Per-row Haze blur profiling on a mid-range Android device.
-4. iOS iPad/orientation + deploymentTarget-26 scope decision.
+1. **Invite links** — `familyapp://join` is inert without the app installed; needs an HTTPS App Link domain + store-redirect page (owner decision pending).
+2. Forgot-password reset flow — deferred by owner ("not yet"); the coming-soon dialog stays.
+3. iOS `GlassEffectContainer` — skipped deliberately: it visually merges nearby glass shapes, so it needs on-device verification on a Mac before shipping.
+4. Per-row Haze blur profiling on a mid-range Android device.
+5. iOS iPad/orientation + deploymentTarget-26 scope decision.
+6. Softer observations from run 2: Calendar/Chat create buttons top-right vs FABs elsewhere; chat timestamps at 50% alpha; EventDialog density; "No family yet" CTA weight vs empty tiles.
