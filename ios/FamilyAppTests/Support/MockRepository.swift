@@ -56,6 +56,10 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     private(set) var loginCalls: [LoginRecord] = []
     private(set) var registerCalls: [RegisterRecord] = []
+    private(set) var resetEmailCalls: [String] = []
+    private(set) var confirmResetCalls: [(email: String, code: String, newPassword: String)] = []
+    var sendResetError: Error?
+    var confirmResetError: Error?
 
     // App lifecycle (RootViewModel)
     private(set) var touchLastActiveCalled = false
@@ -178,6 +182,17 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func signOut() async {
         signOutCalled = true
+    }
+
+    func sendPasswordResetEmail(email: String) async throws {
+        resetEmailCalls.append(email)
+        if let sendResetError { throw sendResetError }
+    }
+
+    func confirmPasswordReset(email: String, code: String, newPassword: String) async throws -> String {
+        confirmResetCalls.append((email: email, code: code, newPassword: newPassword))
+        if let confirmResetError { throw confirmResetError }
+        return confirmResult
     }
 
     func completeSignInAfterConfirmation() async throws -> String {

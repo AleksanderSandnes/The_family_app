@@ -78,6 +78,21 @@ extension FamilyRepository {
         return try await completeSignInAfterConfirmation()
     }
 
+    func sendPasswordResetEmail(email: String) async throws {
+        let norm = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        try await client.auth.resetPasswordForEmail(norm)
+    }
+
+    /// Verifies the emailed 6-digit recovery code (which signs the user in), sets the new
+    /// password, and finalizes the app session so the auth gate flips.
+    @discardableResult
+    func confirmPasswordReset(email: String, code: String, newPassword: String) async throws -> String {
+        let norm = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        try await client.auth.verifyOTP(email: norm, token: code, type: .recovery)
+        try await client.auth.update(user: UserAttributes(password: newPassword))
+        return try await completeSignInAfterConfirmation()
+    }
+
     func signOut() async {
         // Remove this device's push token while the auth session is still valid (RLS).
         await unregisterPushToken()

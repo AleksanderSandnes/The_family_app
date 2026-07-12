@@ -40,6 +40,8 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func login(email: String, password: String) async throws -> String
     func register(name: String, email: String, password: String, birthday: String, mobile: String) async throws
     func signInWithGoogle() async throws
+    func sendPasswordResetEmail(email: String) async throws
+    func confirmPasswordReset(email: String, code: String, newPassword: String) async throws -> String
     func signOut() async
     func completeSignInAfterConfirmation() async throws -> String
     func authSignedInEvents() -> AsyncStream<Void>
