@@ -72,8 +72,8 @@ blank** in the Play-distributed build.
   becomes the **upload key**. Copy the **App signing key SHA-1** from Console → use in A6 (Maps) and
   add to the Firebase app (A5) so maps/FCM work in the distributed build.
 
-### Step 9 — Privacy Policy (required)
-Host a privacy-policy URL (e.g. GitHub Pages) covering: precise location (foreground), Firebase
+### Step 9 — Privacy Policy (required) ✅ DONE 2026-07-13
+Live at **https://thefamilyapp.app/privacy** (see "Privacy policy" section below). Covers: precise location (foreground), Firebase
 push/notification tokens, camera & microphone (avatars / voice chat messages), photos, account
 identifiers, chat/message content. Paste into Console → App content → Privacy policy.
 
@@ -85,8 +85,9 @@ identifiers, chat/message content. Paste into Console → App content → Privac
 - **Content rating** — IARC questionnaire (likely Everyone; note user-generated chat content).
 - **Target audience & content** — pick age groups (avoid <13 to dodge Families policy unless intended).
 - **App access** — app is auth-gated, so **provide a reviewer test account** (email + password,
-  pre-joined to a family). Existing test users: `testuser1-4@familyapp.test` / `TestPass123!`
-  in "Test Family" (join code `TESTFAM`).
+  pre-joined to a family). Use the demo family "The Harpers": admin `emma@thefamilyapp.app`
+  (see "Play review account" section below; join code `HARPER`). The old `testuser*` accounts
+  were deleted 2026-07-13.
 - **Ads** (none), **Government apps**, **Health** — N/A.
 
 ### Step 11 — Store listing assets
