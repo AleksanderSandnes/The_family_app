@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-12T00:00:00Z",
+  "title": "Design System: The Family App",
+  "extensions": {
+    "colorMeta": {
+      "heirloom-indigo": {
+        "role": "primary",
+        "displayName": "Heirloom Indigo",
+        "canonical": "#5457E8",
+        "tonalRamp": ["#23256E", "#4338CA", "#5457E8", "#6366F1", "#9CA3FF", "#C4C9FF", "#E0E3FF", "#EEF0FF"]
+      },
+      "violet": {
+        "role": "secondary",
+        "displayName": "Brand Violet",
+        "canonical": "#7C3AED",
+        "tonalRamp": ["#3B1D7A", "#4C1D95", "#6D28D9", "#7C3AED", "#8B5CF6", "#B79CFA", "#D9CBFD", "#EDE4FF"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#16192A",
+        "tonalRamp": ["#0A0E1A", "#141A2A", "#1E2638", "#2A3349", "#5F6780", "#8B92AC", "#CBD2E0", "#EFF1F8"]
+      },
+      "accent-teal": {
+        "role": "tertiary",
+        "displayName": "Map Teal",
+        "canonical": "#14B8A6",
+        "tonalRamp": ["#0B4F47", "#0D6E62", "#0F9384", "#14B8A6", "#3FCCBB", "#7FDFD3", "#B5EDE6", "#E2F9F5"]
+      },
+      "interactive-accent": {
+        "role": "primary",
+        "displayName": "Interactive Accent (quieted indigo)",
+        "canonical": "#4F55E6",
+        "tonalRamp": ["#20246B", "#3A3FB8", "#4F55E6", "#6C71EE", "#8A8FF4", "#A5ABFF", "#C9CDFF", "#E6E8FF"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Screen heroes and large titles only." },
+      "title": { "displayName": "Title", "purpose": "Card titles and list-row primaries — the workhorse style." },
+      "label": { "displayName": "Label", "purpose": "Buttons, chips, captions, meta text." }
+    },
+    "shadows": [
+      { "name": "glass-ambient", "value": "0 6px 20px rgba(20, 26, 60, 0.12)", "purpose": "Soft ambient lift under glass cards; finish, never structure." },
+      { "name": "glass-ambient-tinted", "value": "0 6px 20px rgba(84, 87, 232, 0.22)", "purpose": "Accent-tinted lift under selected/active glass surfaces." }
+    ],
+    "motion": [
+      { "name": "slide", "value": "300ms ease-out", "purpose": "Horizontal slide for detail-screen navigation (iOS-style push)." },
+      { "name": "fade", "value": "200ms ease-out", "purpose": "Crossfade between bottom-nav tabs; reduced-motion alternative everywhere." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Glass Card",
+      "kind": "card",
+      "refersTo": "card-glass",
+      "description": "The workhorse surface: blurred translucent glass over the ambient wash, 20dp radius, 1.5dp hairline, soft ambient shadow.",
+      "html": "<div class=\"ds-glass-card\"><strong>Tonight's dinner</strong><span>Taco Friday — 6 of 8 ingredients bought</span></div>",
+      "css": ".ds-glass-card { display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.55); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-radius: 20px; padding: 18px; box-shadow: 0 6px 20px rgba(20,26,60,0.12), inset 0 0 0 1.5px rgba(22,25,42,0.10); color: #16192A; font-family: system-ui, sans-serif; } .ds-glass-card strong { font-size: 17px; font-weight: 600; line-height: 23px; } .ds-glass-card span { font-size: 14px; line-height: 20px; color: #5F6780; }"
+    },
+    {
+      "name": "Primary CTA Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Brand CTA carrying the one sanctioned gradient (identity surfaces only); standard primaries use the flat Heirloom Indigo fill.",
+      "html": "<button class=\"ds-btn-primary\">Create family</button>",
+      "css": ".ds-btn-primary { background: linear-gradient(90deg, #5457E8, #7C3AED); color: #fff; border: none; border-radius: 18px; padding: 14px 24px; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.1px; cursor: pointer; transition: filter 0.15s ease-out, transform 0.15s ease-out; } .ds-btn-primary:hover { filter: brightness(1.06); } .ds-btn-primary:active { transform: scale(0.98); filter: brightness(0.94); } .ds-btn-primary:focus-visible { outline: 2px solid #4F55E6; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Surface",
+      "kind": "custom",
+      "refersTo": "card-glass",
+      "description": "Completed / empty items recede: no blur, no shadow, faint fill, dashed hairline.",
+      "html": "<div class=\"ds-ghost\"><s>Milk</s><span>bought</span></div>",
+      "css": ".ds-ghost { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.36); border: 1px dashed rgba(95,103,128,0.28); border-radius: 20px; padding: 14px 18px; color: #8B92AC; font-family: system-ui, sans-serif; font-size: 16px; } .ds-ghost span { font-size: 12px; letter-spacing: 0.4px; font-weight: 500; }"
+    },
+    {
+      "name": "Feature Badge",
+      "kind": "chip",
+      "refersTo": "badge-feature",
+      "description": "The wayfinding atom: rounded-square translucent accent fill with the feature icon stroked in its accent. The only home of feature color.",
+      "html": "<span class=\"ds-feature-badge\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#B45309\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M4 19h16M6 19V9a6 6 0 0 1 12 0v10M9 5l.5-2h5L15 5\"/></svg></span>",
+      "css": ".ds-feature-badge { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(245,158,11,0.16); }"
+    },
+    {
+      "name": "Floating Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Floating glass chrome pill that blurs content scrolling beneath it; active glyph takes the interactive accent.",
+      "html": "<nav class=\"ds-tab-bar\"><span class=\"ds-tab ds-tab-active\">Home</span><span class=\"ds-tab\">Calendar</span><span class=\"ds-tab\">Chat</span><span class=\"ds-tab\">Family</span><span class=\"ds-tab\">Profile</span></nav>",
+      "css": ".ds-tab-bar { display: inline-flex; gap: 4px; background: rgba(255,255,255,0.5); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); border-radius: 33px; padding: 8px 10px; box-shadow: 0 4px 14px rgba(20,26,60,0.10), inset 0 0 0 1.5px rgba(22,25,42,0.10); font-family: system-ui, sans-serif; } .ds-tab { padding: 8px 14px; border-radius: 24px; font-size: 12px; font-weight: 500; letter-spacing: 0.4px; color: #5F6780; cursor: pointer; transition: background 0.2s ease-out, color 0.2s ease-out; } .ds-tab:hover { background: rgba(79,85,230,0.08); } .ds-tab-active { color: #4F55E6; background: rgba(79,85,230,0.14); font-weight: 600; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Glass-filled field, 16dp radius; focus shifts the border to the single interactive accent.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Add an item…\" />",
+      "css": ".ds-input { background: rgba(255,255,255,0.6); border: 1.5px solid rgba(22,25,42,0.10); border-radius: 16px; padding: 14px 16px; font-family: system-ui, sans-serif; font-size: 16px; color: #16192A; transition: border-color 0.15s ease-out; } .ds-input::placeholder { color: #5F6780; } .ds-input:focus-visible { outline: none; border-color: #4F55E6; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Glass House",
+    "overview": "The Family App is a warm family home seen through calm glass. Every screen is built from translucent, softly blurred surfaces floating over an ambient canvas — three radial washes of violet (top-right), indigo (left), and teal (bottom) over a near-white or near-black base. The glass is the identity: content sits on it, chrome floats as it, and completed things fade out of it. The mood is warm, premium, calm — a household that has its act together, never a dashboard and never a toy. The system ships identically on two native platforms: Jetpack Compose (with Haze blur, Glass.kt) and SwiftUI (Glass.swift), sharing the same hex values, radii, spacing, and channel of restraint. Brand lives in the material and the light, not in loud color: large surfaces are always neutral glass, and hue appears only in small, meaningful doses.",
+    "keyCharacteristics": [
+      "Translucent glass surfaces over a three-wash ambient canvas, in both light and dark",
+      "One quiet interactive accent (Heirloom Indigo); feature hues confined to badges and dots",
+      "Generous, differentiated corner radii (12–33dp) as the main shape voice",
+      "Platform system type (Roboto / SF Pro) on a tight, iOS-flavored scale",
+      "Depth by material — blur and translucency first, soft ambient shadow second",
+      "Graceful degradation: below Android API 31 glass becomes a translucent solid and the UI stays legible"
+    ],
+    "rules": [
+      { "name": "The Badge Rule", "body": "Feature accents live only in icon badges and calendar event dots — never on large surfaces. A screen's identity comes from its glass, not from flooding it with its feature hue.", "section": "colors" },
+      { "name": "The One Gradient Rule", "body": "The brand gradient (#5457E8 → #7C3AED) is the only sanctioned gradient and may appear only on identity surfaces: hero headers, outgoing chat bubbles, the brand primary CTA, and the Home family banner. Never as a generic card or background fill.", "section": "colors" },
+      { "name": "The One Voice Rule", "body": "One family, weights 400–700, nothing else. No display faces, no mono, no decorative type. Emphasis is weight and size, never a second font.", "section": "typography" },
+      { "name": "The sp Rule", "body": "All type in sp (Android) / Dynamic Type-relative (iOS) so it follows the user's system text size. Hard-coded pixel sizes are prohibited.", "section": "typography" },
+      { "name": "The Ghost Rule", "body": "Completed and empty things recede by losing their material: a ghost surface has no blur, no shadow, a faint translucent fill, and a dashed 1dp hairline. Done items don't get louder decoration — they get less.", "section": "elevation" },
+      { "name": "The No Structural Shadow Rule", "body": "If removing the shadow makes the layout unreadable, the surface is wrong. Fix the material, not the shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do build every screen inside AmbientBackground and compose surfaces from the glass helpers (glassCard, glassChrome, glassBar, ghostSurface) — never hand-roll a blur or a card style.",
+      "Do use MaterialTheme.colorScheme / semantic tokens for all color, and Spacing / Radius tokens for all metrics; 20dp screen edges, 18dp card padding, 4-pt grid.",
+      "Do keep secondary text at #5F6780 (light) / #98A0BC (dark) or stronger — Slate500-strength grays fail WCAG AA on the light canvas.",
+      "Do design and test both themes and both platforms; the hex values, radii, and channel names are shared contracts (Glass.kt ↔ Glass.swift) — change them in pairs.",
+      "Do verify every glass surface is legible in the API < 31 fallback (translucent solid, no blur)."
+    ],
+    "donts": [
+      "Don't let it read as a kids' app / cartoon — no mascots, no bubbly primary-color chrome; adults must feel this is a serious, premium tool.",
+      "Don't let it read as a generic Material template — a stock M3 scaffold with default surfaces and tonal chips is off-brand; the glass identity must be present on every screen.",
+      "Don't let it read as a corporate productivity tool — no dense enterprise chrome, no gray utilitarianism, no urgency theater.",
+      "Don't put feature accents on large surfaces (the Badge Rule) or add any gradient beyond the sanctioned brand gradient (the One Gradient Rule).",
+      "Don't use structural shadows, opaque hard-edged cards, or a second font family.",
+      "Don't hardcode colors, dp paddings, or px font sizes at call sites — if it isn't a token, it doesn't ship."
+    ]
+  }
+}
