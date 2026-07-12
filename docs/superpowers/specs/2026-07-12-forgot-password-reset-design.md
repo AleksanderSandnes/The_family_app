@@ -48,8 +48,8 @@ Mirror the Android flow in `Features/Auth/` (`AuthFlowView`, `AuthViewModel`) us
 App code is independent of all of this; it only changes who delivers the email.
 
 1. Edit the **Reset Password** email template (Dashboard → Auth → Emails) to include the code: `{{ .Token }}`. *(Required before the feature works well; works with the built-in sender.)*
-2. Buy a domain (~$10/yr), add it to Resend, add the DNS records Resend provides (SPF/DKIM), wait for verification.
-3. Dashboard → Auth → SMTP: host `smtp.resend.com`, port `465`, username `resend`, password = Resend API key, sender `auth@<domain>`, sender name "The Family App".
+2. Domain: **thefamilyapp.app** (bought 2026-07-12 via Vercel — DNS managed at Vercel). Add it to Resend, add the DNS records Resend provides (SPF/DKIM) at Vercel, wait for verification.
+3. Dashboard → Auth → SMTP: host `smtp.resend.com`, port `465`, username `resend`, password = Resend API key, sender `auth@thefamilyapp.app`, sender name "The Family App".
 4. After SMTP is live, raise the auth email rate limit (Dashboard → Auth → Rate limits) from the built-in default.
 
 ## Non-goals
