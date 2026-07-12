@@ -407,7 +407,7 @@ private struct MealDayRow: View {
             if empty {
                 shape.fill(Color(light: .white.opacity(0.36), dark: .white.opacity(0.04)))
                     .overlay(shape.strokeBorder(
-                        Color(light: Color(hex: 0x5F6780).opacity(0.28), dark: .white.opacity(0.12)),
+                        Color(light: Palette.secondaryLight.opacity(0.28), dark: .white.opacity(0.12)),
                         style: StrokeStyle(lineWidth: 1, dash: [4, 3])
                     ))
             }

@@ -56,7 +56,7 @@ class FamilyViewModelTest {
         // Return a user with no familyId to avoid the SupabaseManager.client direct
         // path for members in load(), which cannot be reached in a plain unit-test env.
         coEvery { repo.getUser(any()) } returns UserModel(id = "user1", familyId = null)
-        vm = FamilyViewModel(repo)
+        vm = FamilyViewModel(mockk(relaxed = true), repo)
     }
 
     // ──────────────────────────────────────────────────────────────

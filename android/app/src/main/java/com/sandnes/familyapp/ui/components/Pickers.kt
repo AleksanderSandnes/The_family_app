@@ -97,7 +97,7 @@ fun IconGrid(
                 // Selected tile: solid accent fill + white glyph (mirrors iOS IconGrid).
                 Box(
                     Modifier
-                        .size(46.dp)
+                        .size(48.dp)
                         .clip(RoundedCornerShape(Radius.badgeLarge))
                         .background(colorOverride ?: feature.stroke())
                         .clickable { onSelect(key) },
@@ -119,7 +119,7 @@ fun IconGrid(
                     FeatureBadge(
                         icon = IconKeyMap.icon(key, Icons.Filled.Star),
                         feature = feature,
-                        size = 46.dp,
+                        size = 48.dp,
                         colorOverride = colorOverride,
                     )
                 }

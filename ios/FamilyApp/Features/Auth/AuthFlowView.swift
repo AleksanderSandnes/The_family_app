@@ -244,7 +244,7 @@ struct AuthScaffold<Content: View>: View {
                                 .font(.system(size: 30, weight: .medium))
                                 .foregroundStyle(.white)
                         )
-                        .shadow(color: Color(hex: 0x141A3C).opacity(0.15), radius: 12, y: 6)
+                        .shadow(color: Palette.shadowInk.opacity(0.15), radius: 12, y: 6)
                 }
                 Text(L("The Family App"))
                     .font(.system(size: 23, weight: .bold))

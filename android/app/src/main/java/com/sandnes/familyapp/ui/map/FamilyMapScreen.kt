@@ -30,11 +30,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.PeopleAlt
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -86,7 +89,9 @@ import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.InitialAvatar
 import com.sandnes.familyapp.ui.components.LoadingState
+import com.sandnes.familyapp.ui.components.appSwitchColors
 import com.sandnes.familyapp.ui.theme.FeatureAccent
+import com.sandnes.familyapp.ui.theme.Indigo500
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
 import com.sandnes.familyapp.ui.theme.glassCard
@@ -108,6 +113,7 @@ fun FamilyMapScreen(
     val userProfiles by viewModel.userProfiles.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
+    val locationVisible by viewModel.locationVisible.collectAsStateWithLifecycle()
     val cameraPositionState = rememberCameraPositionState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -227,6 +233,7 @@ fun FamilyMapScreen(
     }
 
     // Build avatar-pin bitmaps for visible members plus the current user's own pin.
+    val youLabel = stringResource(R.string.you)
     LaunchedEffect(userProfiles, locations, currentUserId) {
         // The Maps SDK must be initialised before BitmapDescriptorFactory is touched —
         // on a cold start this effect can win the race against GoogleMap's own init and
@@ -249,7 +256,7 @@ fun FamilyMapScreen(
             val myProfile = userProfiles[myId]
             val bitmap =
                 withContext(Dispatchers.Default) {
-                    buildMarkerBitmap(context, myProfile, myProfile?.name ?: "You", markerSizePx)
+                    buildMarkerBitmap(context, myProfile, myProfile?.name ?: youLabel, markerSizePx)
                 }
             markerBitmaps[myId] = BitmapDescriptorFactory.fromBitmap(bitmap)
         }
@@ -299,7 +306,7 @@ fun FamilyMapScreen(
                     if (myId != null && myLoc != null) {
                         Marker(
                             state = rememberUpdatedMarkerState(position = myLoc),
-                            title = userProfiles[myId]?.name ?: "You",
+                            title = userProfiles[myId]?.name ?: youLabel,
                             icon = markerBitmaps[myId],
                         )
                     }
@@ -358,6 +365,8 @@ fun FamilyMapScreen(
                             locations = locations,
                             profiles = userProfiles,
                             currentUserId = currentUserId,
+                            visible = locationVisible,
+                            onToggleVisible = viewModel::setLocationVisible,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -378,7 +387,7 @@ private suspend fun buildMarkerBitmap(
     sizePx: Int,
 ): Bitmap {
     val name = profile?.name?.ifBlank { displayName } ?: displayName
-    val colorInt = profile?.avatarColor?.takeIf { it != 0 } ?: 0xFF6366F1.toInt()
+    val colorInt = profile?.avatarColor?.takeIf { it != 0 } ?: Indigo500.toArgb()
     val avatar =
         profile?.avatarUrl?.let { loadCircularBitmap(context, it, sizePx) }
             ?: createInitialsBitmap(name, colorInt, sizePx)
@@ -530,6 +539,8 @@ private fun MemberLegend(
     locations: List<UserLocationModel>,
     profiles: Map<String, UserModel>,
     currentUserId: String?,
+    visible: Boolean,
+    onToggleVisible: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val locationByUserId = locations.associateBy { it.userId }
@@ -549,6 +560,33 @@ private fun MemberLegend(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold,
         )
+        Spacer(Modifier.size(Spacing.xs))
+        // Your own sharing state, always visible with an inline toggle — otherwise the only
+        // control is three screens away in Settings and the map can read as broken.
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.you),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    stringResource(if (visible) R.string.you_sharing_location else R.string.you_hidden_on_map),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = visible,
+                onCheckedChange = onToggleVisible,
+                colors = appSwitchColors(),
+            )
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Spacer(Modifier.size(Spacing.xs))
         profiles.values
             .filter { currentUserId != null && it.id != currentUserId }

@@ -113,7 +113,7 @@ fun LoginScreen(
         val passwordFieldDescription = stringResource(R.string.password_field)
         val signInButtonDescription = stringResource(R.string.sign_in_button)
         val googleButtonDescription = stringResource(R.string.continue_with_google_button)
-        ErrorBanner(state.error)
+        ErrorBanner(state.error?.let { stringResource(it) })
         FamilyTextField(
             value = email,
             onValueChange = {
@@ -211,14 +211,9 @@ fun RegisterScreen(
                 stringResource(R.string.about_you) to
                     stringResource(R.string.optional_details_to_help_your_family_recognize_you)
         }
-    val errEnterName = stringResource(R.string.please_enter_your_name)
-    val errInvalidEmail = stringResource(R.string.please_enter_a_valid_email_address)
-    val errShortPassword = stringResource(R.string.password_must_be_at_least_6_characters)
-    val errPasswordMismatch = stringResource(R.string.passwords_do_not_match)
-
     AuthScaffold(title = title, subtitle = subtitle) {
         StepIndicator(currentStep = step, totalSteps = 2)
-        ErrorBanner(state.error)
+        ErrorBanner(state.error?.let { stringResource(it) })
         when (step) {
             1 ->
                 RegistrationStep1(
@@ -246,10 +241,10 @@ fun RegisterScreen(
                     onGoogle = { viewModel.signInWithGoogle() },
                     onNext = {
                         when {
-                            name.isBlank() -> viewModel.setError(errEnterName)
-                            !email.contains('@') || !email.contains('.') -> viewModel.setError(errInvalidEmail)
-                            password.length < 6 -> viewModel.setError(errShortPassword)
-                            password != confirm -> viewModel.setError(errPasswordMismatch)
+                            name.isBlank() -> viewModel.setError(R.string.please_enter_your_name)
+                            !email.contains('@') || !email.contains('.') -> viewModel.setError(R.string.please_enter_a_valid_email_address)
+                            password.length < 6 -> viewModel.setError(R.string.password_must_be_at_least_6_characters)
+                            password != confirm -> viewModel.setError(R.string.passwords_do_not_match)
                             else -> {
                                 viewModel.clearError()
                                 step = 2
@@ -284,7 +279,8 @@ fun RegisterScreen(
 @Composable
 private fun StepIndicator(
     currentStep: Int,
-    totalSteps: Int = 3,
+    // Registration is a 2-step flow; the default matches so a missed argument can't lie.
+    totalSteps: Int = 2,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),

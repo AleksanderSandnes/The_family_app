@@ -286,6 +286,7 @@ fun ShoppingDetailScreen(
     var showMenu by remember { mutableStateOf(false) }
     var showRename by remember { mutableStateOf(false) }
     var showChangeIcon by remember { mutableStateOf(false) }
+    var showClearCompletedConfirm by remember { mutableStateOf(false) }
     val remaining = items.count { !it.checked }
     val active = remember(items) { items.filter { !it.checked } }
     val completed = remember(items) { items.filter { it.checked } }
@@ -383,7 +384,7 @@ fun ShoppingDetailScreen(
                                 },
                                 onClick = {
                                     showMenu = false
-                                    viewModel.clearCompleted(listId)
+                                    showClearCompletedConfirm = true
                                 },
                             )
                         }
@@ -449,6 +450,18 @@ fun ShoppingDetailScreen(
         )
     }
 
+    if (showClearCompletedConfirm) {
+        ConfirmationDialog(
+            title = stringResource(R.string.clear_completed_q),
+            message = stringResource(R.string.clear_completed_confirm, completed.size),
+            onConfirm = {
+                viewModel.clearCompleted(listId)
+                showClearCompletedConfirm = false
+            },
+            onDismiss = { showClearCompletedConfirm = false },
+        )
+    }
+
     if (showChangeIcon) {
         ChangeIconDialog(
             currentIcon = list?.icon ?: "shopping_cart",
@@ -505,7 +518,7 @@ private fun AddItemBar(
         val enabled = value.isNotBlank()
         Box(
             Modifier
-                .size(46.dp)
+                .size(48.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 1f else 0.4f))
                 .clickable(enabled = enabled, onClick = onSubmit),

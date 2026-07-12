@@ -767,7 +767,7 @@ class ChatViewModel
                             eq("user_id", targetUserId)
                         }
                     }
-                }
+                }.onFailure { _errorEvent.emit(app.getString(R.string.couldnt_save)) }
                 if (targetUserId == userId) {
                     loadConversations(userId)
                 } else {
@@ -830,7 +830,7 @@ class ChatViewModel
                     list.map { p ->
                         if (p.conversation.id == conversationId) {
                             val lastMsg = _messages.value.lastOrNull { it.conversationId == conversationId }
-                            if (lastMsg != null) p.copy(lastMessage = lastMsg, lastSenderName = "You") else p
+                            if (lastMsg != null) p.copy(lastMessage = lastMsg, lastSenderName = app.getString(R.string.you)) else p
                         } else {
                             p
                         }
@@ -847,7 +847,7 @@ class ChatViewModel
                     db.from("conversations").update({
                         set("name", name.trim())
                     }) { filter { eq("id", id) } }
-                }
+                }.onFailure { _errorEvent.emit(app.getString(R.string.couldnt_save)) }
                 _conversation.update { it?.copy(name = name.trim()) }
                 val userId = repo.currentUserId.first() ?: return@launch
                 loadConversations(userId)

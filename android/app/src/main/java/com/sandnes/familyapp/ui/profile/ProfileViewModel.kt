@@ -1,11 +1,13 @@
 package com.sandnes.familyapp.ui.profile
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.ProfileUpdate
 import com.sandnes.familyapp.data.UserModel
@@ -36,6 +38,7 @@ private const val STOP_TIMEOUT_MS = 5000L
 class ProfileViewModel
     @Inject
     constructor(
+        private val app: Application,
         internal val repo: FamilyRepository,
     ) : ViewModel() {
         private val _user = MutableStateFlow<UserModel?>(null)
@@ -132,7 +135,7 @@ class ProfileViewModel
                     uploadAvatar(compressImage(file.readBytes()))
                 }.onFailure { e ->
                     Log.e("ProfileVM", "Failed to read camera capture", e)
-                    _error.value = "Could not read the captured photo."
+                    _error.value = app.getString(R.string.could_not_read_the_captured_photo)
                 }
                 file.delete()
             }
@@ -149,13 +152,13 @@ class ProfileViewModel
                             context.contentResolver.openInputStream(sourceUri)?.use { it.readBytes() }
                         }
                     if (raw == null) {
-                        _error.value = "Could not read the selected photo."
+                        _error.value = app.getString(R.string.could_not_read_the_selected_photo)
                         return@launch
                     }
                     uploadAvatar(compressImage(raw))
                 }.onFailure { e ->
                     Log.e("ProfileVM", "Failed to read photo from URI", e)
-                    _error.value = "Could not read the selected photo."
+                    _error.value = app.getString(R.string.could_not_read_the_selected_photo)
                 }
             }
 
@@ -226,7 +229,7 @@ class ProfileViewModel
                         _user.value = current.copy(avatarUrl = url)
                     }.onFailure { e ->
                         Log.e("ProfileVM", "Avatar upload failed", e)
-                        _error.value = "Failed to update photo. Please try again."
+                        _error.value = app.getString(R.string.failed_to_update_photo_please_try_again)
                     }
                 } finally {
                     _isUploading.value = false

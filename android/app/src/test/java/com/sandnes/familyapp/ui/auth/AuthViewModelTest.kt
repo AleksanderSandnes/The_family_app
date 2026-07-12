@@ -1,5 +1,6 @@
 package com.sandnes.familyapp.ui.auth
 
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.util.MainDispatcherRule
 import io.github.jan.supabase.auth.status.SessionStatus
@@ -95,15 +96,15 @@ class AuthViewModelTest {
     @Test
     fun `friendlyAuthError maps known keywords`() {
         assertEquals(
-            "Incorrect email or password.",
+            R.string.incorrect_email_or_password,
             friendlyAuthError(RuntimeException("Invalid login credentials"), isLogin = true),
         )
         assertEquals(
-            "An account with this email already exists.",
+            R.string.an_account_with_this_email_already_exists,
             friendlyAuthError(RuntimeException("User already registered"), isLogin = false),
         )
         assertEquals(
-            "Network error. Please check your connection.",
+            R.string.network_error_check_connection,
             friendlyAuthError(RuntimeException("Unable to resolve host"), isLogin = true),
         )
     }
@@ -111,7 +112,7 @@ class AuthViewModelTest {
     @Test
     fun `friendlyAuthError hides oauth redirect misconfiguration`() {
         assertEquals(
-            "Something went wrong. Please try again.",
+            R.string.something_went_wrong,
             friendlyAuthError(RuntimeException("redirect_to is not allowed"), isLogin = true),
         )
     }
@@ -119,11 +120,11 @@ class AuthViewModelTest {
     @Test
     fun `friendlyAuthError falls back per flow`() {
         assertEquals(
-            "Sign in failed. Please try again.",
+            R.string.sign_in_failed,
             friendlyAuthError(RuntimeException("weird unmapped error"), isLogin = true),
         )
         assertEquals(
-            "Registration failed. Please try again.",
+            R.string.registration_failed,
             friendlyAuthError(RuntimeException("weird unmapped error"), isLogin = false),
         )
     }
@@ -131,7 +132,7 @@ class AuthViewModelTest {
     @Test
     fun `friendlyAuthError handles a null message`() {
         assertEquals(
-            "Something went wrong. Please try again.",
+            R.string.something_went_wrong,
             friendlyAuthError(RuntimeException(), isLogin = true),
         )
     }
@@ -142,14 +143,14 @@ class AuthViewModelTest {
 
     @Test
     fun `setError sets message and clears loading`() {
-        vm.setError("Boom")
-        assertEquals("Boom", vm.state.value.error)
+        vm.setError(R.string.something_went_wrong)
+        assertEquals(R.string.something_went_wrong, vm.state.value.error)
         assertFalse(vm.state.value.loading)
     }
 
     @Test
     fun `clearError resets error to null`() {
-        vm.setError("Boom")
+        vm.setError(R.string.something_went_wrong)
         vm.clearError()
         assertNull(vm.state.value.error)
     }
@@ -164,7 +165,7 @@ class AuthViewModelTest {
             vm.login("not-an-email", "password")
             advanceUntilIdle()
 
-            assertEquals("Please enter a valid email address.", vm.state.value.error)
+            assertEquals(R.string.please_enter_a_valid_email_address, vm.state.value.error)
             assertFalse(vm.state.value.success)
             coVerify(exactly = 0) { repo.login(any(), any()) }
         }
@@ -175,7 +176,7 @@ class AuthViewModelTest {
             vm.login("alice@example.com", "123")
             advanceUntilIdle()
 
-            assertEquals("Password must be at least 6 characters.", vm.state.value.error)
+            assertEquals(R.string.password_must_be_at_least_6_characters, vm.state.value.error)
             coVerify(exactly = 0) { repo.login(any(), any()) }
         }
 
@@ -201,7 +202,7 @@ class AuthViewModelTest {
             vm.login("alice@example.com", "password")
             advanceUntilIdle()
 
-            assertEquals("Incorrect email or password.", vm.state.value.error)
+            assertEquals(R.string.incorrect_email_or_password, vm.state.value.error)
             assertFalse(vm.state.value.success)
             assertFalse(vm.state.value.loading)
         }
@@ -216,7 +217,7 @@ class AuthViewModelTest {
             vm.register(RegistrationForm("  ", "alice@example.com", "password", "password", "", ""))
             advanceUntilIdle()
 
-            assertEquals("Please enter your name.", vm.state.value.error)
+            assertEquals(R.string.please_enter_your_name, vm.state.value.error)
             coVerify(exactly = 0) { repo.register(any(), any(), any(), any(), any()) }
         }
 
@@ -226,7 +227,7 @@ class AuthViewModelTest {
             vm.register(RegistrationForm("Alice", "bad", "password", "password", "", ""))
             advanceUntilIdle()
 
-            assertEquals("Please enter a valid email address.", vm.state.value.error)
+            assertEquals(R.string.please_enter_a_valid_email_address, vm.state.value.error)
             coVerify(exactly = 0) { repo.register(any(), any(), any(), any(), any()) }
         }
 
@@ -236,7 +237,7 @@ class AuthViewModelTest {
             vm.register(RegistrationForm("Alice", "alice@example.com", "password", "different", "", ""))
             advanceUntilIdle()
 
-            assertEquals("Passwords do not match.", vm.state.value.error)
+            assertEquals(R.string.passwords_do_not_match, vm.state.value.error)
             coVerify(exactly = 0) { repo.register(any(), any(), any(), any(), any()) }
         }
 
@@ -262,7 +263,7 @@ class AuthViewModelTest {
             vm.register(RegistrationForm("Alice", "alice@example.com", "password", "password", "", ""))
             advanceUntilIdle()
 
-            assertEquals("An account with this email already exists.", vm.state.value.error)
+            assertEquals(R.string.an_account_with_this_email_already_exists, vm.state.value.error)
             assertFalse(vm.state.value.success)
         }
 
@@ -278,7 +279,7 @@ class AuthViewModelTest {
             vm.signInWithGoogle()
             advanceUntilIdle()
 
-            assertEquals("Network error. Please check your connection.", vm.state.value.error)
+            assertEquals(R.string.network_error_check_connection, vm.state.value.error)
             assertFalse(vm.state.value.loading)
         }
 }

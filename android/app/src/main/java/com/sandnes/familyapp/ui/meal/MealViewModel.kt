@@ -302,7 +302,7 @@ class MealViewModel
             cache = _plans.value
             runCatching {
                 db.from("meal_plans").update({ set("name", newName) }) { filter { eq("id", plan.id) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
         }
 
         fun setPlanIcon(
@@ -315,7 +315,7 @@ class MealViewModel
             cache = _plans.value
             runCatching {
                 db.from("meal_plans").update({ set("icon", newIcon) }) { filter { eq("id", plan.id) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
         }
 
         fun setPlanColor(
@@ -328,13 +328,14 @@ class MealViewModel
             cache = _plans.value
             runCatching {
                 db.from("meal_plans").update({ set("color", newColor) }) { filter { eq("id", plan.id) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
         }
 
         fun deletePlan(plan: MealPlanModel) =
             viewModelScope.launch {
                 _plans.value = _plans.value.filter { it.id != plan.id }
                 runCatching { db.from("meal_plans").delete { filter { eq("id", plan.id) } } }
+                    .onFailure { _errorRes.value = R.string.couldnt_delete }
                 val userId = repo.currentUserId.first() ?: return@launch
                 val user = repo.getUser(userId) ?: return@launch
                 user.familyId?.let { loadPlansOnly(it) }
@@ -351,7 +352,7 @@ class MealViewModel
                     db.from("meal_plan_days").update({
                         set("food", trimmed)
                     }) { filter { eq("id", day.id) } }
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 loadPlanDetail(day.mealPlanId).join()
             }
     }

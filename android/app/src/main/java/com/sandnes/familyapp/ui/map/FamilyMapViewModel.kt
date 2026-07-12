@@ -25,9 +25,11 @@ import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -59,6 +61,22 @@ class FamilyMapViewModel
 
         private val _currentUserId = MutableStateFlow<String?>(null)
         val currentUserId: StateFlow<String?> = _currentUserId.asStateFlow()
+
+        /** Whether the user shares their own location — surfaced on the map so their own state is never invisible. */
+        val locationVisible: StateFlow<Boolean> =
+            repo.locationVisible.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+        /** Toggles sharing from the map legend and pushes the new visibility immediately. */
+        fun setLocationVisible(enabled: Boolean) =
+            viewModelScope.launch {
+                repo.setLocationVisible(enabled)
+                val userId = _currentUserId.value ?: return@launch
+                runCatching {
+                    db.from("user_locations").update({
+                        set("visible", enabled)
+                    }) { filter { eq("user_id", userId) } }
+                }
+            }
 
         private val fusedClient: FusedLocationProviderClient =
             LocationServices.getFusedLocationProviderClient(app)

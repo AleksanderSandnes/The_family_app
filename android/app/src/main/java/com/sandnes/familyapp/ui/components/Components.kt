@@ -342,7 +342,10 @@ fun FamilyTextField(
                     IconButton(onClick = { revealed = !revealed }) {
                         Icon(
                             if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            contentDescription = null,
+                            contentDescription =
+                                stringResource(
+                                    if (revealed) R.string.hide_password else R.string.show_password,
+                                ),
                         )
                     }
                 }

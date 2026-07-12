@@ -518,7 +518,7 @@ private struct QrSheet: View {
                     .frame(width: 224, height: 224)
                     .padding(Spacing.xl)
                     .background(Color.white, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-                    .shadow(color: Color(hex: 0x141A3C).opacity(0.12), radius: 15, y: 8)
+                    .shadow(color: Palette.shadowInk.opacity(0.12), radius: 15, y: 8)
                     .accessibilityLabel("Family invite QR code")
             }
             Text(family.joinCode)

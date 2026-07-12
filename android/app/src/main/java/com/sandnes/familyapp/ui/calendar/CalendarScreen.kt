@@ -69,6 +69,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -88,6 +89,7 @@ import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.IconGrid
 import com.sandnes.familyapp.ui.components.InitialAvatar
 import com.sandnes.familyapp.ui.components.LoadingState
+import com.sandnes.familyapp.ui.components.PullRefresh
 import com.sandnes.familyapp.ui.components.RefreshOnResume
 import com.sandnes.familyapp.ui.components.SheetField
 import com.sandnes.familyapp.ui.components.SwipeToRevealDelete
@@ -97,6 +99,7 @@ import com.sandnes.familyapp.ui.theme.FeatureAccent
 import com.sandnes.familyapp.ui.theme.FeatureBadge
 import com.sandnes.familyapp.ui.theme.IconKeyMap
 import com.sandnes.familyapp.ui.theme.IconOptions
+import com.sandnes.familyapp.ui.theme.Indigo500
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
 import com.sandnes.familyapp.ui.theme.calendarIconColorIndex
@@ -111,13 +114,22 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val SHORT_DATE_DAY = DateTimeFormatter.ofPattern("EEE d MMM", Locale.getDefault())
-private val MONTH_YEAR_FMT = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
-private val SECTION_DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
-private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+// Formatters are functions (not top-level vals) so the in-app EN↔NB language switch — which
+// recreates the activity with a new default locale — takes effect without a process restart.
+private fun shortDateDayFmt() = DateTimeFormatter.ofPattern("EEE d MMM", Locale.getDefault())
+
+private fun monthYearFmt() = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
+
+private fun sectionDateFmt() = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
+
+// Localized time style: 24-h in NB ("09:00"), 12-h where the locale prefers it ("9:00 AM").
+private fun timeFmt() =
+    DateTimeFormatter
+        .ofLocalizedTime(java.time.format.FormatStyle.SHORT)
+        .withLocale(Locale.getDefault())
 
 // Monday-first, locale-aware two-letter weekday labels (e.g. EN "Mo Tu…", NB "Ma Ti…").
-private val WEEKDAY_LABELS =
+private fun weekdayLabels(): List<String> =
     java.time.DayOfWeek.entries.map { day ->
         day
             .getDisplayName(java.time.format.TextStyle.SHORT_STANDALONE, Locale.getDefault())
@@ -224,34 +236,39 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
             )
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            CalendarViewToggle(view = view, onSelect = { view = it })
-            when (view) {
-                CalendarView.Month -> {
-                    MonthCalendarSection(
-                        displayedMonth = displayedMonth,
-                        selectedDate = selectedDate,
-                        dateColors = dateColors,
-                        onPrevMonth = viewModel::prevMonth,
-                        onNextMonth = viewModel::nextMonth,
-                        onDaySelected = viewModel::selectDate,
-                    )
-                    SelectedDateHeader(selectedDate)
-                    DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it })
+        PullRefresh(
+            onRefresh = { viewModel.refresh().join() },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
+            Column(Modifier.fillMaxSize()) {
+                CalendarViewToggle(view = view, onSelect = { view = it })
+                when (view) {
+                    CalendarView.Month -> {
+                        MonthCalendarSection(
+                            displayedMonth = displayedMonth,
+                            selectedDate = selectedDate,
+                            dateColors = dateColors,
+                            onPrevMonth = viewModel::prevMonth,
+                            onNextMonth = viewModel::nextMonth,
+                            onDaySelected = viewModel::selectDate,
+                        )
+                        SelectedDateHeader(selectedDate)
+                        DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it })
+                    }
+                    CalendarView.Week -> {
+                        WeekStrip(selectedDate, dateColors, viewModel::selectDate)
+                        SelectedDateHeader(selectedDate)
+                        DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it })
+                    }
+                    CalendarView.Agenda ->
+                        AgendaList(
+                            modifier = Modifier.weight(1f),
+                            events = allEvents,
+                            members = familyMembers,
+                            onEdit = { eventToEdit = it },
+                            onDelete = { pendingDelete = it },
+                        )
                 }
-                CalendarView.Week -> {
-                    WeekStrip(selectedDate, dateColors, viewModel::selectDate)
-                    SelectedDateHeader(selectedDate)
-                    DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it })
-                }
-                CalendarView.Agenda ->
-                    AgendaList(
-                        modifier = Modifier.weight(1f),
-                        events = allEvents,
-                        members = familyMembers,
-                        onEdit = { eventToEdit = it },
-                        onDelete = { pendingDelete = it },
-                    )
             }
         }
     }
@@ -363,7 +380,7 @@ private fun CalendarViewToggle(
 @Composable
 private fun SelectedDateHeader(date: LocalDate) {
     Text(
-        date.format(SECTION_DATE_FMT).uppercase(),
+        date.format(sectionDateFmt()).uppercase(),
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -483,7 +500,7 @@ private fun AgendaList(
         grouped.forEach { (date, dayEvents) ->
             item(key = "header-$date") {
                 Text(
-                    date?.format(SECTION_DATE_FMT) ?: stringResource(R.string.upcoming),
+                    date?.format(sectionDateFmt()) ?: stringResource(R.string.upcoming),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.SemiBold,
@@ -551,7 +568,7 @@ private fun MonthCalendarSection(
 @Composable
 private fun WeekdayHeaderRow() {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        WEEKDAY_LABELS.forEach { label ->
+        weekdayLabels().forEach { label ->
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Text(
                     label,
@@ -579,7 +596,7 @@ private fun MonthHeader(
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.previous_month), tint = MaterialTheme.colorScheme.onSurface)
         }
         Text(
-            month.format(MONTH_YEAR_FMT),
+            month.format(monthYearFmt()),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -770,7 +787,7 @@ private fun EventPeopleRow(people: List<UserModel>) {
             people.take(6).forEach { person ->
                 InitialAvatar(
                     name = person.name,
-                    color = Color(person.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+                    color = Color(person.avatarColor.takeIf { it != 0 } ?: Indigo500.toArgb()),
                     size = 22,
                     avatarUri = person.avatarUrl,
                 )
@@ -1008,7 +1025,7 @@ private fun AttendeeRow(
     ) {
         InitialAvatar(
             name = member.name,
-            color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+            color = Color(member.avatarColor.takeIf { it != 0 } ?: Indigo500.toArgb()),
             size = 34,
             avatarUri = member.avatarUrl,
         )
@@ -1052,7 +1069,7 @@ private fun DateTimeRow(
             modifier = Modifier.clickable(onClick = onDateClick),
         ) {
             Text(
-                date.format(SHORT_DATE_DAY),
+                date.format(shortDateDayFmt()),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -1066,7 +1083,7 @@ private fun DateTimeRow(
                 modifier = Modifier.clickable(onClick = onTimeClick),
             ) {
                 Text(
-                    time.format(TIME_FMT),
+                    time.format(timeFmt()),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
