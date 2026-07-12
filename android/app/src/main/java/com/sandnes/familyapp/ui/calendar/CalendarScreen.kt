@@ -196,6 +196,13 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     var showAdd by remember { mutableStateOf(false) }
     var eventToEdit by remember { mutableStateOf<CalendarEventModel?>(null) }
     var pendingDelete by remember { mutableStateOf<CalendarEventModel?>(null) }
+    val isAdmin by viewModel.isAdmin.collectAsStateWithLifecycle()
+    val currentUserIdValue by viewModel.currentUserId.collectAsStateWithLifecycle()
+    // Only the event's creator or the family admin may delete; admins never touch others'
+    // private events (mirrors calendar_events_delete RLS).
+    val canDelete: (CalendarEventModel) -> Boolean = { e ->
+        e.userId == currentUserIdValue || (isAdmin && !e.isPrivate)
+    }
     var view by remember { mutableStateOf(CalendarView.Month) }
 
     RefreshOnResume { viewModel.refresh() }
@@ -253,12 +260,12 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             onDaySelected = viewModel::selectDate,
                         )
                         SelectedDateHeader(selectedDate)
-                        DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it })
+                        DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it }, canDelete)
                     }
                     CalendarView.Week -> {
                         WeekStrip(selectedDate, dateColors, viewModel::selectDate)
                         SelectedDateHeader(selectedDate)
-                        DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it })
+                        DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it }, canDelete)
                     }
                     CalendarView.Agenda ->
                         AgendaList(
@@ -267,6 +274,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             members = familyMembers,
                             onEdit = { eventToEdit = it },
                             onDelete = { pendingDelete = it },
+                            canDelete = canDelete,
                         )
                 }
             }
@@ -396,6 +404,7 @@ private fun ColumnScope.DayEventsList(
     members: List<UserModel>,
     onEdit: (CalendarEventModel) -> Unit,
     onDelete: (CalendarEventModel) -> Unit,
+    canDelete: (CalendarEventModel) -> Boolean,
 ) {
     when {
         isLoading ->
@@ -421,7 +430,11 @@ private fun ColumnScope.DayEventsList(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(dayEvents, key = { it.id }) { event ->
-                    SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(Radius.row)) {
+                    if (canDelete(event)) {
+                        SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(Radius.row)) {
+                            EventCard(event = event, members = members, onEdit = { onEdit(event) })
+                        }
+                    } else {
                         EventCard(event = event, members = members, onEdit = { onEdit(event) })
                     }
                 }
@@ -471,6 +484,7 @@ private fun AgendaList(
     members: List<UserModel>,
     onEdit: (CalendarEventModel) -> Unit,
     onDelete: (CalendarEventModel) -> Unit,
+    canDelete: (CalendarEventModel) -> Boolean,
 ) {
     val today = LocalDate.now()
     val grouped =
@@ -508,7 +522,11 @@ private fun AgendaList(
                 )
             }
             items(dayEvents, key = { it.id }) { event ->
-                SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(Radius.row)) {
+                if (canDelete(event)) {
+                    SwipeToRevealDelete(onDelete = { onDelete(event) }, shape = RoundedCornerShape(Radius.row)) {
+                        EventCard(event = event, members = members, onEdit = { onEdit(event) })
+                    }
+                } else {
                     EventCard(event = event, members = members, onEdit = { onEdit(event) })
                 }
             }

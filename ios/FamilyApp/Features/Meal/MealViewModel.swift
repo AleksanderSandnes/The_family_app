@@ -17,6 +17,12 @@ final class MealViewModel {
     private(set) var plans: [MealPlanModel] = MealViewModel.cache
     private(set) var planProgress: [String: MealProgress] = [:]
     private(set) var isLoading = false
+    /// Whether the current user is the family admin — drives creator-or-admin delete gating.
+    private(set) var isAdmin = false
+
+    var currentUserId: String? {
+        repo.session.currentUserId
+    }
     private(set) var selectedPlan: MealPlanModel?
     private(set) var days: [MealPlanDayModel] = []
 
@@ -46,6 +52,9 @@ final class MealViewModel {
 
     func refresh() {
         Task {
+            if let userId = repo.session.currentUserId {
+                isAdmin = await repo.isFamilyAdmin(userId: userId)
+            }
             guard let familyId = await currentFamilyId() else { return }
             await loadPlansOnly(familyId: familyId)
         }
@@ -57,6 +66,9 @@ final class MealViewModel {
     }
 
     private func loadForCurrentFamily() async {
+        if let userId = repo.session.currentUserId {
+            isAdmin = await repo.isFamilyAdmin(userId: userId)
+        }
         guard let familyId = await currentFamilyId() else {
             plans = []
             return
@@ -136,6 +148,7 @@ final class MealViewModel {
             temp.fromDate = fromIso
             temp.toDate = toIso
             temp.week = week
+            temp.createdBy = userId
             plans.append(temp)
 
             do {

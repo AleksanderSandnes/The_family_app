@@ -121,6 +121,8 @@ fun ShoppingScreen(
     val lists by viewModel.lists.collectAsStateWithLifecycle(emptyList())
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     val progress by viewModel.listProgress.collectAsStateWithLifecycle(emptyMap())
+    val currentUserId by viewModel.currentUserIdState.collectAsStateWithLifecycle()
+    val isAdmin by viewModel.isAdmin.collectAsStateWithLifecycle()
     var showAdd by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<ShoppingListModel?>(null) }
 
@@ -165,18 +167,30 @@ fun ShoppingScreen(
                     verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
                 ) {
                     items(lists, key = { it.id }) { list ->
-                        SwipeToRevealDelete(
-                            // Shared family data — confirm before destroying (no undo exists).
-                            onDelete = { pendingDelete = list },
-                            modifier = Modifier.animateItem(),
-                            shape = RoundedCornerShape(Radius.overviewCard),
-                        ) {
+                        // Only the list's owner or the family admin may delete (RLS enforces too).
+                        if (list.ownerUserId == currentUserId || isAdmin) {
+                            SwipeToRevealDelete(
+                                // Shared family data — confirm before destroying (no undo exists).
+                                onDelete = { pendingDelete = list },
+                                modifier = Modifier.animateItem(),
+                                shape = RoundedCornerShape(Radius.overviewCard),
+                            ) {
+                                ShoppingListCard(
+                                    title = list.title,
+                                    iconKey = list.icon,
+                                    color = list.color,
+                                    progress = progress[list.id],
+                                    onClick = { onOpenList(list.id) },
+                                )
+                            }
+                        } else {
                             ShoppingListCard(
                                 title = list.title,
                                 iconKey = list.icon,
                                 color = list.color,
                                 progress = progress[list.id],
                                 onClick = { onOpenList(list.id) },
+                                modifier = Modifier.animateItem(),
                             )
                         }
                     }
@@ -215,6 +229,7 @@ private fun ShoppingListCard(
     color: Int?,
     progress: ListProgress?,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val fraction =
         if (progress != null && progress.total > 0) {
@@ -225,7 +240,7 @@ private fun ShoppingListCard(
     val allDone = progress != null && progress.total > 0 && progress.bought == progress.total
 
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
             .rowSurface(ghost = allDone, cornerRadius = Radius.overviewCard)
             .clickable(onClick = onClick)

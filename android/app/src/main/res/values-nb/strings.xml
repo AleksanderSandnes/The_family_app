@@ -526,4 +526,8 @@
     <string name="sign_out_confirm">Du trenger e-post og passord for \u00e5 logge inn igjen.</string>
     <string name="clear_completed_q">Fjerne fullf\u00f8rte varer?</string>
     <string name="clear_completed_confirm">Dette fjerner %1$d fullf\u00f8rte varer fra listen for hele familien.</string>
+    <string name="edit">Rediger</string>
+    <string name="edited">redigert</string>
+    <string name="editing_message">Redigerer melding</string>
+    <string name="message_deleted">Melding slettet</string>
 </resources>

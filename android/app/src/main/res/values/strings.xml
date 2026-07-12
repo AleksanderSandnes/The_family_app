@@ -525,4 +525,8 @@
     <string name="sign_out_confirm">You\u2019ll need your email and password to sign back in.</string>
     <string name="clear_completed_q">Clear completed items?</string>
     <string name="clear_completed_confirm">This removes %1$d completed items from the list for everyone in the family.</string>
+    <string name="edit">Edit</string>
+    <string name="edited">edited</string>
+    <string name="editing_message">Editing message</string>
+    <string name="message_deleted">Message deleted</string>
 </resources>

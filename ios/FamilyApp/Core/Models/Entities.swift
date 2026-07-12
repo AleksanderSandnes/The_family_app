@@ -97,12 +97,15 @@ struct MealPlanModel: Codable, Identifiable, Hashable {
     var name = ""
     var icon = "restaurant"
     var color: Int?
+    // Creator (add_destructive_action_gating.sql). Nil on legacy rows → admin-only delete.
+    var createdBy: String?
 
     enum CodingKeys: String, CodingKey {
         case id, week, name, icon, color
         case familyId = "family_id"
         case fromDate = "from_date"
         case toDate = "to_date"
+        case createdBy = "created_by"
     }
 }
 
@@ -276,6 +279,8 @@ struct MessageModel: Codable, Identifiable, Hashable {
     var replyToId: String?
     var messageType = "text"
     var mediaUrl: String?
+    // Set when the sender edits the message (add_message_edit_delete.sql).
+    var editedAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, text
@@ -285,6 +290,7 @@ struct MessageModel: Codable, Identifiable, Hashable {
         case replyToId = "reply_to_id"
         case messageType = "message_type"
         case mediaUrl = "media_url"
+        case editedAt = "edited_at"
     }
 }
 

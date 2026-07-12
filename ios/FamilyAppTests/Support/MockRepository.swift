@@ -79,6 +79,11 @@ final class MockRepository: FamilyRepositoryProtocol {
         families[familyId]
     }
 
+    var isAdminResult = false
+    func isFamilyAdmin(userId _: String) async -> Bool {
+        isAdminResult
+    }
+
     func getFamilyMembers(familyId _: String) async -> [UserModel] {
         familyMembers
     }
@@ -199,6 +204,16 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func sendMessage(conversationId: String, text: String) async throws {
         sentMessages.append((conversationId, text))
+    }
+
+    var editedMessages: [(String, String)] = []
+    func editMessage(messageId: String, newText: String) async throws {
+        editedMessages.append((messageId, newText))
+    }
+
+    var deletedMessages: [String] = []
+    func deleteMessage(messageId: String) async throws {
+        deletedMessages.append(messageId)
     }
 
     func addReaction(messageId: String, conversationId _: String, emoji: String) async throws {

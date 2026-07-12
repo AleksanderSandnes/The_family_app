@@ -36,6 +36,25 @@ extension FamilyRepository {
             .execute()
     }
 
+    /// Updates the sender's own message text and stamps edited_at (RLS enforces ownership).
+    func editMessage(messageId: String, newText: String) async throws {
+        try await client.from("messages")
+            .update([
+                "text": AnyJSON.string(newText),
+                "edited_at": .string(ISO8601DateFormatter().string(from: Date())),
+            ])
+            .eq("id", value: messageId)
+            .execute()
+    }
+
+    /// Deletes the sender's own message (RLS enforces ownership).
+    func deleteMessage(messageId: String) async throws {
+        try await client.from("messages")
+            .delete()
+            .eq("id", value: messageId)
+            .execute()
+    }
+
     func addReaction(messageId: String, conversationId: String, emoji: String) async throws {
         guard let userId = session.currentUserId else { throw RepositoryError.notAuthenticated }
         try await client.from("message_reactions")

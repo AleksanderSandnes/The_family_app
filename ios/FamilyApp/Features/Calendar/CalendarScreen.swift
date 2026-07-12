@@ -93,6 +93,7 @@ struct CalendarScreen: View {
                     events: viewModel.events,
                     onEdit: { eventToEdit = $0 },
                     onDelete: { viewModel.delete($0) },
+                    canDelete: { $0.userId == viewModel.currentUserId || (viewModel.isAdmin && !$0.isPrivate) },
                     member: viewModel.member
                 )
             }
@@ -159,10 +160,14 @@ struct CalendarScreen: View {
                             top: 5, leading: Spacing.screenEdge, bottom: 5, trailing: Spacing.screenEdge
                         ))
                         .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                viewModel.delete(event)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+                            // Creator or admin only; admins never touch others' private
+                            // events (mirrors calendar_events_delete RLS).
+                            if event.userId == viewModel.currentUserId || (viewModel.isAdmin && !event.isPrivate) {
+                                Button(role: .destructive) {
+                                    viewModel.delete(event)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
                         }
                 }
@@ -344,6 +349,7 @@ private struct AgendaList: View {
     let events: [CalendarEventModel]
     let onEdit: (CalendarEventModel) -> Void
     let onDelete: (CalendarEventModel) -> Void
+    var canDelete: (CalendarEventModel) -> Bool = { _ in true }
     var member: (String) -> UserModel? = { _ in nil }
 
     var body: some View {
@@ -384,10 +390,12 @@ private struct AgendaList: View {
                                     bottom: 4, trailing: Spacing.screenEdge
                                 ))
                                 .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        onDelete(event)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
+                                    if canDelete(event) {
+                                        Button(role: .destructive) {
+                                            onDelete(event)
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
                                     }
                                 }
                         }

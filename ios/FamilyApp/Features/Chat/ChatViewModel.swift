@@ -21,6 +21,41 @@ final class ChatViewModel {
     // Plain `var` so the `+Media`/`+Members` extensions in sibling files can mutate it.
     var conversations: [ConversationWithPreview] = []
     private(set) var isLoading = false
+    /// Whether the current user is the family admin — drives creator-or-admin delete gating.
+    private(set) var isAdmin = false
+
+    /// The own message currently being edited in the composer (nil = normal send mode).
+    private(set) var editing: MessageModel?
+
+    func startEditing(_ msg: MessageModel) {
+        editing = msg
+    }
+
+    func cancelEditing() {
+        editing = nil
+    }
+
+    /// Commits the composer's edit; local patch first, then the update (reload reconciles).
+    func commitEdit(newText: String) {
+        guard let msg = editing else { return }
+        editing = nil
+        let trimmed = newText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != msg.text else { return }
+        messages = messages.map { row in
+            guard row.id == msg.id else { return row }
+            var updated = row
+            updated.text = trimmed
+            updated.editedAt = ISO8601DateFormatter().string(from: Date())
+            return updated
+        }
+        Task { try? await repo.editMessage(messageId: msg.id, newText: trimmed) }
+    }
+
+    /// Deletes the sender's own message (confirmed by the UI's alert).
+    func deleteMessage(_ msg: MessageModel) {
+        messages = messages.filter { $0.id != msg.id }
+        Task { try? await repo.deleteMessage(messageId: msg.id) }
+    }
     private(set) var familyMembers: [UserModel] = []
     private(set) var userProfiles: [String: UserModel] = [:]
 
@@ -143,6 +178,7 @@ final class ChatViewModel {
         }
         isLoading = true
         defer { isLoading = false }
+        isAdmin = await repo.isFamilyAdmin(userId: userId)
 
         var familyId: String?
         if let user = await repo.getUser(userId) {

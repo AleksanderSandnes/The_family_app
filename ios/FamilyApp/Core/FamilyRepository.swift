@@ -201,6 +201,13 @@ final class FamilyRepository {
         return rows.first
     }
 
+    /// Whether `userId` is their family's admin. Drives the creator-or-admin gating of
+    /// destructive actions (mirrors the `i_am_family_admin()` RLS helper).
+    func isFamilyAdmin(userId: String) async -> Bool {
+        guard let familyId = await getUser(userId)?.familyId else { return false }
+        return await getFamily(familyId: familyId)?.adminId == userId
+    }
+
     // MARK: - Auth
 
     // Auth methods (register / completeSignInAfterConfirmation / signInWithGoogle / login /

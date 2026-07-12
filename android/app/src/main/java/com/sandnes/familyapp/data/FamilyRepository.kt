@@ -41,6 +41,9 @@ data class ProfileUpdate(
     val avatarUrl: String?,
 )
 
+// The documented central API for auth, family, profile and settings (see CLAUDE.md);
+// splitting it would break that contract, so TooManyFunctions is suppressed by design.
+@Suppress("TooManyFunctions")
 @Singleton
 class FamilyRepository
     @Inject
@@ -238,6 +241,15 @@ class FamilyRepository
                     .decodeList<FamilyModel>()
                     .firstOrNull()
             }.getOrNull()
+
+        /**
+         * Whether [userId] is their family's admin. Drives the creator-or-admin gating of
+         * destructive actions (mirrors the `i_am_family_admin()` RLS helper).
+         */
+        suspend fun isFamilyAdmin(userId: String): Boolean {
+            val familyId = getUser(userId)?.familyId ?: return false
+            return getFamily(familyId)?.adminId == userId
+        }
 
         // ---- Auth ----
 

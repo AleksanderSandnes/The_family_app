@@ -70,6 +70,8 @@ final class CalendarViewModel {
     private(set) var events: [CalendarEventModel] = CalendarViewModel.cache
     private(set) var familyMembers: [UserModel] = []
     private(set) var isLoading = false
+    /// Whether the current user is the family admin — drives creator-or-admin delete gating.
+    private(set) var isAdmin = false
 
     var currentUserId: String? {
         repo.session.currentUserId
@@ -128,6 +130,7 @@ final class CalendarViewModel {
         }
         if events.isEmpty { isLoading = true }
         defer { isLoading = false }
+        isAdmin = await repo.isFamilyAdmin(userId: userId)
         guard let user = await repo.getUser(userId) else { return }
         if let familyId = user.familyId {
             familyMembers = await repo.getFamilyMembers(familyId: familyId)

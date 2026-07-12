@@ -34,10 +34,13 @@ struct ShoppingScreen: View {
                                     bottom: 6, trailing: Spacing.screenEdge
                                 ))
                                 .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        viewModel.deleteList(list)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
+                                    // Owner or family admin only (mirrors shopping_lists_delete RLS).
+                                    if list.ownerUserId == viewModel.currentUserId || viewModel.isAdmin {
+                                        Button(role: .destructive) {
+                                            viewModel.deleteList(list)
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
                                     }
                                 }
                         }

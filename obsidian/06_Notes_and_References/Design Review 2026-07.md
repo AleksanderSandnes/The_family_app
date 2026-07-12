@@ -46,6 +46,14 @@ Fresh dual-agent re-run verified every fixed item (0 hardcoded literals, 0 ungat
 
 Destruction model scans clean (9/9 sites protected), Home error recovery passes, Aesthetic 4/4. New findings fixed same day (`feat/impeccable-followups`): map legend now shows your own sharing state with an inline toggle; voice recording gained slide-to-cancel + <1s discard + failed-start guard; cancelled Google sign-in no longer bricks the login form; auth errors are @StringRes (localize in NB); calendar formatters resolve per call (in-app language switch works without restart) + locale 12/24-h times + pull-to-refresh; sign-out and Clear-completed confirm; ~15 more strings localized; avatar-fallback and iOS shadow colors tokenized; remaining sub-48dp targets bumped. Snapshot: `.impeccable/critique/2026-07-12T16-21-30Z__full-app-android-ios.md`.
 
+## Owner decisions + feature track (branch `feat/roles-message-edit-chat-glass`)
+
+Owner ruled: full chat design milestone; message edit + delete; admin-gate destructive acts. Shipped as three milestones, each build/test/lint-verified:
+
+- **M1 — creator-or-admin destruction** (`add_destructive_action_gating.sql`, applied to production): deleting shopping lists / calendar events / meal plans / conversations now requires the creator or family admin, enforced in RLS and mirrored in both apps' UI (delete affordances hidden otherwise). `meal_plans` gained `created_by`; admins never see or delete DMs they're not in. Recorded in PRODUCT.md as "Trust & Permissions".
+- **M2 — message edit/delete** (`add_message_edit_delete.sql`, applied): own messages editable (composer edit mode, "(edited)" marker) and deletable (Android: snackbar undo re-inserting with original sent_at; iOS: native confirm alert); realtime update/delete flows patch open threads live; replica identity full on messages.
+- **M3 — chat joins the Glass House** (Android): glass composer bar + glass capsule text field, PrimaryButton in the new-conversation sheet, list skeleton, Spacing tokens and AA secondary ink in the chat list. (iOS chat was already the glass reference.)
+
 ## Still open
 
 1. **Invite links** — `familyapp://join` is inert without the app installed; needs an HTTPS App Link domain + store-redirect page (owner decision pending).

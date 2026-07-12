@@ -351,6 +351,8 @@ fun MealScreen(
     val errorRes by viewModel.errorRes.collectAsStateWithLifecycle(null)
     var showCreate by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<MealPlanModel?>(null) }
+    val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
+    val isAdmin by viewModel.isAdmin.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     RefreshOnResume { viewModel.refresh() }
@@ -398,12 +400,27 @@ fun MealScreen(
                     verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
                 ) {
                     items(plans, key = { it.id }) { plan ->
-                        SwipeToRevealDelete(
-                            // Shared family data — confirm before destroying (no undo exists).
-                            onDelete = { pendingDelete = plan },
-                            modifier = Modifier.animateItem(),
-                            shape = RoundedCornerShape(Radius.overviewCard),
-                        ) {
+                        // Creator or admin only; legacy null-creator plans are admin-only
+                        // (mirrors meal_plans_delete RLS).
+                        val deletable = (plan.createdBy != null && plan.createdBy == currentUserId) || isAdmin
+                        if (deletable) {
+                            SwipeToRevealDelete(
+                                // Shared family data — confirm before destroying (no undo exists).
+                                onDelete = { pendingDelete = plan },
+                                modifier = Modifier.animateItem(),
+                                shape = RoundedCornerShape(Radius.overviewCard),
+                            ) {
+                                MealPlanCard(
+                                    name = plan.name.ifBlank { stringResource(R.string.meal_plan) },
+                                    iconKey = plan.icon,
+                                    color = plan.color,
+                                    dateRange = "${formatMealDate(plan.fromDate)} – ${formatMealDate(plan.toDate)}",
+                                    label = mealPlanLabel(planProgress[plan.id], plan.fromDate, plan.toDate),
+                                    progress = planProgress[plan.id],
+                                    onClick = { onOpen(plan.id) },
+                                )
+                            }
+                        } else {
                             MealPlanCard(
                                 name = plan.name.ifBlank { stringResource(R.string.meal_plan) },
                                 iconKey = plan.icon,
@@ -412,6 +429,7 @@ fun MealScreen(
                                 label = mealPlanLabel(planProgress[plan.id], plan.fromDate, plan.toDate),
                                 progress = planProgress[plan.id],
                                 onClick = { onOpen(plan.id) },
+                                modifier = Modifier.animateItem(),
                             )
                         }
                     }
@@ -452,6 +470,7 @@ private fun MealPlanCard(
     label: String,
     progress: MealProgress?,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val fraction =
         if (progress != null && progress.total > 0) {
@@ -462,7 +481,7 @@ private fun MealPlanCard(
     val hasPlanned = (progress?.planned ?: 0) > 0
 
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
             // Meal plans are always shown active — never dashed/greyed.
             .rowSurface(ghost = false, cornerRadius = Radius.overviewCard)

@@ -149,6 +149,11 @@ struct MessageRow: View {
                 Text(message.text)
                     .font(.bodyLarge)
                     .foregroundStyle(isMine ? .white : Color.appOnSurface)
+                if message.editedAt != nil {
+                    Text(L("edited"))
+                        .font(.labelMedium)
+                        .foregroundStyle(isMine ? .white.opacity(0.7) : Color.appOnSurfaceVariant)
+                }
             }
         }
         .padding(.horizontal, 14)
