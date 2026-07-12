@@ -397,7 +397,9 @@ fun ProfileEditScreen(
     var mobile by remember(user) { mutableStateOf(user?.mobile ?: "") }
     var birthday by remember(user) { mutableStateOf(user?.birthday ?: "") }
 
-    val saveEnabled = name.isNotBlank() && email.isNotBlank() && mobile.isNotBlank() && birthday.isNotBlank()
+    // Mobile and birthday are optional at registration (and absent for Google sign-ups) —
+    // requiring them here would make the profile un-savable for those users.
+    val saveEnabled = name.isNotBlank() && email.isNotBlank()
 
     Scaffold(
         containerColor = Color.Transparent,

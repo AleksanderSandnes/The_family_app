@@ -602,19 +602,23 @@ private fun DayCell(
     val dayName =
         date
             ?.dayOfWeek
-            ?.name
-            ?.lowercase()
+            ?.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
             ?.replaceFirstChar { it.uppercase() } ?: ""
     val monthName =
         date
             ?.month
-            ?.name
-            ?.lowercase()
+            ?.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
             ?.replaceFirstChar { it.uppercase() } ?: ""
     val eventCount = dotColors.size
+    val eventsLabel =
+        if (eventCount == 1) {
+            stringResource(R.string.one_event_a11y)
+        } else {
+            stringResource(R.string.n_events_a11y, eventCount)
+        }
     val a11yDesc =
         if (date != null) {
-            "$dayName, $monthName ${date.dayOfMonth}. $eventCount ${if (eventCount == 1) "event" else "events"}"
+            "$dayName, $monthName ${date.dayOfMonth}. $eventsLabel"
         } else {
             null
         }
@@ -1017,7 +1021,7 @@ private fun AttendeeRow(
         )
         Icon(
             if (selected) Icons.Filled.Check else Icons.Filled.Add,
-            contentDescription = if (selected) "Selected" else "Add",
+            contentDescription = stringResource(if (selected) R.string.selected else R.string.add),
             tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

@@ -424,15 +424,16 @@ fun ConversationScreen(
     val familyMembers by viewModel.familyMembers.collectAsStateWithLifecycle()
     val reactionsMap by viewModel.reactions.collectAsStateWithLifecycle()
 
+    val chatFallbackTitle = stringResource(R.string.chat)
     val title =
         remember(conversation, currentParticipants, myId) {
-            val conv = conversation ?: return@remember "Chat"
+            val conv = conversation ?: return@remember chatFallbackTitle
             val others = currentParticipants.filter { it.id != myId }
             when {
                 others.size == 1 -> others.first().name
                 conv.name.isNotBlank() -> conv.name
                 others.size > 1 -> others.take(3).joinToString(", ") { it.name.split(" ").first() }
-                else -> "Chat"
+                else -> chatFallbackTitle
             }
         }
 
@@ -728,8 +729,8 @@ fun ConversationScreen(
                                     )
                                     Text(
                                         when (quoted.messageType) {
-                                            "image" -> "📷 Photo"
-                                            "voice" -> "🎤 Voice message"
+                                            "image" -> "📷 " + stringResource(R.string.photo_label)
+                                            "voice" -> "🎤 " + stringResource(R.string.voice_message)
                                             else -> quoted.text.take(80)
                                         },
                                         style = MaterialTheme.typography.bodySmall,
@@ -1042,7 +1043,7 @@ fun ConversationScreen(
             title = stringResource(R.string.rename_conversation),
             label = stringResource(R.string.name),
             initial = conversation?.name ?: "",
-            confirmText = "Rename",
+            confirmText = stringResource(R.string.rename),
             onDismiss = { showRename = false },
         ) { name, _ ->
             viewModel.renameConversation(conversationId, name)
@@ -1292,13 +1293,13 @@ private fun RemoveMemberSheet(
                             avatarUri = member.avatarUrl,
                         )
                         Text(
-                            if (isMe) "${member.name} (You)" else member.name,
+                            if (isMe) stringResource(R.string.name_with_you_suffix, member.name) else member.name,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f),
                         )
                         TextButton(onClick = { onRemove(member.id) }) {
                             Text(
-                                if (isMe) "Leave" else "Remove",
+                                stringResource(if (isMe) R.string.leave else R.string.remove),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.labelMedium,
                             )
@@ -1847,7 +1848,7 @@ private fun MembersSheet(
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                "Members (${participants.size})",
+                stringResource(R.string.members_count_title, participants.size),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = 12.dp),

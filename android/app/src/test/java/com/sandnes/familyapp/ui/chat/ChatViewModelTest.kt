@@ -2,6 +2,7 @@ package com.sandnes.familyapp.ui.chat
 
 import android.app.Application
 import app.cash.turbine.test
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ConversationModel
 import com.sandnes.familyapp.data.ConversationWithPreview
 import com.sandnes.familyapp.data.FamilyRepository
@@ -83,6 +84,9 @@ class ChatViewModelTest {
         coEvery { repo.getUser(any()) } returns null
 
         val app = mockk<Application>(relaxed = true)
+        // Error events resolve localized strings through the Application context.
+        every { app.getString(R.string.failed_to_send_message) } returns "Failed to send message"
+        every { app.getString(R.string.failed_to_delete_conversation) } returns "Failed to delete conversation"
         vm = ChatViewModel(app, repo)
     }
 

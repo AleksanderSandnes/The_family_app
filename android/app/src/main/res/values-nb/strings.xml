@@ -503,4 +503,15 @@
     <string name="undo">Angre</string>
     <string name="item_deleted">Vare slettet</string>
     <string name="wish_deleted">Ønske slettet</string>
+    <string name="delete_wishlist_q">Slette ønskelisten?</string>
+    <string name="delete_wishlist_confirm">Dette sletter \u00ab%1$s\u00bb og alle ønskene for hele familien.</string>
+    <string name="delete_birthday_q">Slette bursdagen?</string>
+    <string name="delete_birthday_confirm">Dette fjerner bursdagen til %1$s for hele familien.</string>
+    <string name="name_with_you_suffix">%1$s (deg)</string>
+    <string name="members_count_title">Medlemmer (%1$d)</string>
+    <string name="one_event_a11y">1 hendelse</string>
+    <string name="n_events_a11y">%1$d hendelser</string>
+    <string name="toggle_on">på</string>
+    <string name="toggle_off">av</string>
+    <string name="member">Medlem</string>
 </resources>

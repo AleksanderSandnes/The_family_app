@@ -54,6 +54,7 @@ import com.sandnes.familyapp.data.BirthdayModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.BirthdayPickerField
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.ConfirmationDialog
 import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
@@ -91,6 +92,7 @@ fun BirthdayScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     var showAdd by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<BirthdayModel?>(null) }
     var editing by remember { mutableStateOf<BirthdayModel?>(null) }
 
     RefreshOnResume { viewModel.refresh() }
@@ -151,7 +153,8 @@ fun BirthdayScreen(
                         val canEdit = b.madeByUserId == currentUserId
                         if (canEdit) {
                             SwipeToRevealDelete(
-                                onDelete = { viewModel.delete(b) },
+                                // Shared family data — confirm before destroying (no undo exists).
+                                onDelete = { pendingDelete = b },
                                 modifier = Modifier.animateItem(),
                                 shape = RoundedCornerShape(Radius.overviewCard),
                             ) {
@@ -192,6 +195,18 @@ fun BirthdayScreen(
                 viewModel.update(birthday.id, name, date, icon, color)
                 editing = null
             },
+        )
+    }
+
+    pendingDelete?.let { birthday ->
+        ConfirmationDialog(
+            title = stringResource(R.string.delete_birthday_q),
+            message = stringResource(R.string.delete_birthday_confirm, birthday.name),
+            onConfirm = {
+                viewModel.delete(birthday)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
         )
     }
 }

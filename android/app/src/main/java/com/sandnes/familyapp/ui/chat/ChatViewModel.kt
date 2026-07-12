@@ -817,7 +817,7 @@ class ChatViewModel
                         )
                     }.onFailure { e ->
                         Log.e("ChatVM", "send failed", e)
-                        _errorEvent.emit("Failed to send message")
+                        _errorEvent.emit(app.getString(R.string.failed_to_send_message))
                     }.isSuccess
 
                 runCatching {
@@ -942,7 +942,7 @@ class ChatViewModel
                     _conversationDeleted.emit(Unit)
                 }.onFailure { e ->
                     Log.e("ChatVM", "deleteConversation failed", e)
-                    _errorEvent.emit("Failed to delete conversation")
+                    _errorEvent.emit(app.getString(R.string.failed_to_delete_conversation))
                 }
             }
 

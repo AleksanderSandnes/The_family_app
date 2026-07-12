@@ -88,6 +88,7 @@ import com.sandnes.familyapp.data.WishReservationModel
 import com.sandnes.familyapp.data.WishlistModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.ConfirmationDialog
 import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
@@ -128,6 +129,7 @@ fun WishlistScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
     var showAdd by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<WishlistModel?>(null) }
 
     RefreshOnResume { viewModel.refresh() }
 
@@ -176,7 +178,8 @@ fun WishlistScreen(
                             // Only the owner may delete; RLS enforces it server-side too.
                             if (wl.ownerUserId == currentUserId) {
                                 SwipeToRevealDelete(
-                                    onDelete = { viewModel.deleteWishlist(wl) },
+                                    // Shared family data — confirm before destroying (no undo exists).
+                                    onDelete = { pendingDelete = wl },
                                     modifier = Modifier.animateItem(),
                                     shape = RoundedCornerShape(Radius.overviewCard),
                                 ) {
@@ -207,6 +210,18 @@ fun WishlistScreen(
                 viewModel.addWishlist(name, icon, color)
                 showAdd = false
             },
+        )
+    }
+
+    pendingDelete?.let { wl ->
+        ConfirmationDialog(
+            title = stringResource(R.string.delete_wishlist_q),
+            message = stringResource(R.string.delete_wishlist_confirm, wl.name),
+            onConfirm = {
+                viewModel.deleteWishlist(wl)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
         )
     }
 }
