@@ -1,0 +1,1877 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1782395309.4659877,
+    "ast_hash": "b317b6131f005abf8678edb38197707d",
+    "semantic_hash": "b317b6131f005abf8678edb38197707d"
+  },
+  ".mcp.json": {
+    "mtime": 1782475235.6682985,
+    "ast_hash": "8a26dc4ebfc299cc9095c369a7704817",
+    "semantic_hash": "8a26dc4ebfc299cc9095c369a7704817"
+  },
+  ".vscode/settings.json": {
+    "mtime": 1783258019.4907563,
+    "ast_hash": "3a2f7c4cfab63fa9624ca4445b125a89",
+    "semantic_hash": "3a2f7c4cfab63fa9624ca4445b125a89"
+  },
+  "android/app/build.gradle": {
+    "mtime": 1783802163.4425592,
+    "ast_hash": "a1c73e18d56bd2e4011e9deedb3f0325",
+    "semantic_hash": "a1c73e18d56bd2e4011e9deedb3f0325"
+  },
+  "android/app/gradlew": {
+    "mtime": 1783703090.5500262,
+    "ast_hash": "857faf4b42fc9e324fb40b7223f2a94a",
+    "semantic_hash": "857faf4b42fc9e324fb40b7223f2a94a"
+  },
+  "android/app/src/androidTest/java/com/sandnes/familyapp/ExampleInstrumentedTest.java": {
+    "mtime": 1783703090.5503054,
+    "ast_hash": "e184aa29abf842a67ebc35e1b2527e87",
+    "semantic_hash": "e184aa29abf842a67ebc35e1b2527e87"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/MainActivity.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "2b913f63d75dffac1daeb23dec917720",
+    "semantic_hash": "2b913f63d75dffac1daeb23dec917720"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/MainApplication.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "a07e6198e66ff498ce6432c357ecc7ac",
+    "semantic_hash": "a07e6198e66ff498ce6432c357ecc7ac"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/data/Entities.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "f21c10aa2ec13138aa320162b242fc0f",
+    "semantic_hash": "f21c10aa2ec13138aa320162b242fc0f"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/data/FamilyRepository.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "b6b77abf1c65c0d40f1a3e0a5f96d4e9",
+    "semantic_hash": "b6b77abf1c65c0d40f1a3e0a5f96d4e9"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/data/FamilyRepositoryShares.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "cc920846d727b45c988690a1267d5625",
+    "semantic_hash": "cc920846d727b45c988690a1267d5625"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/data/SessionManager.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "fcc86d83061f516af612d7db954a2807",
+    "semantic_hash": "fcc86d83061f516af612d7db954a2807"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/data/remote/SupabaseManager.kt": {
+    "mtime": 1783703090.551542,
+    "ast_hash": "c1a0d1649514430f1462253335099b87",
+    "semantic_hash": "c1a0d1649514430f1462253335099b87"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/di/AppModule.kt": {
+    "mtime": 1783703090.551542,
+    "ast_hash": "93a32aa7ce864d75724ef41c8ae25c17",
+    "semantic_hash": "93a32aa7ce864d75724ef41c8ae25c17"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/notifications/ActiveChat.kt": {
+    "mtime": 1783703090.551542,
+    "ast_hash": "b3c5362e65d585a4043a276085b11d17",
+    "semantic_hash": "b3c5362e65d585a4043a276085b11d17"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/notifications/FamilyMessagingService.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "bb7361c457204fbf3b6f1719eb87da8f",
+    "semantic_hash": "bb7361c457204fbf3b6f1719eb87da8f"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/notifications/NotificationHelper.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "26eb64a91b966b4379c631cf17b8581b",
+    "semantic_hash": "26eb64a91b966b4379c631cf17b8581b"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/receivers/ReplyReceiver.kt": {
+    "mtime": 1783703090.5524025,
+    "ast_hash": "3094096fe6f1a53b0430b7131e0226b1",
+    "semantic_hash": "3094096fe6f1a53b0430b7131e0226b1"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/auth/AuthScreens.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "3751ba9495948f601639b575353cc2c6",
+    "semantic_hash": "3751ba9495948f601639b575353cc2c6"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/auth/AuthViewModel.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "522fe8539743dd909c88172c64cd2b46",
+    "semantic_hash": "522fe8539743dd909c88172c64cd2b46"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/birthday/BirthdayDateUtils.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "387e5f671c991ff2e0bd4b1ac287d183",
+    "semantic_hash": "387e5f671c991ff2e0bd4b1ac287d183"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/birthday/BirthdayScreen.kt": {
+    "mtime": 1783802163.4435594,
+    "ast_hash": "e6e788278c12e2561533b3d15a8a1313",
+    "semantic_hash": "e6e788278c12e2561533b3d15a8a1313"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/birthday/BirthdayViewModel.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "0be42911c7cada1ab1d3ced5d6949e79",
+    "semantic_hash": "0be42911c7cada1ab1d3ced5d6949e79"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/calendar/CalendarScreen.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "ccf72886501d4565b18f2280c861a02f",
+    "semantic_hash": "ccf72886501d4565b18f2280c861a02f"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/calendar/CalendarViewModel.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "7b6cac87e8093adece68a2d8a55f6180",
+    "semantic_hash": "7b6cac87e8093adece68a2d8a55f6180"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/chat/ChatScreens.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "be16e88f864ae5b35fdade5e96b18d2b",
+    "semantic_hash": "be16e88f864ae5b35fdade5e96b18d2b"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/chat/ChatTimeFormatters.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "9e3fe58f0e97db6fa7dad0859ca56201",
+    "semantic_hash": "9e3fe58f0e97db6fa7dad0859ca56201"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/chat/ChatViewModel.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "aa26fe9a3c9bccafb9c61503b4270c1e",
+    "semantic_hash": "aa26fe9a3c9bccafb9c61503b4270c1e"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/chat/components/ImageViewerDialog.kt": {
+    "mtime": 1783703090.5542612,
+    "ast_hash": "081d1e5bb02e9dde4c1f79f72fe62b97",
+    "semantic_hash": "081d1e5bb02e9dde4c1f79f72fe62b97"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/chat/components/ReactionPicker.kt": {
+    "mtime": 1783703090.5547204,
+    "ast_hash": "3911a07ef939b882c1f876ec61e0f2b6",
+    "semantic_hash": "3911a07ef939b882c1f876ec61e0f2b6"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/chat/components/VoiceNoteMessage.kt": {
+    "mtime": 1783703090.5547204,
+    "ast_hash": "b9aaa7da36b648928d6bbca32edc902b",
+    "semantic_hash": "b9aaa7da36b648928d6bbca32edc902b"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/components/Components.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "1bbeb60b4eea945d3b04b639a58865a9",
+    "semantic_hash": "1bbeb60b4eea945d3b04b639a58865a9"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/components/Pickers.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "6f1867434bb578e4279cff823cb4667a",
+    "semantic_hash": "6f1867434bb578e4279cff823cb4667a"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/components/Scaffolding.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "ec41a1e252e684bea6fb0b9ebd89f733",
+    "semantic_hash": "ec41a1e252e684bea6fb0b9ebd89f733"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/components/Sheets.kt": {
+    "mtime": 1783802163.4445593,
+    "ast_hash": "5b0a4e9ac87a11ab5856f295c8f13f1e",
+    "semantic_hash": "5b0a4e9ac87a11ab5856f295c8f13f1e"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/family/FamilyScreen.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "b37a0835711f5d8ee28dc7a0537fe974",
+    "semantic_hash": "b37a0835711f5d8ee28dc7a0537fe974"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/family/FamilyViewModel.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "77a185f293d8cdeece9cea729b3e67fe",
+    "semantic_hash": "77a185f293d8cdeece9cea729b3e67fe"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/family/QrCode.kt": {
+    "mtime": 1783703090.5556147,
+    "ast_hash": "5668b4172ac820f38e064d5c8dc35d16",
+    "semantic_hash": "5668b4172ac820f38e064d5c8dc35d16"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/home/HomeGreetingUtils.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "7a2fb9a5a0cf5e05ab9d752062edabab",
+    "semantic_hash": "7a2fb9a5a0cf5e05ab9d752062edabab"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/home/HomeScreen.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "bbb9684eba8593e35c237c2fa1fbac69",
+    "semantic_hash": "bbb9684eba8593e35c237c2fa1fbac69"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/home/HomeViewModel.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "473da27d05d094439e9a525eae8b3706",
+    "semantic_hash": "473da27d05d094439e9a525eae8b3706"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/map/FamilyMapScreen.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "0ee20eac354a37f2dd62280c6e524411",
+    "semantic_hash": "0ee20eac354a37f2dd62280c6e524411"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/map/FamilyMapViewModel.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "20597ecd848ea06bb4b6cd655890ba60",
+    "semantic_hash": "20597ecd848ea06bb4b6cd655890ba60"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/map/LocationForegroundService.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "75049a969599aebd9dc27e5c1b21fb20",
+    "semantic_hash": "75049a969599aebd9dc27e5c1b21fb20"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/meal/MealScreens.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "625fd2ea533e8164b2c740a7e0ea2eb8",
+    "semantic_hash": "625fd2ea533e8164b2c740a7e0ea2eb8"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/meal/MealViewModel.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "bce2943ee1a5148bb9d021a9ad1c8875",
+    "semantic_hash": "bce2943ee1a5148bb9d021a9ad1c8875"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/navigation/AppNavHost.kt": {
+    "mtime": 1783802163.4455593,
+    "ast_hash": "6a8e196fbb2d5fa777408e462fc133a9",
+    "semantic_hash": "6a8e196fbb2d5fa777408e462fc133a9"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/navigation/RootViewModel.kt": {
+    "mtime": 1783703090.5577295,
+    "ast_hash": "15e3c1a1f8bf519f406963cda0db882e",
+    "semantic_hash": "15e3c1a1f8bf519f406963cda0db882e"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/navigation/Routes.kt": {
+    "mtime": 1783703090.5577295,
+    "ast_hash": "12189247f4d425a3fe1abedf5ca68c98",
+    "semantic_hash": "12189247f4d425a3fe1abedf5ca68c98"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/onboarding/PermissionsOnboardingScreen.kt": {
+    "mtime": 1783804158.6425066,
+    "ast_hash": "f438d62c9e1b2546054f21ddb0cac10d",
+    "semantic_hash": "f438d62c9e1b2546054f21ddb0cac10d"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/profile/ProfileScreens.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "5b3fd66278db70370faeebe6594f0770",
+    "semantic_hash": "5b3fd66278db70370faeebe6594f0770"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/profile/ProfileViewModel.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "ac46c32b10816c6714de0cfc337d81cd",
+    "semantic_hash": "ac46c32b10816c6714de0cfc337d81cd"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/settings/SettingsScreen.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "c75745545ea11b33037f5bb64a88b058",
+    "semantic_hash": "c75745545ea11b33037f5bb64a88b058"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/settings/SettingsViewModel.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "6f5ce604258e222291fc4996160ca1e1",
+    "semantic_hash": "6f5ce604258e222291fc4996160ca1e1"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/shopping/ShoppingScreens.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "25b8e4e5cdc1fe98982b65afcc9945ad",
+    "semantic_hash": "25b8e4e5cdc1fe98982b65afcc9945ad"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/shopping/ShoppingViewModel.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "646fe2acc3b7778ce9f052e8b8fc9897",
+    "semantic_hash": "646fe2acc3b7778ce9f052e8b8fc9897"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/Color.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "244cfab14b62ed6b84e4e61ea7a597b8",
+    "semantic_hash": "244cfab14b62ed6b84e4e61ea7a597b8"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/FeatureAccent.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "410904b25918c4d091a9158f3adf08b4",
+    "semantic_hash": "410904b25918c4d091a9158f3adf08b4"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/Glass.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "036d4d44b1b7976f57636a839c984abe",
+    "semantic_hash": "036d4d44b1b7976f57636a839c984abe"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/GlassComponents.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "56bfc17d3ec021cc0bb0816eadaf5bb2",
+    "semantic_hash": "56bfc17d3ec021cc0bb0816eadaf5bb2"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/IconKeyMap.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "a994b447a202f0127e07c7d65f40aa7b",
+    "semantic_hash": "a994b447a202f0127e07c7d65f40aa7b"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/Shape.kt": {
+    "mtime": 1783703090.5595887,
+    "ast_hash": "b015ae998625ff7fb2d0a28ff333a02e",
+    "semantic_hash": "b015ae998625ff7fb2d0a28ff333a02e"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/Spacing.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "a4c93ed87384339b901478259f4d4f53",
+    "semantic_hash": "a4c93ed87384339b901478259f4d4f53"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/Theme.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "b2077d87c393fb8614aff39cf29ec0f7",
+    "semantic_hash": "b2077d87c393fb8614aff39cf29ec0f7"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/theme/Type.kt": {
+    "mtime": 1783703090.5595887,
+    "ast_hash": "0465d577436310679424613b0f78542c",
+    "semantic_hash": "0465d577436310679424613b0f78542c"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/wishlist/WishlistPdf.kt": {
+    "mtime": 1783802163.4465594,
+    "ast_hash": "a2a8dfeb8e91bc0f1ef77a2486324c48",
+    "semantic_hash": "a2a8dfeb8e91bc0f1ef77a2486324c48"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/wishlist/WishlistScreens.kt": {
+    "mtime": 1783802163.4475594,
+    "ast_hash": "43472fc7cb3ea8dddb0a5c6108533b8f",
+    "semantic_hash": "43472fc7cb3ea8dddb0a5c6108533b8f"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/ui/wishlist/WishlistViewModel.kt": {
+    "mtime": 1783802163.4475594,
+    "ast_hash": "c9facde6b16cf10ca72b074c866571ec",
+    "semantic_hash": "c9facde6b16cf10ca72b074c866571ec"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/util/ErrorMessages.kt": {
+    "mtime": 1783802163.4475594,
+    "ast_hash": "ae6db718a1d4f37091d5a98479393c7f",
+    "semantic_hash": "ae6db718a1d4f37091d5a98479393c7f"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/util/ImageUtils.kt": {
+    "mtime": 1783703090.5602937,
+    "ast_hash": "9ee82874e15b1aed0407453b7c6122cc",
+    "semantic_hash": "9ee82874e15b1aed0407453b7c6122cc"
+  },
+  "android/app/src/main/java/com/sandnes/familyapp/util/LocaleManager.kt": {
+    "mtime": 1783802163.4475594,
+    "ast_hash": "db81cb61c2d196257abaf970faf0038c",
+    "semantic_hash": "db81cb61c2d196257abaf970faf0038c"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ExampleUnitTest.java": {
+    "mtime": 1783703090.5615265,
+    "ast_hash": "1e2ece1af00bd1830b678f51180ad204",
+    "semantic_hash": "1e2ece1af00bd1830b678f51180ad204"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/data/EntitiesTest.kt": {
+    "mtime": 1783703090.561745,
+    "ast_hash": "35031d2cf2c8eaf5209564d0d117319c",
+    "semantic_hash": "35031d2cf2c8eaf5209564d0d117319c"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/data/FamilyRepositoryTest.kt": {
+    "mtime": 1783703090.561973,
+    "ast_hash": "b69113d5f8b8e6f9de82f92ac84b6366",
+    "semantic_hash": "b69113d5f8b8e6f9de82f92ac84b6366"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/data/SessionManagerTest.kt": {
+    "mtime": 1783802163.4485593,
+    "ast_hash": "49403ce17d729bd4df8ceb3691e6c4e3",
+    "semantic_hash": "49403ce17d729bd4df8ceb3691e6c4e3"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/auth/AuthViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "e84b61a8bf52adfe8db898369a19ab89",
+    "semantic_hash": "e84b61a8bf52adfe8db898369a19ab89"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/birthday/BirthdayDateUtilsTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "b6515d2f33f8b6ae662d00f00e0b2bcf",
+    "semantic_hash": "b6515d2f33f8b6ae662d00f00e0b2bcf"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/birthday/BirthdayViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "35e41224acd571755d8db55628e0a177",
+    "semantic_hash": "35e41224acd571755d8db55628e0a177"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/calendar/CalendarViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "6bb83d35566c793166a0e6f7c1e5f4f5",
+    "semantic_hash": "6bb83d35566c793166a0e6f7c1e5f4f5"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/chat/ChatTimeFormattersTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "d8b182466b4704604302ecfc97bcbead",
+    "semantic_hash": "d8b182466b4704604302ecfc97bcbead"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/chat/ChatViewModelTest.kt": {
+    "mtime": 1783703090.5628502,
+    "ast_hash": "bc408dfe6558a6f9e065dfa5d273970e",
+    "semantic_hash": "bc408dfe6558a6f9e065dfa5d273970e"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/family/FamilyViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "4999d5290147e4ee9a63d3534b17215f",
+    "semantic_hash": "4999d5290147e4ee9a63d3534b17215f"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/home/HomeGreetingUtilsTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "4784a3a854684811e8872319e5cb0885",
+    "semantic_hash": "4784a3a854684811e8872319e5cb0885"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/home/HomeSummaryUtilsTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "37dbcfd555b8eba3d8200aee4cff609c",
+    "semantic_hash": "37dbcfd555b8eba3d8200aee4cff609c"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/home/HomeViewModelTest.kt": {
+    "mtime": 1783703090.5633862,
+    "ast_hash": "25344de2bf4c4ccf5b1cd1e8c5693b64",
+    "semantic_hash": "25344de2bf4c4ccf5b1cd1e8c5693b64"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/map/FamilyMapViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "1cb0a7d3db41e4a13597adb8085b0e98",
+    "semantic_hash": "1cb0a7d3db41e4a13597adb8085b0e98"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/meal/MealViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "854df8950dab75b42b1c6d604ea4cc36",
+    "semantic_hash": "854df8950dab75b42b1c6d604ea4cc36"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/profile/ProfileViewModelTest.kt": {
+    "mtime": 1783703090.5633862,
+    "ast_hash": "1b7d0823d8b5d7062872d3c905287542",
+    "semantic_hash": "1b7d0823d8b5d7062872d3c905287542"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/settings/SettingsViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "143bcaf3251716b91c8637ab0c35df5c",
+    "semantic_hash": "143bcaf3251716b91c8637ab0c35df5c"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/shopping/ShoppingViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "31df1fbf10ea0a52a045a56d25af4b96",
+    "semantic_hash": "31df1fbf10ea0a52a045a56d25af4b96"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/wishlist/WishlistPdfTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "1265de4f3b8d909c25f7f318debfb6c7",
+    "semantic_hash": "1265de4f3b8d909c25f7f318debfb6c7"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/ui/wishlist/WishlistViewModelTest.kt": {
+    "mtime": 1783802163.4495595,
+    "ast_hash": "bbd9eeeef53836639a377222dd94f8b7",
+    "semantic_hash": "bbd9eeeef53836639a377222dd94f8b7"
+  },
+  "android/app/src/test/java/com/sandnes/familyapp/util/MainDispatcherRule.kt": {
+    "mtime": 1783703090.5635047,
+    "ast_hash": "14b3aa2b3036b06d42e2d1efcb4f9578",
+    "semantic_hash": "14b3aa2b3036b06d42e2d1efcb4f9578"
+  },
+  "android/build.gradle": {
+    "mtime": 1783703090.5635047,
+    "ast_hash": "cb54d9413974045c83edf905df7f8ecc",
+    "semantic_hash": "cb54d9413974045c83edf905df7f8ecc"
+  },
+  "android/gradlew": {
+    "mtime": 1783703090.565039,
+    "ast_hash": "a43be8432bac3ffd05b3769aa42fe996",
+    "semantic_hash": "a43be8432bac3ffd05b3769aa42fe996"
+  },
+  "android/settings.gradle": {
+    "mtime": 1783703090.565039,
+    "ast_hash": "dddccede5aa6707e966cb01561ca0da1",
+    "semantic_hash": "dddccede5aa6707e966cb01561ca0da1"
+  },
+  "ios/FamilyApp/App/AppDelegate.swift": {
+    "mtime": 1783800657.9021907,
+    "ast_hash": "c23f061388bdc5416b88822372b9793c",
+    "semantic_hash": "c23f061388bdc5416b88822372b9793c"
+  },
+  "ios/FamilyApp/App/DeepLinkRouter.swift": {
+    "mtime": 1783800657.9021907,
+    "ast_hash": "8e089915468e0f8fe4fb88745d2ab486",
+    "semantic_hash": "8e089915468e0f8fe4fb88745d2ab486"
+  },
+  "ios/FamilyApp/App/FamilyApp.swift": {
+    "mtime": 1783800657.9021907,
+    "ast_hash": "ea93c38fcd6e2d3e0b8507d7790fe42a",
+    "semantic_hash": "ea93c38fcd6e2d3e0b8507d7790fe42a"
+  },
+  "ios/FamilyApp/App/RootViewModel.swift": {
+    "mtime": 1783800657.9021907,
+    "ast_hash": "93df7169913c7505e870c4eeff0e03a2",
+    "semantic_hash": "93df7169913c7505e870c4eeff0e03a2"
+  },
+  "ios/FamilyApp/Core/AppLanguage.swift": {
+    "mtime": 1783800657.9021907,
+    "ast_hash": "922c35085abeeb360a081034243b7bb7",
+    "semantic_hash": "922c35085abeeb360a081034243b7bb7"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Auth.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "64bf430b4108afee15fb3120fdb8b3ed",
+    "semantic_hash": "64bf430b4108afee15fb3120fdb8b3ed"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Birthday.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "20d75cc2836570ecbce46910810a7249",
+    "semantic_hash": "20d75cc2836570ecbce46910810a7249"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Calendar.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "c7688973d244b4017dc094159f2983ab",
+    "semantic_hash": "c7688973d244b4017dc094159f2983ab"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Chat.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "80a19465fe26e36517e50b202db0803b",
+    "semantic_hash": "80a19465fe26e36517e50b202db0803b"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Family.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "419ce30a366199e4d9b71e10e0930b6d",
+    "semantic_hash": "419ce30a366199e4d9b71e10e0930b6d"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Home.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "50d12e629e3495a39d0861cf7ddebad0",
+    "semantic_hash": "50d12e629e3495a39d0861cf7ddebad0"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Map.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "78426189515c4b4c9c3be8390a34f917",
+    "semantic_hash": "78426189515c4b4c9c3be8390a34f917"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Meal.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "764f5d58f606f01e80a8d39c03d2068a",
+    "semantic_hash": "764f5d58f606f01e80a8d39c03d2068a"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Settings.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "9b0c44a20d7b9d2649501da549e2800e",
+    "semantic_hash": "9b0c44a20d7b9d2649501da549e2800e"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Shopping.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "c0a16bea6936575cda53814a95763a69",
+    "semantic_hash": "c0a16bea6936575cda53814a95763a69"
+  },
+  "ios/FamilyApp/Core/FamilyRepository+Wishlist.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "fe17df9a20b8e8b5ca4981e75caa92ca",
+    "semantic_hash": "fe17df9a20b8e8b5ca4981e75caa92ca"
+  },
+  "ios/FamilyApp/Core/FamilyRepository.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "000282d1287b5f19e97017062a74f4e4",
+    "semantic_hash": "000282d1287b5f19e97017062a74f4e4"
+  },
+  "ios/FamilyApp/Core/FamilyRepositoryProtocol.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "2e7beaa7f4db93f7488010ad64718b51",
+    "semantic_hash": "2e7beaa7f4db93f7488010ad64718b51"
+  },
+  "ios/FamilyApp/Core/ImagePipelineConfig.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "a9356f419e88496affb339421b158306",
+    "semantic_hash": "a9356f419e88496affb339421b158306"
+  },
+  "ios/FamilyApp/Core/ImageUtils.swift": {
+    "mtime": 1783800657.9031909,
+    "ast_hash": "9cc2c0ce977f88bc19524d8a0a79cfcc",
+    "semantic_hash": "9cc2c0ce977f88bc19524d8a0a79cfcc"
+  },
+  "ios/FamilyApp/Core/LocalDate.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "db5c5e10501dd8a0e8c2412e15445e90",
+    "semantic_hash": "db5c5e10501dd8a0e8c2412e15445e90"
+  },
+  "ios/FamilyApp/Core/Localization.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "b44cb1f9e6f6c940ac48a481b92611dd",
+    "semantic_hash": "b44cb1f9e6f6c940ac48a481b92611dd"
+  },
+  "ios/FamilyApp/Core/LocationSharingService.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "1a299cea894488d4308bf7d6609a3345",
+    "semantic_hash": "1a299cea894488d4308bf7d6609a3345"
+  },
+  "ios/FamilyApp/Core/Models/Entities.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "e5e10082f5bfbb0242887a79bee097e5",
+    "semantic_hash": "e5e10082f5bfbb0242887a79bee097e5"
+  },
+  "ios/FamilyApp/Core/RealtimeObserver.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "1a4dffb5e8975e470d1910221788d40c",
+    "semantic_hash": "1a4dffb5e8975e470d1910221788d40c"
+  },
+  "ios/FamilyApp/Core/SessionStore.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "3922f6be237ccdcef74721861e71d5e8",
+    "semantic_hash": "3922f6be237ccdcef74721861e71d5e8"
+  },
+  "ios/FamilyApp/Core/StorageService.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "0afec55e78115760fd3f080b6cba6784",
+    "semantic_hash": "0afec55e78115760fd3f080b6cba6784"
+  },
+  "ios/FamilyApp/Core/SupabaseClientProvider.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "67eae50e134e66b0c2ff2ae32fc35574",
+    "semantic_hash": "67eae50e134e66b0c2ff2ae32fc35574"
+  },
+  "ios/FamilyApp/DesignSystem/AmbientBackground.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "c53668c6ae241cb2833f8189b4779c41",
+    "semantic_hash": "c53668c6ae241cb2833f8189b4779c41"
+  },
+  "ios/FamilyApp/DesignSystem/Colors.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "f2307367cb8f5ba63a006ca06baa67a8",
+    "semantic_hash": "f2307367cb8f5ba63a006ca06baa67a8"
+  },
+  "ios/FamilyApp/DesignSystem/Components/Buttons.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "7f035e03b43650bc38836c0ff700f945",
+    "semantic_hash": "7f035e03b43650bc38836c0ff700f945"
+  },
+  "ios/FamilyApp/DesignSystem/Components/CameraPicker.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "b966f3d953cbf33ae373fd470f884a86",
+    "semantic_hash": "b966f3d953cbf33ae373fd470f884a86"
+  },
+  "ios/FamilyApp/DesignSystem/Components/Cards.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "20559167b470c5cb9820fb790410a431",
+    "semantic_hash": "20559167b470c5cb9820fb790410a431"
+  },
+  "ios/FamilyApp/DesignSystem/Components/DatePickerField.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "386a930d2dd7d35ada0f0bbd19f26271",
+    "semantic_hash": "386a930d2dd7d35ada0f0bbd19f26271"
+  },
+  "ios/FamilyApp/DesignSystem/Components/FamilyTextField.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "156cae87435f9f9139870c738bf17b6f",
+    "semantic_hash": "156cae87435f9f9139870c738bf17b6f"
+  },
+  "ios/FamilyApp/DesignSystem/Components/GlassComponents.swift": {
+    "mtime": 1783800657.9041908,
+    "ast_hash": "9d03b0c6a0b6c9ad9312380ed9b92e81",
+    "semantic_hash": "9d03b0c6a0b6c9ad9312380ed9b92e81"
+  },
+  "ios/FamilyApp/DesignSystem/Components/InitialAvatar.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "428009023c99362292d0c3847ef6269f",
+    "semantic_hash": "428009023c99362292d0c3847ef6269f"
+  },
+  "ios/FamilyApp/DesignSystem/Components/Scaffolding.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "44620cb38fc4e221f1d24ae5917f80ca",
+    "semantic_hash": "44620cb38fc4e221f1d24ae5917f80ca"
+  },
+  "ios/FamilyApp/DesignSystem/Components/ShareSheet.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "84677c689aa46b9e416fa6dd5e546c5f",
+    "semantic_hash": "84677c689aa46b9e416fa6dd5e546c5f"
+  },
+  "ios/FamilyApp/DesignSystem/FeatureAccent.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "838d4a7f4c07cb1966403bd4c82f070d",
+    "semantic_hash": "838d4a7f4c07cb1966403bd4c82f070d"
+  },
+  "ios/FamilyApp/DesignSystem/Glass.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "a8b0f747204f3e2e71ca9ebfb072ba8e",
+    "semantic_hash": "a8b0f747204f3e2e71ca9ebfb072ba8e"
+  },
+  "ios/FamilyApp/DesignSystem/Gradients.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "d8d7209be6f2f4efb5d35a39ca42a6f8",
+    "semantic_hash": "d8d7209be6f2f4efb5d35a39ca42a6f8"
+  },
+  "ios/FamilyApp/DesignSystem/IconKeyMap.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "6a0fdd6aa755e2515fadee5b1a0f5e01",
+    "semantic_hash": "6a0fdd6aa755e2515fadee5b1a0f5e01"
+  },
+  "ios/FamilyApp/DesignSystem/Metrics.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "9c44512b7acd29d1c2e46b9b00b1e4e5",
+    "semantic_hash": "9c44512b7acd29d1c2e46b9b00b1e4e5"
+  },
+  "ios/FamilyApp/DesignSystem/Theme.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "e05591c99dcbe1c2207bc0d6359ecf9d",
+    "semantic_hash": "e05591c99dcbe1c2207bc0d6359ecf9d"
+  },
+  "ios/FamilyApp/DesignSystem/Typography.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "1df16b42c07adbec34f9e90b42146e67",
+    "semantic_hash": "1df16b42c07adbec34f9e90b42146e67"
+  },
+  "ios/FamilyApp/Features/Auth/AuthFlowView.swift": {
+    "mtime": 1783804158.6445067,
+    "ast_hash": "0a531095a3a7f725aafb23ee4bd74b63",
+    "semantic_hash": "0a531095a3a7f725aafb23ee4bd74b63"
+  },
+  "ios/FamilyApp/Features/Auth/AuthViewModel.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "f909296a4f300104799042c391c9a251",
+    "semantic_hash": "f909296a4f300104799042c391c9a251"
+  },
+  "ios/FamilyApp/Features/Birthday/BirthdayDateUtils.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "d1522866ad34fab8e1ce122c19a1dde8",
+    "semantic_hash": "d1522866ad34fab8e1ce122c19a1dde8"
+  },
+  "ios/FamilyApp/Features/Birthday/BirthdayScreen.swift": {
+    "mtime": 1783800657.9051907,
+    "ast_hash": "1884e8af7ba06fef4f0bf0a8d2acf7ed",
+    "semantic_hash": "1884e8af7ba06fef4f0bf0a8d2acf7ed"
+  },
+  "ios/FamilyApp/Features/Birthday/BirthdayViewModel.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "9b526aa2949bbdbd78ec9df760c0b6ed",
+    "semantic_hash": "9b526aa2949bbdbd78ec9df760c0b6ed"
+  },
+  "ios/FamilyApp/Features/Calendar/CalendarEventSheet.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "99c8714a615e5244cbeceeb5e21bf27a",
+    "semantic_hash": "99c8714a615e5244cbeceeb5e21bf27a"
+  },
+  "ios/FamilyApp/Features/Calendar/CalendarScreen.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "f2b3d544be39eee5021058700b25b0ca",
+    "semantic_hash": "f2b3d544be39eee5021058700b25b0ca"
+  },
+  "ios/FamilyApp/Features/Calendar/CalendarViewModel.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "ff23d7df000b80acfe5d8eedb483d4ac",
+    "semantic_hash": "ff23d7df000b80acfe5d8eedb483d4ac"
+  },
+  "ios/FamilyApp/Features/Chat/ChatScreen.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "f25fc3dbf5d07b46a7986654577757a0",
+    "semantic_hash": "f25fc3dbf5d07b46a7986654577757a0"
+  },
+  "ios/FamilyApp/Features/Chat/ChatTimeFormatters.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "6293b3841b908bb3069436eca5572664",
+    "semantic_hash": "6293b3841b908bb3069436eca5572664"
+  },
+  "ios/FamilyApp/Features/Chat/ChatViewModel+Media.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "614409b24472beba6f27602f9a32712d",
+    "semantic_hash": "614409b24472beba6f27602f9a32712d"
+  },
+  "ios/FamilyApp/Features/Chat/ChatViewModel+Members.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "33eb718ddd61d0b120fef09014a82379",
+    "semantic_hash": "33eb718ddd61d0b120fef09014a82379"
+  },
+  "ios/FamilyApp/Features/Chat/ChatViewModel+Reactions.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "b54cfbeaa11755ee452bffc26bba6148",
+    "semantic_hash": "b54cfbeaa11755ee452bffc26bba6148"
+  },
+  "ios/FamilyApp/Features/Chat/ChatViewModel.swift": {
+    "mtime": 1783800657.9061906,
+    "ast_hash": "e93035160a3bc6eed486b66adea57aa4",
+    "semantic_hash": "e93035160a3bc6eed486b66adea57aa4"
+  },
+  "ios/FamilyApp/Features/Chat/ConversationScreen.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "7482f2810c87ccc1c6448bb1d265ba29",
+    "semantic_hash": "7482f2810c87ccc1c6448bb1d265ba29"
+  },
+  "ios/FamilyApp/Features/Chat/ConversationSupportViews.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "e91c9961c21bc99601749e2ff75ba748",
+    "semantic_hash": "e91c9961c21bc99601749e2ff75ba748"
+  },
+  "ios/FamilyApp/Features/Chat/MessageRow.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "03e220e7e06d66e2403003f231b8b25a",
+    "semantic_hash": "03e220e7e06d66e2403003f231b8b25a"
+  },
+  "ios/FamilyApp/Features/Chat/VoiceNote.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "adc40d61b516ccdcb453e1f3a520a2d7",
+    "semantic_hash": "adc40d61b516ccdcb453e1f3a520a2d7"
+  },
+  "ios/FamilyApp/Features/Family/FamilyMemberSheets.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "d72d3c0ad1bc27fc419f157fb6d8ced0",
+    "semantic_hash": "d72d3c0ad1bc27fc419f157fb6d8ced0"
+  },
+  "ios/FamilyApp/Features/Family/FamilyScreen.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "69ef7d3fc858040cf7ea6b1025c1a301",
+    "semantic_hash": "69ef7d3fc858040cf7ea6b1025c1a301"
+  },
+  "ios/FamilyApp/Features/Family/FamilyViewModel.swift": {
+    "mtime": 1783804158.6445067,
+    "ast_hash": "acffa0361b51e0e77a20343ab40e0a75",
+    "semantic_hash": "acffa0361b51e0e77a20343ab40e0a75"
+  },
+  "ios/FamilyApp/Features/Family/QrCode.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "9892c629b8af36821ec16cfa05795122",
+    "semantic_hash": "9892c629b8af36821ec16cfa05795122"
+  },
+  "ios/FamilyApp/Features/Home/HomeGreetingUtils.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "7b01c0303a7f787b2d60571e40a138bb",
+    "semantic_hash": "7b01c0303a7f787b2d60571e40a138bb"
+  },
+  "ios/FamilyApp/Features/Home/HomeScreen.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "03f4d3229914a93e271fab5a54a0d618",
+    "semantic_hash": "03f4d3229914a93e271fab5a54a0d618"
+  },
+  "ios/FamilyApp/Features/Home/HomeViewModel.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "337d2524d831e1e2c9a565a9ba67f91c",
+    "semantic_hash": "337d2524d831e1e2c9a565a9ba67f91c"
+  },
+  "ios/FamilyApp/Features/Map/FamilyMapScreen.swift": {
+    "mtime": 1783800657.9071906,
+    "ast_hash": "8650393685baaac3cb8c262389187f4f",
+    "semantic_hash": "8650393685baaac3cb8c262389187f4f"
+  },
+  "ios/FamilyApp/Features/Map/FamilyMapViewModel.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "7f36c66094f8ff3b73025ed1730d591a",
+    "semantic_hash": "7f36c66094f8ff3b73025ed1730d591a"
+  },
+  "ios/FamilyApp/Features/Meal/MealScreens.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "b99d9dd9f7bce3dee7f78da038c4385e",
+    "semantic_hash": "b99d9dd9f7bce3dee7f78da038c4385e"
+  },
+  "ios/FamilyApp/Features/Meal/MealViewModel.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "bc6c8d6bb947a8679f4738adc4f27d75",
+    "semantic_hash": "bc6c8d6bb947a8679f4738adc4f27d75"
+  },
+  "ios/FamilyApp/Features/Navigation/MainTabView.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "3fbedebefffb38772136462fa68ef418",
+    "semantic_hash": "3fbedebefffb38772136462fa68ef418"
+  },
+  "ios/FamilyApp/Features/Navigation/Routes.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "00232e78e90807c13fe18cdbcaa07ad4",
+    "semantic_hash": "00232e78e90807c13fe18cdbcaa07ad4"
+  },
+  "ios/FamilyApp/Features/Onboarding/PermissionsOnboardingScreen.swift": {
+    "mtime": 1783804158.6445067,
+    "ast_hash": "6f0ba2d2c8ed23d71bd16c56c7dc2b8f",
+    "semantic_hash": "6f0ba2d2c8ed23d71bd16c56c7dc2b8f"
+  },
+  "ios/FamilyApp/Features/Profile/ProfileScreens.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "ebd22ab1aaf2c1b80a56577e343c5c37",
+    "semantic_hash": "ebd22ab1aaf2c1b80a56577e343c5c37"
+  },
+  "ios/FamilyApp/Features/Profile/ProfileViewModel.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "2412785de3946cda05f67089c1dacc7e",
+    "semantic_hash": "2412785de3946cda05f67089c1dacc7e"
+  },
+  "ios/FamilyApp/Features/Settings/SettingsScreen.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "46a2cf4978a796478c7091e6fa7efef6",
+    "semantic_hash": "46a2cf4978a796478c7091e6fa7efef6"
+  },
+  "ios/FamilyApp/Features/Shopping/ShoppingScreens.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "c164f2626d37f037dab75408659c2bf1",
+    "semantic_hash": "c164f2626d37f037dab75408659c2bf1"
+  },
+  "ios/FamilyApp/Features/Shopping/ShoppingViewModel.swift": {
+    "mtime": 1783800657.9081907,
+    "ast_hash": "b945b556cad79b90a6c5d7103ecdd4dd",
+    "semantic_hash": "b945b556cad79b90a6c5d7103ecdd4dd"
+  },
+  "ios/FamilyApp/Features/Wishlist/WishlistPDF.swift": {
+    "mtime": 1783800657.9091907,
+    "ast_hash": "b55b1626ef0fe78ed52eeb4f81f53855",
+    "semantic_hash": "b55b1626ef0fe78ed52eeb4f81f53855"
+  },
+  "ios/FamilyApp/Features/Wishlist/WishlistScreens.swift": {
+    "mtime": 1783804158.6445067,
+    "ast_hash": "fbd1ad983838c0bb0bb2a2ba31b798d5",
+    "semantic_hash": "fbd1ad983838c0bb0bb2a2ba31b798d5"
+  },
+  "ios/FamilyApp/Features/Wishlist/WishlistSheets.swift": {
+    "mtime": 1783800657.9091907,
+    "ast_hash": "3ec9d07d25ce9d3dea82fc36957501d5",
+    "semantic_hash": "3ec9d07d25ce9d3dea82fc36957501d5"
+  },
+  "ios/FamilyApp/Features/Wishlist/WishlistViewModel.swift": {
+    "mtime": 1783800657.9091907,
+    "ast_hash": "eac83e59487988942ac9c090f5af2ef2",
+    "semantic_hash": "eac83e59487988942ac9c090f5af2ef2"
+  },
+  "ios/FamilyApp/Resources/Assets.xcassets/AccentColor.colorset/Contents.json": {
+    "mtime": 1783703090.5701225,
+    "ast_hash": "ca39d82cb9fee12598c2d331902a0d9e",
+    "semantic_hash": "ca39d82cb9fee12598c2d331902a0d9e"
+  },
+  "ios/FamilyApp/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "67425efba4ad62a4368a0fc76becea74",
+    "semantic_hash": "67425efba4ad62a4368a0fc76becea74"
+  },
+  "ios/FamilyApp/Resources/Assets.xcassets/Contents.json": {
+    "mtime": 1783703090.5710025,
+    "ast_hash": "9deb2ada1cc834bbebf8bbad9c8978a1",
+    "semantic_hash": "9deb2ada1cc834bbebf8bbad9c8978a1"
+  },
+  "ios/FamilyAppTests/AuthLogicTests.swift": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "b951c3eef15809d6a1a1ae696320fa31",
+    "semantic_hash": "b951c3eef15809d6a1a1ae696320fa31"
+  },
+  "ios/FamilyAppTests/AuthViewModelTests.swift": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "3d17f0d58c7542e8540463e09234820d",
+    "semantic_hash": "3d17f0d58c7542e8540463e09234820d"
+  },
+  "ios/FamilyAppTests/AvatarPaletteTests.swift": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "2a59d279efe8a217323422a7561112ea",
+    "semantic_hash": "2a59d279efe8a217323422a7561112ea"
+  },
+  "ios/FamilyAppTests/BirthdayViewModelTests.swift": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "47979ca29f9fffd222883ef9eda6ce22",
+    "semantic_hash": "47979ca29f9fffd222883ef9eda6ce22"
+  },
+  "ios/FamilyAppTests/CalendarBirthdayLogicTests.swift": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "53382de141b655de2314d844e8af33cf",
+    "semantic_hash": "53382de141b655de2314d844e8af33cf"
+  },
+  "ios/FamilyAppTests/CalendarViewModelTests.swift": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "1069c7c49a6f94f647f17abb58d4a45f",
+    "semantic_hash": "1069c7c49a6f94f647f17abb58d4a45f"
+  },
+  "ios/FamilyAppTests/ChatLogicTests.swift": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "7d25f11dc754c1073c80c31a52ed2cf1",
+    "semantic_hash": "7d25f11dc754c1073c80c31a52ed2cf1"
+  },
+  "ios/FamilyAppTests/ChatViewModelTests.swift": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "89559757e31c20f9e773f532e9bd94c4",
+    "semantic_hash": "89559757e31c20f9e773f532e9bd94c4"
+  },
+  "ios/FamilyAppTests/CoreHelpersTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "770bb8290856f2aefe6ea4cb7f87bf2b",
+    "semantic_hash": "770bb8290856f2aefe6ea4cb7f87bf2b"
+  },
+  "ios/FamilyAppTests/DeepLinkTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "100564b4adfe6c28da0dd08fa213941f",
+    "semantic_hash": "100564b4adfe6c28da0dd08fa213941f"
+  },
+  "ios/FamilyAppTests/EntitiesTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "16a02950eceb32f376baf99df36f5100",
+    "semantic_hash": "16a02950eceb32f376baf99df36f5100"
+  },
+  "ios/FamilyAppTests/FamilyMapViewModelTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "8ee102d10f4bba13e11f05e027f888c8",
+    "semantic_hash": "8ee102d10f4bba13e11f05e027f888c8"
+  },
+  "ios/FamilyAppTests/FamilyProfileLogicTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "11a8f94d01387d7c5611b566b841fac4",
+    "semantic_hash": "11a8f94d01387d7c5611b566b841fac4"
+  },
+  "ios/FamilyAppTests/FamilyViewModelTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "bf9ce380ddc4f33bd20b2de951104cec",
+    "semantic_hash": "bf9ce380ddc4f33bd20b2de951104cec"
+  },
+  "ios/FamilyAppTests/HomeLogicTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "e62c77b5883e6798e58ca59d51a0f745",
+    "semantic_hash": "e62c77b5883e6798e58ca59d51a0f745"
+  },
+  "ios/FamilyAppTests/HomeViewModelTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "32c44a582b2730b6d7a867341570db37",
+    "semantic_hash": "32c44a582b2730b6d7a867341570db37"
+  },
+  "ios/FamilyAppTests/MapLogicTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "163c60f3ebcb2b08e9e6b2adc72b0cc5",
+    "semantic_hash": "163c60f3ebcb2b08e9e6b2adc72b0cc5"
+  },
+  "ios/FamilyAppTests/MealViewModelTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "e52cb7a10e08c88ee7a5281dd3d24552",
+    "semantic_hash": "e52cb7a10e08c88ee7a5281dd3d24552"
+  },
+  "ios/FamilyAppTests/ProfileViewModelTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "efee9a062a9a4ba43590959766c7239a",
+    "semantic_hash": "efee9a062a9a4ba43590959766c7239a"
+  },
+  "ios/FamilyAppTests/PushContractTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "3f3107d5b0c9a46146c79e654cba2d1f",
+    "semantic_hash": "3f3107d5b0c9a46146c79e654cba2d1f"
+  },
+  "ios/FamilyAppTests/SessionStoreTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "c64e04eac3ef3c292a5485d5553edfa9",
+    "semantic_hash": "c64e04eac3ef3c292a5485d5553edfa9"
+  },
+  "ios/FamilyAppTests/ShoppingMealLogicTests.swift": {
+    "mtime": 1783800657.9111905,
+    "ast_hash": "c8246ada1750e4f5000ea286728193a0",
+    "semantic_hash": "c8246ada1750e4f5000ea286728193a0"
+  },
+  "ios/FamilyAppTests/ShoppingViewModelTests.swift": {
+    "mtime": 1783800657.9121904,
+    "ast_hash": "d94c6996ea1937409ea9cf03ae97dba0",
+    "semantic_hash": "d94c6996ea1937409ea9cf03ae97dba0"
+  },
+  "ios/FamilyAppTests/Support/MockRepository.swift": {
+    "mtime": 1783800657.9121904,
+    "ast_hash": "76c6b1222806d76abd2510dcab56cc49",
+    "semantic_hash": "76c6b1222806d76abd2510dcab56cc49"
+  },
+  "ios/FamilyAppTests/Support/NoopRealtimeObserver.swift": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "41ce90c8f6f610e395c224fe42ede14d",
+    "semantic_hash": "41ce90c8f6f610e395c224fe42ede14d"
+  },
+  "ios/FamilyAppTests/WishlistLogicTests.swift": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "4560ab7b04d20aaafce5300b6d7af9d1",
+    "semantic_hash": "4560ab7b04d20aaafce5300b6d7af9d1"
+  },
+  "ios/FamilyAppTests/WishlistPDFTests.swift": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "5f6cfe859966ae529d71efcfc4ac4846",
+    "semantic_hash": "5f6cfe859966ae529d71efcfc4ac4846"
+  },
+  "ios/FamilyAppTests/WishlistViewModelTests.swift": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "d4bfac437301d24f1eb79cb147ae7918",
+    "semantic_hash": "d4bfac437301d24f1eb79cb147ae7918"
+  },
+  "obsidian/.obsidian/app.json": {
+    "mtime": 1783865405.6539428,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": "99914b932bd37a50b983c5e7c90ae93b"
+  },
+  "obsidian/.obsidian/appearance.json": {
+    "mtime": 1783865405.654518,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": "99914b932bd37a50b983c5e7c90ae93b"
+  },
+  "obsidian/.obsidian/core-plugins.json": {
+    "mtime": 1783865405.191517,
+    "ast_hash": "7c877bea49eaeabb100563bd157b9051",
+    "semantic_hash": "7c877bea49eaeabb100563bd157b9051"
+  },
+  "supabase/add_auth_user_trigger.sql": {
+    "mtime": 1782241407.9729223,
+    "ast_hash": "266f313a8220cf09a2c1a63dbdc34b1c",
+    "semantic_hash": "266f313a8220cf09a2c1a63dbdc34b1c"
+  },
+  "supabase/add_birthday_icon_color_and_owner_rls.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "238f7848e0c1aa5ce748b477c31f9778",
+    "semantic_hash": "238f7848e0c1aa5ce748b477c31f9778"
+  },
+  "supabase/add_calendar_event_attendees.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "db0c7be22d5b7aaaf31473b8728ebc1a",
+    "semantic_hash": "db0c7be22d5b7aaaf31473b8728ebc1a"
+  },
+  "supabase/add_calendar_private_and_color.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "86a0b5773eadbe04ee1d6db5f72daaa9",
+    "semantic_hash": "86a0b5773eadbe04ee1d6db5f72daaa9"
+  },
+  "supabase/add_chat_media_bucket.sql": {
+    "mtime": 1782333415.8864145,
+    "ast_hash": "437e753729a0ca85e8689112067cc47b",
+    "semantic_hash": "437e753729a0ca85e8689112067cc47b"
+  },
+  "supabase/add_color_to_meal_shopping_wishlist.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "ec62a68cc97da5412ebd73231ad51f84",
+    "semantic_hash": "ec62a68cc97da5412ebd73231ad51f84"
+  },
+  "supabase/add_conversation_participants.sql": {
+    "mtime": 1782258019.5083985,
+    "ast_hash": "9d8fead0d4d345a02f882e430b6635b9",
+    "semantic_hash": "9d8fead0d4d345a02f882e430b6635b9"
+  },
+  "supabase/add_conversation_participants_update_policy.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "091d0c28f863cb067a052615a7eddb08",
+    "semantic_hash": "091d0c28f863cb067a052615a7eddb08"
+  },
+  "supabase/add_device_push_token_platform.sql": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "d77398a12dff903abbc10bb6d1c86a64",
+    "semantic_hash": "d77398a12dff903abbc10bb6d1c86a64"
+  },
+  "supabase/add_family_member_update_policy.sql": {
+    "mtime": 1782472735.5168717,
+    "ast_hash": "140272466b639f9f4e1545f925eec6bb",
+    "semantic_hash": "140272466b639f9f4e1545f925eec6bb"
+  },
+  "supabase/add_family_photo.sql": {
+    "mtime": 1782471530.4593973,
+    "ast_hash": "9c170c9f3c0d1743d17b8d4c91b7d220",
+    "semantic_hash": "9c170c9f3c0d1743d17b8d4c91b7d220"
+  },
+  "supabase/add_family_relations.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "520a805602b3d5cd4c8aa29a46de31be",
+    "semantic_hash": "520a805602b3d5cd4c8aa29a46de31be"
+  },
+  "supabase/add_grants.sql": {
+    "mtime": 1782241407.9729223,
+    "ast_hash": "08f1149252720a7f971f3eb18df97617",
+    "semantic_hash": "08f1149252720a7f971f3eb18df97617"
+  },
+  "supabase/add_group_images_bucket.sql": {
+    "mtime": 1782247159.9926646,
+    "ast_hash": "fdf07d9daa0f24cd99dac86a285795de",
+    "semantic_hash": "fdf07d9daa0f24cd99dac86a285795de"
+  },
+  "supabase/add_last_read_at.sql": {
+    "mtime": 1782333406.026146,
+    "ast_hash": "cbdcbc58027565f34edb4edea0e08056",
+    "semantic_hash": "cbdcbc58027565f34edb4edea0e08056"
+  },
+  "supabase/add_meal_plan_name_icon.sql": {
+    "mtime": 1782335158.924547,
+    "ast_hash": "f42ff4ff185f36ec8bafca986d36737d",
+    "semantic_hash": "f42ff4ff185f36ec8bafca986d36737d"
+  },
+  "supabase/add_message_media_reactions.sql": {
+    "mtime": 1782333410.9367795,
+    "ast_hash": "f3c66f0c0431440eb8f3c7afb33ac3c5",
+    "semantic_hash": "f3c66f0c0431440eb8f3c7afb33ac3c5"
+  },
+  "supabase/add_message_reply.sql": {
+    "mtime": 1782243777.043984,
+    "ast_hash": "c1adeaeccdc77ea60a028aba1f41da67",
+    "semantic_hash": "c1adeaeccdc77ea60a028aba1f41da67"
+  },
+  "supabase/add_push_notifications.sql": {
+    "mtime": 1782527443.0441058,
+    "ast_hash": "686b1b72b61739ee7d98be9079672e2b",
+    "semantic_hash": "686b1b72b61739ee7d98be9079672e2b"
+  },
+  "supabase/add_realtime_core.sql": {
+    "mtime": 1782252592.044665,
+    "ast_hash": "033daa2661b951016f9fc127cc90d159",
+    "semantic_hash": "033daa2661b951016f9fc127cc90d159"
+  },
+  "supabase/add_shopping_list_icon.sql": {
+    "mtime": 1782335158.9145467,
+    "ast_hash": "ae668ae3b3f6d3ec27afcde206e29f59",
+    "semantic_hash": "ae668ae3b3f6d3ec27afcde206e29f59"
+  },
+  "supabase/add_storage_buckets.sql": {
+    "mtime": 1782241407.9729223,
+    "ast_hash": "5c055bc684728f516c3c39348e32a605",
+    "semantic_hash": "5c055bc684728f516c3c39348e32a605"
+  },
+  "supabase/add_user_locations.sql": {
+    "mtime": 1782249461.9924912,
+    "ast_hash": "cefc52b7eb05102d6e081e652b6863cf",
+    "semantic_hash": "cefc52b7eb05102d6e081e652b6863cf"
+  },
+  "supabase/add_user_presence.sql": {
+    "mtime": 1782518496.1425452,
+    "ast_hash": "167464c899e9fcb6ffab825d0b4ce933",
+    "semantic_hash": "167464c899e9fcb6ffab825d0b4ce933"
+  },
+  "supabase/add_wish_details.sql": {
+    "mtime": 1782518496.1425452,
+    "ast_hash": "bea62bba34d6c1ef8323340944b06765",
+    "semantic_hash": "bea62bba34d6c1ef8323340944b06765"
+  },
+  "supabase/add_wish_images_bucket.sql": {
+    "mtime": 1782518496.1425452,
+    "ast_hash": "bc191ebc8675f5decb8d6816d5e8ed22",
+    "semantic_hash": "bc191ebc8675f5decb8d6816d5e8ed22"
+  },
+  "supabase/add_wish_reservations.sql": {
+    "mtime": 1782518496.1425452,
+    "ast_hash": "ad2fe418af7c58a098b66bbc05f14e90",
+    "semantic_hash": "ad2fe418af7c58a098b66bbc05f14e90"
+  },
+  "supabase/add_wishlist_family_sharing.sql": {
+    "mtime": 1782270628.6957998,
+    "ast_hash": "b902a55bb3c5112afe9a1e7ce0d47079",
+    "semantic_hash": "b902a55bb3c5112afe9a1e7ce0d47079"
+  },
+  "supabase/add_wishlist_icon.sql": {
+    "mtime": 1782419033.7449322,
+    "ast_hash": "55b2892b44c72862a5d37e31e10d877e",
+    "semantic_hash": "55b2892b44c72862a5d37e31e10d877e"
+  },
+  "supabase/add_wishlist_realtime.sql": {
+    "mtime": 1782419033.7449322,
+    "ast_hash": "7561d49007dfa9db00849dd4c300c353",
+    "semantic_hash": "7561d49007dfa9db00849dd4c300c353"
+  },
+  "supabase/add_wishlist_share_links.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "4a92581165c0f02cdae92f5275f187c8",
+    "semantic_hash": "4a92581165c0f02cdae92f5275f187c8"
+  },
+  "supabase/cleanup_orphaned_family_data.sql": {
+    "mtime": 1782273123.888801,
+    "ast_hash": "0d31dafcb717adf049a56fe52596c02a",
+    "semantic_hash": "0d31dafcb717adf049a56fe52596c02a"
+  },
+  "supabase/diagnose_family_sync.sql": {
+    "mtime": 1782273123.888801,
+    "ast_hash": "0fbe6ad5e41982c7b6c12810b0828a1b",
+    "semantic_hash": "0fbe6ad5e41982c7b6c12810b0828a1b"
+  },
+  "supabase/diagnose_users.sql": {
+    "mtime": 1782273123.888801,
+    "ast_hash": "3219250b1bbc6cccc17e63a1dcbd8be1",
+    "semantic_hash": "3219250b1bbc6cccc17e63a1dcbd8be1"
+  },
+  "supabase/diagnose_write_path.sql": {
+    "mtime": 1782273123.888801,
+    "ast_hash": "23e15ca3cea26deadf02f187841a5fe4",
+    "semantic_hash": "23e15ca3cea26deadf02f187841a5fe4"
+  },
+  "supabase/fix_conversation_participants_grants.sql": {
+    "mtime": 1782264112.7580645,
+    "ast_hash": "36541cbddbac1ce5b9ad08cd33f1ff1c",
+    "semantic_hash": "36541cbddbac1ce5b9ad08cd33f1ff1c"
+  },
+  "supabase/fix_messages_rls_chat.sql": {
+    "mtime": 1782262858.1344812,
+    "ast_hash": "3b41de65078c37f21800fe24d8336d14",
+    "semantic_hash": "3b41de65078c37f21800fe24d8336d14"
+  },
+  "supabase/fix_users_rls_recursion.sql": {
+    "mtime": 1782419033.7449322,
+    "ast_hash": "f520123ed2cd9d68852ccc06ced3169a",
+    "semantic_hash": "f520123ed2cd9d68852ccc06ced3169a"
+  },
+  "supabase/functions/_shared/client.ts": {
+    "mtime": 1782527443.044917,
+    "ast_hash": "47c1a18bbe7b4bf6adf6e9a6c269f399",
+    "semantic_hash": "47c1a18bbe7b4bf6adf6e9a6c269f399"
+  },
+  "supabase/functions/_shared/fcm.ts": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "238f1b169f3e82772053ac95265f462b",
+    "semantic_hash": "238f1b169f3e82772053ac95265f462b"
+  },
+  "supabase/functions/daily-reminders/index.ts": {
+    "mtime": 1783703090.5735044,
+    "ast_hash": "909ab86f5ee4009174c3cfc8f9f4b916",
+    "semantic_hash": "909ab86f5ee4009174c3cfc8f9f4b916"
+  },
+  "supabase/functions/push-on-message/index.ts": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "52366ab8b1214a2e1944634e7e0ee0fe",
+    "semantic_hash": "52366ab8b1214a2e1944634e7e0ee0fe"
+  },
+  "supabase/grant_conversation_participants_update.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "a405767edde1a2447cf1af2f425a7bf4",
+    "semantic_hash": "a405767edde1a2447cf1af2f425a7bf4"
+  },
+  "supabase/grant_service_role_access.sql": {
+    "mtime": 1782527443.0451057,
+    "ast_hash": "7a69017711c4e04ae4811e01de91c10e",
+    "semantic_hash": "7a69017711c4e04ae4811e01de91c10e"
+  },
+  "supabase/grant_wish_reservations_privileges.sql": {
+    "mtime": 1782518496.1425452,
+    "ast_hash": "72b3f45d60d5990f578027807dec0b1e",
+    "semantic_hash": "72b3f45d60d5990f578027807dec0b1e"
+  },
+  "supabase/harden_family_and_message_rls.sql": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "525a2d530d9eaca8251083b8ee5442c6",
+    "semantic_hash": "525a2d530d9eaca8251083b8ee5442c6"
+  },
+  "supabase/migrate_to_supabase_only.sql": {
+    "mtime": 1782241407.9729223,
+    "ast_hash": "2747f57807510edd1196aca2cc7e93b8",
+    "semantic_hash": "2747f57807510edd1196aca2cc7e93b8"
+  },
+  "supabase/restrict_wishlist_edits_to_owner.sql": {
+    "mtime": 1783800657.9131904,
+    "ast_hash": "52178e427816031c9f44ef842ad520c9",
+    "semantic_hash": "52178e427816031c9f44ef842ad520c9"
+  },
+  "supabase/schema.sql": {
+    "mtime": 1783804158.6485066,
+    "ast_hash": "a88df3985d7dab1a94cf6a70b19f03f3",
+    "semantic_hash": "a88df3985d7dab1a94cf6a70b19f03f3"
+  },
+  "supabase/set_last_family_join_code.sql": {
+    "mtime": 1782419033.7449322,
+    "ast_hash": "14f0efea9b082f61c3618f3ea84afb51",
+    "semantic_hash": "14f0efea9b082f61c3618f3ea84afb51"
+  },
+  "supabase/strip_birthday_suffix.sql": {
+    "mtime": 1782518496.1425452,
+    "ast_hash": "3283323a6926aec6d3cfb6bed6d67c21",
+    "semantic_hash": "3283323a6926aec6d3cfb6bed6d67c21"
+  },
+  "supabase/verify_wishlist_realtime.sql": {
+    "mtime": 1782273123.888801,
+    "ast_hash": "d61e0730a2067128990f971bca9126a7",
+    "semantic_hash": "d61e0730a2067128990f971bca9126a7"
+  },
+  ".github/workflows/android-lint.yml": {
+    "mtime": 1783802163.2945595,
+    "ast_hash": "084a413ebfc9e89940a223b1fc496a52",
+    "semantic_hash": "084a413ebfc9e89940a223b1fc496a52"
+  },
+  ".github/workflows/claude-code-review.yml": {
+    "mtime": 1782399458.7611818,
+    "ast_hash": "5079400de856707524c884e89e366799",
+    "semantic_hash": "5079400de856707524c884e89e366799"
+  },
+  ".github/workflows/claude.yml": {
+    "mtime": 1782314801.9357455,
+    "ast_hash": "995b9db52dace3af043903f678a61551",
+    "semantic_hash": "995b9db52dace3af043903f678a61551"
+  },
+  ".github/workflows/swift-lint.yml": {
+    "mtime": 1783800657.9011908,
+    "ast_hash": "0babc87e719c15548e9c05155310f822",
+    "semantic_hash": "0babc87e719c15548e9c05155310f822"
+  },
+  ".pre-commit-config.yaml": {
+    "mtime": 1783802163.2955594,
+    "ast_hash": "f83ad59f568beaa22bbd686ff56a87e7",
+    "semantic_hash": "f83ad59f568beaa22bbd686ff56a87e7"
+  },
+  ".swiftlint.yml": {
+    "mtime": 1783804158.6425066,
+    "ast_hash": "e90dfc99321e78587ba6e46205b595e2",
+    "semantic_hash": "e90dfc99321e78587ba6e46205b595e2"
+  },
+  "CLAUDE.md": {
+    "mtime": 1783865766.183028,
+    "ast_hash": "feb9dee7b06c4361fe80c508ad146532",
+    "semantic_hash": "feb9dee7b06c4361fe80c508ad146532"
+  },
+  "README.md": {
+    "mtime": 1783804293.3145754,
+    "ast_hash": "40e92d06892be73d13a8f7b1ccaa2c58",
+    "semantic_hash": "40e92d06892be73d13a8f7b1ccaa2c58"
+  },
+  "The family app design docs/README.md": {
+    "mtime": 1783802163.2955594,
+    "ast_hash": "4d882eeafcc0a450a0e08c89291226c4",
+    "semantic_hash": "4d882eeafcc0a450a0e08c89291226c4"
+  },
+  "android/LINTING.md": {
+    "mtime": 1783802163.4425592,
+    "ast_hash": "954af93762f4705eca3b3b93327ecd6f",
+    "semantic_hash": "954af93762f4705eca3b3b93327ecd6f"
+  },
+  "android/config/detekt/detekt.yml": {
+    "mtime": 1783703090.5646658,
+    "ast_hash": "2a847e6020804f3aa9cad2c7e6c54c75",
+    "semantic_hash": "2a847e6020804f3aa9cad2c7e6c54c75"
+  },
+  "ios/FamilyAppTests/.swiftlint.yml": {
+    "mtime": 1783800657.9101906,
+    "ast_hash": "16dd76d208be322a5996b1beb98deee1",
+    "semantic_hash": "16dd76d208be322a5996b1beb98deee1"
+  },
+  "ios/LINTING.md": {
+    "mtime": 1783800657.912887,
+    "ast_hash": "1d0b0b82e90b997c10223a954b548973",
+    "semantic_hash": "1d0b0b82e90b997c10223a954b548973"
+  },
+  "ios/README.md": {
+    "mtime": 1783804158.6475065,
+    "ast_hash": "d427dada67ac8b21b42ab873b58d060d",
+    "semantic_hash": "d427dada67ac8b21b42ab873b58d060d"
+  },
+  "ios/project.yml": {
+    "mtime": 1783804158.6475065,
+    "ast_hash": "b7f3ff9c59c87a4487eb5429590ca065",
+    "semantic_hash": "b7f3ff9c59c87a4487eb5429590ca065"
+  },
+  "maestro/README.md": {
+    "mtime": 1783804158.6475065,
+    "ast_hash": "498d7fa2ccd75ffe3578f26b2697dbcf",
+    "semantic_hash": "498d7fa2ccd75ffe3578f26b2697dbcf"
+  },
+  "maestro/birthdays.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "6b2d19898a2839d34ea240046a702de6",
+    "semantic_hash": "6b2d19898a2839d34ea240046a702de6"
+  },
+  "maestro/calendar.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "9ccb1fdbf1a8be660bf75f7064b4d705",
+    "semantic_hash": "9ccb1fdbf1a8be660bf75f7064b4d705"
+  },
+  "maestro/chat.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "6b3e3d7a18fdb613a5230d953044e92d",
+    "semantic_hash": "6b3e3d7a18fdb613a5230d953044e92d"
+  },
+  "maestro/family.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "1be0a00e95e3fad3bb6fd511b4291a59",
+    "semantic_hash": "1be0a00e95e3fad3bb6fd511b4291a59"
+  },
+  "maestro/map.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "65b9b9421757ee1ae718bbc43c457d44",
+    "semantic_hash": "65b9b9421757ee1ae718bbc43c457d44"
+  },
+  "maestro/meals.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "cca662141355f2f8d5a7ad20d460c270",
+    "semantic_hash": "cca662141355f2f8d5a7ad20d460c270"
+  },
+  "maestro/profile_settings.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "1f4bd86dda1f838ac45368a64c39b89a",
+    "semantic_hash": "1f4bd86dda1f838ac45368a64c39b89a"
+  },
+  "maestro/shopping.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "15d2633d560a8fc5ac93ba6d9547f1ab",
+    "semantic_hash": "15d2633d560a8fc5ac93ba6d9547f1ab"
+  },
+  "maestro/wishlists.yaml": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "ff56861e65ad3e26c7674baaf02b8cfa",
+    "semantic_hash": "ff56861e65ad3e26c7674baaf02b8cfa"
+  },
+  "obsidian/00 Home.md": {
+    "mtime": 1783804293.3155754,
+    "ast_hash": "cca96960c8913a1712ce7965e0f101aa",
+    "semantic_hash": "cca96960c8913a1712ce7965e0f101aa"
+  },
+  "obsidian/01_Project_Overview/Project Overview.md": {
+    "mtime": 1783804158.6475065,
+    "ast_hash": "eb6a3a6b5bd10480fb10daa52cb9f865",
+    "semantic_hash": "eb6a3a6b5bd10480fb10daa52cb9f865"
+  },
+  "obsidian/02_Build_and_Environment/Build and Environment.md": {
+    "mtime": 1783802163.4505594,
+    "ast_hash": "deff5abfdd726f0e7471fa16e81d64f5",
+    "semantic_hash": "deff5abfdd726f0e7471fa16e81d64f5"
+  },
+  "obsidian/03_Architecture_and_Design/Architecture and Design.md": {
+    "mtime": 1783802163.4505594,
+    "ast_hash": "5641069c0a655d4af720de93270bde38",
+    "semantic_hash": "5641069c0a655d4af720de93270bde38"
+  },
+  "obsidian/03_Architecture_and_Design/Backend Options and API Strategy.md": {
+    "mtime": 1783802163.4513268,
+    "ast_hash": "4882d966bfc522a36ccaa417ca9f7872",
+    "semantic_hash": "4882d966bfc522a36ccaa417ca9f7872"
+  },
+  "obsidian/04_Features_and_Backlog/Feature Inventory.md": {
+    "mtime": 1783802163.4513268,
+    "ast_hash": "a5e198542d6a6fc3f3515365d23c8971",
+    "semantic_hash": "a5e198542d6a6fc3f3515365d23c8971"
+  },
+  "obsidian/05_Implementation_Plan/Android Parity Track.md": {
+    "mtime": 1783804293.3155754,
+    "ast_hash": "cb68872c8ddbf2b1b2c15b970cfb9804",
+    "semantic_hash": "cb68872c8ddbf2b1b2c15b970cfb9804"
+  },
+  "obsidian/05_Implementation_Plan/Delivered/Backend & Data Sync.md": {
+    "mtime": 1783802163.4514956,
+    "ast_hash": "d3d376aa89f06f863ca2525a1da99464",
+    "semantic_hash": "d3d376aa89f06f863ca2525a1da99464"
+  },
+  "obsidian/05_Implementation_Plan/Delivered/Chat.md": {
+    "mtime": 1783802163.4515483,
+    "ast_hash": "336d571a47ba6b13dce8651f3b515566",
+    "semantic_hash": "336d571a47ba6b13dce8651f3b515566"
+  },
+  "obsidian/05_Implementation_Plan/Delivered/Design & UI Polish.md": {
+    "mtime": 1783802163.4515483,
+    "ast_hash": "35b6b0c0c7d2a2c927a245b2bdc3c45b",
+    "semantic_hash": "35b6b0c0c7d2a2c927a245b2bdc3c45b"
+  },
+  "obsidian/05_Implementation_Plan/Delivered/Feature Milestones.md": {
+    "mtime": 1783802163.4515483,
+    "ast_hash": "dcc68abf031b29db4b5008fd38d52b5e",
+    "semantic_hash": "dcc68abf031b29db4b5008fd38d52b5e"
+  },
+  "obsidian/05_Implementation_Plan/Delivered/Foundation, Build & Tooling.md": {
+    "mtime": 1783802163.4515593,
+    "ast_hash": "3e5c4e2666978841c86dee516becde1f",
+    "semantic_hash": "3e5c4e2666978841c86dee516becde1f"
+  },
+  "obsidian/05_Implementation_Plan/Delivered/Testing & Quality.md": {
+    "mtime": 1783802163.4515593,
+    "ast_hash": "3d1fdb4475474daebb4d92985efeb9ed",
+    "semantic_hash": "3d1fdb4475474daebb4d92985efeb9ed"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/00 Design Improvement Plan.md": {
+    "mtime": 1783802163.4515593,
+    "ast_hash": "285a9d1a8c96d0912917ce9eec32f183",
+    "semantic_hash": "285a9d1a8c96d0912917ce9eec32f183"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/D1 \u2014 Design System Foundation.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "1b1c95223af797557012324104754529",
+    "semantic_hash": "1b1c95223af797557012324104754529"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/D2 \u2014 Accessibility & Content Correctness.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "a58bda3c3eb1f0f52b95b64cb2ac0ac1",
+    "semantic_hash": "a58bda3c3eb1f0f52b95b64cb2ac0ac1"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/D3 \u2014 Navigation & Information Architecture.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "8d20ed89d2f8d472b76e2b37694c9117",
+    "semantic_hash": "8d20ed89d2f8d472b76e2b37694c9117"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/D4 \u2014 Home Glanceable Feed.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "1b0fd75977dbe2b18787e21188502ca8",
+    "semantic_hash": "1b0fd75977dbe2b18787e21188502ca8"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/D5 \u2014 Empty States, Skeletons & Micro-interactions.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "ab76347f33e3fec7b85e3c8f85b9dc9c",
+    "semantic_hash": "ab76347f33e3fec7b85e3c8f85b9dc9c"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/D6 \u2014 Feature Deep-Dives.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "d8b5c9e6873a8d949c6a4aa012ffca92",
+    "semantic_hash": "d8b5c9e6873a8d949c6a4aa012ffca92"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/D7 \u2014 Chat & Auth Table-Stakes.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "22578968ed84e3aa3869e33cfb722b6d",
+    "semantic_hash": "22578968ed84e3aa3869e33cfb722b6d"
+  },
+  "obsidian/05_Implementation_Plan/Design_Improvements/D8 \u2014 Polish, Motion & Platform Extras.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "0d98ab59cda8c00305d327d9fd5909da",
+    "semantic_hash": "0d98ab59cda8c00305d327d9fd5909da"
+  },
+  "obsidian/05_Implementation_Plan/Implementation Plan.md": {
+    "mtime": 1783804293.3155754,
+    "ast_hash": "1d659402781ac9a2e86c33d843910b73",
+    "semantic_hash": "1d659402781ac9a2e86c33d843910b73"
+  },
+  "obsidian/05_Implementation_Plan/Project - UI - UX - improvements.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "948d359bfcf44efcce509f6cc50c7022",
+    "semantic_hash": "948d359bfcf44efcce509f6cc50c7022"
+  },
+  "obsidian/05_Implementation_Plan/iOS Port Plan.md": {
+    "mtime": 1783802163.4518273,
+    "ast_hash": "544ca1705079bbf8c5463dbf2b8f5af9",
+    "semantic_hash": "544ca1705079bbf8c5463dbf2b8f5af9"
+  },
+  "obsidian/06_Notes_and_References/Play Store Release Guide.md": {
+    "mtime": 1783804158.6475065,
+    "ast_hash": "17c514dda1df0f261e9a8f829ab40eac",
+    "semantic_hash": "17c514dda1df0f261e9a8f829ab40eac"
+  },
+  "obsidian/06_Notes_and_References/Project Notes.md": {
+    "mtime": 1783804158.6485066,
+    "ast_hash": "9b0a2dd3431cc065735266346f3db055",
+    "semantic_hash": "9b0a2dd3431cc065735266346f3db055"
+  },
+  "obsidian/Architecture Notes.md": {
+    "mtime": 1783802163.4524271,
+    "ast_hash": "5d9a0507429b30133ff85394d5ce20b5",
+    "semantic_hash": "5d9a0507429b30133ff85394d5ce20b5"
+  },
+  "obsidian/Implementation Plan.md": {
+    "mtime": 1783802163.4524271,
+    "ast_hash": "5d493237bfa92113dc20bb92bcb52f1b",
+    "semantic_hash": "5d493237bfa92113dc20bb92bcb52f1b"
+  },
+  "obsidian/Project Notes.md": {
+    "mtime": 1783804158.6485066,
+    "ast_hash": "cb7c3f4e6c4e2a012a5f6cfb889958da",
+    "semantic_hash": "cb7c3f4e6c4e2a012a5f6cfb889958da"
+  },
+  "obsidian/README.md": {
+    "mtime": 1783804158.6485066,
+    "ast_hash": "475379ee7fe0a681caa7e1d6edb44e72",
+    "semantic_hash": "475379ee7fe0a681caa7e1d6edb44e72"
+  },
+  "supabase/functions/README.md": {
+    "mtime": 1783703090.5726838,
+    "ast_hash": "3f5373b7fb49f14049508ba6c246f7d3",
+    "semantic_hash": "3f5373b7fb49f14049508ba6c246f7d3"
+  },
+  "The family app design docs/Systemdesign_Android_Gruppe06.pdf": {
+    "mtime": 1783802163.2975595,
+    "ast_hash": "5c8b64e1c0ee3844c366b48d056b8f7a",
+    "semantic_hash": "5c8b64e1c0ee3844c366b48d056b8f7a"
+  },
+  "The family app design docs/android/birthdays-list-dark.png": {
+    "mtime": 1783802163.3025594,
+    "ast_hash": "01d751fe3155a076a1e0c9a6038b61e9",
+    "semantic_hash": "01d751fe3155a076a1e0c9a6038b61e9"
+  },
+  "The family app design docs/android/birthdays-list-light.png": {
+    "mtime": 1783802163.3055594,
+    "ast_hash": "f2a01092de3d56b803abdecaf019af95",
+    "semantic_hash": "f2a01092de3d56b803abdecaf019af95"
+  },
+  "The family app design docs/android/calendar-month-dark.png": {
+    "mtime": 1783802163.3115594,
+    "ast_hash": "5ca7f4b2e4f4ceb4740180c7860106f6",
+    "semantic_hash": "5ca7f4b2e4f4ceb4740180c7860106f6"
+  },
+  "The family app design docs/android/calendar-month-with-event-light.png": {
+    "mtime": 1783802163.3165593,
+    "ast_hash": "50621955c3434c5556609187a066f133",
+    "semantic_hash": "50621955c3434c5556609187a066f133"
+  },
+  "The family app design docs/android/chats-list-dark.png": {
+    "mtime": 1783802163.3215594,
+    "ast_hash": "3a70d6228b8e093d2f147889a3022cce",
+    "semantic_hash": "3a70d6228b8e093d2f147889a3022cce"
+  },
+  "The family app design docs/android/conversation-dark.png": {
+    "mtime": 1783802163.3235593,
+    "ast_hash": "3ba698bcb7a5a52b07643c4fbde40d82",
+    "semantic_hash": "3ba698bcb7a5a52b07643c4fbde40d82"
+  },
+  "The family app design docs/android/conversation-light.png": {
+    "mtime": 1783802163.3255594,
+    "ast_hash": "ecb7643e8bd69a28f5a1edee61bb72a4",
+    "semantic_hash": "ecb7643e8bd69a28f5a1edee61bb72a4"
+  },
+  "The family app design docs/android/edit-profile-light.png": {
+    "mtime": 1783802163.3275595,
+    "ast_hash": "58661804bcfa8fe306a4b89da3708136",
+    "semantic_hash": "58661804bcfa8fe306a4b89da3708136"
+  },
+  "The family app design docs/android/family-map-light.png": {
+    "mtime": 1783802163.3305595,
+    "ast_hash": "8d3cf6797be0a3e7037f5888eee6138d",
+    "semantic_hash": "8d3cf6797be0a3e7037f5888eee6138d"
+  },
+  "The family app design docs/android/family-overview-dark.png": {
+    "mtime": 1783802163.3385594,
+    "ast_hash": "caf8fd46b5cfd0fe6a02544579db4c55",
+    "semantic_hash": "caf8fd46b5cfd0fe6a02544579db4c55"
+  },
+  "The family app design docs/android/family-overview-light.png": {
+    "mtime": 1783802163.3435595,
+    "ast_hash": "7b7d4f2f78c9703d9ac9b6c9b6564483",
+    "semantic_hash": "7b7d4f2f78c9703d9ac9b6c9b6564483"
+  },
+  "The family app design docs/android/home-dashboard-dark.png": {
+    "mtime": 1783802163.3495593,
+    "ast_hash": "ce040fbdd5f5acbff09f90284aad32a1",
+    "semantic_hash": "ce040fbdd5f5acbff09f90284aad32a1"
+  },
+  "The family app design docs/android/home-dashboard-light.png": {
+    "mtime": 1783802163.3535595,
+    "ast_hash": "9c8122ffca5a865c9b8e152c7831b1f2",
+    "semantic_hash": "9c8122ffca5a865c9b8e152c7831b1f2"
+  },
+  "The family app design docs/android/meal-plan-week-detail-dark.png": {
+    "mtime": 1783802163.3585594,
+    "ast_hash": "cb5125a20ee9e6e711f9de34700103e9",
+    "semantic_hash": "cb5125a20ee9e6e711f9de34700103e9"
+  },
+  "The family app design docs/android/meal-plan-week-detail-light.png": {
+    "mtime": 1783802163.3625593,
+    "ast_hash": "d9183344ea31037a3ca0ab4d572305dc",
+    "semantic_hash": "d9183344ea31037a3ca0ab4d572305dc"
+  },
+  "The family app design docs/android/meal-planner-list-dark.png": {
+    "mtime": 1783802163.3655593,
+    "ast_hash": "b0a57ab1f8356334c9096433eb7ce308",
+    "semantic_hash": "b0a57ab1f8356334c9096433eb7ce308"
+  },
+  "The family app design docs/android/meal-planner-list-light.png": {
+    "mtime": 1783802163.3685594,
+    "ast_hash": "961255ed840e6637d0c214ab7e9abb4b",
+    "semantic_hash": "961255ed840e6637d0c214ab7e9abb4b"
+  },
+  "The family app design docs/android/profile-dark.png": {
+    "mtime": 1783802163.3725593,
+    "ast_hash": "ebe41a738e1c4bfb536ccf276eb7de93",
+    "semantic_hash": "ebe41a738e1c4bfb536ccf276eb7de93"
+  },
+  "The family app design docs/android/profile-light.png": {
+    "mtime": 1783802163.3765595,
+    "ast_hash": "bb8d40e59d91ddce69cc61973964e94a",
+    "semantic_hash": "bb8d40e59d91ddce69cc61973964e94a"
+  },
+  "The family app design docs/android/settings-dark.png": {
+    "mtime": 1783802163.3825593,
+    "ast_hash": "13fe505ebab0fd259a7a79cfa4a1859c",
+    "semantic_hash": "13fe505ebab0fd259a7a79cfa4a1859c"
+  },
+  "The family app design docs/android/settings-light.png": {
+    "mtime": 1783802163.3875594,
+    "ast_hash": "926a44c699a3166babedf87580b8016f",
+    "semantic_hash": "926a44c699a3166babedf87580b8016f"
+  },
+  "The family app design docs/android/shopping-list-detail-with-items-light.png": {
+    "mtime": 1783802163.3905594,
+    "ast_hash": "caff64cc983c1de700fe0923f32f1ecd",
+    "semantic_hash": "caff64cc983c1de700fe0923f32f1ecd"
+  },
+  "The family app design docs/android/shopping-lists-dark.png": {
+    "mtime": 1783802163.3935595,
+    "ast_hash": "b7c56a3d706bae74bb47b847cd408f5a",
+    "semantic_hash": "b7c56a3d706bae74bb47b847cd408f5a"
+  },
+  "The family app design docs/android/shopping-lists-light.png": {
+    "mtime": 1783802163.3965595,
+    "ast_hash": "d0641bbb8f6f5b60dda817aaaf12116d",
+    "semantic_hash": "d0641bbb8f6f5b60dda817aaaf12116d"
+  },
+  "The family app design docs/android/wishlist-detail-light.png": {
+    "mtime": 1783802163.3985593,
+    "ast_hash": "4514a7f69e34ad633135f60bc9f78688",
+    "semantic_hash": "4514a7f69e34ad633135f60bc9f78688"
+  },
+  "The family app design docs/android/wishlists-list-dark.png": {
+    "mtime": 1783802163.4025593,
+    "ast_hash": "9869cf2bbff4b0f3db720f56f12fd5a5",
+    "semantic_hash": "9869cf2bbff4b0f3db720f56f12fd5a5"
+  },
+  "The family app design docs/android/wishlists-list-light.png": {
+    "mtime": 1783802163.4045594,
+    "ast_hash": "30022022c865d6315c4f58c52215a36f",
+    "semantic_hash": "30022022c865d6315c4f58c52215a36f"
+  },
+  "android/app/src/main/ic_launcher-playstore.png": {
+    "mtime": 1783703090.5506213,
+    "ast_hash": "f4683fd4820ca11fc7bbac56f8a47e30",
+    "semantic_hash": "f4683fd4820ca11fc7bbac56f8a47e30"
+  },
+  "android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
+    "mtime": 1783804158.6425066,
+    "ast_hash": "a2dac5e4485e4d79baf093ace1e437df",
+    "semantic_hash": "a2dac5e4485e4d79baf093ace1e437df"
+  },
+  "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png": {
+    "mtime": 1783804158.6425066,
+    "ast_hash": "e4076ec0162d2af86ddad0487bb0c75a",
+    "semantic_hash": "e4076ec0162d2af86ddad0487bb0c75a"
+  },
+  "android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "de7918b36d4924077f3f15a6ff4f62aa",
+    "semantic_hash": "de7918b36d4924077f3f15a6ff4f62aa"
+  },
+  "android/app/src/main/res/mipmap-mdpi/ic_launcher.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "22754fdd226a95f54a798cf97a8af970",
+    "semantic_hash": "22754fdd226a95f54a798cf97a8af970"
+  },
+  "android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "0c69dd8befaece60c0d0e107b3431187",
+    "semantic_hash": "0c69dd8befaece60c0d0e107b3431187"
+  },
+  "android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "9f50a86edf0210a8e9f9f0e4eaf9fa7f",
+    "semantic_hash": "9f50a86edf0210a8e9f9f0e4eaf9fa7f"
+  },
+  "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "c59ce07a058404209f3432880254e06e",
+    "semantic_hash": "c59ce07a058404209f3432880254e06e"
+  },
+  "android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "591852eefa366b4f3c35b1a29e0cce34",
+    "semantic_hash": "591852eefa366b4f3c35b1a29e0cce34"
+  },
+  "android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "1fd4c0ca1d5a9b1d9caad675d6c9dd35",
+    "semantic_hash": "1fd4c0ca1d5a9b1d9caad675d6c9dd35"
+  },
+  "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "aa08e72e45a0a2c718976774ccf5dbf6",
+    "semantic_hash": "aa08e72e45a0a2c718976774ccf5dbf6"
+  },
+  "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "e8963c9c16cdea988993bb7cd5d587d4",
+    "semantic_hash": "e8963c9c16cdea988993bb7cd5d587d4"
+  },
+  "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "5ee05943eb049740a8b9041fab9d6f01",
+    "semantic_hash": "5ee05943eb049740a8b9041fab9d6f01"
+  },
+  "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "9c5a8e7a375b316f815d80f0f8400e16",
+    "semantic_hash": "9c5a8e7a375b316f815d80f0f8400e16"
+  },
+  "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": {
+    "mtime": 1783804158.6435065,
+    "ast_hash": "878aa775f6d2fd2d442bf071686120aa",
+    "semantic_hash": "878aa775f6d2fd2d442bf071686120aa"
+  },
+  "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png": {
+    "mtime": 1783804158.6445067,
+    "ast_hash": "08205e1396deafeb0fa6436d0dc7388a",
+    "semantic_hash": "08205e1396deafeb0fa6436d0dc7388a"
+  },
+  "ios/FamilyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png": {
+    "mtime": 1783804158.6465065,
+    "ast_hash": "b8ba30489cd7000cea75154b01c54b29",
+    "semantic_hash": "b8ba30489cd7000cea75154b01c54b29"
+  },
+  ".claude/settings.json": {
+    "mtime": 1783866193.715508,
+    "ast_hash": "4d2f8b93f82c370c9f9eb5b1a9ac422a",
+    "semantic_hash": "4d2f8b93f82c370c9f9eb5b1a9ac422a"
+  },
+  ".impeccable/design.json": {
+    "mtime": 1783865748.0800033,
+    "ast_hash": "a09c913ac3f8f7540be1ed2d567f3c31",
+    "semantic_hash": "a09c913ac3f8f7540be1ed2d567f3c31"
+  },
+  "DESIGN.md": {
+    "mtime": 1783865694.1299293,
+    "ast_hash": "c6ff7d0889bb4642eef338855917530a",
+    "semantic_hash": "c6ff7d0889bb4642eef338855917530a"
+  },
+  "PRODUCT.md": {
+    "mtime": 1783865247.9962773,
+    "ast_hash": "782a11fc9994d6f7013f6177809e9542",
+    "semantic_hash": "782a11fc9994d6f7013f6177809e9542"
+  }
+}
