@@ -56,6 +56,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Reply
@@ -72,7 +73,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -83,7 +83,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarDuration
@@ -111,6 +110,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -140,12 +140,15 @@ import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.InitialAvatar
 import com.sandnes.familyapp.ui.components.InputDialog
-import com.sandnes.familyapp.ui.components.LoadingState
+import com.sandnes.familyapp.ui.components.ListSkeleton
 import com.sandnes.familyapp.ui.components.PillTag
+import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.theme.BrandGradient
 import com.sandnes.familyapp.ui.theme.Destructive
 import com.sandnes.familyapp.ui.theme.Indigo500
 import com.sandnes.familyapp.ui.theme.Radius
+import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.glassBar
 import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.reducedMotion
 import kotlinx.coroutines.delay
@@ -194,9 +197,7 @@ fun ChatScreen(
         },
     ) { padding ->
         if (isLoading && conversations.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                LoadingState()
-            }
+            ListSkeleton(Modifier.fillMaxSize().padding(padding))
         } else if (conversations.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(
@@ -220,7 +221,7 @@ fun ChatScreen(
             ) {
                 LazyColumn(
                     Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 80.dp),
+                    contentPadding = PaddingValues(start = Spacing.md, top = Spacing.sm, end = Spacing.md, bottom = 80.dp),
                 ) {
                     items(conversations, key = { it.conversation.id }) { preview ->
                         ConversationRow(
@@ -301,12 +302,12 @@ private fun ConversationRow(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             InitialAvatar(name = displayName, color = avatarColor, size = 56, avatarUri = avatarUri)
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(Spacing.md))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -328,7 +329,7 @@ private fun ConversationRow(
                                 if (isUnread) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                         )
                     }
@@ -356,7 +357,7 @@ private fun ConversationRow(
                             if (isUnread) {
                                 MaterialTheme.colorScheme.onSurface
                             } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             },
                         fontWeight = if (isUnread) FontWeight.Medium else FontWeight.Normal,
                         maxLines = 1,
@@ -732,9 +733,9 @@ fun ConversationScreen(
             )
         },
         bottomBar = {
-            // The surface itself absorbs the navigation-bar inset so the white composer
-            // background wraps all the way to the bottom edge (mirrors iOS).
-            Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
+            // Glass composer bar — translucent chrome over the ambient wash so scrolling
+            // messages blur beneath it (the tab-bar recipe, docked full-width).
+            Box(Modifier.glassBar(0.dp)) {
                 Column(Modifier.navigationBarsPadding()) {
                     // Edit indicator — the composer is rewriting an existing message.
                     AnimatedVisibility(visible = editing != null) {
@@ -871,28 +872,34 @@ fun ConversationScreen(
                                 }
                             }
 
-                            // Text field
-                            OutlinedTextField(
-                                value = draft,
-                                onValueChange = {
-                                    draft = it
-                                    viewModel.setTyping(it.isNotBlank())
-                                },
-                                modifier = Modifier.weight(1f),
-                                placeholder = {
+                            // Text field — glass capsule (mirrors the shopping add-item bar)
+                            Box(
+                                Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 46.dp)
+                                    .glassCard(cornerRadius = 23.dp)
+                                    .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                if (draft.isEmpty()) {
                                     Text(
                                         stringResource(R.string.message),
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
-                                },
-                                shape = RoundedCornerShape(24.dp),
-                                maxLines = 5,
-                                colors =
-                                    OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
-                                    ),
-                            )
+                                }
+                                BasicTextField(
+                                    value = draft,
+                                    onValueChange = {
+                                        draft = it
+                                        viewModel.setTyping(it.isNotBlank())
+                                    },
+                                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                    maxLines = 5,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
 
                             // Send or mic
                             AnimatedContent(
@@ -1288,8 +1295,9 @@ private fun NewConversationSheet(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-            Button(
+            Spacer(Modifier.height(Spacing.lg))
+            PrimaryButton(
+                text = stringResource(if (isGroup) R.string.create_group else R.string.start_chat),
                 onClick = {
                     scope.launch {
                         sheetState.hide()
@@ -1299,11 +1307,8 @@ private fun NewConversationSheet(
                 },
                 enabled = canCreate,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-            ) {
-                Text(stringResource(if (isGroup) R.string.create_group else R.string.start_chat), style = MaterialTheme.typography.labelLarge)
-            }
-            Spacer(Modifier.height(24.dp))
+            )
+            Spacer(Modifier.height(Spacing.xxl))
         }
     }
 }
