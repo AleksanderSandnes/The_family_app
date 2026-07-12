@@ -326,6 +326,9 @@
 "Remembered your password?" = "Husket du passordet?";
 "Please enter the 6-digit code from the email." = "Skriv inn den 6-sifrede koden fra e-posten.";
 "That code is wrong or has expired. Request a new one." = "Koden er feil eller utløpt. Be om en ny.";
+"Verify your email" = "Bekreft e-posten din";
+"Enter the 6-digit code we emailed to %@." = "Skriv inn den 6-sifrede koden vi sendte til %@.";
+"Verify" = "Bekreft";
 "Used to track family birthdays" = "Brukes til å holde styr på familiens bursdager";
 "For family contact info" = "For familiens kontaktinformasjon";
 "Too short" = "For kort";

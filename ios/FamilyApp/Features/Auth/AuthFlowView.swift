@@ -7,6 +7,8 @@ struct AuthFlowView: View {
     @State private var viewModel = AuthViewModel()
     @State private var showRegister = false
     @State private var showReset = false
+    @State private var showVerify = false
+    @State private var verifySendCode = false
 
     var body: some View {
         NavigationStack {
@@ -22,6 +24,16 @@ struct AuthFlowView: View {
             .navigationDestination(isPresented: $showReset) {
                 ResetPasswordScreen(viewModel: viewModel)
                     .navigationBarBackButtonHidden()
+            }
+            .navigationDestination(isPresented: $showVerify) {
+                VerifyEmailScreen(viewModel: viewModel, sendCode: verifySendCode)
+                    .navigationBarBackButtonHidden()
+            }
+            .onChange(of: viewModel.needsVerificationEmail) { _, email in
+                guard email != nil else { return }
+                // From register the signup call just sent the code; from login we must resend.
+                verifySendCode = !showRegister
+                showVerify = true
             }
         }
     }
@@ -169,6 +181,62 @@ struct ResetPasswordScreen: View {
             }
         }
         .onDisappear { viewModel.clearResetFlow() }
+    }
+}
+
+// MARK: - Verify email (signup)
+
+struct VerifyEmailScreen: View {
+    @Bindable var viewModel: AuthViewModel
+    let sendCode: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var code = ""
+
+    var body: some View {
+        AuthScaffold(
+            title: L("Verify your email"),
+            subtitle: L("Enter the 6-digit code we emailed to \(viewModel.needsVerificationEmail ?? viewModel.verifyEmail)."),
+            showIcon: false
+        ) {
+            ErrorBanner(message: viewModel.error)
+            FamilyTextField(
+                label: L("6-digit code"),
+                text: $code.clearingError(viewModel),
+                systemImage: "key",
+                keyboardType: .numberPad,
+                whiteField: true
+            )
+            PrimaryButton(
+                text: L("Verify"),
+                enabled: !code.isEmpty,
+                loading: viewModel.loading
+            ) {
+                viewModel.confirmSignupEmail(code: code)
+            }
+            Button(
+                viewModel.verifyCooldown > 0
+                    ? L("Resend code (\(viewModel.verifyCooldown) s)")
+                    : L("Resend code")
+            ) {
+                viewModel.resendSignupCode()
+            }
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(viewModel.verifyCooldown > 0 ? Color.secondary : Color.appPrimary)
+            .disabled(viewModel.verifyCooldown > 0 || viewModel.loading)
+            .frame(maxWidth: .infinity)
+            AuthFooter(prompt: L("Already have an account?"), action: L("Sign in")) {
+                viewModel.clearVerifyFlow()
+                viewModel.clearNeedsVerification()
+                dismiss()
+            }
+        }
+        .onAppear {
+            let email = viewModel.needsVerificationEmail ?? viewModel.verifyEmail
+            viewModel.clearNeedsVerification()
+            viewModel.startEmailVerification(email: email, sendCode: sendCode)
+        }
+        .onDisappear { viewModel.clearVerifyFlow() }
     }
 }
 

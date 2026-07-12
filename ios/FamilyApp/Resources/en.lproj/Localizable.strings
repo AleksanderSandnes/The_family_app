@@ -327,6 +327,9 @@
 "Remembered your password?" = "Remembered your password?";
 "Please enter the 6-digit code from the email." = "Please enter the 6-digit code from the email.";
 "That code is wrong or has expired. Request a new one." = "That code is wrong or has expired. Request a new one.";
+"Verify your email" = "Verify your email";
+"Enter the 6-digit code we emailed to %@." = "Enter the 6-digit code we emailed to %@.";
+"Verify" = "Verify";
 "Used to track family birthdays" = "Used to track family birthdays";
 "For family contact info" = "For family contact info";
 "Too short" = "Too short";
