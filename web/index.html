@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Family App</title>
+<meta name="description" content="One shared home for the family — shopping, meals, calendar, birthdays, wishlists, chat, and location.">
+<style>
+  :root {
+    --bg: #EFF1F8;
+    --ink: #16192A;
+    --secondary: #5F6780;
+    --accent: #5457E8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0B0D16;
+      --ink: #ECEEF8;
+      --secondary: #98A0BC;
+      --accent: #A5ABFF;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { text-align: center; padding: 24px; }
+  h1 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  p { color: var(--secondary); font-size: 16px; line-height: 1.5; margin-bottom: 24px; }
+  a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<main>
+  <h1>The Family App</h1>
+  <p>One shared home for the family.</p>
+  <a href="/privacy">Privacy Policy</a>
+</main>
+</body>
+</html>
