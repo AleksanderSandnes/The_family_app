@@ -366,6 +366,27 @@ class FamilyRepository
                 client.auth.updateUser { password = newPassword }
             }.mapCatching { completeSignInAfterConfirmation().getOrThrow() }
 
+        fun hasAuthSession(): Boolean = SupabaseManager.client.auth.currentSessionOrNull() != null
+
+        /** Verifies the emailed 6-digit signup code (which signs the user in) and
+         *  finalizes the app session so the auth gate flips. */
+        suspend fun confirmSignupEmail(
+            email: String,
+            code: String,
+        ): Result<String> =
+            runCatching {
+                SupabaseManager.client.auth.verifyEmailOtp(
+                    type = OtpType.Email.SIGNUP,
+                    email = email.trim().lowercase(),
+                    token = code,
+                )
+            }.mapCatching { completeSignInAfterConfirmation().getOrThrow() }
+
+        suspend fun resendSignupCode(email: String): Result<Unit> =
+            runCatching {
+                SupabaseManager.client.auth.resendEmail(OtpType.Email.SIGNUP, email.trim().lowercase())
+            }
+
         // ---- Family ----
 
         suspend fun createFamily(
