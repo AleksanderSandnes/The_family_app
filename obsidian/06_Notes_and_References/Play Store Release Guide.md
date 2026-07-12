@@ -139,6 +139,23 @@ service-account JSON injected via GitHub Actions secrets.
 Branch from `master` → merge into `test` → `test` into `master`; push all branches. No direct
 commits to `master`/`test`. The current work is on `chore/play-store-release`.
 
+## Privacy policy (2026-07-13)
+- Live at **https://thefamilyapp.app/privacy** — static site in `web/` at repo root, deployed to
+  Vercel project `thefamilyapp-web` with the apex domain assigned (redeploy: `cd web && vercel deploy --prod`).
+- Root https://thefamilyapp.app is a minimal landing page linking to the policy.
+
+## Play review account (2026-07-13)
+Demo family **"The Harpers"** in the production DB, created for Google Play app review and for
+store-listing screenshots (believable fake data, no "test" wording anywhere).
+- **Admin login for Play Console review:** `emma@thefamilyapp.app` (password shared separately —
+  keep it in the password manager / Play Console "App access" form, not in git).
+- Members: `liam@thefamilyapp.app`, `mia@thefamilyapp.app` (same password), join code `HARPER`.
+- Seeded data in every module: shopping (3 lists), meal plan week 29, calendar (5 events),
+  birthdays (5), wishlists (2, one wish reserved), family group chat with reactions,
+  map locations around Oslo.
+- DB cleanup 2026-07-13: all other test accounts and their data/storage removed; the only real
+  users are Charles, Rachel (Vardeveien) and Aleksander, Lotte (Korallveien 26).
+
 ## Related
 - [[02_Build_and_Environment/Build and Environment]] — toolchain, AGP/Gradle, signing config
 - [[00 Home]]
