@@ -259,6 +259,7 @@ class AuthViewModelTest {
     fun `register success flips success flag after sign-in completion`() =
         runTest(dispatcherRule.dispatcher) {
             coEvery { repo.register("Alice", "alice@example.com", "password", "", "") } returns Result.success(Unit)
+            every { repo.hasAuthSession() } returns true
             coEvery { repo.completeSignInAfterConfirmation() } returns Result.success("uid")
 
             vm.register(RegistrationForm("Alice", "alice@example.com", "password", "password", "", ""))
@@ -279,6 +280,137 @@ class AuthViewModelTest {
 
             assertEquals(R.string.an_account_with_this_email_already_exists, vm.state.value.error)
             assertFalse(vm.state.value.success)
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Signup email verification
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `register without a session routes to verification instead of completing sign-in`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.register(any(), any(), any(), any(), any()) } returns Result.success(Unit)
+            every { repo.hasAuthSession() } returns false
+
+            vm.register(RegistrationForm("Alice", "alice@example.com", "password", "password", "", ""))
+            advanceUntilIdle()
+
+            assertEquals("alice@example.com", vm.state.value.needsVerificationEmail)
+            assertFalse(vm.state.value.success)
+            coVerify(exactly = 0) { repo.completeSignInAfterConfirmation() }
+        }
+
+    @Test
+    fun `register with a session keeps the immediate sign-in path`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.register(any(), any(), any(), any(), any()) } returns Result.success(Unit)
+            every { repo.hasAuthSession() } returns true
+            coEvery { repo.completeSignInAfterConfirmation() } returns Result.success("uid")
+
+            vm.register(RegistrationForm("Alice", "alice@example.com", "password", "password", "", ""))
+            advanceUntilIdle()
+
+            assertTrue(vm.state.value.success)
+            assertNull(vm.state.value.needsVerificationEmail)
+        }
+
+    @Test
+    fun `login with unconfirmed email routes to verification instead of erroring`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.login(any(), any()) } returns
+                Result.failure(RuntimeException("Email not confirmed"))
+
+            vm.login("alice@example.com", "password")
+            advanceUntilIdle()
+
+            assertEquals("alice@example.com", vm.state.value.needsVerificationEmail)
+            assertNull(vm.state.value.error)
+        }
+
+    @Test
+    fun `startEmailVerification with sendCode resends and starts the cooldown`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.resendSignupCode("alice@example.com") } returns Result.success(Unit)
+
+            vm.startEmailVerification("alice@example.com", sendCode = true)
+            runCurrent()
+
+            assertEquals("alice@example.com", vm.verifyState.value.email)
+            assertEquals(60, vm.verifyState.value.resendCooldownSeconds)
+            coVerify(exactly = 1) { repo.resendSignupCode("alice@example.com") }
+        }
+
+    @Test
+    fun `startEmailVerification without sendCode only starts the cooldown`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.startEmailVerification("alice@example.com", sendCode = false)
+            runCurrent()
+
+            assertEquals(60, vm.verifyState.value.resendCooldownSeconds)
+            coVerify(exactly = 0) { repo.resendSignupCode(any()) }
+        }
+
+    @Test
+    fun `confirmSignupEmail with a short code sets error and does not call repo`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.confirmSignupEmail("123")
+            advanceUntilIdle()
+
+            assertEquals(R.string.enter_the_6_digit_code, vm.verifyState.value.error)
+            coVerify(exactly = 0) { repo.confirmSignupEmail(any(), any()) }
+        }
+
+    @Test
+    fun `confirmSignupEmail uses the captured email`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.confirmSignupEmail("alice@example.com", "123456") } returns Result.success("uid")
+
+            vm.startEmailVerification("alice@example.com", sendCode = false)
+            runCurrent()
+            vm.confirmSignupEmail("123456")
+            runCurrent()
+
+            assertNull(vm.verifyState.value.error)
+            coVerify(exactly = 1) { repo.confirmSignupEmail("alice@example.com", "123456") }
+        }
+
+    @Test
+    fun `confirmSignupEmail failure maps the otp error and stops loading`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.confirmSignupEmail(any(), any()) } returns
+                Result.failure(RuntimeException("Token has expired or is invalid"))
+
+            vm.startEmailVerification("alice@example.com", sendCode = false)
+            runCurrent()
+            vm.confirmSignupEmail("123456")
+            advanceUntilIdle()
+
+            assertEquals(R.string.that_code_is_wrong_or_expired, vm.verifyState.value.error)
+            assertFalse(vm.verifyState.value.loading)
+        }
+
+    @Test
+    fun `resendSignupCode is blocked while the cooldown is active`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.resendSignupCode(any()) } returns Result.success(Unit)
+
+            vm.startEmailVerification("alice@example.com", sendCode = true)
+            runCurrent()
+            vm.resendSignupCode()
+            runCurrent()
+
+            coVerify(exactly = 1) { repo.resendSignupCode(any()) }
+        }
+
+    @Test
+    fun `clearVerifyFlow resets verify state`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.startEmailVerification("alice@example.com", sendCode = false)
+            runCurrent()
+
+            vm.clearVerifyFlow()
+
+            assertEquals(VerifyEmailUiState(), vm.verifyState.value)
         }
 
     // ─────────────────────────────────────────────────────────────────────────

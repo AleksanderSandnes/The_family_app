@@ -28,6 +28,17 @@ data class AuthUiState(
     // A string resource id so error copy resolves in the UI's current locale (NB support).
     @StringRes val error: Int? = null,
     val success: Boolean = false,
+    // Set when the account needs email verification (register without session,
+    // or login rejected with "email not confirmed") — the screen navigates on it.
+    val needsVerificationEmail: String? = null,
+)
+
+/** State for the signup email-verification screen (shared by register + unverified login). */
+data class VerifyEmailUiState(
+    val email: String = "",
+    val loading: Boolean = false,
+    @StringRes val error: Int? = null,
+    val resendCooldownSeconds: Int = 0,
 )
 
 /** State for the two-step password-reset screen. Step 1 = email, step 2 = code + new password. */
@@ -86,6 +97,8 @@ class AuthViewModel
 
         fun clearError() = _state.update { it.copy(error = null) }
 
+        fun clearNeedsVerification() = _state.update { it.copy(needsVerificationEmail = null) }
+
         fun setError(
             @StringRes messageRes: Int,
         ) = _state.update { it.copy(loading = false, error = messageRes) }
@@ -103,7 +116,12 @@ class AuthViewModel
                         onSuccess = { AuthUiState(success = true) },
                         onFailure = { e ->
                             Log.e("Auth", "Login failed", e)
-                            it.copy(loading = false, error = friendlyAuthError(e, isLogin = true))
+                            val raw = e.message?.lowercase() ?: ""
+                            if ("email not confirmed" in raw || "email_not_confirmed" in raw) {
+                                it.copy(loading = false, needsVerificationEmail = email.trim().lowercase())
+                            } else {
+                                it.copy(loading = false, error = friendlyAuthError(e, isLogin = true))
+                            }
                         },
                     )
                 }
@@ -125,7 +143,11 @@ class AuthViewModel
                     _state.update { AuthUiState(error = friendlyAuthError(e, isLogin = false)) }
                     return@launch
                 }
-                // Email confirmation is disabled — session is active immediately after signUpWith.
+                if (!repo.hasAuthSession()) {
+                    // Email confirmations are ON — no session until the emailed code is verified.
+                    _state.update { AuthUiState(needsVerificationEmail = form.email.trim().lowercase()) }
+                    return@launch
+                }
                 val signInResult = repo.completeSignInAfterConfirmation()
                 _state.update {
                     signInResult.fold(
@@ -137,6 +159,86 @@ class AuthViewModel
                     )
                 }
             }
+        }
+
+        private val _verifyState = MutableStateFlow(VerifyEmailUiState())
+        val verifyState: StateFlow<VerifyEmailUiState> = _verifyState.asStateFlow()
+        private var verifyCooldownJob: Job? = null
+
+        fun startEmailVerification(
+            email: String,
+            sendCode: Boolean,
+        ) {
+            _verifyState.value = VerifyEmailUiState(email = email)
+            if (sendCode) {
+                _verifyState.update { it.copy(loading = true) }
+                viewModelScope.launch {
+                    repo
+                        .resendSignupCode(email)
+                        .onSuccess { _verifyState.update { it.copy(loading = false) } }
+                        .onFailure { e ->
+                            _verifyState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
+                        }
+                    startVerifyCooldown()
+                }
+            } else {
+                // The signup call just sent the code — only arm the cooldown.
+                startVerifyCooldown()
+            }
+        }
+
+        fun confirmSignupEmail(code: String) {
+            if (code.trim().length != RESET_CODE_LENGTH) {
+                _verifyState.update { it.copy(error = R.string.enter_the_6_digit_code) }
+                return
+            }
+            _verifyState.update { it.copy(loading = true, error = null) }
+            viewModelScope.launch {
+                repo
+                    .confirmSignupEmail(_verifyState.value.email, code.trim())
+                    .onFailure { e ->
+                        Log.e("Auth", "Signup verification failed", e)
+                        _verifyState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = false)) }
+                    }
+                // On success the session is persisted — the auth gate flips to NeedsPermissions
+                // and unmounts this flow; keep the button spinning until then.
+            }
+        }
+
+        fun resendSignupCode() {
+            val current = _verifyState.value
+            if (current.resendCooldownSeconds > 0 || current.loading) return
+            _verifyState.update { it.copy(loading = true, error = null) }
+            viewModelScope.launch {
+                repo
+                    .resendSignupCode(current.email)
+                    .onSuccess {
+                        _verifyState.update { it.copy(loading = false) }
+                        startVerifyCooldown()
+                    }
+                    .onFailure { e ->
+                        _verifyState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
+                    }
+            }
+        }
+
+        fun clearVerifyFlow() {
+            verifyCooldownJob?.cancel()
+            _verifyState.value = VerifyEmailUiState()
+        }
+
+        private fun startVerifyCooldown() {
+            verifyCooldownJob?.cancel()
+            verifyCooldownJob =
+                viewModelScope.launch {
+                    var remaining = RESEND_COOLDOWN_SECONDS
+                    while (remaining > 0) {
+                        _verifyState.update { it.copy(resendCooldownSeconds = remaining) }
+                        delay(1_000)
+                        remaining--
+                    }
+                    _verifyState.update { it.copy(resendCooldownSeconds = 0) }
+                }
         }
 
         private val _resetState = MutableStateFlow(ResetUiState())
