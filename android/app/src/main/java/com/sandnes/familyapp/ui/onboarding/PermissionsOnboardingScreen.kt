@@ -36,11 +36,8 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,7 +49,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -64,12 +60,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.sandnes.familyapp.R
+import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.theme.Amber500
+import com.sandnes.familyapp.ui.theme.AmbientBackground
+import com.sandnes.familyapp.ui.theme.BrandGradient
 import com.sandnes.familyapp.ui.theme.Indigo500
-import com.sandnes.familyapp.ui.theme.Indigo700
+import com.sandnes.familyapp.ui.theme.LiveGreen
 import com.sandnes.familyapp.ui.theme.Pink500
+import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Teal500
-import com.sandnes.familyapp.ui.theme.Violet600
+import com.sandnes.familyapp.ui.theme.glassCard
 import kotlinx.coroutines.delay
 
 @Composable
@@ -210,16 +210,9 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
         }
     }
 
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Indigo700, Violet600),
-                    ),
-                ),
-    ) {
+    // Glass House first-run: ambient wash canvas, glass permission cards, gradient only on
+    // the identity badge and the primary CTA (One Gradient Rule).
+    AmbientBackground {
         Column(
             modifier =
                 Modifier
@@ -234,7 +227,7 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
                     Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f)),
+                        .background(BrandGradient),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -250,7 +243,7 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
             Text(
                 stringResource(R.string.before_we_start),
                 style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
@@ -258,7 +251,7 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
             Text(
                 stringResource(R.string.onboarding_permissions_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
 
@@ -276,7 +269,8 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
 
             Spacer(Modifier.height(32.dp))
 
-            Button(
+            PrimaryButton(
+                text = stringResource(R.string.continue_label),
                 onClick = {
                     val toRequest = mutableListOf<String>()
                     if (!notifGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -295,28 +289,13 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
                         combinedLauncher.launch(toRequest.toTypedArray())
                     }
                 },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = Indigo700,
-                    ),
-            ) {
-                Text(
-                    stringResource(R.string.continue_label),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             Spacer(Modifier.height(12.dp))
 
             TextButton(onClick = onComplete) {
-                Text(stringResource(R.string.skip_for_now), color = Color.White.copy(alpha = 0.7f))
+                Text(stringResource(R.string.skip_for_now), color = MaterialTheme.colorScheme.primary)
             }
         }
     }
@@ -339,16 +318,14 @@ private fun PermissionCardItem(card: PermissionCardData) {
         } else {
             stringResource(R.string.permission_not_granted_a11y, card.title)
         }
-    Surface(
+    Box(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 72.dp)
+                .glassCard(Radius.card)
                 .semantics { contentDescription = semanticsLabel }
                 .clickable(enabled = !card.granted) { card.onRequest() },
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 0.dp,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -389,7 +366,7 @@ private fun PermissionCardItem(card: PermissionCardData) {
                 Icon(
                     Icons.Filled.CheckCircle,
                     contentDescription = null,
-                    tint = Color(0xFF4ADE80),
+                    tint = LiveGreen,
                     modifier = Modifier.size(24.dp),
                 )
             } else {

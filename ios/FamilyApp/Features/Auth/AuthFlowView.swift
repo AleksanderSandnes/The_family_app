@@ -226,88 +226,60 @@ struct AuthScaffold<Content: View>: View {
     var showIcon = true
     @ViewBuilder let content: () -> Content
 
-    @Environment(\.colorScheme) private var colorScheme
     @State private var visible = false
 
     var body: some View {
-        ZStack {
-            // Full-identity hero gradient (linear-gradient(160deg,#5457E8,#6D3AE0,#7C3AED))
-            LinearGradient(
-                stops: [
-                    .init(color: Color(hex: 0x5457E8), location: 0),
-                    .init(color: Color(hex: 0x6D3AE0), location: 0.55),
-                    .init(color: Color(hex: 0x7C3AED), location: 1),
-                ],
-                startPoint: UnitPoint(x: 0.15, y: 0),
-                endPoint: UnitPoint(x: 0.85, y: 1)
-            )
-            .ignoresSafeArea()
-            // Faint bokeh
-            .overlay(alignment: .topTrailing) {
-                Circle().fill(.white.opacity(0.09)).frame(width: 260, height: 260)
-                    .offset(x: 90, y: -60).blur(radius: 4)
-            }
-            .overlay(alignment: .bottomLeading) {
-                Circle().fill(.white.opacity(0.06)).frame(width: 220, height: 220)
-                    .offset(x: -70, y: 40).blur(radius: 4)
-            }
-
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Glass app-icon tile
-                    if showIcon {
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .fill(Color.white.opacity(0.2))
-                            .frame(width: 70, height: 70)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                    .strokeBorder(Color.white.opacity(0.4), lineWidth: 1)
-                            )
-                            .overlay(
-                                Image(systemName: "person.3.fill")
-                                    .font(.system(size: 30, weight: .medium))
-                                    .foregroundStyle(.white)
-                            )
-                            .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
-                    }
-                    Text(L("The Family App"))
-                        .font(.system(size: 23, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.top, 16)
-                    Text("One home for everything you share")
-                        .font(.system(size: 13.5))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .padding(.top, 2)
-
-                    // Floating frosted glass form card
-                    VStack(alignment: .leading, spacing: Spacing.md) {
-                        Text(title)
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(Color.appOnSurface)
-                        Text(subtitle)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.appOnSurfaceVariant)
-                        content()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Spacing.xxl)
-                    .padding(.vertical, Spacing.xxxl)
-                    .background(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .fill(Color(light: Color(hex: 0xF7F6FC), dark: Palette.inkSurface))
-                    )
-                    .shadow(color: Color(hex: 0x0A0C28).opacity(0.3), radius: 30, y: 20)
-                    .padding(.top, Spacing.xxxl)
-                    .opacity(visible ? 1 : 0)
-                    .offset(y: visible ? 0 : 24)
+        // Glass House front door: the ambient wash is the canvas; the brand gradient appears
+        // only on the small identity badge (One Gradient Rule), and the form sits on glass.
+        // Mirrors Android AuthScaffold.
+        ScrollView {
+            VStack(spacing: 0) {
+                // Brand identity badge over the wash
+                if showIcon {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Gradients.brand)
+                        .frame(width: 70, height: 70)
+                        .overlay(
+                            Image(systemName: "person.3.fill")
+                                .font(.system(size: 30, weight: .medium))
+                                .foregroundStyle(.white)
+                        )
+                        .shadow(color: Color(hex: 0x141A3C).opacity(0.15), radius: 12, y: 6)
                 }
-                .frame(maxWidth: 480)
-                .padding(.horizontal, Spacing.xl)
-                .padding(.vertical, 48)
-                .frame(maxWidth: .infinity)
+                Text(L("The Family App"))
+                    .font(.system(size: 23, weight: .bold))
+                    .foregroundStyle(Color.appOnSurface)
+                    .padding(.top, 16)
+                Text("One home for everything you share")
+                    .font(.system(size: 13.5))
+                    .foregroundStyle(Color.appOnSurfaceVariant)
+                    .padding(.top, 2)
+
+                // Form card — a glass surface over the wash
+                VStack(alignment: .leading, spacing: Spacing.md) {
+                    Text(title)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Color.appOnSurface)
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.appOnSurfaceVariant)
+                    content()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Spacing.xxl)
+                .padding(.vertical, Spacing.xxxl)
+                .glassCard(cornerRadius: Radius.sheet)
+                .padding(.top, Spacing.xxxl)
+                .opacity(visible ? 1 : 0)
+                .offset(y: visible ? 0 : 24)
             }
-            .scrollBounceBehavior(.basedOnSize)
+            .frame(maxWidth: 480)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.vertical, 48)
+            .frame(maxWidth: .infinity)
         }
+        .scrollBounceBehavior(.basedOnSize)
+        .ambientBackground()
         .onAppear {
             withAnimation(.easeOut(duration: 0.4)) { visible = true }
         }

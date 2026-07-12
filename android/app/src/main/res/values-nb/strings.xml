@@ -499,4 +499,8 @@
     <string name="location_sharing_channel_desc">Vises mens posisjonen din deles med familien</string>
     <string name="sharing_location_with_family">Deler posisjon med familien</string>
     <string name="your_position_is_visible_on_the_family_map">Posisjonen din er synlig på familiekartet</string>
+    <string name="couldnt_delete">Kunne ikke slette</string>
+    <string name="undo">Angre</string>
+    <string name="item_deleted">Vare slettet</string>
+    <string name="wish_deleted">Ønske slettet</string>
 </resources>

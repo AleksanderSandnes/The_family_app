@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -38,7 +37,6 @@ import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -71,11 +69,12 @@ import com.sandnes.familyapp.ui.components.FamilyTextField
 import com.sandnes.familyapp.ui.components.PrimaryButton
 import com.sandnes.familyapp.ui.components.SecondaryButton
 import com.sandnes.familyapp.ui.theme.Amber500
+import com.sandnes.familyapp.ui.theme.AmbientBackground
+import com.sandnes.familyapp.ui.theme.BrandGradient
 import com.sandnes.familyapp.ui.theme.Emerald500
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
-import com.sandnes.familyapp.ui.theme.appDarkTheme
-import com.sandnes.familyapp.ui.theme.heroGradient
+import com.sandnes.familyapp.ui.theme.glassCard
 
 @Composable
 fun LoginScreen(
@@ -559,18 +558,15 @@ private fun AuthScaffold(
     subtitle: String,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val dark = appDarkTheme()
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(heroGradient(dark)),
-        contentAlignment = Alignment.Center,
-    ) {
+    // Glass House front door: the ambient wash is the canvas; the brand gradient appears
+    // only on the small identity badge (One Gradient Rule), and the form sits on glass.
+    AmbientBackground {
         Column(
             Modifier
+                .align(Alignment.Center)
                 .widthIn(max = 480.dp)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
@@ -580,12 +576,12 @@ private fun AuthScaffold(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            // Brand header
+            // Brand header — gradient identity badge over the wash.
             Box(
                 Modifier
                     .size(72.dp)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(Color.White.copy(alpha = 0.18f)),
+                    .background(BrandGradient),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -598,48 +594,41 @@ private fun AuthScaffold(
             Spacer(Modifier.height(14.dp))
             Text(
                 stringResource(R.string.the_family_app),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 stringResource(R.string.one_home_for_everything_you_share),
-                color = Color.White.copy(alpha = 0.80f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(32.dp))
 
-            // Animated form card entrance
+            // Animated form card entrance — a glass surface over the wash.
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 4 },
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 4.dp,
-                    tonalElevation = 2.dp,
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .glassCard(Radius.sheet)
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 32.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Text(
-                            title,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            subtitle,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        content()
-                    }
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    content()
                 }
             }
         }

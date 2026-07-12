@@ -42,13 +42,14 @@ struct PermissionsOnboardingScreen: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: Spacing.lg) {
+                    // Brand identity badge — the gradient's sanctioned home (One Gradient Rule).
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Color.appPrimaryContainer)
+                        .fill(Gradients.brand)
                         .frame(width: 72, height: 72)
                         .overlay(
                             Image(systemName: "hand.raised.fill")
                                 .font(.system(size: 30))
-                                .foregroundStyle(Color.appPrimary)
+                                .foregroundStyle(.white)
                         )
                         .padding(.top, 48)
                     Text("Before we start")
@@ -83,8 +84,7 @@ struct PermissionsOnboardingScreen: View {
                                 Spacer()
                             }
                             .padding(Spacing.lg)
-                            .background(Color.appSurface)
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+                            .glassCard(cornerRadius: Radius.card)
                         }
                     }
                     .padding(.horizontal, Spacing.screenEdge)
@@ -101,7 +101,7 @@ struct PermissionsOnboardingScreen: View {
             }
             .padding(Spacing.screenEdge)
         }
-        .background(Color.appBackground)
+        .ambientBackground()
     }
 
     private func requestPermissions() {

@@ -45,6 +45,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -122,8 +126,19 @@ fun ShoppingScreen(
 
     RefreshOnResume { viewModel.refresh() }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorRes by viewModel.errorRes.collectAsStateWithLifecycle()
+    errorRes?.let { res ->
+        val message = stringResource(res)
+        LaunchedEffect(res) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { FeatureTopBar(stringResource(R.string.shopping_lists), onBack) },
         floatingActionButton = {
             AppFab(text = stringResource(R.string.new_list), icon = Icons.Filled.Add, onClick = { showAdd = true })
@@ -292,9 +307,30 @@ fun ShoppingDetailScreen(
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorRes by viewModel.errorRes.collectAsStateWithLifecycle()
+    errorRes?.let { res ->
+        val message = stringResource(res)
+        LaunchedEffect(res) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+    val undoItem by viewModel.undoItem.collectAsStateWithLifecycle()
+    undoItem?.let { deleted ->
+        val message = stringResource(R.string.item_deleted)
+        val undoLabel = stringResource(R.string.undo)
+        LaunchedEffect(deleted.id) {
+            val result = snackbarHostState.showSnackbar(message, actionLabel = undoLabel, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) viewModel.restoreItem(deleted)
+            viewModel.clearUndo()
+        }
+    }
+
     Scaffold(
         modifier = Modifier.imePadding(),
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             FeatureTopBar(list?.title ?: stringResource(R.string.list_label), onBack) {
                 if (items.isNotEmpty()) {
