@@ -67,6 +67,80 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertTrue(mock.registerCalls.isEmpty)
     }
 
+    // MARK: - Signup email verification
+
+    func testRegisterWithoutSessionRoutesToVerification() async {
+        let mock = MockRepository()
+        mock.hasSession = false
+        let vm = makeVM(mock)
+        var form = RegistrationForm()
+        form.name = "Bob"
+        form.email = "bob@test.com"
+        form.password = "secret1"
+        form.confirm = "secret1"
+
+        vm.register(form)
+        await waitUntil { vm.needsVerificationEmail != nil }
+        XCTAssertEqual(vm.needsVerificationEmail, "bob@test.com")
+    }
+
+    func testRegisterWithSessionKeepsImmediatePath() async {
+        let mock = MockRepository()
+        mock.hasSession = true
+        let vm = makeVM(mock)
+        var form = RegistrationForm()
+        form.name = "Bob"
+        form.email = "bob@test.com"
+        form.password = "secret1"
+        form.confirm = "secret1"
+
+        vm.register(form)
+        await waitUntil { !mock.registerCalls.isEmpty }
+        try? await Task.sleep(for: .milliseconds(100))
+        XCTAssertNil(vm.needsVerificationEmail)
+    }
+
+    func testUnconfirmedLoginRoutesToVerification() async {
+        let mock = MockRepository()
+        mock.loginError = NSError(
+            domain: "auth", code: 400,
+            userInfo: [NSLocalizedDescriptionKey: "Email not confirmed"]
+        )
+        let vm = makeVM(mock)
+        vm.login(email: "bob@test.com", password: "secret1")
+        await waitUntil { vm.needsVerificationEmail != nil }
+        XCTAssertEqual(vm.needsVerificationEmail, "bob@test.com")
+        XCTAssertNil(vm.error)
+    }
+
+    func testStartEmailVerificationWithSendCodeResends() async {
+        let mock = MockRepository()
+        let vm = makeVM(mock)
+        vm.startEmailVerification(email: "bob@test.com", sendCode: true)
+        await waitUntil { !mock.resendSignupCalls.isEmpty }
+        XCTAssertEqual(vm.verifyEmail, "bob@test.com")
+        await waitUntil { vm.verifyCooldown > 0 }
+        XCTAssertTrue(vm.verifyCooldown > 0)
+    }
+
+    func testConfirmSignupEmailValidatesCodeLength() async {
+        let mock = MockRepository()
+        let vm = makeVM(mock)
+        vm.confirmSignupEmail(code: "123")
+        await waitUntil { vm.error != nil }
+        XCTAssertTrue(mock.confirmSignupCalls.isEmpty)
+    }
+
+    func testConfirmSignupEmailUsesStoredEmail() async {
+        let mock = MockRepository()
+        let vm = makeVM(mock)
+        vm.startEmailVerification(email: "bob@test.com", sendCode: false)
+        vm.confirmSignupEmail(code: "123456")
+        await waitUntil { !mock.confirmSignupCalls.isEmpty }
+        XCTAssertEqual(mock.confirmSignupCalls.first?.email, "bob@test.com")
+        XCTAssertEqual(mock.confirmSignupCalls.first?.code, "123456")
+    }
+
     // MARK: - Password reset
 
     func testSendResetCodeAdvancesToStepTwoAndStartsCooldown() async {

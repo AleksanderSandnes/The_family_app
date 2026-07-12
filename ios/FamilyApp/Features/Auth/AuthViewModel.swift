@@ -27,10 +27,14 @@ final class AuthViewModel {
     var resetStep = 1
     var resetEmail = ""
     var resetCooldown = 0
+    var needsVerificationEmail: String?
+    var verifyEmail = ""
+    var verifyCooldown = 0
 
     private let repo: FamilyRepositoryProtocol
     private var authListener: Task<Void, Never>?
     private var cooldownTask: Task<Void, Never>?
+    private var verifyCooldownTask: Task<Void, Never>?
 
     init(repo: FamilyRepositoryProtocol? = nil) {
         self.repo = repo ?? FamilyRepository.shared
@@ -47,6 +51,7 @@ final class AuthViewModel {
     isolated deinit {
         authListener?.cancel()
         cooldownTask?.cancel()
+        verifyCooldownTask?.cancel()
     }
 
     func clearError() {
@@ -74,6 +79,11 @@ final class AuthViewModel {
                 loading = false
             } catch {
                 loading = false
+                let raw = error.localizedDescription.lowercased()
+                if raw.contains("email not confirmed") || raw.contains("email_not_confirmed") {
+                    needsVerificationEmail = email.trimmingCharacters(in: .whitespaces).lowercased()
+                    return
+                }
                 self.error = localized(friendlyAuthError(error, isLogin: true))
             }
         }
@@ -98,7 +108,12 @@ final class AuthViewModel {
                     birthday: form.birthday,
                     mobile: form.mobile
                 )
-                // Email confirmation is disabled — session is active immediately.
+                if !repo.hasAuthSession() {
+                    // Email confirmations are ON — no session until the emailed code is verified.
+                    loading = false
+                    needsVerificationEmail = form.email.trimmingCharacters(in: .whitespaces).lowercased()
+                    return
+                }
                 _ = try await repo.completeSignInAfterConfirmation()
                 loading = false
             } catch {
@@ -199,6 +214,84 @@ final class AuthViewModel {
                 try? await Task.sleep(for: .seconds(1))
                 if Task.isCancelled { return }
                 resetCooldown -= 1
+            }
+        }
+    }
+
+    func clearNeedsVerification() {
+        needsVerificationEmail = nil
+    }
+
+    func startEmailVerification(email: String, sendCode: Bool) {
+        verifyEmail = email
+        error = nil
+        if sendCode {
+            loading = true
+            Task {
+                do {
+                    try await repo.resendSignupCode(email: email)
+                    loading = false
+                } catch {
+                    loading = false
+                    self.error = localized(friendlyAuthError(error, isLogin: true))
+                }
+                startVerifyCooldown()
+            }
+        } else {
+            // The signup call just sent the code — only arm the cooldown.
+            startVerifyCooldown()
+        }
+    }
+
+    func confirmSignupEmail(code: String) {
+        let trimmed = code.trimmingCharacters(in: .whitespaces)
+        guard trimmed.count == resetCodeLength else {
+            return setError("Please enter the 6-digit code from the email.")
+        }
+        loading = true
+        error = nil
+        Task {
+            do {
+                _ = try await repo.confirmSignupEmail(email: verifyEmail, code: trimmed)
+                // Session persisted → RootViewModel flips the gate; keep the spinner until unmount.
+            } catch {
+                loading = false
+                self.error = localized(friendlyAuthError(error, isLogin: false))
+            }
+        }
+    }
+
+    func resendSignupCode() {
+        guard verifyCooldown == 0, !loading else { return }
+        loading = true
+        error = nil
+        Task {
+            do {
+                try await repo.resendSignupCode(email: verifyEmail)
+                loading = false
+                startVerifyCooldown()
+            } catch {
+                loading = false
+                self.error = localized(friendlyAuthError(error, isLogin: true))
+            }
+        }
+    }
+
+    func clearVerifyFlow() {
+        verifyCooldownTask?.cancel()
+        verifyEmail = ""
+        verifyCooldown = 0
+        error = nil
+    }
+
+    private func startVerifyCooldown() {
+        verifyCooldownTask?.cancel()
+        verifyCooldownTask = Task {
+            verifyCooldown = resendCooldownSeconds
+            while verifyCooldown > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { return }
+                verifyCooldown -= 1
             }
         }
     }
