@@ -6,6 +6,8 @@ import Observation
 
 let minPasswordLength = 6
 private let strongPasswordLength = 8
+let resetCodeLength = 6
+private let resendCooldownSeconds = 60
 
 /// The sign-up form fields, grouped to keep register() to a single parameter.
 struct RegistrationForm {
@@ -22,9 +24,13 @@ struct RegistrationForm {
 final class AuthViewModel {
     var loading = false
     var error: String?
+    var resetStep = 1
+    var resetEmail = ""
+    var resetCooldown = 0
 
     private let repo: FamilyRepositoryProtocol
     private var authListener: Task<Void, Never>?
+    private var cooldownTask: Task<Void, Never>?
 
     init(repo: FamilyRepositoryProtocol? = nil) {
         self.repo = repo ?? FamilyRepository.shared
@@ -40,6 +46,7 @@ final class AuthViewModel {
 
     isolated deinit {
         authListener?.cancel()
+        cooldownTask?.cancel()
     }
 
     func clearError() {
@@ -116,6 +123,86 @@ final class AuthViewModel {
         }
     }
 
+    func sendResetCode(email: String) {
+        let norm = email.trimmingCharacters(in: .whitespaces)
+        guard isValidEmail(norm) else {
+            return setError("Please enter a valid email address.")
+        }
+        loading = true
+        error = nil
+        Task {
+            do {
+                try await repo.sendPasswordResetEmail(email: norm)
+                loading = false
+                resetEmail = norm
+                resetStep = 2
+                startResendCooldown()
+            } catch {
+                loading = false
+                self.error = localized(friendlyAuthError(error, isLogin: true))
+            }
+        }
+    }
+
+    func resendResetCode() {
+        guard resetCooldown == 0, !loading else { return }
+        loading = true
+        error = nil
+        Task {
+            do {
+                try await repo.sendPasswordResetEmail(email: resetEmail)
+                loading = false
+                startResendCooldown()
+            } catch {
+                loading = false
+                self.error = localized(friendlyAuthError(error, isLogin: true))
+            }
+        }
+    }
+
+    func confirmPasswordReset(code: String, newPassword: String) {
+        let trimmed = code.trimmingCharacters(in: .whitespaces)
+        guard trimmed.count == resetCodeLength else {
+            return setError("Please enter the 6-digit code from the email.")
+        }
+        guard newPassword.count >= minPasswordLength else {
+            return setError("Password must be at least 6 characters.")
+        }
+        loading = true
+        error = nil
+        Task {
+            do {
+                _ = try await repo.confirmPasswordReset(
+                    email: resetEmail, code: trimmed, newPassword: newPassword
+                )
+                // Session persisted → RootViewModel flips the gate; keep the spinner until unmount.
+            } catch {
+                loading = false
+                self.error = localized(friendlyAuthError(error, isLogin: true))
+            }
+        }
+    }
+
+    func clearResetFlow() {
+        cooldownTask?.cancel()
+        resetStep = 1
+        resetEmail = ""
+        resetCooldown = 0
+        error = nil
+    }
+
+    private func startResendCooldown() {
+        cooldownTask?.cancel()
+        cooldownTask = Task {
+            resetCooldown = resendCooldownSeconds
+            while resetCooldown > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { return }
+                resetCooldown -= 1
+            }
+        }
+    }
+
     private func validate(email: String, password: String) -> Bool {
         if !isValidEmail(email.trimmingCharacters(in: .whitespaces)) {
             setError("Please enter a valid email address.")
@@ -154,6 +241,7 @@ let authErrorMessages: [(keywords: [String], message: String)] = [
     (["user already registered", "already been registered"], "An account with this email already exists."),
     (["email address is invalid"], "Please enter a valid email address."),
     (["password should be at least", "weak_password"], "Password must be at least 6 characters."),
+    (["otp_expired", "token has expired", "invalid token"], "That code is wrong or has expired. Request a new one."),
     (["rate limit", "too many requests"], "Too many attempts. Please wait a moment and try again."),
     (["network", "unable to resolve", "connect", "offline"], "Network error. Please check your connection."),
 ]
