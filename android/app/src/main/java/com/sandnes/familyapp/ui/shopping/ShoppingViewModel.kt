@@ -2,6 +2,7 @@ package com.sandnes.familyapp.ui.shopping
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.ShoppingItemModel
 import com.sandnes.familyapp.data.ShoppingListModel
@@ -59,6 +60,22 @@ class ShoppingViewModel
         /** Map of listId to bought/total progress, shown on list cards. */
         private val _listProgress = MutableStateFlow<Map<String, ListProgress>>(emptyMap())
         val listProgress: StateFlow<Map<String, ListProgress>> = _listProgress.asStateFlow()
+
+        /** One-shot, user-visible error as a string resource id. Cleared via [clearError]. */
+        private val _errorRes = MutableStateFlow<Int?>(null)
+        val errorRes: StateFlow<Int?> = _errorRes.asStateFlow()
+
+        fun clearError() {
+            _errorRes.value = null
+        }
+
+        /** Last successfully deleted item, offered for snackbar undo. Cleared via [clearUndo]. */
+        private val _undoItem = MutableStateFlow<ShoppingItemModel?>(null)
+        val undoItem: StateFlow<ShoppingItemModel?> = _undoItem.asStateFlow()
+
+        fun clearUndo() {
+            _undoItem.value = null
+        }
 
         private var realtimeListsChannel: RealtimeChannel? = null
         private var realtimeItemsChannel: RealtimeChannel? = null
@@ -301,7 +318,7 @@ class ShoppingViewModel
                         if (color != null) put("color", color)
                     },
                 )
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             reloadLists(userId)
         }
 
@@ -335,6 +352,7 @@ class ShoppingViewModel
             viewModelScope.launch {
                 _lists.value = _lists.value.filter { it.id != list.id }
                 runCatching { db.from("shopping_lists").delete { filter { eq("id", list.id) } } }
+                    .onFailure { _errorRes.value = R.string.couldnt_delete }
                 val userId = repo.currentUserId.first() ?: return@launch
                 reloadLists(userId)
             }
@@ -353,7 +371,7 @@ class ShoppingViewModel
                             put("item", item)
                         },
                     )
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 reloadItems(listId)
             }
 
@@ -364,7 +382,7 @@ class ShoppingViewModel
                     db.from("shopping_items").update({
                         set("checked", !item.checked)
                     }) { filter { eq("id", item.id) } }
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 reloadItems(item.listId)
             }
 
@@ -372,6 +390,23 @@ class ShoppingViewModel
             viewModelScope.launch {
                 _items.value = _items.value.filter { it.id != item.id }
                 runCatching { db.from("shopping_items").delete { filter { eq("id", item.id) } } }
+                    .onSuccess { _undoItem.value = item }
+                    .onFailure { _errorRes.value = R.string.couldnt_delete }
+                reloadItems(item.listId)
+            }
+
+        /** Re-inserts a deleted item (snackbar undo). The row gets a fresh id; content is kept. */
+        fun restoreItem(item: ShoppingItemModel) =
+            viewModelScope.launch {
+                runCatching {
+                    db.from("shopping_items").insert(
+                        buildJsonObject {
+                            put("list_id", item.listId)
+                            put("item", item.item)
+                            put("checked", item.checked)
+                        },
+                    )
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 reloadItems(item.listId)
             }
 
@@ -382,7 +417,7 @@ class ShoppingViewModel
             _items.value = _items.value.map { if (it.id == item.id) it.copy(item = newName) else it }
             runCatching {
                 db.from("shopping_items").update({ set("item", newName) }) { filter { eq("id", item.id) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             reloadItems(item.listId)
         }
 
@@ -393,7 +428,7 @@ class ShoppingViewModel
             _selectedList.value = _selectedList.value?.copy(title = newTitle)
             runCatching {
                 db.from("shopping_lists").update({ set("title", newTitle) }) { filter { eq("id", listId) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             reloadItems(listId)
         }
 
@@ -410,7 +445,7 @@ class ShoppingViewModel
                             eq("checked", true)
                         }
                     }
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_delete }
                 reloadItems(listId)
             }
 

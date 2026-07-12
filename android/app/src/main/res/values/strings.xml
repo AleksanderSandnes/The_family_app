@@ -498,4 +498,8 @@
     <string name="location_sharing_channel_desc">Shown while your location is shared with family</string>
     <string name="sharing_location_with_family">Sharing location with family</string>
     <string name="your_position_is_visible_on_the_family_map">Your position is visible on the family map</string>
+    <string name="couldnt_delete">Couldn’t delete</string>
+    <string name="undo">Undo</string>
+    <string name="item_deleted">Item deleted</string>
+    <string name="wish_deleted">Wish deleted</string>
 </resources>

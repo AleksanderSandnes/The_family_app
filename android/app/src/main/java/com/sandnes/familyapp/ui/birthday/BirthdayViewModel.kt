@@ -2,6 +2,7 @@ package com.sandnes.familyapp.ui.birthday
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.BirthdayModel
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.remote.SupabaseManager
@@ -41,6 +42,14 @@ class BirthdayViewModel
 
         private val _isLoading = MutableStateFlow(false)
         val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+        /** One-shot, user-visible error as a string resource id. Cleared via [clearError]. */
+        private val _errorRes = MutableStateFlow<Int?>(null)
+        val errorRes: StateFlow<Int?> = _errorRes.asStateFlow()
+
+        fun clearError() {
+            _errorRes.value = null
+        }
 
         /** The current app user id (public.users.id) — gates creator-only edit affordances. */
         val currentUserId: StateFlow<String?> =
@@ -170,7 +179,7 @@ class BirthdayViewModel
                             color?.let { put("color", it) }
                         },
                     )
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 reload(userId)
             }
 
@@ -195,7 +204,7 @@ class BirthdayViewModel
                 }) {
                     filter { eq("id", id) }
                 }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             val userId = currentUserId.value ?: repo.currentUserId.first() ?: return@launch
             reload(userId)
         }
@@ -204,6 +213,7 @@ class BirthdayViewModel
             viewModelScope.launch {
                 _birthdays.value = _birthdays.value.filter { it.id != birthday.id }
                 runCatching { db.from("birthdays").delete { filter { eq("id", birthday.id) } } }
+                    .onFailure { _errorRes.value = R.string.couldnt_delete }
                 val userId = repo.currentUserId.first() ?: return@launch
                 reload(userId)
             }

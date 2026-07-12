@@ -2,6 +2,7 @@ package com.sandnes.familyapp.ui.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.CalendarEventModel
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.UserModel
@@ -71,6 +72,14 @@ class CalendarViewModel
 
         private val _isLoading = MutableStateFlow(false)
         val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+        /** One-shot, user-visible error as a string resource id. Cleared via [clearError]. */
+        private val _errorRes = MutableStateFlow<Int?>(null)
+        val errorRes: StateFlow<Int?> = _errorRes.asStateFlow()
+
+        fun clearError() {
+            _errorRes.value = null
+        }
 
         /** Family members — the selectable "Going with" list and creator/attendee avatar lookup. */
         private val _familyMembers = MutableStateFlow<List<UserModel>>(emptyList())
@@ -227,7 +236,7 @@ class CalendarViewModel
                             putJsonArray("attendee_ids") { draft.attendeeIds.forEach { add(it) } }
                         },
                     )
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 loadEvents(userId)
             }
 
@@ -247,7 +256,7 @@ class CalendarViewModel
                         event.color?.let { set("color", it) } ?: setToNull("color")
                         set("attendee_ids", buildJsonArray { event.attendeeIds.forEach { add(it) } })
                     }) { filter { eq("id", event.id) } }
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 val userId = repo.currentUserId.first() ?: return@launch
                 loadEvents(userId)
             }
@@ -256,6 +265,7 @@ class CalendarViewModel
             viewModelScope.launch {
                 _events.value = _events.value.filter { it.id != event.id }
                 runCatching { db.from("calendar_events").delete { filter { eq("id", event.id) } } }
+                    .onFailure { _errorRes.value = R.string.couldnt_delete }
                 val userId = repo.currentUserId.first() ?: return@launch
                 loadEvents(userId)
             }

@@ -49,10 +49,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -126,8 +131,19 @@ fun WishlistScreen(
 
     RefreshOnResume { viewModel.refresh() }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorRes by viewModel.errorRes.collectAsStateWithLifecycle()
+    errorRes?.let { res ->
+        val message = stringResource(res)
+        LaunchedEffect(res) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { FeatureTopBar(stringResource(R.string.wishlists), onBack) },
         floatingActionButton = {
             AppFab(text = stringResource(R.string.new_wishlist), icon = Icons.Filled.Add, onClick = { showAdd = true })
@@ -264,8 +280,29 @@ fun WishlistDetailScreen(
     // Claimed wishes sink to the bottom.
     val sortedWishes = remember(wishes) { wishes.sortedWith(compareBy { it.checked }) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorRes by viewModel.errorRes.collectAsStateWithLifecycle()
+    errorRes?.let { res ->
+        val message = stringResource(res)
+        LaunchedEffect(res) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+    val undoWish by viewModel.undoWish.collectAsStateWithLifecycle()
+    undoWish?.let { deleted ->
+        val message = stringResource(R.string.wish_deleted)
+        val undoLabel = stringResource(R.string.undo)
+        LaunchedEffect(deleted.id) {
+            val result = snackbarHostState.showSnackbar(message, actionLabel = undoLabel, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) viewModel.restoreWish(deleted)
+            viewModel.clearUndo()
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             FeatureTopBar(
                 title = wishlist?.name ?: stringResource(R.string.wishlist),

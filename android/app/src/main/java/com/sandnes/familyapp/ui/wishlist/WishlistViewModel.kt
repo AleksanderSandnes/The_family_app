@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.WishModel
 import com.sandnes.familyapp.data.WishReservationModel
@@ -72,6 +73,22 @@ class WishlistViewModel
 
         private val _wishes = MutableStateFlow<List<WishModel>>(emptyList())
         val wishes: StateFlow<List<WishModel>> = _wishes.asStateFlow()
+
+        /** One-shot, user-visible error as a string resource id. Cleared via [clearError]. */
+        private val _errorRes = MutableStateFlow<Int?>(null)
+        val errorRes: StateFlow<Int?> = _errorRes.asStateFlow()
+
+        fun clearError() {
+            _errorRes.value = null
+        }
+
+        /** Last successfully deleted wish, offered for snackbar undo. Cleared via [clearUndo]. */
+        private val _undoWish = MutableStateFlow<WishModel?>(null)
+        val undoWish: StateFlow<WishModel?> = _undoWish.asStateFlow()
+
+        fun clearUndo() {
+            _undoWish.value = null
+        }
 
         private val _currentUserId = MutableStateFlow<String?>(null)
         val currentUserId: StateFlow<String?> = _currentUserId.asStateFlow()
@@ -281,7 +298,7 @@ class WishlistViewModel
                             put("reserved_by", userId)
                         },
                     )
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 loadReservations()
             }
 
@@ -297,7 +314,7 @@ class WishlistViewModel
                             eq("reserved_by", userId)
                         }
                     }
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 loadReservations()
             }
 
@@ -369,7 +386,7 @@ class WishlistViewModel
                         if (color != null) put("color", color)
                     },
                 )
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             loadWishlists(userId)
         }
 
@@ -377,6 +394,7 @@ class WishlistViewModel
             viewModelScope.launch {
                 _wishlists.value = _wishlists.value.filter { it.id != wishlist.id }
                 runCatching { db.from("wishlists").delete { filter { eq("id", wishlist.id) } } }
+                    .onFailure { _errorRes.value = R.string.couldnt_delete }
                 val userId = repo.currentUserId.first() ?: return@launch
                 loadWishlists(userId)
             }
@@ -451,7 +469,7 @@ class WishlistViewModel
                         if (imageUrl != null) put("image_url", imageUrl)
                     },
                 )
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             loadWishlistDetail(wishlistId).join()
         }
 
@@ -484,7 +502,7 @@ class WishlistViewModel
                     set("price", cleanPrice)
                     set("image_url", imageUrl)
                 }) { filter { eq("id", wishId) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             existing?.wishlistId?.let { loadWishlistDetail(it).join() }
         }
 
@@ -512,7 +530,7 @@ class WishlistViewModel
                     db.from("wishes").update({
                         set("checked", !wish.checked)
                     }) { filter { eq("id", wish.id) } }
-                }
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 loadWishlistDetail(wish.wishlistId).join()
             }
 
@@ -520,6 +538,27 @@ class WishlistViewModel
             viewModelScope.launch {
                 _wishes.value = _wishes.value.filter { it.id != wish.id }
                 runCatching { db.from("wishes").delete { filter { eq("id", wish.id) } } }
+                    .onSuccess { _undoWish.value = wish }
+                    .onFailure { _errorRes.value = R.string.couldnt_delete }
+                loadWishlistDetail(wish.wishlistId).join()
+            }
+
+        /** Re-inserts a deleted wish (snackbar undo). The row gets a fresh id; content is kept. */
+        fun restoreWish(wish: WishModel) =
+            viewModelScope.launch {
+                runCatching {
+                    db.from("wishes").insert(
+                        buildJsonObject {
+                            put("wishlist_id", wish.wishlistId)
+                            put("user_id", wish.userId)
+                            put("text", wish.text)
+                            put("checked", wish.checked)
+                            if (wish.link != null) put("link", wish.link)
+                            if (wish.price != null) put("price", wish.price)
+                            if (wish.imageUrl != null) put("image_url", wish.imageUrl)
+                        },
+                    )
+                }.onFailure { _errorRes.value = R.string.couldnt_save }
                 loadWishlistDetail(wish.wishlistId).join()
             }
 

@@ -47,6 +47,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -55,6 +57,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -190,8 +193,19 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     // Map each date to the display colours of events covering it (max 3 dots shown per day).
     val dateColors: Map<LocalDate, List<Color>> = remember(allEvents) { dateEventColors(allEvents) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorRes by viewModel.errorRes.collectAsStateWithLifecycle()
+    errorRes?.let { res ->
+        val message = stringResource(res)
+        LaunchedEffect(res) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             // iOS header: "Today" pill + circular "+" both in the top bar (no FAB).
             AppTopBar(

@@ -29,8 +29,11 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -103,8 +106,19 @@ fun BirthdayScreen(
             }
         }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorRes by viewModel.errorRes.collectAsStateWithLifecycle()
+    errorRes?.let { res ->
+        val message = stringResource(res)
+        LaunchedEffect(res) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { FeatureTopBar(stringResource(R.string.birthdays), onBack) },
         floatingActionButton = {
             AppFab(text = stringResource(R.string.add_birthday), icon = Icons.Filled.Add, onClick = { showAdd = true })

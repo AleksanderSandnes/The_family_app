@@ -25,9 +25,20 @@ First full `/impeccable` critique + audit + polish across both apps. Full report
 
 Verified: `assembleDebug`, `testDebugUnitTest`, `detekt`, `spotlessCheck` all green. iOS changes are conservative and await Mac compile.
 
-## Recommended follow-ups (not done)
+## Follow-up pass shipped (branch `feat/impeccable-followups`, same day)
 
-1. `/impeccable harden` — forgot-password reset flow (P1, currently a dead-end dialog); errorEvent→snackbar for optimistic writes outside chat; snackbar-undo for row deletes.
-2. `/impeccable optimize` — profile per-row Haze blur on a mid-range device; iOS `GlassEffectContainer` on heavy screens.
-3. `/impeccable adapt` — tablet max-width wrappers (Android); iPad/orientation scope decision (iOS is iPhone-portrait-only, deploymentTarget 26.0).
-4. Auth + permissions onboarding visually abandon the Glass House (full-bleed gradients) — a deliberate-or-drift decision worth making.
+Owner ruled the gradient front door **drift** → fixed; forgot-password email flow explicitly deferred.
+
+- **Glass House front door** — Android `AuthScaffold` + `PermissionsOnboardingScreen` rebuilt on `AmbientBackground` with glass cards; the brand gradient survives only on the identity badge and the primary CTA (One Gradient Rule). iOS `AuthScaffold` mirrored (`.ambientBackground()` + `.glassCard`, gradient badge); iOS onboarding cards moved from flat surface to glass.
+- **Failure signals** — meal's `errorRes`→snackbar pattern replicated in Shopping, Wishlist, Calendar, Birthday ViewModels: every create/update/delete/toggle/reserve now surfaces "Couldn't save/delete" instead of silently reverting.
+- **Undo** — deleting a shopping item or a wish shows a snackbar with Undo (re-inserts the row, content preserved).
+- **Tablets** — settings/profile/edit-profile forms capped at 640dp and centered.
+
+Verified: `assembleDebug`, `testDebugUnitTest`, `detekt`, `spotlessCheck` green.
+
+## Still open
+
+1. Forgot-password reset flow — deferred by owner ("not yet"); the coming-soon dialog stays.
+2. iOS `GlassEffectContainer` — skipped deliberately: it visually merges nearby glass shapes, so it needs on-device verification on a Mac before shipping.
+3. Per-row Haze blur profiling on a mid-range Android device.
+4. iOS iPad/orientation + deploymentTarget-26 scope decision.
