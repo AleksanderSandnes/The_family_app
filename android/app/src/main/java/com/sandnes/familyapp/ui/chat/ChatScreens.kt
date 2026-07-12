@@ -422,6 +422,7 @@ fun ConversationScreen(
     val conversation by viewModel.conversation.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val myId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
+    val isAdmin by viewModel.isAdmin.collectAsStateWithLifecycle()
     val otherLastRead by viewModel.otherLastRead.collectAsStateWithLifecycle()
     val typingUsers by viewModel.typingUsers.collectAsStateWithLifecycle()
     val replyTo by viewModel.replyTo.collectAsStateWithLifecycle()
@@ -696,15 +697,18 @@ fun ConversationScreen(
                                     },
                                 )
                             }
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.delete_conversation), color = MaterialTheme.colorScheme.error) },
-                                leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    showMenu = false
-                                    showDeleteConfirm = true
-                                },
-                            )
+                            // Creator or family admin only (mirrors conversations_delete RLS).
+                            if (conversation?.userFrom == myId || isAdmin) {
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.delete_conversation), color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        showMenu = false
+                                        showDeleteConfirm = true
+                                    },
+                                )
+                            }
                         }
                     }
                 },

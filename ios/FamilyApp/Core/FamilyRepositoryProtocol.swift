@@ -12,6 +12,7 @@ protocol FamilyRepositoryProtocol: AnyObject {
     // Users / family reads
     func getUser(_ userId: String) async -> UserModel?
     func getFamily(familyId: String) async -> FamilyModel?
+    func isFamilyAdmin(userId: String) async -> Bool
     func getFamilyMembers(familyId: String) async -> [UserModel]
     func getMyRelations(userId: String) async -> [String: String]
     func familyChanged() -> AsyncStream<Void>

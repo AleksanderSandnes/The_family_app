@@ -60,6 +60,8 @@ data class MealPlanModel(
     val icon: String = "restaurant",
     // User-picked 0xRRGGBB colour (add_color_to_meal_shopping_wishlist.sql). Null → feature accent.
     val color: Int? = null,
+    // Creator (add_destructive_action_gating.sql). Null on legacy rows → admin-only delete.
+    @SerialName("created_by") val createdBy: String? = null,
 )
 
 @Serializable

@@ -79,6 +79,11 @@ final class MockRepository: FamilyRepositoryProtocol {
         families[familyId]
     }
 
+    var isAdminResult = false
+    func isFamilyAdmin(userId _: String) async -> Bool {
+        isAdminResult
+    }
+
     func getFamilyMembers(familyId _: String) async -> [UserModel] {
         familyMembers
     }

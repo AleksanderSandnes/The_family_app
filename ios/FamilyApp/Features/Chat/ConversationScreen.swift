@@ -216,8 +216,11 @@ struct ConversationScreen: View {
                     Label(L("Remove member"), systemImage: "person.badge.minus")
                 }
             }
-            Button(role: .destructive) { showDeleteConfirm = true } label: {
-                Label(L("Delete conversation"), systemImage: "trash")
+            // Creator or family admin only (mirrors conversations_delete RLS).
+            if viewModel.conversation?.userFrom == myId || viewModel.isAdmin {
+                Button(role: .destructive) { showDeleteConfirm = true } label: {
+                    Label(L("Delete conversation"), systemImage: "trash")
+                }
             }
         } label: {
             Image(systemName: "ellipsis.circle")

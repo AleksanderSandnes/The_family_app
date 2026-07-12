@@ -97,12 +97,15 @@ struct MealPlanModel: Codable, Identifiable, Hashable {
     var name = ""
     var icon = "restaurant"
     var color: Int?
+    // Creator (add_destructive_action_gating.sql). Nil on legacy rows → admin-only delete.
+    var createdBy: String?
 
     enum CodingKeys: String, CodingKey {
         case id, week, name, icon, color
         case familyId = "family_id"
         case fromDate = "from_date"
         case toDate = "to_date"
+        case createdBy = "created_by"
     }
 }
 

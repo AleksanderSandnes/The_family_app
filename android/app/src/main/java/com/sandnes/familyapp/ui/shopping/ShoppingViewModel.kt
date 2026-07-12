@@ -19,9 +19,11 @@ import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -60,6 +62,14 @@ class ShoppingViewModel
         /** Map of listId to bought/total progress, shown on list cards. */
         private val _listProgress = MutableStateFlow<Map<String, ListProgress>>(emptyMap())
         val listProgress: StateFlow<Map<String, ListProgress>> = _listProgress.asStateFlow()
+
+        /** Whether the current user is the family admin — drives creator-or-admin delete gating. */
+        private val _isAdmin = MutableStateFlow(false)
+        val isAdmin: StateFlow<Boolean> = _isAdmin.asStateFlow()
+
+        /** Current app user id — pairs with [isAdmin] for the delete-gating check. */
+        val currentUserIdState: StateFlow<String?> =
+            repo.currentUserId.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
         /** One-shot, user-visible error as a string resource id. Cleared via [clearError]. */
         private val _errorRes = MutableStateFlow<Int?>(null)
@@ -150,6 +160,7 @@ class ShoppingViewModel
          */
         private suspend fun reloadLists(userId: String) {
             runCatching {
+                _isAdmin.value = repo.isFamilyAdmin(userId)
                 val user = repo.getUser(userId)
                 reloadListsInternal(userId, user?.familyId)
                 // Also subscribe if the user just joined/created a family.

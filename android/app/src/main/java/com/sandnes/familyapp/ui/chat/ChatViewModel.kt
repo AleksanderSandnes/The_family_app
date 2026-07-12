@@ -101,6 +101,10 @@ class ChatViewModel
 
         val currentUserId: Flow<String?> = repo.currentUserId
 
+        /** Whether the current user is the family admin — drives creator-or-admin delete gating. */
+        private val _isAdmin = MutableStateFlow(false)
+        val isAdmin: StateFlow<Boolean> = _isAdmin.asStateFlow()
+
         private val _conversation = MutableStateFlow<ConversationModel?>(null)
         val conversation: StateFlow<ConversationModel?> = _conversation.asStateFlow()
 
@@ -185,6 +189,7 @@ class ChatViewModel
         }
 
         private suspend fun loadConversations(userId: String) {
+            runCatching { _isAdmin.value = repo.isFamilyAdmin(userId) }
             _isLoading.value = true
             runCatching {
                 val user = repo.getUser(userId)

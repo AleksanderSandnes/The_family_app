@@ -18,9 +18,11 @@ import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -69,6 +71,13 @@ class MealViewModel
          *  once shown so a failed create surfaces instead of presenting as "nothing happened". */
         private val _errorRes = MutableStateFlow<Int?>(null)
         val errorRes: StateFlow<Int?> = _errorRes.asStateFlow()
+
+        /** Current app user id + admin flag — drive creator-or-admin delete gating in the UI. */
+        val currentUserId: StateFlow<String?> =
+            repo.currentUserId.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+        private val _isAdmin = MutableStateFlow(false)
+        val isAdmin: StateFlow<Boolean> = _isAdmin.asStateFlow()
 
         fun clearError() {
             _errorRes.value = null
@@ -124,6 +133,7 @@ class MealViewModel
         fun refresh() =
             viewModelScope.launch {
                 val userId = repo.currentUserId.first() ?: return@launch
+                runCatching { _isAdmin.value = repo.isFamilyAdmin(userId) }
                 val user = repo.getUser(userId)
                 _hasFamily.value = user?.familyId != null
                 if (user?.familyId != null) loadPlansOnly(user.familyId)
@@ -243,7 +253,7 @@ class MealViewModel
 
             val from = LocalDate.parse(fromIso)
             val to = LocalDate.parse(toIso)
-            val optimistic = buildOptimisticPlan(name, fromIso, toIso, icon, color, familyId)
+            val optimistic = buildOptimisticPlan(name, fromIso, toIso, icon, color, familyId, createdBy = userId)
             _plans.value = _plans.value + optimistic
 
             val result = runCatching { insertPlanWithDays(optimistic, from, to) }
@@ -274,6 +284,7 @@ class MealViewModel
                             put("to_date", draft.toDate)
                             put("week", draft.week)
                             draft.color?.let { put("color", it) }
+                            draft.createdBy?.let { put("created_by", it) }
                         },
                     ) { select() }
                     .decodeList<MealPlanModel>()
@@ -369,6 +380,7 @@ internal fun buildOptimisticPlan(
     icon: String,
     color: Int?,
     familyId: String,
+    createdBy: String? = null,
 ): MealPlanModel {
     val from = LocalDate.parse(fromIso)
     val cal =
@@ -384,5 +396,6 @@ internal fun buildOptimisticPlan(
         toDate = toIso,
         week = cal.get(Calendar.WEEK_OF_YEAR),
         color = color,
+        createdBy = createdBy,
     )
 }

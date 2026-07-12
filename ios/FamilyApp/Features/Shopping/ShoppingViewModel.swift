@@ -23,6 +23,8 @@ final class ShoppingViewModel {
     private(set) var selectedList: ShoppingListModel?
     private(set) var items: [ShoppingItemModel] = []
     private(set) var listProgress: [String: ListProgress] = [:]
+    /// Whether the current user is the family admin — drives creator-or-admin delete gating.
+    private(set) var isAdmin = false
 
     private let repo: FamilyRepositoryProtocol
     private let listsObserver: RealtimeObserving
@@ -71,6 +73,7 @@ final class ShoppingViewModel {
     private func reloadLists() async {
         guard let userId = repo.session.currentUserId else { return }
         let user = await repo.getUser(userId)
+        isAdmin = await repo.isFamilyAdmin(userId: userId)
         let familyId = user?.familyId
 
         let result = await (try? repo.fetchShoppingLists(userId: userId, familyId: familyId)) ?? lists

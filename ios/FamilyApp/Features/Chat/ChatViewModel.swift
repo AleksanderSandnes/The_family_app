@@ -21,6 +21,8 @@ final class ChatViewModel {
     // Plain `var` so the `+Media`/`+Members` extensions in sibling files can mutate it.
     var conversations: [ConversationWithPreview] = []
     private(set) var isLoading = false
+    /// Whether the current user is the family admin — drives creator-or-admin delete gating.
+    private(set) var isAdmin = false
     private(set) var familyMembers: [UserModel] = []
     private(set) var userProfiles: [String: UserModel] = [:]
 
@@ -143,6 +145,7 @@ final class ChatViewModel {
         }
         isLoading = true
         defer { isLoading = false }
+        isAdmin = await repo.isFamilyAdmin(userId: userId)
 
         var familyId: String?
         if let user = await repo.getUser(userId) {

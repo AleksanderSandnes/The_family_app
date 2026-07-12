@@ -89,6 +89,10 @@ class CalendarViewModel
         val currentUserId: StateFlow<String?> =
             repo.currentUserId.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+        /** Whether the current user is the family admin — drives creator-or-admin delete gating. */
+        private val _isAdmin = MutableStateFlow(false)
+        val isAdmin: StateFlow<Boolean> = _isAdmin.asStateFlow()
+
         private var realtimeChannel: RealtimeChannel? = null
 
         val eventsForSelectedDate: StateFlow<List<CalendarEventModel>> =
@@ -126,6 +130,7 @@ class CalendarViewModel
             }
 
         private suspend fun loadEvents(userId: String) {
+            runCatching { _isAdmin.value = repo.isFamilyAdmin(userId) }
             if (_events.value.isEmpty()) _isLoading.value = true
             runCatching {
                 val user = repo.getUser(userId)

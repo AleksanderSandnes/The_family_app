@@ -48,6 +48,7 @@ extension FamilyRepository {
                 "to_date": .string(plan.toDate),
                 "week": .integer(plan.week),
                 "color": plan.color.map { AnyJSON.integer($0) } ?? .null,
+                "created_by": plan.createdBy.map { AnyJSON.string($0) } ?? .null,
             ])
             .select()
             .single()
