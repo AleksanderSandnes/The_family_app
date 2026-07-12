@@ -5,6 +5,12 @@ This Obsidian vault is the canonical source for project plans, notes, and archit
 Update it here first and keep it current as implementation progresses.
 
 ## Active tracks
+- **✅ Signup email verification (Android + iOS)** — delivered 2026-07-12, branch
+  `feat/signup-email-verification`. `enable_confirmations = true` live in production;
+  new signups enter a 6-digit code (branded confirmation email) on a shared
+  VerifyEmailScreen before the permission screen; unverified logins route into the
+  same screen instead of a dead end. Old app versions error at signup until updated
+  (accepted). Unit tests green (Android); iOS authored, Mac compile pending.
 - **✅ Forgot-password reset (Android + iOS)** — delivered 2026-07-12, branch
   `feat/forgot-password-reset`. 6-digit OTP code flow (no deep links): repo methods +
   reset state machine + two-step screen on both platforms, EN/NB strings, unit tests

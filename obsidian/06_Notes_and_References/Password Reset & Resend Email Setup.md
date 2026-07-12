@@ -52,8 +52,9 @@ password = `supabase-smtp-familyapp` key (from `.envrc`), sender
 (2026-07-12 21:10 UTC). Remaining: on-device test — Login → Forgot password? →
 code arrives → new password signs in, old password rejected.
 
-## Next planned
+## Signup email verification — SHIPPED ✅ (2026-07-12)
 
-Email verification at signup (6-digit code step before the permission screen) —
-requires app-side flow first; flip `enable_confirmations = true` in config.toml
-only together with that app release.
+`enable_confirmations = true` is live; the branded confirmation template
+(`supabase/templates/confirmation.html`) carries the 6-digit code. App-side:
+shared VerifyEmailScreen on both platforms, entered from register and from
+unverified logins. Branch `feat/signup-email-verification`.

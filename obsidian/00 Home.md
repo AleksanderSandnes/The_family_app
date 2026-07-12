@@ -17,6 +17,10 @@ Welcome to the project knowledge base for The Family App.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
+- **✉️ Signup email verification shipped (2026-07-12)** — new signups verify a 6-digit
+  emailed code before the permission screen (both platforms); `enable_confirmations`
+  is LIVE in production, so older installed versions error at signup until users
+  update. Branch `feat/signup-email-verification`.
 - **🔑 Forgot-password reset shipped (2026-07-12)** — 6-digit email-code flow on Android +
   iOS (branch `feat/forgot-password-reset`); domain **thefamilyapp.app** bought via Vercel.
   User action pending: edit the Supabase Reset Password email template ({{ .Token }}) and run
