@@ -28,3 +28,19 @@ enable_confirmations = false
 [auth.email.template.recovery]
 subject = "Your Family App reset code"
 content_path = "./supabase/templates/recovery.html"
+
+# Resend SMTP — sender domain thefamilyapp.app (verified 2026-07-12).
+# The key lives in .envrc (gitignored); a push without it fails loudly.
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_SMTP_KEY)"
+admin_email = "auth@thefamilyapp.app"
+sender_name = "The Family App"
+
+[auth.rate_limit]
+# Resend free tier: 100/day. Raise from the built-in default now that
+# delivery goes through verified SMTP.
+email_sent = 30
