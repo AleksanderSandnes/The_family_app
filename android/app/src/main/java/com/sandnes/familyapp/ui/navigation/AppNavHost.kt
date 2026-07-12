@@ -58,6 +58,7 @@ import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.auth.LoginScreen
 import com.sandnes.familyapp.ui.auth.RegisterScreen
 import com.sandnes.familyapp.ui.auth.ResetPasswordScreen
+import com.sandnes.familyapp.ui.auth.VerifyEmailScreen
 import com.sandnes.familyapp.ui.birthday.BirthdayScreen
 import com.sandnes.familyapp.ui.birthday.BirthdayViewModel
 import com.sandnes.familyapp.ui.calendar.CalendarScreen
@@ -133,15 +134,38 @@ private fun AuthFlow() {
                 onAuthenticated = { /* RootViewModel reacts to session change */ },
                 onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
                 onNavigateToReset = { navController.navigate(Routes.RESET_PASSWORD) },
+                onNeedsVerification = { email ->
+                    navController.navigate(Routes.verifyEmail(email, send = true))
+                },
             )
         }
         composable(Routes.RESET_PASSWORD) {
             ResetPasswordScreen(onBackToLogin = { navController.popBackStack() })
         }
+        composable(
+            Routes.VERIFY_EMAIL,
+            arguments =
+                listOf(
+                    navArgument("email") { type = NavType.StringType },
+                    navArgument("send") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    },
+                ),
+        ) { entry ->
+            VerifyEmailScreen(
+                email = entry.arguments?.getString("email").orEmpty(),
+                sendCode = entry.arguments?.getBoolean("send") ?: false,
+                onBackToLogin = { navController.popBackStack(Routes.LOGIN, inclusive = false) },
+            )
+        }
         composable(Routes.REGISTER) {
             RegisterScreen(
                 onAuthenticated = { },
                 onNavigateToLogin = { navController.popBackStack() },
+                onNeedsVerification = { email ->
+                    navController.navigate(Routes.verifyEmail(email, send = false))
+                },
             )
         }
     }

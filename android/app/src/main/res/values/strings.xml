@@ -322,6 +322,9 @@
     <string name="enter_the_6_digit_code">Please enter the 6-digit code from the email.</string>
     <string name="that_code_is_wrong_or_expired">That code is wrong or has expired. Request a new one.</string>
     <string name="remembered_your_password">Remembered your password?</string>
+    <string name="verify_your_email">Verify your email</string>
+    <string name="enter_the_code_we_emailed_to">Enter the 6-digit code we emailed to %1$s.</string>
+    <string name="verify_code">Verify</string>
     <string name="sign_in_button">Sign in button</string>
     <string name="continue_with_google_button">Continue with Google button</string>
     <string name="continue_next_step_button">Continue to next step button</string>

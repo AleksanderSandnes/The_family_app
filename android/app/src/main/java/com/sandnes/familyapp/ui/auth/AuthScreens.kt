@@ -80,6 +80,7 @@ fun LoginScreen(
     onAuthenticated: () -> Unit,
     onNavigateToRegister: () -> Unit,
     onNavigateToReset: () -> Unit,
+    onNeedsVerification: (String) -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -87,6 +88,12 @@ fun LoginScreen(
     var password by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(state.success) { if (state.success) onAuthenticated() }
+    LaunchedEffect(state.needsVerificationEmail) {
+        state.needsVerificationEmail?.let {
+            viewModel.clearNeedsVerification()
+            onNeedsVerification(it)
+        }
+    }
 
     AuthScaffold(
         title = stringResource(R.string.welcome_back),
@@ -170,6 +177,7 @@ fun LoginScreen(
 fun RegisterScreen(
     onAuthenticated: () -> Unit,
     onNavigateToLogin: () -> Unit,
+    onNeedsVerification: (String) -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -183,6 +191,12 @@ fun RegisterScreen(
     var mobile by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(state.success) { if (state.success) onAuthenticated() }
+    LaunchedEffect(state.needsVerificationEmail) {
+        state.needsVerificationEmail?.let {
+            viewModel.clearNeedsVerification()
+            onNeedsVerification(it)
+        }
+    }
     BackHandler(enabled = step == 2) {
         step = 1
         viewModel.clearError()
@@ -366,6 +380,77 @@ fun ResetPasswordScreen(
         }
         AuthFooter(
             prompt = stringResource(R.string.remembered_your_password),
+            action = stringResource(R.string.sign_in),
+            onClick = onBackToLogin,
+        )
+    }
+}
+
+@Composable
+fun VerifyEmailScreen(
+    email: String,
+    sendCode: Boolean,
+    onBackToLogin: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel(),
+) {
+    val verify by viewModel.verifyState.collectAsStateWithLifecycle()
+    var code by rememberSaveable { mutableStateOf("") }
+
+    LaunchedEffect(Unit) { viewModel.startEmailVerification(email, sendCode) }
+    DisposableEffect(Unit) { onDispose { viewModel.clearVerifyFlow() } }
+
+    AuthScaffold(
+        title = stringResource(R.string.verify_your_email),
+        subtitle = stringResource(R.string.enter_the_code_we_emailed_to, email),
+    ) {
+        ErrorBanner(verify.error?.let { stringResource(it) })
+        FamilyTextField(
+            value = code,
+            onValueChange = { code = it },
+            label = stringResource(R.string.reset_code),
+            leadingIcon = Icons.Outlined.Lock,
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done,
+            keyboardActions =
+                KeyboardActions(
+                    onDone = {
+                        if (code.isNotBlank() && !verify.loading) viewModel.confirmSignupEmail(code)
+                    },
+                ),
+            enabled = !verify.loading,
+        )
+        PrimaryButton(
+            text = stringResource(R.string.verify_code),
+            onClick = { viewModel.confirmSignupEmail(code) },
+            enabled = code.isNotBlank(),
+            loading = verify.loading,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            if (verify.resendCooldownSeconds > 0) {
+                stringResource(R.string.resend_code_in_seconds, verify.resendCooldownSeconds)
+            } else {
+                stringResource(R.string.resend_code)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color =
+                if (verify.resendCooldownSeconds > 0) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            modifier =
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .clip(RoundedCornerShape(Radius.extraSmall))
+                    .clickable(enabled = verify.resendCooldownSeconds == 0 && !verify.loading) {
+                        viewModel.resendSignupCode()
+                    }
+                    .padding(Spacing.xs),
+        )
+        AuthFooter(
+            prompt = stringResource(R.string.already_have_an_account),
             action = stringResource(R.string.sign_in),
             onClick = onBackToLogin,
         )

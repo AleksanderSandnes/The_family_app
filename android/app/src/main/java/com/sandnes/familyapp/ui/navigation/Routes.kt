@@ -4,6 +4,7 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val RESET_PASSWORD = "reset_password"
+    const val VERIFY_EMAIL = "verify_email/{email}?send={send}"
 
     const val HOME = "home"
     const val CALENDAR = "calendar"
@@ -22,6 +23,11 @@ object Routes {
     const val PROFILE_EDIT = "profile/edit"
     const val SETTINGS = "settings"
     const val FAMILY_MAP = "family_map"
+
+    fun verifyEmail(
+        email: String,
+        send: Boolean,
+    ) = "verify_email/${android.net.Uri.encode(email)}?send=$send"
 
     fun shoppingDetail(id: String) = "shopping/$id"
 

@@ -323,6 +323,9 @@
     <string name="enter_the_6_digit_code">Skriv inn den 6-sifrede koden fra e-posten.</string>
     <string name="that_code_is_wrong_or_expired">Koden er feil eller utløpt. Be om en ny.</string>
     <string name="remembered_your_password">Husket du passordet?</string>
+    <string name="verify_your_email">Bekreft e-posten din</string>
+    <string name="enter_the_code_we_emailed_to">Skriv inn den 6-sifrede koden vi sendte til %1$s.</string>
+    <string name="verify_code">Bekreft</string>
     <string name="sign_in_button">Logg inn-knapp</string>
     <string name="continue_with_google_button">Fortsett med Google-knapp</string>
     <string name="continue_next_step_button">Knapp for å gå til neste steg</string>
