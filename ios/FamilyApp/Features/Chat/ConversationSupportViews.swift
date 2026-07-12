@@ -25,7 +25,7 @@ struct ReactionBar: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .glassEffect(.regular, in: Capsule())
-        .shadow(color: Color(hex: 0x141A3C).opacity(0.2), radius: 12, y: 6)
+        .shadow(color: Palette.shadowInk.opacity(0.2), radius: 12, y: 6)
     }
 }
 

@@ -407,7 +407,7 @@ class WishlistViewModel
             _selectedWishlist.value = _selectedWishlist.value?.copy(name = newName)
             runCatching {
                 db.from("wishlists").update({ set("name", newName) }) { filter { eq("id", wishlistId) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             loadWishlistDetail(wishlistId).join()
         }
 
@@ -419,7 +419,7 @@ class WishlistViewModel
             _selectedWishlist.value = _selectedWishlist.value?.copy(icon = newIcon)
             runCatching {
                 db.from("wishlists").update({ set("icon", newIcon) }) { filter { eq("id", wishlistId) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             loadWishlistDetail(wishlistId).join()
         }
 
@@ -431,7 +431,7 @@ class WishlistViewModel
             _selectedWishlist.value = _selectedWishlist.value?.copy(color = color)
             runCatching {
                 db.from("wishlists").update({ set("color", color) }) { filter { eq("id", wishlistId) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             loadWishlistDetail(wishlistId).join()
         }
 

@@ -330,7 +330,7 @@ class ShoppingViewModel
             _selectedList.value = _selectedList.value?.copy(color = color)
             runCatching {
                 db.from("shopping_lists").update({ set("color", color) }) { filter { eq("id", listId) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             val userId = currentUserId ?: repo.currentUserId.first() ?: return@launch
             reloadLists(userId)
         }
@@ -343,7 +343,7 @@ class ShoppingViewModel
             _selectedList.value = _selectedList.value?.copy(icon = icon)
             runCatching {
                 db.from("shopping_lists").update({ set("icon", icon) }) { filter { eq("id", listId) } }
-            }
+            }.onFailure { _errorRes.value = R.string.couldnt_save }
             val userId = currentUserId ?: repo.currentUserId.first() ?: return@launch
             reloadLists(userId)
         }

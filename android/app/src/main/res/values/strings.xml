@@ -513,4 +513,16 @@
     <string name="toggle_on">on</string>
     <string name="toggle_off">off</string>
     <string name="member">Member</string>
+    <string name="too_many_attempts">Too many attempts. Please wait a moment and try again.</string>
+    <string name="network_error_check_connection">Network error. Please check your connection.</string>
+    <string name="registration_failed">Registration failed. Please try again.</string>
+    <string name="slide_to_cancel">Slide left to cancel</string>
+    <string name="you_sharing_location">Sharing your location with family</string>
+    <string name="you_hidden_on_map">Hidden — your family can\u2019t see you</string>
+    <string name="show_password">Show password</string>
+    <string name="hide_password">Hide password</string>
+    <string name="sign_out_q">Sign out?</string>
+    <string name="sign_out_confirm">You\u2019ll need your email and password to sign back in.</string>
+    <string name="clear_completed_q">Clear completed items?</string>
+    <string name="clear_completed_confirm">This removes %1$d completed items from the list for everyone in the family.</string>
 </resources>

@@ -514,4 +514,16 @@
     <string name="toggle_on">på</string>
     <string name="toggle_off">av</string>
     <string name="member">Medlem</string>
+    <string name="too_many_attempts">For mange forsøk. Vent litt og prøv igjen.</string>
+    <string name="network_error_check_connection">Nettverksfeil. Sjekk tilkoblingen din.</string>
+    <string name="registration_failed">Registrering mislyktes. Prøv igjen.</string>
+    <string name="slide_to_cancel">Dra til venstre for å avbryte</string>
+    <string name="you_sharing_location">Deler posisjonen din med familien</string>
+    <string name="you_hidden_on_map">Skjult \u2014 familien kan ikke se deg</string>
+    <string name="show_password">Vis passord</string>
+    <string name="hide_password">Skjul passord</string>
+    <string name="sign_out_q">Logge ut?</string>
+    <string name="sign_out_confirm">Du trenger e-post og passord for \u00e5 logge inn igjen.</string>
+    <string name="clear_completed_q">Fjerne fullf\u00f8rte varer?</string>
+    <string name="clear_completed_confirm">Dette fjerner %1$d fullf\u00f8rte varer fra listen for hele familien.</string>
 </resources>

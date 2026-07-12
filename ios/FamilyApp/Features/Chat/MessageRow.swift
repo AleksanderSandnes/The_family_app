@@ -57,7 +57,7 @@ struct MessageRow: View {
                                     .padding(.horizontal, 9)
                                     .padding(.vertical, 3)
                                     .background(Color(light: .white, dark: Palette.inkSurfaceVariant), in: Capsule())
-                                    .shadow(color: Color(hex: 0x141A3C).opacity(0.15), radius: 5, y: 2)
+                                    .shadow(color: Palette.shadowInk.opacity(0.15), radius: 5, y: 2)
                                     .onTapGesture { onReact(emoji) }
                             }
                         }
@@ -164,7 +164,7 @@ struct MessageRow: View {
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
         .shadow(
-            color: (isMine ? Palette.indigo600 : Color(hex: 0x141A3C)).opacity(isMine ? 0.3 : 0.07),
+            color: (isMine ? Palette.indigo600 : Palette.shadowInk).opacity(isMine ? 0.3 : 0.07),
             radius: isMine ? 10 : 6, x: 0, y: isMine ? 4 : 3
         )
     }

@@ -115,6 +115,7 @@ enum Palette {
     static let liveGreenText = Color(hex: 0x047857) // "All done" text
     static let weekAmberText = Color(hex: 0x92400E) // "this week" urgency text
     static let staleDot = Color(hex: 0xCBD2E0) // map stale dot
+    static let shadowInk = Color(hex: 0x141A3C) // soft ambient drop-shadow tint (DESIGN.md elevation)
     static let mapBase = Color(hex: 0xE7ECE3) // family-map flat base
 }
 

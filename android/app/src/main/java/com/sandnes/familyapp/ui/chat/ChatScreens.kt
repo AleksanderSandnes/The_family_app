@@ -25,8 +25,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -108,6 +109,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -140,12 +142,16 @@ import com.sandnes.familyapp.ui.components.LoadingState
 import com.sandnes.familyapp.ui.components.PillTag
 import com.sandnes.familyapp.ui.theme.BrandGradient
 import com.sandnes.familyapp.ui.theme.Destructive
+import com.sandnes.familyapp.ui.theme.Indigo500
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.reducedMotion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
+/** Recordings shorter than this are treated as accidental grips and discarded. */
+private const val MIN_RECORDING_MS = 1000L
 
 // ─── Chat list screen ──────────────────────────────────────────────────────
 
@@ -280,7 +286,7 @@ private fun ConversationRow(
     val avatarColor =
         Color(
             (if (isOneOnOne) other?.avatarColor else null)
-                ?.takeIf { it != 0 } ?: 0xFF6366F1.toInt(),
+                ?.takeIf { it != 0 } ?: Indigo500.toArgb(),
         )
 
     Box(
@@ -463,6 +469,7 @@ fun ConversationScreen(
     // Voice recording state
     var isRecording by remember { mutableStateOf(false) }
     var recordingSeconds by remember { mutableIntStateOf(0) }
+    var recordingStartMs by remember { mutableStateOf(0L) }
     var mediaRecorder by remember { mutableStateOf<android.media.MediaRecorder?>(null) }
     var recordingFile by remember { mutableStateOf<java.io.File?>(null) }
 
@@ -526,9 +533,9 @@ fun ConversationScreen(
             if (granted) viewModel.prepareCameraCapture(context, conversationId)?.let { cameraLauncher.launch(it) }
         }
 
-    fun startRecording() {
+    /** Starts capture. Returns false (and shows no recording UI) if the recorder failed to start. */
+    fun startRecording(): Boolean {
         val file = java.io.File(context.cacheDir, "voice_${System.currentTimeMillis()}.m4a")
-        recordingFile = file
         val recorder =
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 android.media.MediaRecorder(context)
@@ -540,12 +547,21 @@ fun ConversationScreen(
         recorder.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
         recorder.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
         recorder.setOutputFile(file.absolutePath)
-        runCatching {
-            recorder.prepare()
-            recorder.start()
+        val started =
+            runCatching {
+                recorder.prepare()
+                recorder.start()
+            }.isSuccess
+        if (!started) {
+            runCatching { recorder.release() }
+            file.delete()
+            return false
         }
+        recordingFile = file
         mediaRecorder = recorder
+        recordingStartMs = System.currentTimeMillis()
         isRecording = true
+        return true
     }
 
     fun stopRecording(send: Boolean) {
@@ -555,7 +571,9 @@ fun ConversationScreen(
             mediaRecorder?.release()
         }
         mediaRecorder = null
-        if (send) {
+        // An accidental grip (< 1 s) shouldn't send audio — discard it silently.
+        val tooShort = System.currentTimeMillis() - recordingStartMs < MIN_RECORDING_MS
+        if (send && !tooShort) {
             recordingFile?.let { file ->
                 val bytes = file.readBytes()
                 viewModel.sendVoice(conversationId, bytes, file.name)
@@ -849,22 +867,37 @@ fun ConversationScreen(
                                             Modifier
                                                 .size(48.dp)
                                                 .pointerInput(Unit) {
-                                                    detectTapGestures(
-                                                        onPress = {
-                                                            val hasPermission =
-                                                                androidx.core.content.ContextCompat.checkSelfPermission(
-                                                                    context,
-                                                                    android.Manifest.permission.RECORD_AUDIO,
-                                                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                                            if (hasPermission) {
-                                                                startRecording()
-                                                                tryAwaitRelease()
-                                                                stopRecording(true)
-                                                            } else {
-                                                                audioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                                                    // Hold to record; slide left to cancel (platform
+                                                    // convention — the overlay X needs a second finger).
+                                                    val cancelPx = 96.dp.toPx()
+                                                    awaitEachGesture {
+                                                        val down = awaitFirstDown()
+                                                        val hasPermission =
+                                                            androidx.core.content.ContextCompat.checkSelfPermission(
+                                                                context,
+                                                                android.Manifest.permission.RECORD_AUDIO,
+                                                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                                        if (!hasPermission) {
+                                                            audioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                                                            return@awaitEachGesture
+                                                        }
+                                                        if (!startRecording()) return@awaitEachGesture
+                                                        var cancelled = false
+                                                        while (true) {
+                                                            val event = awaitPointerEvent()
+                                                            val change =
+                                                                event.changes.firstOrNull { it.id == down.id }
+                                                                    ?: event.changes.first()
+                                                            if (!cancelled && change.position.x - down.position.x < -cancelPx) {
+                                                                cancelled = true
+                                                                stopRecording(send = false)
                                                             }
-                                                        },
-                                                    )
+                                                            if (event.changes.none { it.pressed }) {
+                                                                if (!cancelled) stopRecording(send = true)
+                                                                break
+                                                            }
+                                                        }
+                                                    }
                                                 },
                                         contentAlignment = androidx.compose.ui.Alignment.Center,
                                     ) {
@@ -914,7 +947,7 @@ fun ConversationScreen(
                                 )
                                 Spacer(Modifier.weight(1f))
                                 Text(
-                                    stringResource(R.string.release_to_send),
+                                    stringResource(R.string.slide_to_cancel),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 )
@@ -1250,7 +1283,7 @@ private fun AddMemberSheet(
                     ) {
                         InitialAvatar(
                             name = member.name,
-                            color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+                            color = Color(member.avatarColor.takeIf { it != 0 } ?: Indigo500.toArgb()),
                             size = 42,
                             avatarUri = member.avatarUrl,
                         )
@@ -1288,7 +1321,7 @@ private fun RemoveMemberSheet(
                     ) {
                         InitialAvatar(
                             name = member.name,
-                            color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+                            color = Color(member.avatarColor.takeIf { it != 0 } ?: Indigo500.toArgb()),
                             size = 36,
                             avatarUri = member.avatarUrl,
                         )
@@ -1331,7 +1364,7 @@ private fun MemberSelectRow(
     ) {
         InitialAvatar(
             name = member.name,
-            color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt()),
+            color = Color(member.avatarColor.takeIf { it != 0 } ?: Indigo500.toArgb()),
             size = 42,
             avatarUri = member.avatarUrl,
         )
@@ -1543,7 +1576,7 @@ private fun MessageRow(
             ) {
                 if (isLastInGroup) {
                     val avatarName = senderProfile?.name?.ifBlank { "?" } ?: "?"
-                    val avatarColor = Color(senderProfile?.avatarColor?.takeIf { it != 0 } ?: 0xFF6366F1.toInt())
+                    val avatarColor = Color(senderProfile?.avatarColor?.takeIf { it != 0 } ?: Indigo500.toArgb())
                     InitialAvatar(name = avatarName, color = avatarColor, size = 36, avatarUri = senderProfile?.avatarUrl)
                 } else {
                     Spacer(Modifier.size(36.dp))
@@ -1860,7 +1893,7 @@ private fun MembersSheet(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val color = Color(member.avatarColor.takeIf { it != 0 } ?: 0xFF6366F1.toInt())
+                    val color = Color(member.avatarColor.takeIf { it != 0 } ?: Indigo500.toArgb())
                     InitialAvatar(name = member.name, color = color, size = 40, avatarUri = member.avatarUrl)
                     Spacer(Modifier.width(12.dp))
                     Text(member.name, style = MaterialTheme.typography.bodyLarge)

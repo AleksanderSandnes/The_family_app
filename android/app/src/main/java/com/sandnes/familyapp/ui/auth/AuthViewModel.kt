@@ -1,8 +1,10 @@
 package com.sandnes.familyapp.ui.auth
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.auth.status.SessionStatus
@@ -19,7 +21,8 @@ private const val MAX_PASSWORD_SCORE = 3
 
 data class AuthUiState(
     val loading: Boolean = false,
-    val error: String? = null,
+    // A string resource id so error copy resolves in the UI's current locale (NB support).
+    @StringRes val error: Int? = null,
     val success: Boolean = false,
 )
 
@@ -57,15 +60,22 @@ class AuthViewModel
         fun signInWithGoogle() {
             _state.update { it.copy(loading = true, error = null) }
             viewModelScope.launch {
-                repo.signInWithGoogle().onFailure { e ->
-                    _state.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
-                }
+                repo
+                    .signInWithGoogle()
+                    .onFailure { e ->
+                        _state.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
+                    }
+                    // Browser handoff succeeded. If the user cancels there, no callback ever
+                    // arrives — don't leave the whole form disabled while waiting.
+                    .onSuccess { _state.update { it.copy(loading = false) } }
             }
         }
 
         fun clearError() = _state.update { it.copy(error = null) }
 
-        fun setError(message: String) = _state.update { it.copy(loading = false, error = message) }
+        fun setError(
+            @StringRes messageRes: Int,
+        ) = _state.update { it.copy(loading = false, error = messageRes) }
 
         fun login(
             email: String,
@@ -89,9 +99,9 @@ class AuthViewModel
 
         fun register(form: RegistrationForm) {
             when {
-                form.name.isBlank() -> return setError("Please enter your name.")
+                form.name.isBlank() -> return setError(R.string.please_enter_your_name)
                 !validate(email = form.email, password = form.password) -> return
-                form.password != form.confirm -> return setError("Passwords do not match.")
+                form.password != form.confirm -> return setError(R.string.passwords_do_not_match)
             }
             _state.update { it.copy(loading = true, error = null) }
             viewModelScope.launch {
@@ -121,11 +131,11 @@ class AuthViewModel
             password: String,
         ): Boolean {
             if (!isValidEmail(email.trim())) {
-                setError("Please enter a valid email address.")
+                setError(R.string.please_enter_a_valid_email_address)
                 return false
             }
             if (password.length < MIN_PASSWORD_LENGTH) {
-                setError("Password must be at least 6 characters.")
+                setError(R.string.password_must_be_at_least_6_characters)
                 return false
             }
             return true
@@ -148,24 +158,25 @@ internal fun passwordStrength(password: String): Int {
     return score.coerceIn(0, MAX_PASSWORD_SCORE)
 }
 
-// Ordered keyword → message table. The first entry whose keywords appear in the raw
-// error message wins. Keeps friendlyAuthError simple (data-driven, not a giant when).
-private val AUTH_ERROR_MESSAGES: List<Pair<List<String>, String>> =
+// Ordered keyword → string-resource table. The first entry whose keywords appear in the raw
+// error message wins. Resource ids (not strings) so the UI resolves them in the active locale.
+private val AUTH_ERROR_MESSAGES: List<Pair<List<String>, Int>> =
     listOf(
-        listOf("invalid login credentials", "invalid_credentials") to "Incorrect email or password.",
-        listOf("user already registered", "already been registered") to "An account with this email already exists.",
-        listOf("email address is invalid") to "Please enter a valid email address.",
-        listOf("password should be at least", "weak_password") to "Password must be at least 6 characters.",
-        listOf("rate limit", "too many requests") to "Too many attempts. Please wait a moment and try again.",
-        listOf("network", "unable to resolve", "connect") to "Network error. Please check your connection.",
+        listOf("invalid login credentials", "invalid_credentials") to R.string.incorrect_email_or_password,
+        listOf("user already registered", "already been registered") to R.string.an_account_with_this_email_already_exists,
+        listOf("email address is invalid") to R.string.please_enter_a_valid_email_address,
+        listOf("password should be at least", "weak_password") to R.string.password_must_be_at_least_6_characters,
+        listOf("rate limit", "too many requests") to R.string.too_many_attempts,
+        listOf("network", "unable to resolve", "connect") to R.string.network_error_check_connection,
     )
 
+@StringRes
 internal fun friendlyAuthError(
     e: Throwable,
     isLogin: Boolean,
-): String {
-    val raw = e.message?.lowercase() ?: return "Something went wrong. Please try again."
-    if ("redirect" in raw && "not allowed" in raw) return "Something went wrong. Please try again."
+): Int {
+    val raw = e.message?.lowercase() ?: return R.string.something_went_wrong
+    if ("redirect" in raw && "not allowed" in raw) return R.string.something_went_wrong
     AUTH_ERROR_MESSAGES.firstOrNull { (keywords, _) -> keywords.any { it in raw } }?.let { return it.second }
-    return if (isLogin) "Sign in failed. Please try again." else "Registration failed. Please try again."
+    return if (isLogin) R.string.sign_in_failed else R.string.registration_failed
 }

@@ -177,14 +177,14 @@ private fun downloadImage(
         val request =
             DownloadManager
                 .Request(Uri.parse(url))
-                .setTitle("Saving image…")
+                .setTitle(context.getString(R.string.saving_image))
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_PICTURES, filename)
                 .setMimeType("image/jpeg")
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         dm.enqueue(request)
-        Toast.makeText(context, "Saving to gallery…", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.saving_to_gallery), Toast.LENGTH_SHORT).show()
     }.onFailure {
-        Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.download_failed), Toast.LENGTH_SHORT).show()
     }
 }

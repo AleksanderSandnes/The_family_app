@@ -149,7 +149,7 @@ private struct BirthdayCard: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Color.appCaption)
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(Color(hex: 0x8B92AC).opacity(0.12), in: Capsule())
+                .background(Palette.captionLight.opacity(0.12), in: Capsule())
         }
     }
 

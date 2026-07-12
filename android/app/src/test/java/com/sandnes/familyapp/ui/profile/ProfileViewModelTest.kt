@@ -49,7 +49,7 @@ class ProfileViewModelTest {
         every { repo.currentUserId } returns currentUserId
         // Default: getUser returns null — avoids any Supabase side-effects
         coEvery { repo.getUser(any()) } returns null
-        vm = ProfileViewModel(repo)
+        vm = ProfileViewModel(mockk(relaxed = true), repo)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

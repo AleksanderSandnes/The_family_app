@@ -1,10 +1,12 @@
 package com.sandnes.familyapp.ui.family
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyModel
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.UserModel
@@ -33,6 +35,7 @@ private const val JPEG_QUALITY = 85
 class FamilyViewModel
     @Inject
     constructor(
+        private val app: Application,
         internal val repo: FamilyRepository,
     ) : ViewModel() {
         private val _family = MutableStateFlow<FamilyModel?>(null)
@@ -199,7 +202,7 @@ class FamilyViewModel
                             withContext(Dispatchers.IO) {
                                 context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                             } ?: run {
-                                _error.value = "Could not read the selected photo."
+                                _error.value = app.getString(R.string.could_not_read_the_selected_photo)
                                 return@launch
                             }
                         val compressed = compressImage(raw)
@@ -212,7 +215,7 @@ class FamilyViewModel
                         load(userId)
                     }.onFailure { e ->
                         Log.e("FamilyVM", "Photo upload failed", e)
-                        _error.value = "Failed to update photo. Please try again."
+                        _error.value = app.getString(R.string.failed_to_update_photo_please_try_again)
                     }
                 } finally {
                     _isUploading.value = false

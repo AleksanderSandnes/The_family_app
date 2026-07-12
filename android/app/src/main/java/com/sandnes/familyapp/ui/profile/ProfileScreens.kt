@@ -65,6 +65,7 @@ import coil3.compose.AsyncImage
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.components.AppTopBar
 import com.sandnes.familyapp.ui.components.BirthdayPickerField
+import com.sandnes.familyapp.ui.components.ConfirmationDialog
 import com.sandnes.familyapp.ui.components.DestructiveButton
 import com.sandnes.familyapp.ui.components.ErrorBanner
 import com.sandnes.familyapp.ui.components.FamilyTextField
@@ -96,6 +97,7 @@ fun ProfileScreen(
     val context = LocalContext.current
 
     var showAvatarPicker by remember { mutableStateOf(false) }
+    var showSignOutConfirm by remember { mutableStateOf(false) }
 
     RefreshOnResume { viewModel.refresh() }
 
@@ -226,11 +228,24 @@ fun ProfileScreen(
             Spacer(Modifier.height(Spacing.xs))
             DestructiveButton(
                 stringResource(R.string.sign_out),
-                onClick = { viewModel.signOut(onSignedOut) },
+                onClick = { showSignOutConfirm = true },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = Icons.AutoMirrored.Filled.Logout,
             )
         }
+    }
+
+    if (showSignOutConfirm) {
+        ConfirmationDialog(
+            title = stringResource(R.string.sign_out_q),
+            message = stringResource(R.string.sign_out_confirm),
+            confirmText = stringResource(R.string.sign_out),
+            onConfirm = {
+                showSignOutConfirm = false
+                viewModel.signOut(onSignedOut)
+            },
+            onDismiss = { showSignOutConfirm = false },
+        )
     }
 
     if (needsCompletion) {
