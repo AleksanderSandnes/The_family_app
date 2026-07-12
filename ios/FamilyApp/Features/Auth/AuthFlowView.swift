@@ -6,14 +6,23 @@ import SwiftUI
 struct AuthFlowView: View {
     @State private var viewModel = AuthViewModel()
     @State private var showRegister = false
+    @State private var showReset = false
 
     var body: some View {
         NavigationStack {
-            LoginScreen(viewModel: viewModel) { showRegister = true }
-                .navigationDestination(isPresented: $showRegister) {
-                    RegisterScreen(viewModel: viewModel)
-                        .navigationBarBackButtonHidden()
-                }
+            LoginScreen(
+                viewModel: viewModel,
+                onNavigateToRegister: { showRegister = true },
+                onNavigateToReset: { showReset = true }
+            )
+            .navigationDestination(isPresented: $showRegister) {
+                RegisterScreen(viewModel: viewModel)
+                    .navigationBarBackButtonHidden()
+            }
+            .navigationDestination(isPresented: $showReset) {
+                ResetPasswordScreen(viewModel: viewModel)
+                    .navigationBarBackButtonHidden()
+            }
         }
     }
 }
@@ -23,10 +32,10 @@ struct AuthFlowView: View {
 struct LoginScreen: View {
     @Bindable var viewModel: AuthViewModel
     let onNavigateToRegister: () -> Void
+    let onNavigateToReset: () -> Void
 
     @State private var email = ""
     @State private var password = ""
-    @State private var showForgotDialog = false
 
     var body: some View {
         AuthScaffold(title: L("Welcome back"), subtitle: L("Sign in to keep your family in sync.")) {
@@ -51,10 +60,13 @@ struct LoginScreen: View {
             )
             .accessibilityLabel("Password field")
 
-            Button("Forgot password?") { showForgotDialog = true }
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.appPrimary)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+            Button(L("Forgot password?")) {
+                viewModel.clearError()
+                onNavigateToReset()
+            }
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(Color.appPrimary)
+            .frame(maxWidth: .infinity, alignment: .trailing)
 
             PrimaryButton(
                 text: L("Sign in"),
@@ -75,11 +87,88 @@ struct LoginScreen: View {
                 onNavigateToRegister()
             }
         }
-        .alert("Forgot password?", isPresented: $showForgotDialog) {
-            Button("OK") {}
-        } message: {
-            Text("Password reset is coming soon. Contact support at support@familyapp.com")
+    }
+}
+
+// MARK: - Reset password (2 steps)
+
+struct ResetPasswordScreen: View {
+    @Bindable var viewModel: AuthViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var email = ""
+    @State private var code = ""
+    @State private var newPassword = ""
+
+    var body: some View {
+        AuthScaffold(
+            title: L("Reset password"),
+            subtitle: viewModel.resetStep == 1
+                ? L("We'll email you a 6-digit code to reset your password.")
+                : L("If an account exists for \(viewModel.resetEmail), we've emailed a 6-digit code. Enter it below with your new password."),
+            showIcon: false
+        ) {
+            StepIndicator(currentStep: viewModel.resetStep, totalSteps: 2)
+            ErrorBanner(message: viewModel.error)
+            if viewModel.resetStep == 1 {
+                FamilyTextField(
+                    label: L("Email"),
+                    text: $email.clearingError(viewModel),
+                    systemImage: "envelope",
+                    keyboardType: .emailAddress,
+                    textContentType: .emailAddress,
+                    autocapitalization: .never,
+                    whiteField: true
+                )
+                PrimaryButton(
+                    text: L("Send code"),
+                    enabled: !email.isEmpty,
+                    loading: viewModel.loading
+                ) {
+                    viewModel.sendResetCode(email: email)
+                }
+            } else {
+                FamilyTextField(
+                    label: L("6-digit code"),
+                    text: $code.clearingError(viewModel),
+                    systemImage: "key",
+                    keyboardType: .numberPad,
+                    whiteField: true
+                )
+                FamilyTextField(
+                    label: L("New password"),
+                    text: $newPassword.clearingError(viewModel),
+                    systemImage: "lock",
+                    isPassword: true,
+                    textContentType: .newPassword,
+                    whiteField: true
+                )
+                PasswordStrengthBar(password: newPassword)
+                PrimaryButton(
+                    text: L("Set new password"),
+                    enabled: !code.isEmpty && !newPassword.isEmpty,
+                    loading: viewModel.loading
+                ) {
+                    viewModel.confirmPasswordReset(code: code, newPassword: newPassword)
+                }
+                Button(
+                    viewModel.resetCooldown > 0
+                        ? L("Resend code (\(viewModel.resetCooldown) s)")
+                        : L("Resend code")
+                ) {
+                    viewModel.resendResetCode()
+                }
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(viewModel.resetCooldown > 0 ? Color.secondary : Color.appPrimary)
+                .disabled(viewModel.resetCooldown > 0 || viewModel.loading)
+                .frame(maxWidth: .infinity)
+            }
+            AuthFooter(prompt: L("Remembered your password?"), action: L("Sign in")) {
+                viewModel.clearResetFlow()
+                dismiss()
+            }
         }
+        .onDisappear { viewModel.clearResetFlow() }
     }
 }
 
