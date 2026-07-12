@@ -20,14 +20,18 @@ verify_enabled = true
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-# Signup email confirmation is OFF: the app assumes an active session right
-# after signUpWith. Flip to true ONLY together with the app-side verification
-# step (planned).
-enable_confirmations = false
+# Signup email confirmation is ON (2026-07-12): the app verifies via the
+# 6-digit code on VerifyEmailScreen. Old app versions error at signup until
+# updated — accepted trade-off.
+enable_confirmations = true
 
 [auth.email.template.recovery]
 subject = "Your Family App reset code"
 content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.confirmation]
+subject = "Your Family App verification code"
+content_path = "./supabase/templates/confirmation.html"
 
 # Resend SMTP — sender domain thefamilyapp.app (verified 2026-07-12).
 # The key lives in .envrc (gitignored); a push without it fails loudly.
