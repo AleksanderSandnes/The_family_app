@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -70,8 +70,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ShoppingItemModel
+import com.sandnes.familyapp.data.ShoppingListModel
 import com.sandnes.familyapp.ui.components.AppFab
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.ConfirmationDialog
 import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.FeatureTopBar
@@ -116,6 +118,7 @@ fun ShoppingScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle(false)
     val progress by viewModel.listProgress.collectAsStateWithLifecycle(emptyMap())
     var showAdd by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<ShoppingListModel?>(null) }
 
     RefreshOnResume { viewModel.refresh() }
 
@@ -148,7 +151,8 @@ fun ShoppingScreen(
                 ) {
                     items(lists, key = { it.id }) { list ->
                         SwipeToRevealDelete(
-                            onDelete = { viewModel.deleteList(list) },
+                            // Shared family data — confirm before destroying (no undo exists).
+                            onDelete = { pendingDelete = list },
                             modifier = Modifier.animateItem(),
                             shape = RoundedCornerShape(Radius.overviewCard),
                         ) {
@@ -173,6 +177,18 @@ fun ShoppingScreen(
                 viewModel.addList(title, icon, color)
                 showAdd = false
             },
+        )
+    }
+
+    pendingDelete?.let { list ->
+        ConfirmationDialog(
+            title = stringResource(R.string.delete_list_q),
+            message = stringResource(R.string.delete_list_confirm, list.title),
+            onConfirm = {
+                viewModel.deleteList(list)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
         )
     }
 }
@@ -260,8 +276,12 @@ fun ShoppingDetailScreen(
     val completed = remember(items) { items.filter { it.checked } }
     var showCompleted by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
+    // Follow the list only when it GROWS (new item added). Checking an item off also changes
+    // active.size — scrolling then would yank the user away from their place mid-list.
+    var prevActiveCount by remember { mutableStateOf(active.size) }
     LaunchedEffect(active.size) {
-        if (active.isNotEmpty()) listState.animateScrollToItem(active.size - 1)
+        if (active.size > prevActiveCount) listState.animateScrollToItem(active.size - 1)
+        prevActiveCount = active.size
     }
 
     fun addItem() {
@@ -422,7 +442,7 @@ private fun AddItemBar(
         Box(
             Modifier
                 .weight(1f)
-                .height(46.dp)
+                .heightIn(min = 46.dp)
                 .glassCard(cornerRadius = 23.dp)
                 .padding(horizontal = Spacing.lg),
             contentAlignment = Alignment.CenterStart,

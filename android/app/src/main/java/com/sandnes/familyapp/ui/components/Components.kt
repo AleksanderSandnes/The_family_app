@@ -95,7 +95,9 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -114,6 +116,7 @@ import com.sandnes.familyapp.ui.theme.Danger
 import com.sandnes.familyapp.ui.theme.Elevation
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.reducedMotion
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -668,6 +671,8 @@ fun SwipeToRevealDelete(
     val openPx = remember(density) { with(density) { 84.dp.toPx() } }
     var rowWidthPx by remember { mutableStateOf(1f) }
     var crossedFull by remember { mutableStateOf(false) }
+    // Swipe is invisible to TalkBack — expose delete as a custom accessibility action.
+    val deleteLabel = stringResource(R.string.delete)
 
     val settle: (Float) -> Unit = { velocity ->
         val fullSwipe = -offsetX.value > rowWidthPx * 0.55f
@@ -690,7 +695,16 @@ fun SwipeToRevealDelete(
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .onSizeChanged { rowWidthPx = it.width.toFloat().coerceAtLeast(1f) },
+            .onSizeChanged { rowWidthPx = it.width.toFloat().coerceAtLeast(1f) }
+            .semantics {
+                customActions =
+                    listOf(
+                        CustomAccessibilityAction(deleteLabel) {
+                            onDelete()
+                            true
+                        },
+                    )
+            },
     ) {
         // Red delete region — width tracks the drag, so it grows wider and wider like iOS.
         val revealPx = (-offsetX.value).coerceAtLeast(0f)
@@ -781,6 +795,10 @@ fun SkeletonLoader(
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
         )
+    if (reducedMotion()) {
+        Box(modifier = modifier.clip(shape).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)))
+        return
+    }
     val transition = rememberInfiniteTransition(label = "shimmer")
     val translateAnim by transition.animateFloat(
         initialValue = 0f,

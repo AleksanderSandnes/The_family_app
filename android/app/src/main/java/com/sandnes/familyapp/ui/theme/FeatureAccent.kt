@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
  * calendar event dots — never on large surfaces. One entry per domain; each resolves an icon
  * [stroke], a translucent [badgeFill], and a fixed calendar [dot], adapting light ↔ dark.
  *
- * Mirrors iOS `FeatureAccent`. Light/dark is resolved via [isSystemInDarkTheme] at read time,
+ * Mirrors iOS `FeatureAccent`. Light/dark is resolved via [appDarkTheme] at read time,
  * so these are `@Composable` accessors rather than plain vals.
  */
 enum class FeatureAccent {

@@ -79,6 +79,7 @@ import com.sandnes.familyapp.data.CalendarEventModel
 import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.ui.components.AppTopBar
 import com.sandnes.familyapp.ui.components.ColorPickerRow
+import com.sandnes.familyapp.ui.components.ConfirmationDialog
 import com.sandnes.familyapp.ui.components.CreationSheet
 import com.sandnes.familyapp.ui.components.EmptyState
 import com.sandnes.familyapp.ui.components.IconGrid
@@ -111,7 +112,15 @@ private val SHORT_DATE_DAY = DateTimeFormatter.ofPattern("EEE d MMM", Locale.get
 private val MONTH_YEAR_FMT = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
 private val SECTION_DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
 private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
-private val WEEKDAY_LABELS = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
+
+// Monday-first, locale-aware two-letter weekday labels (e.g. EN "Mo Tu…", NB "Ma Ti…").
+private val WEEKDAY_LABELS =
+    java.time.DayOfWeek.entries.map { day ->
+        day
+            .getDisplayName(java.time.format.TextStyle.SHORT_STANDALONE, Locale.getDefault())
+            .take(2)
+            .replaceFirstChar { it.uppercase() }
+    }
 
 private const val MAX_HOUR = 23
 private const val MAX_MINUTE = 59
@@ -171,6 +180,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     var showAdd by remember { mutableStateOf(false) }
     var eventToEdit by remember { mutableStateOf<CalendarEventModel?>(null) }
+    var pendingDelete by remember { mutableStateOf<CalendarEventModel?>(null) }
     var view by remember { mutableStateOf(CalendarView.Month) }
 
     RefreshOnResume { viewModel.refresh() }
@@ -213,12 +223,12 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         onDaySelected = viewModel::selectDate,
                     )
                     SelectedDateHeader(selectedDate)
-                    DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { viewModel.delete(it) })
+                    DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it })
                 }
                 CalendarView.Week -> {
                     WeekStrip(selectedDate, dateColors, viewModel::selectDate)
                     SelectedDateHeader(selectedDate)
-                    DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { viewModel.delete(it) })
+                    DayEventsList(isLoading, dayEvents, familyMembers, { eventToEdit = it }, { pendingDelete = it })
                 }
                 CalendarView.Agenda ->
                     AgendaList(
@@ -226,10 +236,22 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         events = allEvents,
                         members = familyMembers,
                         onEdit = { eventToEdit = it },
-                        onDelete = { viewModel.delete(it) },
+                        onDelete = { pendingDelete = it },
                     )
             }
         }
+    }
+
+    pendingDelete?.let { event ->
+        ConfirmationDialog(
+            title = stringResource(R.string.delete_event_q),
+            message = stringResource(R.string.delete_event_confirm, event.activity),
+            onConfirm = {
+                viewModel.delete(event)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
     }
 
     if (showAdd) {
@@ -447,7 +469,7 @@ private fun AgendaList(
         grouped.forEach { (date, dayEvents) ->
             item(key = "header-$date") {
                 Text(
-                    date?.format(SECTION_DATE_FMT) ?: "Upcoming",
+                    date?.format(SECTION_DATE_FMT) ?: stringResource(R.string.upcoming),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.SemiBold,
@@ -540,7 +562,7 @@ private fun MonthHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         IconButton(onClick = onPrev) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous month", tint = MaterialTheme.colorScheme.onSurface)
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.previous_month), tint = MaterialTheme.colorScheme.onSurface)
         }
         Text(
             month.format(MONTH_YEAR_FMT),
@@ -549,7 +571,7 @@ private fun MonthHeader(
             color = MaterialTheme.colorScheme.onSurface,
         )
         IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next month", tint = MaterialTheme.colorScheme.onSurface)
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_month), tint = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -740,8 +762,9 @@ private fun EventPeopleRow(people: List<UserModel>) {
 }
 
 /** Returns a concise time/date label for the event card. */
+@Composable
 private fun eventTimeLabel(event: CalendarEventModel): String {
-    if (event.allDay) return "All day"
+    if (event.allDay) return stringResource(R.string.all_day)
     return listOf(event.timeFrom, event.timeTo)
         .filter { it.isNotBlank() }
         .joinToString(" – ")

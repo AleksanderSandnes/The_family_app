@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -79,6 +79,7 @@ import com.sandnes.familyapp.ui.shopping.ShoppingDetailScreen
 import com.sandnes.familyapp.ui.shopping.ShoppingScreen
 import com.sandnes.familyapp.ui.shopping.ShoppingViewModel
 import com.sandnes.familyapp.ui.theme.AmbientBackground
+import com.sandnes.familyapp.ui.theme.Destructive
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
 import com.sandnes.familyapp.ui.theme.glassBar
@@ -204,8 +205,9 @@ private fun MainFlow() {
                                 .navigationBarsPadding()
                                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
                                 // Compact bar: M3's NavigationBar defaults to 80dp, which eats
-                                // too much vertical space on every page.
-                                .height(64.dp)
+                                // too much vertical space on every page. Min-height (not fixed)
+                                // so labels aren't clipped at large system font scales.
+                                .heightIn(min = 64.dp)
                                 .glassBar(Radius.tabBar)
                                 // Inner inset so the first/last selection pills don't touch
                                 // the rounded ends of the floating bar (mirrors iOS).
@@ -230,7 +232,7 @@ private fun MainFlow() {
                                         BadgedBox(
                                             badge = {
                                                 if (chatUnread > 0) {
-                                                    Badge(containerColor = Color(0xFFE53935)) {
+                                                    Badge(containerColor = Destructive) {
                                                         Text(
                                                             text = if (chatUnread > 9) "9+" else chatUnread.toString(),
                                                             color = Color.White,

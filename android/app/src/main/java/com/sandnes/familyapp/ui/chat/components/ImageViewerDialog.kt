@@ -40,10 +40,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import com.sandnes.familyapp.R
 
 @Composable
 fun ImageViewerDialog(
@@ -99,7 +101,7 @@ fun ImageViewerDialog(
         ) {
             AsyncImage(
                 model = url,
-                contentDescription = "Full screen image",
+                contentDescription = stringResource(R.string.full_screen_image),
                 contentScale = ContentScale.Fit,
                 modifier =
                     Modifier
@@ -143,21 +145,21 @@ fun ImageViewerDialog(
             ) {
                 IconButton(
                     onClick = { downloadImage(context, url) },
-                    modifier = Modifier.size(44.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Download,
-                        contentDescription = "Download image",
+                        contentDescription = stringResource(R.string.download_image),
                         tint = Color.White,
                     )
                 }
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(44.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.close),
                         tint = Color.White,
                     )
                 }

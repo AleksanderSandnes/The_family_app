@@ -61,7 +61,7 @@ fun FeatureBadge(
 fun GlassProgressBar(
     value: Float, // 0…1
     modifier: Modifier = Modifier,
-    tint: Color = Color(0xFF4F55E6),
+    tint: Color = Accent,
     height: Dp = 4.dp,
 ) {
     val clamped = value.coerceIn(0f, 1f)

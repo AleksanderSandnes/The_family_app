@@ -26,7 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.ui.theme.AppColorPalette
 import com.sandnes.familyapp.ui.theme.FeatureAccent
 import com.sandnes.familyapp.ui.theme.FeatureBadge
@@ -63,7 +65,7 @@ fun ColorPickerRow(
                 contentAlignment = Alignment.Center,
             ) {
                 if (isSelected) {
-                    Icon(Icons.Filled.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.selected), tint = Color.White, modifier = Modifier.size(16.dp))
                 }
             }
         }

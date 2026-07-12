@@ -139,8 +139,10 @@ import com.sandnes.familyapp.ui.components.InputDialog
 import com.sandnes.familyapp.ui.components.LoadingState
 import com.sandnes.familyapp.ui.components.PillTag
 import com.sandnes.familyapp.ui.theme.BrandGradient
+import com.sandnes.familyapp.ui.theme.Destructive
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.glassCard
+import com.sandnes.familyapp.ui.theme.reducedMotion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -667,7 +669,7 @@ fun ConversationScreen(
                             }
                             if (isGroup) {
                                 DropdownMenuItem(
-                                    text = { Text("Members") },
+                                    text = { Text(stringResource(R.string.members)) },
                                     leadingIcon = { Icon(Icons.Filled.GroupAdd, null, tint = MaterialTheme.colorScheme.primary) },
                                     onClick = {
                                         showMenu = false
@@ -737,7 +739,7 @@ fun ConversationScreen(
                                     )
                                 }
                                 IconButton(onClick = viewModel::clearReplyTo) {
-                                    Icon(Icons.Filled.Close, "Cancel reply", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Icon(Icons.Filled.Close, stringResource(R.string.cancel_reply), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -867,7 +869,7 @@ fun ConversationScreen(
                                     ) {
                                         Icon(
                                             Icons.Filled.Mic,
-                                            contentDescription = "Record voice note",
+                                            contentDescription = stringResource(R.string.record_voice_message),
                                             tint = MaterialTheme.colorScheme.primary,
                                         )
                                     }
@@ -886,18 +888,22 @@ fun ConversationScreen(
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                val dotAlpha by rememberInfiniteTransition(label = "rec").animateFloat(
-                                    initialValue = 1f,
-                                    targetValue = 0.2f,
-                                    animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
-                                    label = "dot",
-                                )
+                                val dotAlpha by if (reducedMotion()) {
+                                    remember { mutableStateOf(1f) }
+                                } else {
+                                    rememberInfiniteTransition(label = "rec").animateFloat(
+                                        initialValue = 1f,
+                                        targetValue = 0.2f,
+                                        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+                                        label = "dot",
+                                    )
+                                }
                                 Box(
                                     modifier =
                                         Modifier
                                             .size(12.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFFE53935).copy(alpha = dotAlpha)),
+                                            .background(Destructive.copy(alpha = dotAlpha)),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
@@ -907,13 +913,13 @@ fun ConversationScreen(
                                 )
                                 Spacer(Modifier.weight(1f))
                                 Text(
-                                    "Release to send",
+                                    stringResource(R.string.release_to_send),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 IconButton(onClick = { stopRecording(false) }) {
-                                    Icon(Icons.Filled.Close, "Cancel recording", tint = Color(0xFFE53935))
+                                    Icon(Icons.Filled.Close, stringResource(R.string.cancel_recording), tint = Destructive)
                                 }
                             }
                         }
@@ -926,8 +932,8 @@ fun ConversationScreen(
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(
                     Icons.AutoMirrored.Filled.Chat,
-                    "Say hello 👋",
-                    "Send the first message in this conversation.",
+                    stringResource(R.string.say_hello),
+                    stringResource(R.string.send_first_message),
                 )
             }
         } else {
@@ -954,17 +960,21 @@ fun ConversationScreen(
                                 gapExceedsTenMinutes(prevMsg.sentAt, msg.sentAt)
                         val timeLabel = remember(msg.sentAt) { messageTimeLabel(msg.sentAt) }
                         val senderProfile = if (!mine) userProfiles[msg.userFrom] else null
-                        val senderName = senderProfile?.name ?: "Unknown"
+                        val senderName = senderProfile?.name ?: stringResource(R.string.unknown)
+                        val youLabel = stringResource(R.string.you)
+                        val sentPhoto = stringResource(R.string.sent_a_photo)
+                        val sentVoice = stringResource(R.string.sent_a_voice_message)
+                        val messageFromTemplate = stringResource(R.string.message_from_at)
                         val accessibilityDesc =
                             remember(msg.id, timeLabel) {
-                                val who = if (mine) "You" else senderName
+                                val who = if (mine) youLabel else senderName
                                 val content =
                                     when (msg.messageType) {
-                                        "image" -> "sent a photo"
-                                        "voice" -> "sent a voice message"
+                                        "image" -> sentPhoto
+                                        "voice" -> sentVoice
                                         else -> msg.text
                                     }
-                                "Message from $who at $timeLabel: $content"
+                                messageFromTemplate.format(who, timeLabel, content)
                             }
                         val msgReactions = reactionsMap[msg.id] ?: emptyMap()
 
@@ -996,7 +1006,7 @@ fun ConversationScreen(
                                 horizontalArrangement = Arrangement.End,
                             ) {
                                 Text(
-                                    "Seen",
+                                    stringResource(R.string.seen),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -1020,7 +1030,7 @@ fun ConversationScreen(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     ) {
-                        Icon(Icons.Filled.KeyboardArrowDown, "Scroll to bottom")
+                        Icon(Icons.Filled.KeyboardArrowDown, stringResource(R.string.scroll_to_bottom))
                     }
                 }
             }
@@ -1029,8 +1039,8 @@ fun ConversationScreen(
 
     if (showRename) {
         InputDialog(
-            title = "Rename conversation",
-            label = "Name",
+            title = stringResource(R.string.rename_conversation),
+            label = stringResource(R.string.name),
             initial = conversation?.name ?: "",
             confirmText = "Rename",
             onDismiss = { showRename = false },
@@ -1086,18 +1096,18 @@ fun ConversationScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete conversation") },
-            text = { Text("This will permanently delete the conversation and all messages for everyone. This cannot be undone.") },
+            title = { Text(stringResource(R.string.delete_conversation)) },
+            text = { Text(stringResource(R.string.delete_conversation_confirm)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
                     viewModel.deleteConversation(conversationId)
                 }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -1133,12 +1143,12 @@ private fun NewConversationSheet(
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.padding(horizontal = 20.dp)) {
             Text(
-                "New conversation",
+                stringResource(R.string.new_conversation),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                "Select family members to chat with",
+                stringResource(R.string.select_family_members_to_chat_with),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
@@ -1147,7 +1157,7 @@ private fun NewConversationSheet(
             if (others.isEmpty()) {
                 Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
                     Text(
-                        "No other family members yet.",
+                        stringResource(R.string.no_other_family_members_yet),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1177,8 +1187,8 @@ private fun NewConversationSheet(
                     OutlinedTextField(
                         value = groupName,
                         onValueChange = { groupName = it },
-                        label = { Text("Group name") },
-                        placeholder = { Text("e.g. Weekend plans") },
+                        label = { Text(stringResource(R.string.group_name)) },
+                        placeholder = { Text(stringResource(R.string.group_name_example)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -1199,7 +1209,7 @@ private fun NewConversationSheet(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
             ) {
-                Text(if (isGroup) "Create group" else "Start chat", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(if (isGroup) R.string.create_group else R.string.start_chat), style = MaterialTheme.typography.labelLarge)
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -1219,9 +1229,9 @@ private fun AddMemberSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.padding(horizontal = 20.dp)) {
-            Text("Add member", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.add_member), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
             Text(
-                "Tap a member to add them",
+                stringResource(R.string.tap_a_member_to_add),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
@@ -1265,7 +1275,7 @@ private fun RemoveMemberSheet(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
-        title = { Text("Members", style = MaterialTheme.typography.titleLarge) },
+        title = { Text(stringResource(R.string.members), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 participants.forEach { member ->
@@ -1298,7 +1308,7 @@ private fun RemoveMemberSheet(
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -1396,9 +1406,10 @@ private fun TypingIndicatorRow() {
                 Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                val transition = rememberInfiniteTransition(label = "typing")
+                val motion = !reducedMotion()
+                val transition = if (motion) rememberInfiniteTransition(label = "typing") else null
                 repeat(3) { i ->
-                    val alpha by transition.animateFloat(
+                    val alpha by transition?.animateFloat(
                         initialValue = 0.3f,
                         targetValue = 1f,
                         animationSpec =
@@ -1407,7 +1418,7 @@ private fun TypingIndicatorRow() {
                                 repeatMode = RepeatMode.Reverse,
                             ),
                         label = "dot$i",
-                    )
+                    ) ?: remember { mutableStateOf(0.6f) }
                     Box(
                         Modifier
                             .size(7.dp)
@@ -1627,7 +1638,7 @@ private fun MessageContent(
             var showViewer by remember { mutableStateOf(false) }
             AsyncImage(
                 model = msg.mediaUrl,
-                contentDescription = "Image",
+                contentDescription = stringResource(R.string.image_label),
                 contentScale = ContentScale.Crop,
                 modifier =
                     Modifier
@@ -1685,7 +1696,7 @@ private fun MessageContent(
                 }
                 Text(
                     msg.text,
-                    color = if (mine) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (mine) Color.White else MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
@@ -1793,19 +1804,19 @@ private fun GroupImagePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
-        title = { Text("Group image", style = MaterialTheme.typography.titleLarge) },
+        title = { Text(stringResource(R.string.group_image), style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 TextButton(onClick = onCamera, modifier = Modifier.fillMaxWidth()) {
-                    Text("Take photo", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.take_photo), style = MaterialTheme.typography.bodyLarge)
                 }
                 TextButton(onClick = onGallery, modifier = Modifier.fillMaxWidth()) {
-                    Text("Choose from gallery", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.choose_from_gallery), style = MaterialTheme.typography.bodyLarge)
                 }
                 if (hasImage) {
                     TextButton(onClick = onRemove, modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            "Remove image",
+                            stringResource(R.string.remove_image),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error,
                         )
@@ -1814,7 +1825,7 @@ private fun GroupImagePickerDialog(
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

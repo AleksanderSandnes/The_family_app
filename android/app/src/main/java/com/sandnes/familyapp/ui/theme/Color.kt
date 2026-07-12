@@ -57,7 +57,9 @@ val InkDark = Color(0xFFECEEF8)
 val SecondaryLight = Color(0xFF5F6780)
 val SecondaryDark = Color(0xFF98A0BC)
 val CaptionLight = Color(0xFF8B92AC)
-val CaptionDark = Color(0xFF6A7290)
+
+// Lifted from #6A7290: caption text on the dark ambient base was ~3.9:1, under WCAG AA 4.5:1.
+val CaptionDark = Color(0xFF7C84A3)
 
 // Secondary containers (violet).
 val VioletContainerLight = Color(0xFFEDE4FF)
@@ -66,8 +68,11 @@ val VioletContainerDark = Color(0xFF4C1D95)
 // Status — mirror iOS Palette. Destructive/live/urgency/map tokens.
 val Destructive = Color(0xFFE11D48) // menu rows, leave/sign-out, delete
 val LiveGreen = Color(0xFF10B981) // today / live / done
-val LiveGreenText = Color(0xFF059669) // "All done" text
-val WeekAmberText = Color(0xFFB45309) // "this week" urgency text
+
+// Status text darkened one step (from #059669 / #B45309): both missed WCAG AA against the
+// light ambient wash for small text.
+val LiveGreenText = Color(0xFF047857) // "All done" text
+val WeekAmberText = Color(0xFF92400E) // "this week" urgency text
 val StaleDot = Color(0xFFCBD2E0) // map stale dot
 val MapBase = Color(0xFFE7ECE3) // family-map flat base
 

@@ -65,8 +65,11 @@ import com.sandnes.familyapp.ui.theme.AppColorPalette
 import com.sandnes.familyapp.ui.theme.FeatureAccent
 import com.sandnes.familyapp.ui.theme.IconKeyMap
 import com.sandnes.familyapp.ui.theme.IconOptions
+import com.sandnes.familyapp.ui.theme.LiveGreen
 import com.sandnes.familyapp.ui.theme.Radius
 import com.sandnes.familyapp.ui.theme.Spacing
+import com.sandnes.familyapp.ui.theme.Warning
+import com.sandnes.familyapp.ui.theme.WeekAmberText
 import com.sandnes.familyapp.ui.theme.glassCard
 import com.sandnes.familyapp.ui.theme.hexColor
 import java.time.LocalDate
@@ -202,7 +205,8 @@ private fun BirthdayCard(
             else -> ""
         }
     val cardDescription =
-        "${b.name}'s birthday, $displayDate${if (daysLabel.isNotEmpty()) ", $daysLabel" else ""}"
+        stringResource(R.string.birthday_of, b.name) +
+            ", $displayDate${if (daysLabel.isNotEmpty()) ", $daysLabel" else ""}"
 
     // Today's birthday gets a celebratory green ring; every card is a glass surface.
     val base =
@@ -211,7 +215,7 @@ private fun BirthdayCard(
             .glassCard(Radius.overviewCard)
             .then(
                 if (isToday) {
-                    Modifier.border(1.5.dp, Color(0xFF22C55E).copy(alpha = 0.5f), RoundedCornerShape(Radius.overviewCard))
+                    Modifier.border(1.5.dp, LiveGreen.copy(alpha = 0.5f), RoundedCornerShape(Radius.overviewCard))
                 } else {
                     Modifier
                 },
@@ -276,14 +280,14 @@ private fun DaysPill(days: Int) {
         BirthdayUrgency.TODAY ->
             PillTag(
                 text = stringResource(R.string.today_exclaim) + " 🎉",
-                container = Color(0xFF22C55E),
+                container = LiveGreen,
                 content = Color.White,
             )
         BirthdayUrgency.SOON ->
             PillTag(
                 text = stringResource(R.string.in_days, days),
-                container = Color(0xFFF59E0B).copy(alpha = 0.18f),
-                content = Color(0xFFB45309),
+                container = Warning.copy(alpha = 0.18f),
+                content = WeekAmberText,
             )
         BirthdayUrgency.LATER ->
             PillTag(

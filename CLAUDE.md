@@ -290,3 +290,12 @@ Native SwiftUI port with 1:1 feature/design parity, same Supabase backend. Full 
 | WorkManager reminders | none (server-side `daily-reminders`) |
 
 **The dual-ID rule applies verbatim on iOS:** `SessionStore.currentUserId` = `public.users.id` (FKs); `client.auth.currentSession?.user.id` = `auth_id` (RLS + storage). See pitfall 6 above.
+
+## Design Context
+
+Design work on either app is governed by two root documents:
+
+- `PRODUCT.md` — strategic design context: register (**product**), platform (**adaptive**, Android + iOS), users, positioning ("one shared home for the family"), brand personality (warm, premium, calm), anti-references, and 5 design principles.
+- `DESIGN.md` — the visual system ("The Glass House"): Liquid Glass surfaces, Heirloom Indigo palette, type scale, radii/spacing tokens, named rules (Badge Rule, One Gradient Rule, Ghost Rule), and do's/don'ts. Machine-readable tokens in the frontmatter and `.impeccable/design.json`.
+
+Read both before building or changing any UI; token values are shared contracts between `android/.../ui/theme/` and `ios/FamilyApp/DesignSystem/`.

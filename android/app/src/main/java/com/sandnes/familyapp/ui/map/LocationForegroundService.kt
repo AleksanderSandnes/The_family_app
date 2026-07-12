@@ -19,6 +19,7 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.sandnes.familyapp.MainActivity
+import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.remote.SupabaseManager
 import io.github.jan.supabase.postgrest.postgrest
@@ -123,17 +124,17 @@ class LocationForegroundService : Service() {
         val channel =
             NotificationChannel(
                 CHANNEL_ID,
-                "Location sharing",
+                getString(R.string.location_sharing_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
-            ).apply { description = "Shown while your location is shared with family" }
+            ).apply { description = getString(R.string.location_sharing_channel_desc) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
     private fun buildNotification() =
         NotificationCompat
             .Builder(this, CHANNEL_ID)
-            .setContentTitle("Sharing location with family")
-            .setContentText("Your position is visible on the family map")
+            .setContentTitle(getString(R.string.sharing_location_with_family))
+            .setContentText(getString(R.string.your_position_is_visible_on_the_family_map))
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setOngoing(true)
             .setContentIntent(

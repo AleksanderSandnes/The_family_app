@@ -80,6 +80,23 @@ val LocalAppDarkTheme = androidx.compose.runtime.staticCompositionLocalOf { fals
 @androidx.compose.runtime.ReadOnlyComposable
 fun appDarkTheme(): Boolean = LocalAppDarkTheme.current
 
+/**
+ * True when the user has disabled system animations (accessibility "Remove animations" sets the
+ * animator duration scale to 0). Decorative loops (shimmer, pulses, typing dots) must render a
+ * static alternative when this is set.
+ */
+@Composable
+fun reducedMotion(): Boolean {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    return androidx.compose.runtime.remember(context) {
+        android.provider.Settings.Global.getFloat(
+            context.contentResolver,
+            android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f,
+        ) == 0f
+    }
+}
+
 @Composable
 fun TheFamilyAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

@@ -438,7 +438,7 @@
     <string name="notif_location_title">Sharing location with family</string>
     <string name="notif_location_text">Your position is visible on the family map</string>
     <string name="perm_notifications_desc">Get notified about new messages, birthdays, and upcoming events</string>
-    <string name="perm_location_desc">Share your location with family so everyone knows where each other are</string>
+    <string name="perm_location_desc">Share your location so your family can see where you are</string>
     <string name="perm_camera_desc">Take photos for your profile picture and to share in chat</string>
     <string name="perm_microphone_desc">Record and send voice messages to family members in chat</string>
     <string name="microphone">Microphone</string>
@@ -474,4 +474,28 @@
     <string name="relation_other">Other</string>
     <string name="join_family_invite_message">Join our family \"%1$s\" on The Family App!\n\nTap to join: %2$s\n\nOr open the app, tap \"Join with Invite Code\", and enter: %3$s</string>
     <string name="reply">Reply</string>
+    <!-- Polish pass 2026-07: previously hardcoded literals extracted to resources -->
+    <string name="cancel_recording">Cancel recording</string>
+    <string name="message_from_at">Message from %1$s at %2$s: %3$s</string>
+    <string name="scroll_to_bottom">Scroll to bottom</string>
+    <string name="cancel_reply">Cancel reply</string>
+    <string name="tap_a_member_to_add">Tap a member to add them</string>
+    <string name="delete_list_q">Delete list?</string>
+    <string name="delete_list_confirm">This deletes \u201c%1$s\u201d and all its items for everyone in the family.</string>
+    <string name="delete_event_q">Delete event?</string>
+    <string name="delete_event_confirm">This removes \u201c%1$s\u201d for everyone in the family.</string>
+    <string name="delete_plan_q">Delete meal plan?</string>
+    <string name="delete_plan_confirm">This deletes \u201c%1$s\u201d and all its days for everyone in the family.</string>
+    <string name="member_count_one">1 member</string>
+    <string name="birthday_of">%1$s\'s birthday</string>
+    <string name="map_member_live_a11y">%1$s, live, last seen %2$s</string>
+    <string name="map_member_stale_a11y">%1$s, stale, last seen %2$s</string>
+    <string name="map_member_not_sharing_a11y">%1$s, not sharing location</string>
+    <string name="permission_granted_a11y">%1$s permission granted</string>
+    <string name="permission_not_granted_a11y">Grant %1$s permission. Currently not granted</string>
+    <string name="selected">Selected</string>
+    <string name="location_sharing_channel_name">Location sharing</string>
+    <string name="location_sharing_channel_desc">Shown while your location is shared with family</string>
+    <string name="sharing_location_with_family">Sharing location with family</string>
+    <string name="your_position_is_visible_on_the_family_map">Your position is visible on the family map</string>
 </resources>

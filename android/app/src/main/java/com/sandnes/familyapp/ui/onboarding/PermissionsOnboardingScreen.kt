@@ -56,12 +56,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.sandnes.familyapp.R
+import com.sandnes.familyapp.ui.theme.Amber500
+import com.sandnes.familyapp.ui.theme.Indigo500
+import com.sandnes.familyapp.ui.theme.Indigo700
+import com.sandnes.familyapp.ui.theme.Pink500
+import com.sandnes.familyapp.ui.theme.Teal500
+import com.sandnes.familyapp.ui.theme.Violet600
 import kotlinx.coroutines.delay
 
 @Composable
@@ -151,9 +159,9 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
         listOf(
             PermissionCardData(
                 icon = Icons.Filled.Notifications,
-                title = "Notifications",
-                description = "Get notified about new messages, birthdays, and upcoming events",
-                accentColor = Color(0xFF6366F1),
+                title = stringResource(R.string.notifications),
+                description = stringResource(R.string.perm_notifications_desc),
+                accentColor = Indigo500,
                 granted = notifGranted,
                 onRequest = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -163,9 +171,9 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
             ),
             PermissionCardData(
                 icon = Icons.Filled.LocationOn,
-                title = "Location",
-                description = "Share your location with family so everyone knows where each other are",
-                accentColor = Color(0xFF14B8A6),
+                title = stringResource(R.string.location),
+                description = stringResource(R.string.perm_location_desc),
+                accentColor = Teal500,
                 granted = locationGranted,
                 onRequest = {
                     locationLauncher.launch(
@@ -178,17 +186,17 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
             ),
             PermissionCardData(
                 icon = Icons.Filled.CameraAlt,
-                title = "Camera",
-                description = "Take photos for your profile picture and to share in chat",
-                accentColor = Color(0xFFEC4899),
+                title = stringResource(R.string.camera),
+                description = stringResource(R.string.perm_camera_desc),
+                accentColor = Pink500,
                 granted = cameraGranted,
                 onRequest = { cameraLauncher.launch(Manifest.permission.CAMERA) },
             ),
             PermissionCardData(
                 icon = Icons.Filled.Mic,
-                title = "Microphone",
-                description = "Record and send voice messages to family members in chat",
-                accentColor = Color(0xFFF59E0B),
+                title = stringResource(R.string.microphone),
+                description = stringResource(R.string.perm_microphone_desc),
+                accentColor = Amber500,
                 granted = micGranted,
                 onRequest = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) },
             ),
@@ -208,7 +216,7 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF4338CA), Color(0xFF7C3AED)),
+                        colors = listOf(Indigo700, Violet600),
                     ),
                 ),
     ) {
@@ -240,7 +248,7 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
             Spacer(Modifier.height(24.dp))
 
             Text(
-                "Before we begin",
+                stringResource(R.string.before_we_start),
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -248,7 +256,7 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "The Family App works best with these permissions",
+                stringResource(R.string.onboarding_permissions_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.White.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
@@ -295,11 +303,11 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = Color.White,
-                        contentColor = Color(0xFF4338CA),
+                        contentColor = Indigo700,
                     ),
             ) {
                 Text(
-                    "Continue",
+                    stringResource(R.string.continue_label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -308,7 +316,7 @@ fun PermissionsOnboardingScreen(onComplete: () -> Unit) {
             Spacer(Modifier.height(12.dp))
 
             TextButton(onClick = onComplete) {
-                Text("Skip for now", color = Color.White.copy(alpha = 0.7f))
+                Text(stringResource(R.string.skip_for_now), color = Color.White.copy(alpha = 0.7f))
             }
         }
     }
@@ -327,9 +335,9 @@ private data class PermissionCardData(
 private fun PermissionCardItem(card: PermissionCardData) {
     val semanticsLabel =
         if (card.granted) {
-            "${card.title} permission granted"
+            stringResource(R.string.permission_granted_a11y, card.title)
         } else {
-            "Grant ${card.title} permission. Currently not granted"
+            stringResource(R.string.permission_not_granted_a11y, card.title)
         }
     Surface(
         modifier =
