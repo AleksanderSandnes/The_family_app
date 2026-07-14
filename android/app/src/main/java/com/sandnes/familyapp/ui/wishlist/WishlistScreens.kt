@@ -604,9 +604,9 @@ private suspend fun exportWishlistPdf(
 
 // ─── Wish rows ─────────────────────────────────────────────────────────────────
 
-/** Title with the price appended inline (e.g. "Lego set  ·  $50"). */
+/** Title with the NOK-formatted price appended inline (e.g. "Lego set  ·  649 kr"). */
 private fun wishTitle(wish: WishModel): String =
-    wish.text + (wish.price?.takeIf { it.isNotBlank() }?.let { "  ·  $it" } ?: "")
+    wish.text + (wish.price?.takeIf { it.isNotBlank() }?.let { "  ·  ${formatWishPrice(it)}" } ?: "")
 
 /** Leading wish image thumbnail, shown only when the wish has an image. */
 @Composable
@@ -708,7 +708,11 @@ private fun MemberWishCard(
                 color = if (reservedByOther) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             )
             wish.price?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    formatWishPrice(it),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
         WishLinkButton(wish.link)

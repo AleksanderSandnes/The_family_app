@@ -480,7 +480,7 @@ private struct MemberWishRow: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(state == .reservedByOther ? Color.appCaption : Color.appOnSurface)
                 if let price = wish.price?.trimmingCharacters(in: .whitespaces), !price.isEmpty {
-                    Text(price)
+                    Text(formatWishPrice(price))
                         .font(.caption)
                         .foregroundStyle(Color.appCaption)
                 }
