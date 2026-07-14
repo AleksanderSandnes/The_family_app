@@ -157,7 +157,6 @@ object WishlistPdf {
     // Wish image thumbnail (points) and its gap to the text column.
     private const val IMAGE_SIZE = 90f
     private const val IMAGE_TEXT_GAP = 14f
-    private const val IMAGE_CORNER_RADIUS = 10f
     private const val IMAGE_FETCH_PX = 360
     private const val IMAGE_FETCH_TIMEOUT_MS = 10_000L
 
@@ -252,7 +251,7 @@ object WishlistPdf {
         val textWidth = (contentWidth - textIndent).toInt().coerceAtLeast(1)
 
         if (image != null) {
-            drawRoundedImage(canvas, image, MARGIN.toFloat(), top)
+            drawImage(canvas, image, MARGIN.toFloat(), top)
         }
 
         var cursorY = top
@@ -264,8 +263,8 @@ object WishlistPdf {
         return if (image != null) maxOf(cursorY, top + IMAGE_SIZE) else cursorY
     }
 
-    /** Center-crops [bitmap] into a rounded IMAGE_SIZE square at ([left], [top]). */
-    private fun drawRoundedImage(
+    /** Center-crops [bitmap] into an IMAGE_SIZE square at ([left], [top]). */
+    private fun drawImage(
         canvas: Canvas,
         bitmap: Bitmap,
         left: Float,
@@ -284,7 +283,7 @@ object WishlistPdf {
         shader.setLocalMatrix(matrix)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader }
         val rect = RectF(left, top, left + IMAGE_SIZE, top + IMAGE_SIZE)
-        canvas.drawRoundRect(rect, IMAGE_CORNER_RADIUS, IMAGE_CORNER_RADIUS, paint)
+        canvas.drawRect(rect, paint)
     }
 
     /** Short Heirloom-Indigo rule under the header; returns the Y just below it. */

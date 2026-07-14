@@ -39,7 +39,6 @@ enum WishlistPDF {
 
     private static let imageSize: CGFloat = 90
     private static let imageTextGap: CGFloat = 14
-    private static let imageCornerRadius: CGFloat = 10
     private static let imageFetchTimeout: TimeInterval = 10
     private static let blockGap: CGFloat = 16
 
@@ -114,7 +113,7 @@ enum WishlistPDF {
                     let textWidth = contentWidth - (image != nil ? imageSize + imageTextGap : 0)
 
                     if let image {
-                        drawRounded(image, at: CGPoint(x: margin, y: blockTop))
+                        drawSquare(image, at: CGPoint(x: margin, y: blockTop))
                     }
 
                     cursorY += draw(
@@ -146,12 +145,12 @@ enum WishlistPDF {
         }
     }
 
-    /// Center-crops [image] into a rounded `imageSize` square at [origin].
-    private static func drawRounded(_ image: UIImage, at origin: CGPoint) {
+    /// Center-crops [image] into an `imageSize` square at [origin].
+    private static func drawSquare(_ image: UIImage, at origin: CGPoint) {
         let rect = CGRect(x: origin.x, y: origin.y, width: imageSize, height: imageSize)
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
         ctx.saveGState()
-        UIBezierPath(roundedRect: rect, cornerRadius: imageCornerRadius).addClip()
+        UIBezierPath(rect: rect).addClip()
         let scale = max(imageSize / image.size.width, imageSize / image.size.height)
         let drawSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
         let drawOrigin = CGPoint(
