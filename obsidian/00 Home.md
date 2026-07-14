@@ -17,6 +17,7 @@ Welcome to the project knowledge base for The Family App.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
+- **🎁 Wishlist PDF v2 (2026-07-14)** — export now embeds wish image thumbnails, NOK-formatted prices and shortened links in a card layout with the indigo accent (both platforms). Shopping-item inline edit already existed (tap item text). R8 minification staged on `chore/enable-r8` pending on-device smoke test.
 - **✉️ Signup email verification shipped (2026-07-12)** — new signups verify a 6-digit
   emailed code before the permission screen (both platforms); `enable_confirmations`
   is LIVE in production, so older installed versions error at signup until users
