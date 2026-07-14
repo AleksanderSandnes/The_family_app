@@ -131,13 +131,17 @@ struct WishlistDetailScreen: View {
             && viewModel.selectedWishlist?.ownerUserId == viewModel.currentUserId
     }
 
-    /// Builds a shareable PDF of the current wishlist and presents the system share sheet.
+    /// Builds a shareable PDF of the current wishlist (downloading wish images) and
+    /// presents the system share sheet.
     private func exportPDF() {
         let name = viewModel.selectedWishlist?.name ?? L("Wishlist")
         let ownerName = viewModel.selectedWishlist?.ownerName ?? ""
         let subtitle = ownerName.isEmpty ? "" : L("By \(ownerName)")
-        guard let url = WishlistPDF.make(name: name, subtitle: subtitle, wishes: sortedWishes) else { return }
-        shareItem = ShareItem(items: [url])
+        let wishes = sortedWishes
+        Task {
+            guard let url = await WishlistPDF.make(name: name, subtitle: subtitle, wishes: wishes) else { return }
+            shareItem = ShareItem(items: [url])
+        }
     }
 
     /// Owner action: mint a share link and present the system share sheet. Whoever opens
