@@ -19,7 +19,8 @@ class WishlistPdfTest {
         text: String,
         price: String? = null,
         link: String? = null,
-    ): WishModel = WishModel(id = "w-$text", text = text, price = price, link = link)
+        imageUrl: String? = null,
+    ): WishModel = WishModel(id = "w-$text", text = text, price = price, link = link, imageUrl = imageUrl)
 
     // ─── wishlistPdfLines — content order & kinds ─────────────────────────────
 
@@ -39,21 +40,21 @@ class WishlistPdfTest {
     }
 
     @Test
-    fun `wish renders bullet then price then link`() {
+    fun `wish renders name then price then link`() {
         val lines =
             wishlistPdfLines(
                 "Birthday",
                 "By Test Nine",
-                listOf(wish("AirPods", price = "1990 kr", link = "apple.com/airpods"), wish("Cookbook")),
+                listOf(wish("AirPods", price = "1990", link = "https://www.apple.com/airpods"), wish("Cookbook")),
             )
         assertEquals(
             listOf(
                 WishPdfLine("Birthday", WishPdfLineKind.TITLE),
                 WishPdfLine("By Test Nine", WishPdfLineKind.SUBTITLE),
-                WishPdfLine("•  AirPods", WishPdfLineKind.BULLET),
+                WishPdfLine("AirPods", WishPdfLineKind.BULLET),
                 WishPdfLine("1990 kr", WishPdfLineKind.META),
                 WishPdfLine("apple.com/airpods", WishPdfLineKind.META),
-                WishPdfLine("•  Cookbook", WishPdfLineKind.BULLET),
+                WishPdfLine("Cookbook", WishPdfLineKind.BULLET),
             ),
             lines,
         )
@@ -63,7 +64,61 @@ class WishlistPdfTest {
     fun `blank wishes are skipped`() {
         val lines = wishlistPdfLines("List", "", listOf(wish("   "), wish("Real gift")))
         assertEquals(1, lines.count { it.kind == WishPdfLineKind.BULLET })
-        assertEquals("•  Real gift", lines.first { it.kind == WishPdfLineKind.BULLET }.text)
+        assertEquals("Real gift", lines.first { it.kind == WishPdfLineKind.BULLET }.text)
+    }
+
+    // ─── formatWishPrice — NOK formatting for bare numbers ────────────────────
+
+    @Test
+    fun `bare numbers gain a kr suffix`() {
+        assertEquals("299 kr", formatWishPrice("299"))
+        assertEquals("299,50 kr", formatWishPrice("299,50"))
+        assertEquals("1990.00 kr", formatWishPrice("1990.00"))
+        assertEquals("1 990 kr", formatWishPrice("1 990"))
+    }
+
+    @Test
+    fun `non-numeric prices render as typed`() {
+        assertEquals("1990 kr", formatWishPrice("1990 kr"))
+        assertEquals("ca. 500,-", formatWishPrice("ca. 500,-"))
+        assertEquals("$20", formatWishPrice("$20"))
+    }
+
+    // ─── shortenedLink ────────────────────────────────────────────────────────
+
+    @Test
+    fun `links drop scheme and www and trailing slash`() {
+        assertEquals("apple.com/airpods", shortenedLink("https://www.apple.com/airpods/"))
+        assertEquals("finn.no/item/123", shortenedLink("http://finn.no/item/123"))
+    }
+
+    @Test
+    fun `long links are ellipsized`() {
+        val long = "https://example.com/" + "a".repeat(100)
+        val short = shortenedLink(long)
+        assertTrue(short.length <= 60)
+        assertTrue(short.endsWith("…"))
+    }
+
+    // ─── image slots on blocks ────────────────────────────────────────────────
+
+    @Test
+    fun `wish blocks carry their imageUrl and the header does not`() {
+        val blocks =
+            wishlistPdfBlocks(
+                "Gifts",
+                "",
+                listOf(wish("Lego", imageUrl = "https://img.example/lego.jpg"), wish("Socks")),
+            )
+        assertEquals(null, blocks[0].imageUrl)
+        assertEquals("https://img.example/lego.jpg", blocks[1].imageUrl)
+        assertEquals(null, blocks[2].imageUrl)
+    }
+
+    @Test
+    fun `blank imageUrl is treated as absent`() {
+        val blocks = wishlistPdfBlocks("Gifts", "", listOf(wish("Lego", imageUrl = "  ")))
+        assertEquals(null, blocks[1].imageUrl)
     }
 
     @Test
@@ -85,8 +140,8 @@ class WishlistPdfTest {
         val blocks = wishlistPdfBlocks("Gifts", "By Alice", listOf(wish("A"), wish("B")))
         assertEquals(3, blocks.size) // header + 2 wishes
         assertEquals(WishPdfLineKind.TITLE, blocks[0].lines.first().kind)
-        assertEquals("•  A", blocks[1].lines.first().text)
-        assertEquals("•  B", blocks[2].lines.first().text)
+        assertEquals("A", blocks[1].lines.first().text)
+        assertEquals("B", blocks[2].lines.first().text)
     }
 
     // ─── sanitizedPdfFileName ─────────────────────────────────────────────────
