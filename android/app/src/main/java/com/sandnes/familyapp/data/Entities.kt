@@ -132,6 +132,7 @@ data class WishModel(
     val link: String? = null,
     val price: String? = null,
     @SerialName("image_url") val imageUrl: String? = null,
+    val description: String? = null,
 )
 
 @Serializable

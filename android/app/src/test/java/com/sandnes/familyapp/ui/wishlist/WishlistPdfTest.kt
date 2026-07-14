@@ -20,7 +20,16 @@ class WishlistPdfTest {
         price: String? = null,
         link: String? = null,
         imageUrl: String? = null,
-    ): WishModel = WishModel(id = "w-$text", text = text, price = price, link = link, imageUrl = imageUrl)
+        description: String? = null,
+    ): WishModel =
+        WishModel(
+            id = "w-$text",
+            text = text,
+            price = price,
+            link = link,
+            imageUrl = imageUrl,
+            description = description,
+        )
 
     // ─── wishlistPdfLines — content order & kinds ─────────────────────────────
 
@@ -40,24 +49,39 @@ class WishlistPdfTest {
     }
 
     @Test
-    fun `wish renders name then price then link`() {
+    fun `wish renders name then description then price then link`() {
         val lines =
             wishlistPdfLines(
                 "Birthday",
                 "By Test Nine",
-                listOf(wish("AirPods", price = "1990", link = "https://www.apple.com/airpods"), wish("Cookbook")),
+                listOf(
+                    wish(
+                        "AirPods",
+                        price = "1990",
+                        link = "https://www.apple.com/airpods",
+                        description = "The white ones, 2nd gen",
+                    ),
+                    wish("Cookbook"),
+                ),
             )
         assertEquals(
             listOf(
                 WishPdfLine("Birthday", WishPdfLineKind.TITLE),
                 WishPdfLine("By Test Nine", WishPdfLineKind.SUBTITLE),
                 WishPdfLine("AirPods", WishPdfLineKind.BULLET),
-                WishPdfLine("1990 kr", WishPdfLineKind.META),
-                WishPdfLine("apple.com/airpods", WishPdfLineKind.META),
+                WishPdfLine("The white ones, 2nd gen", WishPdfLineKind.DESCRIPTION),
+                WishPdfLine("1990 kr", WishPdfLineKind.PRICE),
+                WishPdfLine("apple.com/airpods", WishPdfLineKind.LINK),
                 WishPdfLine("Cookbook", WishPdfLineKind.BULLET),
             ),
             lines,
         )
+    }
+
+    @Test
+    fun `blank description is omitted`() {
+        val lines = wishlistPdfLines("List", "", listOf(wish("Gift", description = "  ")))
+        assertTrue(lines.none { it.kind == WishPdfLineKind.DESCRIPTION })
     }
 
     @Test

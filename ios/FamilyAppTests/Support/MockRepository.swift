@@ -734,11 +734,14 @@ final class MockRepository: FamilyRepositoryProtocol {
         let link: String?
         let price: String?
         let imageUrl: String?
+        let description: String?
     }
 
     private(set) var updatedWishes: [WishUpdateRecord] = []
-    func updateWish(id: String, text: String, link: String?, price: String?, imageUrl: String?) async {
-        updatedWishes.append(WishUpdateRecord(id: id, text: text, link: link, price: price, imageUrl: imageUrl))
+    func updateWish(id: String, text: String, link: String?, price: String?, imageUrl: String?, description: String?) async {
+        updatedWishes.append(
+            WishUpdateRecord(id: id, text: text, link: link, price: price, imageUrl: imageUrl, description: description)
+        )
     }
 
     func deleteWish(id: String) async {

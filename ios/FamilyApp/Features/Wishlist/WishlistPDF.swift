@@ -29,18 +29,27 @@ func shortenedLink(_ url: String, maxLength: Int = 60) -> String {
 
 enum WishlistPDF {
     private static let pageSize = CGSize(width: 595.2, height: 841.8) // A4 at 72 dpi
-    private static let margin: CGFloat = 48
-    // Fixed dark inks — the page is always white, so we must NOT use dynamic colors like
-    // .label/.secondaryLabel: in the app's dark mode those resolve near-white and vanish.
-    private static let inkColor = UIColor.black
-    private static let metaColor = UIColor(white: 0.32, alpha: 1)
-    // Heirloom Indigo accent rule under the header (fixed, not a dynamic theme color).
-    private static let accentColor = UIColor(red: 0x54 / 255.0, green: 0x57 / 255.0, blue: 0xE8 / 255.0, alpha: 1)
+    private static let margin: CGFloat = 44
 
-    private static let imageSize: CGFloat = 90
+    // Fixed Glass House light-mode inks — never dynamic colors like .label/.secondaryLabel:
+    // in the app's dark mode those resolve near-white and vanish on the light page.
+    private static let canvasColor = UIColor(red: 0xEF / 255.0, green: 0xF1 / 255.0, blue: 0xF8 / 255.0, alpha: 1)
+    private static let cardBorderColor = UIColor(red: 0x16 / 255.0, green: 0x19 / 255.0, blue: 0x2A / 255.0, alpha: 0.10)
+    private static let inkColor = UIColor(red: 0x16 / 255.0, green: 0x19 / 255.0, blue: 0x2A / 255.0, alpha: 1)
+    private static let secondaryColor = UIColor(red: 0x5F / 255.0, green: 0x67 / 255.0, blue: 0x80 / 255.0, alpha: 1)
+    private static let accentInk = UIColor(red: 0x4F / 255.0, green: 0x55 / 255.0, blue: 0xE6 / 255.0, alpha: 1)
+    private static let captionColor = UIColor(red: 0x8B / 255.0, green: 0x92 / 255.0, blue: 0xAC / 255.0, alpha: 1)
+    // The one sanctioned brand gradient (Heirloom Indigo → violet) for the header rule.
+    private static let accentStart = UIColor(red: 0x54 / 255.0, green: 0x57 / 255.0, blue: 0xE8 / 255.0, alpha: 1)
+    private static let accentEnd = UIColor(red: 0x7C / 255.0, green: 0x3A / 255.0, blue: 0xED / 255.0, alpha: 1)
+
+    private static let cardPadding: CGFloat = 12
+    private static let cardCornerRadius: CGFloat = 14
+    private static let imageSize: CGFloat = 84
     private static let imageTextGap: CGFloat = 14
     private static let imageFetchTimeout: TimeInterval = 10
-    private static let blockGap: CGFloat = 16
+    private static let blockGap: CGFloat = 12
+    private static let footerText = "The Family App  ·  thefamilyapp.app"
 
     /// Downloads wish images (best-effort) and writes the wishlist to a temp-directory PDF.
     /// Returns its file URL, or nil on failure. `subtitle` (e.g. "By Alice") is passed in
@@ -78,7 +87,7 @@ enum WishlistPDF {
 
         do {
             try renderer.writePDF(to: url) { ctx in
-                ctx.beginPage()
+                beginStyledPage(ctx)
                 var cursorY = margin
 
                 cursorY += draw(
@@ -89,60 +98,139 @@ enum WishlistPDF {
                     cursorY += 6
                     cursorY += draw(
                         subtitle, at: CGPoint(x: margin, y: cursorY), width: contentWidth,
-                        font: .systemFont(ofSize: 13, weight: .regular), color: Self.metaColor
+                        font: .systemFont(ofSize: 13, weight: .regular), color: Self.secondaryColor
                     )
                 }
-                // Short indigo accent rule under the header.
+                // Brand-gradient accent rule under the header.
                 cursorY += 10
-                let accent = UIBezierPath(
-                    roundedRect: CGRect(x: margin, y: cursorY, width: 64, height: 3), cornerRadius: 1.5
-                )
-                accentColor.setFill()
-                accent.fill()
-                cursorY += 3 + 24
+                drawAccentRule(at: CGPoint(x: margin, y: cursorY))
+                cursorY += 3 + 20
 
-                let bodyFont = UIFont.systemFont(ofSize: 15, weight: .semibold)
-                let metaFont = UIFont.systemFont(ofSize: 12, weight: .regular)
                 for wish in wishes where !wish.text.trimmingCharacters(in: .whitespaces).isEmpty {
                     let image = images[wish.id]
-                    let needed: CGFloat = image != nil ? imageSize + blockGap : 40
-                    cursorY = startPageIfNeeded(cursorY, ctx: ctx, needed: needed)
-
-                    let blockTop = cursorY
-                    let textX = margin + (image != nil ? imageSize + imageTextGap : 0)
-                    let textWidth = contentWidth - (image != nil ? imageSize + imageTextGap : 0)
-
-                    if let image {
-                        drawSquare(image, at: CGPoint(x: margin, y: blockTop))
+                    let cardHeight = measureCard(wish: wish, image: image, contentWidth: contentWidth)
+                    if cursorY + cardHeight > pageSize.height - margin - 24 {
+                        beginStyledPage(ctx)
+                        cursorY = margin
                     }
-
-                    cursorY += draw(
-                        wish.text, at: CGPoint(x: textX, y: cursorY), width: textWidth,
-                        font: bodyFont, color: Self.inkColor
+                    drawWishCard(
+                        wish: wish, image: image,
+                        at: CGPoint(x: margin, y: cursorY),
+                        contentWidth: contentWidth, cardHeight: cardHeight
                     )
-                    if let price = wish.price, !price.trimmingCharacters(in: .whitespaces).isEmpty {
-                        cursorY += 3
-                        cursorY += draw(
-                            formatWishPrice(price), at: CGPoint(x: textX, y: cursorY), width: textWidth,
-                            font: metaFont, color: Self.metaColor
-                        )
-                    }
-                    if let link = wish.link, !link.trimmingCharacters(in: .whitespaces).isEmpty {
-                        cursorY += 3
-                        cursorY += draw(
-                            shortenedLink(link), at: CGPoint(x: textX, y: cursorY), width: textWidth,
-                            font: metaFont, color: Self.metaColor
-                        )
-                    }
-                    // The block occupies at least the thumbnail's height.
-                    if image != nil { cursorY = max(cursorY, blockTop + imageSize) }
-                    cursorY += blockGap
+                    cursorY += cardHeight + blockGap
                 }
             }
             return url
         } catch {
             return nil
         }
+    }
+
+    /// Starts a page pre-filled with the ambient canvas and the footer caption.
+    private static func beginStyledPage(_ ctx: UIGraphicsPDFRendererContext) {
+        ctx.beginPage()
+        canvasColor.setFill()
+        UIBezierPath(rect: CGRect(origin: .zero, size: pageSize)).fill()
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        (footerText as NSString).draw(
+            in: CGRect(x: 0, y: pageSize.height - margin / 2 - 9, width: pageSize.width, height: 14),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 9, weight: .regular),
+                .foregroundColor: captionColor,
+                .paragraphStyle: paragraph,
+            ]
+        )
+    }
+
+    /// Short Heirloom-Indigo → violet gradient rule.
+    private static func drawAccentRule(at origin: CGPoint) {
+        guard let ctx = UIGraphicsGetCurrentContext() else { return }
+        ctx.saveGState()
+        let rect = CGRect(x: origin.x, y: origin.y, width: 72, height: 3)
+        UIBezierPath(roundedRect: rect, cornerRadius: 1.5).addClip()
+        let colors = [accentStart.cgColor, accentEnd.cgColor] as CFArray
+        if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: nil) {
+            ctx.drawLinearGradient(
+                gradient,
+                start: CGPoint(x: rect.minX, y: rect.midY),
+                end: CGPoint(x: rect.maxX, y: rect.midY),
+                options: []
+            )
+        }
+        ctx.restoreGState()
+    }
+
+    private static let nameFont = UIFont.systemFont(ofSize: 15, weight: .bold)
+    private static let bodyFont = UIFont.systemFont(ofSize: 12, weight: .regular)
+    private static let priceFont = UIFont.systemFont(ofSize: 12, weight: .bold)
+
+    /// The wish's text lines: (string, font, color), in draw order.
+    private static func cardLines(for wish: WishModel) -> [(String, UIFont, UIColor)] {
+        var lines: [(String, UIFont, UIColor)] = [(wish.text, nameFont, inkColor)]
+        if let description = wish.description?.trimmingCharacters(in: .whitespaces), !description.isEmpty {
+            lines.append((description, bodyFont, secondaryColor))
+        }
+        if let price = wish.price?.trimmingCharacters(in: .whitespaces), !price.isEmpty {
+            lines.append((formatWishPrice(price), priceFont, accentInk))
+        }
+        if let link = wish.link?.trimmingCharacters(in: .whitespaces), !link.isEmpty {
+            lines.append((shortenedLink(link), bodyFont, accentInk))
+        }
+        return lines
+    }
+
+    /// Total card height including padding; text column accounts for the thumbnail.
+    private static func measureCard(wish: WishModel, image: UIImage?, contentWidth: CGFloat) -> CGFloat {
+        let textWidth = contentWidth - cardPadding * 2 - (image != nil ? imageSize + imageTextGap : 0)
+        var textHeight: CGFloat = 0
+        for (index, line) in cardLines(for: wish).enumerated() {
+            if index > 0 { textHeight += 4 }
+            textHeight += measure(line.0, width: textWidth, font: line.1)
+        }
+        let inner = max(textHeight, image != nil ? imageSize : 0)
+        return inner + cardPadding * 2
+    }
+
+    /// One wish as a white rounded card with hairline border, image left, text right.
+    private static func drawWishCard(
+        wish: WishModel, image: UIImage?, at origin: CGPoint, contentWidth: CGFloat, cardHeight: CGFloat
+    ) {
+        let card = CGRect(x: origin.x, y: origin.y, width: contentWidth, height: cardHeight)
+        let path = UIBezierPath(roundedRect: card, cornerRadius: cardCornerRadius)
+        UIColor.white.setFill()
+        path.fill()
+        cardBorderColor.setStroke()
+        path.lineWidth = 1
+        path.stroke()
+
+        let innerLeft = origin.x + cardPadding
+        let innerTop = origin.y + cardPadding
+        if let image {
+            drawSquare(image, at: CGPoint(x: innerLeft, y: innerTop))
+        }
+        let textX = innerLeft + (image != nil ? imageSize + imageTextGap : 0)
+        let textWidth = card.maxX - cardPadding - textX
+
+        var cursorY = innerTop
+        for (index, line) in cardLines(for: wish).enumerated() {
+            if index > 0 { cursorY += 4 }
+            cursorY += draw(line.0, at: CGPoint(x: textX, y: cursorY), width: textWidth, font: line.1, color: line.2)
+        }
+    }
+
+    /// Measures wrapped text height without drawing.
+    private static func measure(_ text: String, width: CGFloat, font: UIFont) -> CGFloat {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byWordWrapping
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .paragraphStyle: paragraph]
+        let bounds = CGSize(width: width, height: .greatestFiniteMagnitude)
+        let rect = (text as NSString).boundingRect(
+            with: bounds, options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attrs, context: nil
+        )
+        return ceil(rect.height)
     }
 
     /// Center-crops [image] into an `imageSize` square at [origin].
@@ -180,18 +268,6 @@ enum WishlistPDF {
             options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: attrs, context: nil
         )
         return ceil(rect.height)
-    }
-
-    /// Starts a new page (resetting the cursor to the top margin) when the next block
-    /// wouldn't fit above the bottom margin.
-    private static func startPageIfNeeded(
-        _ cursorY: CGFloat, ctx: UIGraphicsPDFRendererContext, needed: CGFloat
-    ) -> CGFloat {
-        if cursorY + needed > pageSize.height - margin {
-            ctx.beginPage()
-            return margin
-        }
-        return cursorY
     }
 
     private static func fileName(for name: String) -> String {

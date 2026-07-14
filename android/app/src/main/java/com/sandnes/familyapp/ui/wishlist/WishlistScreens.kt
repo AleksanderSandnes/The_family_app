@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -55,6 +56,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -286,6 +288,7 @@ fun WishlistDetailScreen(
 
     var showAddWish by remember { mutableStateOf(false) }
     var wishToEdit by remember { mutableStateOf<WishModel?>(null) }
+    var detailWish by remember { mutableStateOf<WishModel?>(null) }
     var showMenu by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showAppearanceDialog by remember { mutableStateOf(false) }
@@ -411,6 +414,7 @@ fun WishlistDetailScreen(
                                 currentUserId = currentUserId,
                                 onReserve = { viewModel.reserve(wish) },
                                 onUnreserve = { viewModel.unreserve(wish) },
+                                onShowDetail = { detailWish = wish },
                                 modifier = Modifier.animateItem(),
                             )
                         } else {
@@ -479,6 +483,83 @@ fun WishlistDetailScreen(
             },
         )
     }
+
+    detailWish?.let { wish ->
+        WishDetailDialog(
+            wish = wish,
+            reservation = reservations[wish.id],
+            currentUserId = currentUserId,
+            onReserve = { viewModel.reserve(wish) },
+            onUnreserve = { viewModel.unreserve(wish) },
+            onDismiss = { detailWish = null },
+        )
+    }
+}
+
+/** Everything about one wish, for members viewing someone else's list: full-size image,
+ *  name, description, price, the FULL link (tappable), and the reserve control. */
+@Composable
+private fun WishDetailDialog(
+    wish: WishModel,
+    reservation: WishReservationModel?,
+    currentUserId: String?,
+    onReserve: () -> Unit,
+    onUnreserve: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val reservedByMe = reservation != null && reservation.reservedBy == currentUserId
+    val reservedByOther = reservation != null && !reservedByMe
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(wish.text, style = MaterialTheme.typography.titleLarge) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                if (!wish.imageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = wish.imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(Radius.field)),
+                    )
+                }
+                wish.description?.takeIf { it.isNotBlank() }?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium)
+                }
+                wish.price?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        formatWishPrice(it),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                wish.link?.takeIf { it.isNotBlank() }?.let { link ->
+                    Text(
+                        link,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier =
+                            Modifier.clickable {
+                                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link))) }
+                            },
+                    )
+                }
+                when {
+                    reservedByMe -> Text(stringResource(R.string.reserved_by_you), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    reservedByOther -> Text(stringResource(R.string.reserved), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        },
+        confirmButton = {
+            when {
+                reservedByMe -> TextButton(onClick = { onUnreserve(); onDismiss() }) { Text(stringResource(R.string.unreserve)) }
+                !reservedByOther -> TextButton(onClick = { onReserve(); onDismiss() }) { Text(stringResource(R.string.reserve)) }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+        },
+    )
 }
 
 // ─── Share / export helpers ────────────────────────────────────────────────────
@@ -604,6 +685,7 @@ private fun MemberWishCard(
     currentUserId: String?,
     onReserve: () -> Unit,
     onUnreserve: () -> Unit,
+    onShowDetail: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val reservedByMe = reservation != null && reservation.reservedBy == currentUserId
@@ -611,6 +693,8 @@ private fun MemberWishCard(
     Row(
         modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(Radius.row))
+            .clickable(onClick = onShowDetail)
             .rowSurface(ghost = reservedByOther, cornerRadius = Radius.row)
             .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -755,6 +839,7 @@ private fun AddWishDialog(
     var title by remember { mutableStateOf(initial?.text ?: "") }
     var link by remember { mutableStateOf(initial?.link ?: "") }
     var price by remember { mutableStateOf(initial?.price ?: "") }
+    var description by remember { mutableStateOf(initial?.description ?: "") }
     var image by remember { mutableStateOf<Uri?>(null) }
     val picker =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -767,13 +852,19 @@ private fun AddWishDialog(
         confirmTitle = stringResource(if (initial != null) R.string.save else R.string.add),
         confirmEnabled = title.isNotBlank(),
         onDismiss = onDismiss,
-        onConfirm = { onConfirm(WishDraft(title.trim(), link, price, image)) },
+        onConfirm = { onConfirm(WishDraft(title.trim(), link, price, image, description)) },
     ) {
         SheetField(
             icon = Icons.Filled.Redeem,
             placeholder = stringResource(R.string.what_do_you_wish_for),
             value = title,
             onValueChange = { title = it },
+        )
+        SheetField(
+            icon = Icons.Filled.Notes,
+            placeholder = stringResource(R.string.description_optional),
+            value = description,
+            onValueChange = { description = it },
         )
         SheetField(
             icon = Icons.Filled.Link,

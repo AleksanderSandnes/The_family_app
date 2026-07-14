@@ -50,6 +50,7 @@ struct AddWishSheet: View {
     @State private var text = ""
     @State private var link = ""
     @State private var price = ""
+    @State private var descriptionText = ""
     @State private var photoItem: PhotosPickerItem?
     @State private var imageData: Data?
 
@@ -70,12 +71,14 @@ struct AddWishSheet: View {
                     text: text.trimmingCharacters(in: .whitespaces),
                     link: link.isEmpty ? nil : link,
                     price: price.isEmpty ? nil : price,
-                    imageData: imageData
+                    imageData: imageData,
+                    description: descriptionText.isEmpty ? nil : descriptionText
                 ))
                 dismiss()
             }
             .padding(.bottom, Spacing.xs)
             GlassField(systemImage: "gift", placeholder: L("What do you wish for?"), text: $text)
+            GlassField(systemImage: "text.alignleft", placeholder: L("Description (optional)"), text: $descriptionText)
             GlassField(systemImage: "link", placeholder: L("Link (optional)"), text: $link)
             GlassField(systemImage: "tag", placeholder: L("Price (optional)"), text: $price)
 
@@ -121,6 +124,7 @@ struct AddWishSheet: View {
                 text = initial.text
                 link = initial.link ?? ""
                 price = initial.price ?? ""
+                descriptionText = initial.description ?? ""
             }
         }
     }

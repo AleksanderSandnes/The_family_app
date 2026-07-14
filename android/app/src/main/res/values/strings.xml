@@ -191,6 +191,8 @@
     <string name="reserve">Reserve</string>
     <string name="reserved_by_you">Reserved by you</string>
     <string name="reserved">Reserved</string>
+    <string name="unreserve">Unreserve</string>
+    <string name="description_optional">Description (optional)</string>
     <string name="wishlist_name">Wishlist name</string>
     <string name="what_do_you_wish_for">What do you wish for?</string>
     <string name="link_optional">Link (optional)</string>

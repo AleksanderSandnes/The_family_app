@@ -194,6 +194,8 @@
 "What do you wish for?" = "Hva ønsker du deg?";
 "Link (optional)" = "Lenke (valgfritt)";
 "Price (optional)" = "Pris (valgfritt)";
+"Description (optional)" = "Beskrivelse (valgfritt)";
+"Unreserve" = "Fjern reservasjon";
 "Add photo (optional)" = "Legg til bilde (valgfritt)";
 "Photo selected" = "Bilde valgt";
 "Home" = "Hjem";

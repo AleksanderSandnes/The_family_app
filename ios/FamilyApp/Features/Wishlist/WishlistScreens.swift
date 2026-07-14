@@ -121,6 +121,7 @@ struct WishlistDetailScreen: View {
 
     @State private var showAddWish = false
     @State private var wishToEdit: WishModel?
+    @State private var detailWish: WishModel?
     @State private var showRename = false
     @State private var showChangeIcon = false
     @State private var renameText = ""
@@ -201,7 +202,8 @@ struct WishlistDetailScreen: View {
                                         currentUserId: viewModel.currentUserId
                                     ),
                                     onReserve: { viewModel.reserve(wish) },
-                                    onUnreserve: { viewModel.unreserve(wish) }
+                                    onUnreserve: { viewModel.unreserve(wish) },
+                                    onShowDetail: { detailWish = wish }
                                 )
                             }
                         }
@@ -293,6 +295,91 @@ struct WishlistDetailScreen: View {
                 wishToEdit = nil
             }
         }
+        .sheet(item: $detailWish) { wish in
+            WishDetailSheet(
+                wish: wish,
+                state: reservationState(
+                    reservation: viewModel.reservations[wish.id],
+                    currentUserId: viewModel.currentUserId
+                ),
+                onReserve: { viewModel.reserve(wish) },
+                onUnreserve: { viewModel.unreserve(wish) }
+            )
+        }
+    }
+}
+
+// MARK: - Wish detail (member view)
+
+/// Everything about one wish, for members viewing someone else's list: full-size image,
+/// name, description, price, the FULL link (tappable), and the reserve control.
+private struct WishDetailSheet: View {
+    let wish: WishModel
+    let state: WishReservationState
+    let onReserve: () -> Void
+    let onUnreserve: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            SheetHeader(
+                title: wish.text,
+                confirmTitle: state == .reservedByMe ? L("Unreserve") : L("Reserve"),
+                confirmEnabled: state != .reservedByOther
+            ) {
+                dismiss()
+            } onConfirm: {
+                if state == .reservedByMe { onUnreserve() } else { onReserve() }
+                dismiss()
+            }
+            .padding(.bottom, Spacing.xs)
+
+            if let raw = wish.imageUrl, !raw.isEmpty, let url = URL(string: raw) {
+                LazyImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    }
+                }
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+            }
+            if let description = wish.description, !description.isEmpty {
+                Text(description)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.appOnSurface)
+            }
+            if let price = wish.price?.trimmingCharacters(in: .whitespaces), !price.isEmpty {
+                Text(formatWishPrice(price))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.appPrimary)
+            }
+            if let link = wish.link?.trimmingCharacters(in: .whitespaces), !link.isEmpty {
+                Button {
+                    if let url = URL(string: link) { openURL(url) }
+                } label: {
+                    Text(link)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.appPrimary)
+                        .multilineTextAlignment(.leading)
+                }
+                .buttonStyle(.plain)
+            }
+            if state == .reservedByOther {
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill").font(.system(size: 11))
+                    Text("Reserved")
+                }
+                .font(.system(size: 12.5))
+                .foregroundStyle(Color.appCaption)
+            }
+        }
+        .padding(.horizontal, Spacing.screenEdge)
+        .padding(.top, Spacing.lg)
+        .padding(.bottom, Spacing.xl)
+        .huggingSheet()
     }
 }
 
@@ -383,6 +470,7 @@ private struct MemberWishRow: View {
     let state: WishReservationState
     let onReserve: () -> Void
     let onUnreserve: () -> Void
+    let onShowDetail: () -> Void
 
     var body: some View {
         HStack(spacing: Spacing.md) {
@@ -398,6 +486,8 @@ private struct MemberWishRow: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onShowDetail)
             WishLinkButton(link: wish.link)
             switch state {
             case .available:

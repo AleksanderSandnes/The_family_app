@@ -192,6 +192,8 @@
     <string name="reserve">Reserver</string>
     <string name="reserved_by_you">Reservert av deg</string>
     <string name="reserved">Reservert</string>
+    <string name="unreserve">Fjern reservasjon</string>
+    <string name="description_optional">Beskrivelse (valgfritt)</string>
     <string name="wishlist_name">Navn på ønskeliste</string>
     <string name="what_do_you_wish_for">Hva ønsker du deg?</string>
     <string name="link_optional">Lenke (valgfritt)</string>

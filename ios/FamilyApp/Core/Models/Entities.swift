@@ -196,9 +196,10 @@ struct WishModel: Codable, Identifiable, Hashable {
     var link: String?
     var price: String?
     var imageUrl: String?
+    var description: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, text, checked, link, price
+        case id, text, checked, link, price, description
         case wishlistId = "wishlist_id"
         case userId = "user_id"
         case imageUrl = "image_url"

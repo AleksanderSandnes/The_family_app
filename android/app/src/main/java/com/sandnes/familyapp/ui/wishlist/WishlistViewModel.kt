@@ -41,6 +41,7 @@ data class WishDraft(
     val link: String? = null,
     val price: String? = null,
     val imageUri: Uri? = null,
+    val description: String? = null,
 )
 
 @HiltViewModel
@@ -445,6 +446,7 @@ class WishlistViewModel
             val userId = repo.currentUserId.first() ?: return@launch
             val cleanLink = draft.link?.trim()?.takeIf { it.isNotEmpty() }
             val cleanPrice = draft.price?.trim()?.takeIf { it.isNotEmpty() }
+            val cleanDescription = draft.description?.trim()?.takeIf { it.isNotEmpty() }
             val tempId = "temp-${java.util.UUID.randomUUID()}"
             _wishes.value =
                 _wishes.value +
@@ -456,6 +458,7 @@ class WishlistViewModel
                     checked = false,
                     link = cleanLink,
                     price = cleanPrice,
+                    description = cleanDescription,
                 )
             val imageUrl = draft.imageUri?.let { uploadWishImage(context, userId, it) }
             runCatching {
@@ -467,6 +470,7 @@ class WishlistViewModel
                         if (cleanLink != null) put("link", cleanLink)
                         if (cleanPrice != null) put("price", cleanPrice)
                         if (imageUrl != null) put("image_url", imageUrl)
+                        if (cleanDescription != null) put("description", cleanDescription)
                     },
                 )
             }.onFailure { _errorRes.value = R.string.couldnt_save }
@@ -483,6 +487,7 @@ class WishlistViewModel
             val existing = _wishes.value.firstOrNull { it.id == wishId }
             val cleanLink = draft.link?.trim()?.takeIf { it.isNotEmpty() }
             val cleanPrice = draft.price?.trim()?.takeIf { it.isNotEmpty() }
+            val cleanDescription = draft.description?.trim()?.takeIf { it.isNotEmpty() }
             var imageUrl = existing?.imageUrl
             if (draft.imageUri != null) {
                 imageUrl = uploadWishImage(context, userId, draft.imageUri) ?: imageUrl
@@ -490,7 +495,13 @@ class WishlistViewModel
             _wishes.value =
                 _wishes.value.map {
                     if (it.id == wishId) {
-                        it.copy(text = draft.text, link = cleanLink, price = cleanPrice, imageUrl = imageUrl)
+                        it.copy(
+                            text = draft.text,
+                            link = cleanLink,
+                            price = cleanPrice,
+                            imageUrl = imageUrl,
+                            description = cleanDescription,
+                        )
                     } else {
                         it
                     }
@@ -501,6 +512,7 @@ class WishlistViewModel
                     set("link", cleanLink)
                     set("price", cleanPrice)
                     set("image_url", imageUrl)
+                    set("description", cleanDescription)
                 }) { filter { eq("id", wishId) } }
             }.onFailure { _errorRes.value = R.string.couldnt_save }
             existing?.wishlistId?.let { loadWishlistDetail(it).join() }

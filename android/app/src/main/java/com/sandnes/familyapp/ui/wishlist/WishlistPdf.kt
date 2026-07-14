@@ -1,8 +1,12 @@
 /*
  * Renders a wishlist to a shareable A4 PDF for family members who don't use the app.
- * Owner-facing export: it deliberately shows each wish's name, price, link and image —
- * NEVER reservation/claim status — so the surprise is preserved for the person exporting
- * their own list. Mirrors iOS `WishlistPDF`.
+ * Owner-facing export: it deliberately shows each wish's name, description, price, link
+ * and image — NEVER reservation/claim status — so the surprise is preserved for the person
+ * exporting their own list. Mirrors iOS `WishlistPDF`.
+ *
+ * Visual language follows the app's light mode (The Glass House): ambient canvas, white
+ * rounded cards with a hairline border, the brand gradient accent under the header, and
+ * token ink colours. Colours are FIXED (not theme-resolved) — the export is always "light".
  *
  * The content-shaping logic ([wishlistPdfLines] / [wishlistPdfBlocks] / [paginateBlockHeights] /
  * [formatWishPrice] / [shortenedLink] / [sanitizedPdfFileName]) is pure and unit-tested (assert
@@ -16,6 +20,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapShader
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
@@ -33,8 +38,8 @@ import com.sandnes.familyapp.data.WishModel
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
-/** The kind of line in the exported PDF — drives its font, colour and indent. */
-enum class WishPdfLineKind { TITLE, SUBTITLE, BULLET, META }
+/** The kind of line in the exported PDF — drives its font, colour and spacing. */
+enum class WishPdfLineKind { TITLE, SUBTITLE, BULLET, DESCRIPTION, PRICE, LINK }
 
 /** One rendered line of the PDF. */
 data class WishPdfLine(
@@ -73,8 +78,8 @@ fun shortenedLink(
 
 /**
  * The ordered content blocks of the export: block 0 is the header (title + optional subtitle),
- * then one block per non-blank wish (name + optional price/link lines + optional image).
- * Reservation status is never included. Pure — unit-tested.
+ * then one block per non-blank wish (name + optional description/price/link lines + optional
+ * image). Reservation status is never included. Pure — unit-tested.
  */
 fun wishlistPdfBlocks(
     name: String,
@@ -89,8 +94,9 @@ fun wishlistPdfBlocks(
             .filter { it.text.isNotBlank() }
             .map { wish ->
                 val lines = mutableListOf(WishPdfLine(wish.text, WishPdfLineKind.BULLET))
-                wish.price?.takeIf { it.isNotBlank() }?.let { lines += WishPdfLine(formatWishPrice(it), WishPdfLineKind.META) }
-                wish.link?.takeIf { it.isNotBlank() }?.let { lines += WishPdfLine(shortenedLink(it), WishPdfLineKind.META) }
+                wish.description?.takeIf { it.isNotBlank() }?.let { lines += WishPdfLine(it, WishPdfLineKind.DESCRIPTION) }
+                wish.price?.takeIf { it.isNotBlank() }?.let { lines += WishPdfLine(formatWishPrice(it), WishPdfLineKind.PRICE) }
+                wish.link?.takeIf { it.isNotBlank() }?.let { lines += WishPdfLine(shortenedLink(it), WishPdfLineKind.LINK) }
                 WishPdfBlock(lines, imageUrl = wish.imageUrl?.takeIf { it.isNotBlank() })
             }
 
@@ -142,33 +148,47 @@ object WishlistPdf {
     // A4 at 72 dpi, in points, matching iOS.
     private const val PAGE_WIDTH = 595
     private const val PAGE_HEIGHT = 842
-    private const val MARGIN = 48
-    private const val CONTENT_HEIGHT = (PAGE_HEIGHT - MARGIN * 2).toFloat()
+    private const val MARGIN = 44
 
     private const val TITLE_TEXT_SIZE = 26f
     private const val SUBTITLE_TEXT_SIZE = 13f
-    private const val BULLET_TEXT_SIZE = 15f
-    private const val META_TEXT_SIZE = 12f
+    private const val NAME_TEXT_SIZE = 15f
+    private const val BODY_TEXT_SIZE = 12f
+    private const val FOOTER_TEXT_SIZE = 9f
 
-    private const val META_INDENT = 0f
-    private const val LINE_GAP = 3f // between lines within a block
-    private const val BLOCK_GAP = 16f // after each wish block
+    private const val LINE_GAP = 4f // between lines within a block
+    private const val BLOCK_GAP = 12f // between wish cards
+
+    // Wish card chrome (Glass House light mode, in points).
+    private const val CARD_PADDING = 12f
+    private const val CARD_CORNER_RADIUS = 14f
+    private const val CARD_BORDER_WIDTH = 1f
 
     // Wish image thumbnail (points) and its gap to the text column.
-    private const val IMAGE_SIZE = 90f
+    private const val IMAGE_SIZE = 84f
     private const val IMAGE_TEXT_GAP = 14f
     private const val IMAGE_FETCH_PX = 360
     private const val IMAGE_FETCH_TIMEOUT_MS = 10_000L
 
-    // Header accent rule under the title block (Heirloom Indigo).
-    private const val ACCENT_COLOR = 0xFF5457E8.toInt()
+    // Header accent rule: the one sanctioned brand gradient (Heirloom Indigo → violet).
+    private const val ACCENT_START = 0xFF5457E8.toInt()
+    private const val ACCENT_END = 0xFF7C3AED.toInt()
     private const val ACCENT_HEIGHT = 3f
-    private const val ACCENT_WIDTH = 64f
+    private const val ACCENT_WIDTH = 72f
     private const val ACCENT_GAP = 10f
 
-    // Fixed inks — the page is always white, so we must not use theme colours.
-    private const val INK_COLOR = 0xFF000000.toInt()
-    private const val META_COLOR = 0xFF525252.toInt() // grey ~ white 0.32
+    // Fixed Glass House light-mode inks — never theme-resolved.
+    private const val CANVAS_COLOR = 0xFFEFF1F8.toInt() // ambient base
+    private const val CARD_COLOR = 0xFFFFFFFF.toInt()
+    private const val CARD_BORDER_COLOR = 0x1A16192A // ink at 10 %
+    private const val INK_COLOR = 0xFF16192A.toInt() // ink
+    private const val SECONDARY_COLOR = 0xFF5F6780.toInt() // text secondary
+    private const val ACCENT_INK = 0xFF4F55E6.toInt() // interactive accent
+    private const val CAPTION_COLOR = 0xFF8B92AC.toInt() // caption
+
+    private const val FOOTER_TEXT = "The Family App  ·  thefamilyapp.app"
+
+    private const val CONTENT_HEIGHT = (PAGE_HEIGHT - MARGIN * 2 - 24).toFloat() // 24 = footer strip
 
     private const val CACHE_SUBDIR = "wishlist_pdfs"
 
@@ -195,12 +215,18 @@ object WishlistPdf {
             pages.forEachIndexed { pageIndex, blockIndices ->
                 val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageIndex + 1).create()
                 val page = document.startPage(pageInfo)
+                page.canvas.drawColor(CANVAS_COLOR)
                 var cursorY = MARGIN.toFloat()
                 blockIndices.forEach { blockIndex ->
-                    cursorY = drawBlock(page.canvas, blocks[blockIndex], images[blockIndex], cursorY, contentWidth)
-                    if (blockIndex == 0) cursorY = drawAccentRule(page.canvas, cursorY)
+                    cursorY =
+                        if (blockIndex == 0) {
+                            drawHeader(page.canvas, blocks[blockIndex], cursorY, contentWidth)
+                        } else {
+                            drawWishCard(page.canvas, blocks[blockIndex], images[blockIndex], cursorY, contentWidth)
+                        }
                     cursorY += BLOCK_GAP
                 }
+                drawFooter(page.canvas)
                 document.finishPage(page)
             }
 
@@ -239,28 +265,76 @@ object WishlistPdf {
         return result
     }
 
-    /** Draws one block (optional thumbnail left, text right) starting at [top]; returns the Y just below it. */
-    private fun drawBlock(
+    /** Title + subtitle over the brand-gradient accent rule; returns the Y just below. */
+    private fun drawHeader(
+        canvas: Canvas,
+        block: WishPdfBlock,
+        top: Float,
+        contentWidth: Int,
+    ): Float {
+        var cursorY = top
+        block.lines.forEachIndexed { index, line ->
+            if (index > 0) cursorY += LINE_GAP
+            cursorY += drawLine(canvas, line, MARGIN.toFloat(), cursorY, contentWidth)
+        }
+        val y = cursorY + ACCENT_GAP
+        val paint =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader =
+                    LinearGradient(
+                        MARGIN.toFloat(),
+                        0f,
+                        MARGIN + ACCENT_WIDTH,
+                        0f,
+                        ACCENT_START,
+                        ACCENT_END,
+                        Shader.TileMode.CLAMP,
+                    )
+            }
+        canvas.drawRoundRect(
+            RectF(MARGIN.toFloat(), y, MARGIN + ACCENT_WIDTH, y + ACCENT_HEIGHT),
+            ACCENT_HEIGHT / 2f,
+            ACCENT_HEIGHT / 2f,
+            paint,
+        )
+        return y + ACCENT_HEIGHT
+    }
+
+    /** One wish as a white rounded card with hairline border, image left, text right. */
+    private fun drawWishCard(
         canvas: Canvas,
         block: WishPdfBlock,
         image: Bitmap?,
         top: Float,
         contentWidth: Int,
     ): Float {
-        val textIndent = if (image != null) IMAGE_SIZE + IMAGE_TEXT_GAP else 0f
-        val textWidth = (contentWidth - textIndent).toInt().coerceAtLeast(1)
+        val cardHeight = blockHeight(block, image != null, contentWidth)
+        val card = RectF(MARGIN.toFloat(), top, (MARGIN + contentWidth).toFloat(), top + cardHeight)
 
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = CARD_COLOR }
+        canvas.drawRoundRect(card, CARD_CORNER_RADIUS, CARD_CORNER_RADIUS, fill)
+        val border =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = CARD_BORDER_COLOR
+                style = Paint.Style.STROKE
+                strokeWidth = CARD_BORDER_WIDTH
+            }
+        canvas.drawRoundRect(card, CARD_CORNER_RADIUS, CARD_CORNER_RADIUS, border)
+
+        val innerLeft = MARGIN + CARD_PADDING
+        val innerTop = top + CARD_PADDING
         if (image != null) {
-            drawImage(canvas, image, MARGIN.toFloat(), top)
+            drawImage(canvas, image, innerLeft, innerTop)
         }
+        val textLeft = innerLeft + if (image != null) IMAGE_SIZE + IMAGE_TEXT_GAP else 0f
+        val textWidth = (card.right - CARD_PADDING - textLeft).toInt().coerceAtLeast(1)
 
-        var cursorY = top
+        var cursorY = innerTop
         block.lines.forEachIndexed { index, line ->
             if (index > 0) cursorY += LINE_GAP
-            cursorY += drawLine(canvas, line, cursorY, textIndent, textWidth)
+            cursorY += drawLine(canvas, line, textLeft, cursorY, textWidth)
         }
-        // The block occupies at least the thumbnail's height.
-        return if (image != null) maxOf(cursorY, top + IMAGE_SIZE) else cursorY
+        return top + cardHeight
     }
 
     /** Center-crops [bitmap] into an IMAGE_SIZE square at ([left], [top]). */
@@ -282,57 +356,53 @@ object WishlistPdf {
             }
         shader.setLocalMatrix(matrix)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader }
-        val rect = RectF(left, top, left + IMAGE_SIZE, top + IMAGE_SIZE)
-        canvas.drawRect(rect, paint)
+        canvas.drawRect(RectF(left, top, left + IMAGE_SIZE, top + IMAGE_SIZE), paint)
     }
 
-    /** Short Heirloom-Indigo rule under the header; returns the Y just below it. */
-    private fun drawAccentRule(
-        canvas: Canvas,
-        top: Float,
-    ): Float {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ACCENT_COLOR }
-        val y = top + ACCENT_GAP
-        canvas.drawRoundRect(
-            RectF(MARGIN.toFloat(), y, MARGIN + ACCENT_WIDTH, y + ACCENT_HEIGHT),
-            ACCENT_HEIGHT / 2f,
-            ACCENT_HEIGHT / 2f,
-            paint,
-        )
-        return y + ACCENT_HEIGHT
+    /** Centered caption at the bottom of every page. */
+    private fun drawFooter(canvas: Canvas) {
+        val paint =
+            TextPaint(TextPaint.ANTI_ALIAS_FLAG).apply {
+                textSize = FOOTER_TEXT_SIZE
+                color = CAPTION_COLOR
+                textAlign = Paint.Align.CENTER
+            }
+        canvas.drawText(FOOTER_TEXT, PAGE_WIDTH / 2f, PAGE_HEIGHT - MARGIN / 2f, paint)
     }
 
-    /** Draws one wrapped line at [top]; returns the height it consumed. */
+    /** Draws one wrapped line at ([left], [top]); returns the height it consumed. */
     private fun drawLine(
         canvas: Canvas,
         line: WishPdfLine,
+        left: Float,
         top: Float,
-        indent: Float,
         width: Int,
     ): Float {
         val layout = layoutFor(line, width)
         canvas.save()
-        canvas.translate(MARGIN + indent + if (line.kind == WishPdfLineKind.META) META_INDENT else 0f, top)
+        canvas.translate(left, top)
         layout.draw(canvas)
         canvas.restore()
         return layout.height.toFloat()
     }
 
-    /** Measures a block's total height (used for pagination). */
+    /** Measures a block's total height, card chrome included (used for pagination). */
     private fun blockHeight(
         block: WishPdfBlock,
         hasImage: Boolean,
         contentWidth: Int,
     ): Float {
+        val isHeader = block.lines.firstOrNull()?.kind == WishPdfLineKind.TITLE
         val textIndent = if (hasImage) IMAGE_SIZE + IMAGE_TEXT_GAP else 0f
-        val width = (contentWidth - textIndent).toInt().coerceAtLeast(1)
+        val padding = if (isHeader) 0f else CARD_PADDING * 2
+        val width = (contentWidth - textIndent - padding).toInt().coerceAtLeast(1)
         var height = 0f
         block.lines.forEachIndexed { index, line ->
             if (index > 0) height += LINE_GAP
             height += layoutFor(line, width).height
         }
-        val accent = if (block.lines.firstOrNull()?.kind == WishPdfLineKind.TITLE) ACCENT_GAP + ACCENT_HEIGHT else 0f
-        return maxOf(height, if (hasImage) IMAGE_SIZE else 0f) + accent
+        if (isHeader) return height + ACCENT_GAP + ACCENT_HEIGHT
+        return maxOf(height, if (hasImage) IMAGE_SIZE else 0f) + CARD_PADDING * 2
     }
 
     private fun layoutFor(
@@ -353,17 +423,27 @@ object WishlistPdf {
                 }
                 WishPdfLineKind.SUBTITLE -> {
                     textSize = SUBTITLE_TEXT_SIZE
-                    color = META_COLOR
+                    color = SECONDARY_COLOR
                     typeface = Typeface.DEFAULT
                 }
                 WishPdfLineKind.BULLET -> {
-                    textSize = BULLET_TEXT_SIZE
+                    textSize = NAME_TEXT_SIZE
                     color = INK_COLOR
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 }
-                WishPdfLineKind.META -> {
-                    textSize = META_TEXT_SIZE
-                    color = META_COLOR
+                WishPdfLineKind.DESCRIPTION -> {
+                    textSize = BODY_TEXT_SIZE
+                    color = SECONDARY_COLOR
+                    typeface = Typeface.DEFAULT
+                }
+                WishPdfLineKind.PRICE -> {
+                    textSize = BODY_TEXT_SIZE
+                    color = ACCENT_INK
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                }
+                WishPdfLineKind.LINK -> {
+                    textSize = BODY_TEXT_SIZE
+                    color = ACCENT_INK
                     typeface = Typeface.DEFAULT
                 }
             }

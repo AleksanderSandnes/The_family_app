@@ -11,6 +11,7 @@ struct WishDraft {
     var link: String?
     var price: String?
     var imageData: Data?
+    var description: String?
 }
 
 @Observable
@@ -272,6 +273,8 @@ final class WishlistViewModel {
             temp.text = draft.text
             temp.link = cleanLink?.isEmpty == false ? cleanLink : nil
             temp.price = cleanPrice?.isEmpty == false ? cleanPrice : nil
+            let cleanDescription = draft.description?.trimmingCharacters(in: .whitespaces)
+            temp.description = cleanDescription?.isEmpty == false ? cleanDescription : nil
             wishes.append(temp)
 
             var imageUrl: String?
@@ -297,6 +300,8 @@ final class WishlistViewModel {
             let cleanPrice = draft.price?.trimmingCharacters(in: .whitespaces)
             let link = cleanLink?.isEmpty == false ? cleanLink : nil
             let price = cleanPrice?.isEmpty == false ? cleanPrice : nil
+            let cleanDescription = draft.description?.trimmingCharacters(in: .whitespaces)
+            let description = cleanDescription?.isEmpty == false ? cleanDescription : nil
 
             // A newly-picked photo replaces the image; otherwise keep the existing one.
             var imageUrl = existing?.imageUrl
@@ -314,9 +319,12 @@ final class WishlistViewModel {
                 updated.link = link
                 updated.price = price
                 updated.imageUrl = imageUrl
+                updated.description = description
                 return updated
             }
-            await repo.updateWish(id: wishId, text: draft.text, link: link, price: price, imageUrl: imageUrl)
+            await repo.updateWish(
+                id: wishId, text: draft.text, link: link, price: price, imageUrl: imageUrl, description: description
+            )
             if let wishlistId = existing?.wishlistId { await reloadDetail(wishlistId) }
         }
     }
