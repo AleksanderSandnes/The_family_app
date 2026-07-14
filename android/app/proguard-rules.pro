@@ -1,21 +1,37 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# R8 rules for The Family App (release build; minify + shrinkResources).
 #
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# The hard constraint: Supabase / Ktor / kotlinx-serialization resolve
+# serializers and class/field names reflectively. Every @Serializable model
+# must keep its generated serializer and Companion, or decoding crashes at
+# runtime with no compile-time signal. See Play Store Release Guide §A7.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Readable crash reports (mapping.txt still deobfuscates fully).
+-keepattributes SourceFile,LineNumberTable,*Annotation*,InnerClasses,Signature,EnclosingMethod
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── kotlinx-serialization ────────────────────────────────────────────────
+# Generated serializers + Companion serializer() lookups for our models.
+-keep,includedescriptorclasses class com.sandnes.familyapp.**$$serializer { *; }
+-keepclassmembers class com.sandnes.familyapp.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.sandnes.familyapp.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+# @Serializable classes keep their fields (decoded by name via descriptors).
+-keepclassmembers @kotlinx.serialization.Serializable class com.sandnes.familyapp.** {
+    <fields>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Ktor / OkHttp engine ─────────────────────────────────────────────────
+# Optional TLS providers OkHttp probes for reflectively; absent on Android.
+-dontwarn okhttp3.internal.platform.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+# Ktor's optional coroutines debug probes / management beans.
+-dontwarn io.ktor.**
+-dontwarn java.lang.management.**
+
+# ── kotlin-reflect (pulled in for maps-compose) ──────────────────────────
+-dontwarn kotlin.reflect.jvm.internal.**
+-keep class kotlin.Metadata { *; }
