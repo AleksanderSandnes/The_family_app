@@ -35,14 +35,15 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Redeem
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -56,7 +57,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -552,8 +552,16 @@ private fun WishDetailDialog(
         },
         confirmButton = {
             when {
-                reservedByMe -> TextButton(onClick = { onUnreserve(); onDismiss() }) { Text(stringResource(R.string.unreserve)) }
-                !reservedByOther -> TextButton(onClick = { onReserve(); onDismiss() }) { Text(stringResource(R.string.reserve)) }
+                reservedByMe ->
+                    TextButton(onClick = {
+                        onUnreserve()
+                        onDismiss()
+                    }) { Text(stringResource(R.string.unreserve)) }
+                !reservedByOther ->
+                    TextButton(onClick = {
+                        onReserve()
+                        onDismiss()
+                    }) { Text(stringResource(R.string.reserve)) }
             }
         },
         dismissButton = {

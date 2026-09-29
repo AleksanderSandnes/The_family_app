@@ -22,6 +22,7 @@ private const val STRONG_PASSWORD_LENGTH = 8
 private const val MAX_PASSWORD_SCORE = 3
 internal const val RESET_CODE_LENGTH = 6
 private const val RESEND_COOLDOWN_SECONDS = 60
+private const val COOLDOWN_TICK_MILLIS = 1_000L
 
 data class AuthUiState(
     val loading: Boolean = false,
@@ -215,8 +216,7 @@ class AuthViewModel
                     .onSuccess {
                         _verifyState.update { it.copy(loading = false) }
                         startVerifyCooldown()
-                    }
-                    .onFailure { e ->
+                    }.onFailure { e ->
                         _verifyState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
                     }
             }
@@ -234,7 +234,7 @@ class AuthViewModel
                     var remaining = RESEND_COOLDOWN_SECONDS
                     while (remaining > 0) {
                         _verifyState.update { it.copy(resendCooldownSeconds = remaining) }
-                        delay(1_000)
+                        delay(COOLDOWN_TICK_MILLIS)
                         remaining--
                     }
                     _verifyState.update { it.copy(resendCooldownSeconds = 0) }
@@ -258,8 +258,7 @@ class AuthViewModel
                     .onSuccess {
                         _resetState.update { it.copy(loading = false, step = 2, email = norm) }
                         startResendCooldown()
-                    }
-                    .onFailure { e ->
+                    }.onFailure { e ->
                         Log.e("Auth", "Password reset email failed", e)
                         _resetState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
                     }
@@ -276,8 +275,7 @@ class AuthViewModel
                     .onSuccess {
                         _resetState.update { it.copy(loading = false) }
                         startResendCooldown()
-                    }
-                    .onFailure { e ->
+                    }.onFailure { e ->
                         _resetState.update { it.copy(loading = false, error = friendlyAuthError(e, isLogin = true)) }
                     }
             }
@@ -320,7 +318,7 @@ class AuthViewModel
                     var remaining = RESEND_COOLDOWN_SECONDS
                     while (remaining > 0) {
                         _resetState.update { it.copy(resendCooldownSeconds = remaining) }
-                        delay(1_000)
+                        delay(COOLDOWN_TICK_MILLIS)
                         remaining--
                     }
                     _resetState.update { it.copy(resendCooldownSeconds = 0) }

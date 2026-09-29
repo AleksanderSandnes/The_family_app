@@ -34,3 +34,12 @@ obsidian/.obsidian/workspace.json
 graphify-out/cache/
 graphify-out/.graphify_*
 .envrc
+.env*
+!.env.example
+!**/.env.example
+local.properties
+google-services.json
+GoogleService-Info.plist
+*.keystore
+*.jks
+play-service-account.json

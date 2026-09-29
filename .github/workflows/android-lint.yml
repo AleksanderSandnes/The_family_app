@@ -5,7 +5,7 @@ name: Android Lint
 # (Per project rule: pushes only ever land on test / main / master.)
 on:
   push:
-    branches: [test, main, master]
+    branches: [test, master, "task/**"]
     paths:
       - "android/**"
       - ".github/workflows/android-lint.yml"

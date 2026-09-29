@@ -150,8 +150,7 @@ fun LoginScreen(
                     .clickable {
                         viewModel.clearError()
                         onNavigateToReset()
-                    }
-                    .padding(Spacing.xs),
+                    }.padding(Spacing.xs),
         )
         PrimaryButton(
             text = stringResource(R.string.sign_in),
@@ -374,8 +373,7 @@ fun ResetPasswordScreen(
                         .clip(RoundedCornerShape(Radius.extraSmall))
                         .clickable(enabled = reset.resendCooldownSeconds == 0 && !reset.loading) {
                             viewModel.resendResetCode()
-                        }
-                        .padding(Spacing.xs),
+                        }.padding(Spacing.xs),
             )
         }
         AuthFooter(
@@ -446,8 +444,7 @@ fun VerifyEmailScreen(
                     .clip(RoundedCornerShape(Radius.extraSmall))
                     .clickable(enabled = verify.resendCooldownSeconds == 0 && !verify.loading) {
                         viewModel.resendSignupCode()
-                    }
-                    .padding(Spacing.xs),
+                    }.padding(Spacing.xs),
         )
         AuthFooter(
             prompt = stringResource(R.string.already_have_an_account),
