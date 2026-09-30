@@ -1,5 +1,23 @@
 # The Family App
 
+## Public-page factual review — 30 September 2026
+
+Updated draft privacy/deletion pages to describe precise location permissions,
+sharing with invited recipients, and current media download-link access accurately.
+Removed the unverified 30-day hosting-backup promise: live backup inventory is
+empty and PITR disabled; Supabase retention varies by plan. Provider reference:
+https://supabase.com/docs/guides/platform/backups . Support and deletion-request
+emails remain links; no external message was sent. Protected preview https://thefamilyapp-jg761gpts-aleksander-sandnes-projects.vercel.app
+returns HTTP 200 for home/privacy/terms/support/delete-account with CSP, HSTS,
+frame denial and nosniff headers. Chrome verifies privacy navigation and deletion
+instructions. Publication and owner legal review remain open.
+
+Recovery CI passed the schema/platform SQL checks and the existing security job,
+but its final negative-check step failed because ripgrep is absent on the runner.
+Changed the runner check to standard grep. Required Android checks and seven
+release-tooling tests pass locally; remote recovery CI must pass before promotion.
+
+
 ## Auth configuration and empty-database recovery — 30 September 2026
 
 Family's live Auth Site URL is now `https://thefamilyapp.app`; read-back confirms

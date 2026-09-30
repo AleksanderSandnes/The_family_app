@@ -110,7 +110,7 @@ jobs:
             echo "Recovery incorrectly accepted an existing application schema"
             exit 1
           fi
-          rg 'Recovery requires an empty application database' "$RUNNER_TEMP/recovery-replay.log"
+          grep -F 'Recovery requires an empty application database' "$RUNNER_TEMP/recovery-replay.log"
           python3 supabase/tests/recovery_signup_http.py "$RUNNER_TEMP/family-recovery"
       - name: Stop recovery database
         if: always()
