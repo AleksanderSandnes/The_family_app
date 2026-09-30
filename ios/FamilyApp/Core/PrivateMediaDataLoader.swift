@@ -8,6 +8,7 @@ final class PrivateMediaDataLoader: DataLoading, @unchecked Sendable {
         configuration.urlCache = nil
         return URLSession(configuration: configuration)
     }()
+
     private let resolver: MediaURLResolver
 
     init(resolver: MediaURLResolver) {
@@ -46,7 +47,9 @@ final class PrivateMediaDataLoader: DataLoading, @unchecked Sendable {
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode)
         else { throw MediaAccessError.invalidResponse }
-        if protected, resolver.accountID() != account { throw MediaAccessError.accountChanged }
+        if protected, resolver.accountID() != account {
+            throw MediaAccessError.accountChanged
+        }
         try Task.checkCancellation()
         return (data, response)
     }

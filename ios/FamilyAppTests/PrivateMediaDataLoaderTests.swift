@@ -3,8 +3,10 @@ import XCTest
 
 final class PrivateMediaDataLoaderTests: XCTestCase {
     private let project = URL(string: "https://fictional.supabase.co")!
-    private let publicURL = URL(string: "https://fictional.supabase.co/storage/v1/object/public/avatars/user/avatar.jpg")!
-    private let signed = URL(string: "https://fictional.supabase.co/storage/v1/object/sign/avatars/user/avatar.jpg?token=fictional")!
+    private let publicURL =
+        URL(string: "https://fictional.supabase.co/storage/v1/object/public/avatars/user/avatar.jpg")!
+    private let signed =
+        URL(string: "https://fictional.supabase.co/storage/v1/object/sign/avatars/user/avatar.jpg?token=fictional")!
     private var account: String? = "fictional-a"
     private var session: URLSession!
 
@@ -75,8 +77,8 @@ final class PrivateMediaDataLoaderTests: XCTestCase {
                 _ = try await PrivateMediaDataLoader.download(url: publicURL, resolver: resolver(), session: session)
                 XCTFail("HTTP failure returned as media")
             } catch {
-            XCTAssertTrue(error is MediaAccessError)
-        }
+                XCTAssertTrue(error is MediaAccessError)
+            }
         }
     }
 
@@ -95,9 +97,13 @@ final class PrivateMediaDataLoaderTests: XCTestCase {
 private final class MediaURLProtocol: URLProtocol, @unchecked Sendable {
     static var handler: ((URLRequest) throws -> (Int, Data))?
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
 
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
 
     override func startLoading() {
         do {

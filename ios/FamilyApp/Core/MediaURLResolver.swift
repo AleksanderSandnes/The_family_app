@@ -54,7 +54,9 @@ struct MediaURLResolver {
         let nonce = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first {
             $0.name == "t" && ($0.value ?? "").range(of: #"^[0-9]{1,20}$"#, options: .regularExpression) != nil
         }
-        if let nonce { result.queryItems = (result.queryItems ?? []) + [nonce] }
+        if let nonce {
+            result.queryItems = (result.queryItems ?? []) + [nonce]
+        }
         guard let resolved = result.url else { throw MediaAccessError.invalidURL }
         return resolved
     }
