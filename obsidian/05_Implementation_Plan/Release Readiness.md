@@ -39,3 +39,7 @@ store assets, signed builds and approved submissions. No release is claimed read
 
 - Extracted the chat title view to keep ConversationScreen within the existing
   strict file-size gate after applying SwiftFormat. No lint thresholds changed.
+
+- Native iOS application now compiles on CI; XCTest compilation exposed four
+  async calls inside XCTUnwrap autoclosures. Await results before unwrapping.
+  Full simulator execution and coverage still pending.
