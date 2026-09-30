@@ -154,3 +154,12 @@ store assets, signed builds and approved submissions. No release is claimed read
   added), terms, support and delete-account. The Vercel project thefamilyapp-web
   built from the repo root, so thefamilyapp.app returned 404; Root Directory must be
   `web` so the pages and web/vercel.json headers are served.
+
+- Release tooling and repo docs (2026-09-30): dependency-free `scripts/release/`
+  computes the SemVer bump from Conventional Commits, writes one shared version and
+  build number into `android/app/build.gradle` and `ios/project.yml`, and prepends
+  CHANGELOG.md (7 node tests, run by the Security workflow). The bump is prepared on
+  a task branch into `test`, so protected `master` needs no bot push. Added LICENSE
+  (proprietary), SECURITY.md, CONTRIBUTING.md, docs/RELEASE.md, docs/ENVIRONMENTS.md,
+  PR/issue templates and CODEOWNERS. Backend CI fix: the account-deletion fixture
+  disables the push webhook trigger while seeding messages.
