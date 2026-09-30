@@ -75,7 +75,7 @@ The delivered Android milestones are grouped into linked notes rather than one l
 3. Branch workflow: `task → test → master` (never commit directly to `master` or `test`).
 
 ## Long-term goals
-- Swift CodeQL scan recovery is in progress: the generic simulator build compiled both ARM and Intel slices and timed out. Native-architecture scanning and build-log artifacts are staged; a successful full scan is required before advancing the latest task into `test`.
+- Swift CodeQL recovered: [run 36718982820](https://github.com/AleksanderSandnes/The_family_app/actions/runs/36718982820) passed all four languages after switching to the runner's native simulator architecture. Build-log artifacts remain available. Verified changes advanced to `test`; its new run remains pending.
 - Deliver a premium-feeling family app on both Android and iOS.
 - Preserve the original product concepts while modernizing the implementation.
 - Keep the codebase maintainable and easy to extend.

@@ -86,7 +86,9 @@ store assets, signed builds and approved submissions. No release is claimed read
   after sign-out/revocation, and retain access during transient refresh failures
   only after a verified session. Profile completion retains the existing auth flow.
   Added policy and ViewModel transition tests.
-- Latest Swift CodeQL build exceeded its 40-minute limit while compiling both
+- The earlier Swift CodeQL build exceeded its 40-minute limit while compiling both
   simulator architectures. Compile the runner's native architecture for the
   security scan and upload the build log on success/failure. The remaining language
-  scans and Android CI passed; the updated Swift scan must pass before test promotion.
+  scans and Android CI passed. [The updated scan](https://github.com/AleksanderSandnes/The_family_app/actions/runs/36718982820)
+  passed all four languages, and verified changes advanced to `test`. Its new
+  branch run is pending; production `master` remains unchanged.
