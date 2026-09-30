@@ -71,3 +71,7 @@ store assets, signed builds and approved submissions. No release is claimed read
   plus Gradle/GitHub Actions Dependabot entries. First scan verification pending.
   Swift dependency updates need a supported tracked manifest; current dependency
   declarations live in XcodeGen project.yml and are not monitored by Dependabot.
+- Replace default Android Supabase token/PKCE persistence with Keystore-backed
+  AES-GCM preferences. Migrate plaintext only after encrypted persistence, authenticate
+  storage slot names and serialize refresh/logout. Added crypto and migration tests;
+  physical/emulator Keystore and upgrade/restart verification remain open.

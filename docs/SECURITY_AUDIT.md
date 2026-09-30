@@ -55,3 +55,9 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
   into another user's path. Private reads/client URL resolution and rollout remain open.
 - Added CodeQL for Android/Swift/TypeScript/workflows and Dependabot for Gradle
   and GitHub Actions; first results pending. Swift dependency manifest support remains open.
+- Android now supplies explicit encrypted Supabase session and PKCE storage.
+  AES-256-GCM uses an Android Keystore key, random IVs and authenticated slot names;
+  preferences contain ciphertext only. Legacy settings are removed only after
+  encrypted persistence succeeds. Corruption fails closed; serialized refresh/logout
+  cannot restore a session after logout completes. Cryptography/migration unit tests
+  added; device Keystore, update migration and process-restart smoke tests remain pending.
