@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 internal const val MIN_PASSWORD_LENGTH = 6
+internal const val MIN_NEW_PASSWORD_LENGTH = 8
 private const val STRONG_PASSWORD_LENGTH = 8
 private const val MAX_PASSWORD_SCORE = 3
 internal const val RESET_CODE_LENGTH = 6
@@ -132,7 +133,7 @@ class AuthViewModel
         fun register(form: RegistrationForm) {
             when {
                 form.name.isBlank() -> return setError(R.string.please_enter_your_name)
-                !validate(email = form.email, password = form.password) -> return
+                !validate(email = form.email, password = form.password, newPassword = true) -> return
                 form.password != form.confirm -> return setError(R.string.passwords_do_not_match)
             }
             _state.update { it.copy(loading = true, error = null) }
@@ -289,8 +290,8 @@ class AuthViewModel
                 _resetState.update { it.copy(error = R.string.enter_the_6_digit_code) }
                 return
             }
-            if (newPassword.length < MIN_PASSWORD_LENGTH) {
-                _resetState.update { it.copy(error = R.string.password_must_be_at_least_6_characters) }
+            if (newPassword.length < MIN_NEW_PASSWORD_LENGTH) {
+                _resetState.update { it.copy(error = R.string.password_must_be_at_least_8_characters) }
                 return
             }
             _resetState.update { it.copy(loading = true, error = null) }
@@ -328,13 +329,15 @@ class AuthViewModel
         private fun validate(
             email: String,
             password: String,
+            newPassword: Boolean = false,
         ): Boolean {
             if (!isValidEmail(email.trim())) {
                 setError(R.string.please_enter_a_valid_email_address)
                 return false
             }
-            if (password.length < MIN_PASSWORD_LENGTH) {
-                setError(R.string.password_must_be_at_least_6_characters)
+            val minimum = if (newPassword) MIN_NEW_PASSWORD_LENGTH else MIN_PASSWORD_LENGTH
+            if (password.length < minimum) {
+                setError(if (newPassword) R.string.password_must_be_at_least_8_characters else R.string.password_must_be_at_least_6_characters)
                 return false
             }
             return true
@@ -364,7 +367,7 @@ private val AUTH_ERROR_MESSAGES: List<Pair<List<String>, Int>> =
         listOf("invalid login credentials", "invalid_credentials") to R.string.incorrect_email_or_password,
         listOf("user already registered", "already been registered") to R.string.an_account_with_this_email_already_exists,
         listOf("email address is invalid") to R.string.please_enter_a_valid_email_address,
-        listOf("password should be at least", "weak_password") to R.string.password_must_be_at_least_6_characters,
+        listOf("password should be at least", "weak_password") to R.string.password_must_be_at_least_8_characters,
         listOf("otp_expired", "token has expired", "invalid token") to R.string.that_code_is_wrong_or_expired,
         listOf("rate limit", "too many requests") to R.string.too_many_attempts,
         listOf("network", "unable to resolve", "connect") to R.string.network_error_check_connection,

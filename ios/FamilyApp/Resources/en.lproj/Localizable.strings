@@ -437,3 +437,5 @@
 "You will no longer see their messages or get notifications from them. You can unblock them from this chat’s menu." = "You will no longer see their messages or get notifications from them. You can unblock them from this chat’s menu.";
 "%@ is blocked" = "%@ is blocked";
 "%@ is unblocked" = "%@ is unblocked";
+
+"Password must be at least 8 characters." = "Password must be at least 8 characters.";

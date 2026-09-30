@@ -436,3 +436,5 @@
 "You will no longer see their messages or get notifications from them. You can unblock them from this chat’s menu." = "Du ser ikke lenger meldingene deres og får ikke varsler fra dem. Du kan oppheve blokkeringen fra menyen i denne chatten.";
 "%@ is blocked" = "%@ er blokkert";
 "%@ is unblocked" = "Blokkeringen av %@ er opphevet";
+
+"Password must be at least 8 characters." = "Passordet må være minst 8 tegn.";

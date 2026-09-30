@@ -1,5 +1,9 @@
 # Release readiness handover — 30 September 2026
 
+> Owner decision (2026-09-30): accept the remaining Pro-only leaked-password
+> protection warning in both projects. No upgrade is required; this warning
+> does not block release readiness. Other security requirements still apply.
+
 ## Verified continuation — 30 September 2026, 20:46 Oslo
 
 This section supersedes older rollout status below. The full plan is still open.
@@ -29,7 +33,7 @@ uploads, screenshots, coverage gates and complete bootstrap still require work.
   trigger replacement, no embedded credential and denial of client execution.
   Production secret rotation remains open; moving a credential does not revoke it.
 - Fresh security advisors: one warning (Pro-only leaked-password protection),
-  down from 24. Auth confirmation is enabled; minimum password length is six,
+  down from 24. Auth confirmation is enabled; minimum password length is eight (verified through Management API read-back),
   Site URL is still localhost, SMTP is smtp.resend.com. Domain/sender operation,
   OTP/rate limits and production redirects need verification.
 

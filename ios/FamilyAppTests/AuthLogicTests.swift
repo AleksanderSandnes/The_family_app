@@ -76,7 +76,7 @@ final class AuthLogicTests: XCTestCase {
     func testWeakPasswordMapping() {
         XCTAssertEqual(
             map("Password should be at least 6 characters", isLogin: false),
-            "Password must be at least 6 characters."
+            "Password must be at least 8 characters."
         )
     }
 

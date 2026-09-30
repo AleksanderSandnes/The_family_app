@@ -38,8 +38,8 @@ final class AuthViewModelTests: XCTestCase {
         var form = RegistrationForm()
         form.name = "Bob"
         form.email = "bob@test.com"
-        form.password = "secret1"
-        form.confirm = "secret1"
+        form.password = "secret12"
+        form.confirm = "secret12"
         form.birthday = "1990-01-01"
         form.mobile = "12345678"
 
@@ -48,9 +48,22 @@ final class AuthViewModelTests: XCTestCase {
         let record = mock.registerCalls.first
         XCTAssertEqual(record?.name, "Bob")
         XCTAssertEqual(record?.email, "bob@test.com")
-        XCTAssertEqual(record?.password, "secret1")
+        XCTAssertEqual(record?.password, "secret12")
         XCTAssertEqual(record?.birthday, "1990-01-01")
         XCTAssertEqual(record?.mobile, "12345678")
+    }
+
+    func testRegisterRejectsSevenCharacterPassword() {
+        let mock = MockRepository()
+        let vm = makeVM(mock)
+        var form = RegistrationForm()
+        form.name = "Bob"
+        form.email = "bob@test.com"
+        form.password = "secret1"
+        form.confirm = "secret1"
+        vm.register(form)
+        XCTAssertTrue(mock.registerCalls.isEmpty)
+        XCTAssertEqual(vm.error, "Password must be at least 8 characters.")
     }
 
     func testRegisterPasswordMismatchDoesNotCallRepo() async {
@@ -59,7 +72,7 @@ final class AuthViewModelTests: XCTestCase {
         var form = RegistrationForm()
         form.name = "Bob"
         form.email = "bob@test.com"
-        form.password = "secret1"
+        form.password = "secret12"
         form.confirm = "different"
 
         vm.register(form)
@@ -76,8 +89,8 @@ final class AuthViewModelTests: XCTestCase {
         var form = RegistrationForm()
         form.name = "Bob"
         form.email = "bob@test.com"
-        form.password = "secret1"
-        form.confirm = "secret1"
+        form.password = "secret12"
+        form.confirm = "secret12"
 
         vm.register(form)
         await waitUntil { vm.needsVerificationEmail != nil }
@@ -91,8 +104,8 @@ final class AuthViewModelTests: XCTestCase {
         var form = RegistrationForm()
         form.name = "Bob"
         form.email = "bob@test.com"
-        form.password = "secret1"
-        form.confirm = "secret1"
+        form.password = "secret12"
+        form.confirm = "secret12"
 
         vm.register(form)
         await waitUntil { !mock.registerCalls.isEmpty }
@@ -107,7 +120,7 @@ final class AuthViewModelTests: XCTestCase {
             userInfo: [NSLocalizedDescriptionKey: "Email not confirmed"]
         )
         let vm = makeVM(mock)
-        vm.login(email: "bob@test.com", password: "secret1")
+        vm.login(email: "bob@test.com", password: "secret12")
         await waitUntil { vm.needsVerificationEmail != nil }
         XCTAssertEqual(vm.needsVerificationEmail, "bob@test.com")
         XCTAssertNil(vm.error)
@@ -175,7 +188,7 @@ final class AuthViewModelTests: XCTestCase {
     func testConfirmPasswordResetValidatesCodeLength() async {
         let mock = MockRepository()
         let vm = makeVM(mock)
-        vm.confirmPasswordReset(code: "123", newPassword: "secret1")
+        vm.confirmPasswordReset(code: "123", newPassword: "secret12")
         await waitUntil { vm.error != nil }
         XCTAssertTrue(mock.confirmResetCalls.isEmpty)
     }

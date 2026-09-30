@@ -212,3 +212,13 @@ uploads, screenshots, coverage gates and complete bootstrap still require work.
   down from 24. Auth confirmation is enabled; minimum password length is six,
   Site URL is still localhost, SMTP is smtp.resend.com. Domain/sender operation,
   OTP/rate limits and production redirects need verification.
+
+- Owner accepted the final Pro-only leaked-password protection warning in both
+  projects (2026-09-30). Do not upgrade billing for this feature; it is an accepted
+  release exception. New registration/reset passwords are being raised to eight
+  characters with existing login credentials preserved.
+
+- Password policy alignment: Android/iOS registration and resets require eight
+  characters, with English/Norwegian messages. Existing six/seven-character login
+  credentials remain accepted. Added registration rejection and legacy-login
+  regressions; Android required checks and native macOS CI must verify the change.

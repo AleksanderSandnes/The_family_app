@@ -55,6 +55,25 @@ class AuthViewModelTest {
         unmockkAll()
     }
 
+    @Test
+    fun `registration rejects seven character password without calling repo`() =
+        runTest {
+            vm.register(RegistrationForm("Alice", "alice@example.com", "secret1", "secret1", "", ""))
+            runCurrent()
+            assertEquals(R.string.password_must_be_at_least_8_characters, vm.state.value.error)
+            coVerify(exactly = 0) { repo.register(any(), any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `login preserves existing six character password access`() =
+        runTest {
+            coEvery { repo.login("alice@example.com", "secret") } returns Result.success("uid")
+            vm.login("alice@example.com", "secret")
+            runCurrent()
+            coVerify(exactly = 1) { repo.login("alice@example.com", "secret") }
+            assertTrue(vm.state.value.success)
+        }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Pure helpers: isValidEmail
     // ─────────────────────────────────────────────────────────────────────────
@@ -487,7 +506,7 @@ class AuthViewModelTest {
             vm.confirmPasswordReset("123456", "123")
             advanceUntilIdle()
 
-            assertEquals(R.string.password_must_be_at_least_6_characters, vm.resetState.value.error)
+            assertEquals(R.string.password_must_be_at_least_8_characters, vm.resetState.value.error)
             coVerify(exactly = 0) { repo.confirmPasswordReset(any(), any(), any()) }
         }
 

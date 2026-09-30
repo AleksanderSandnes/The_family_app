@@ -341,6 +341,7 @@
     <string name="please_enter_your_name">Skriv inn navnet ditt.</string>
     <string name="passwords_do_not_match">Passordene er ikke like.</string>
     <string name="please_enter_a_valid_email_address">Skriv inn en gyldig e-postadresse.</string>
+    <string name="password_must_be_at_least_8_characters">Passordet må være minst 8 tegn.</string>
     <string name="password_must_be_at_least_6_characters">Passordet må være minst 6 tegn.</string>
     <string name="incorrect_email_or_password">Feil e-post eller passord.</string>
     <string name="an_account_with_this_email_already_exists">En konto med denne e-posten finnes allerede.</string>
