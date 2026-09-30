@@ -112,3 +112,12 @@ store assets, signed builds and approved submissions. No release is claimed read
   CI now repeats both read and write checks. Full Storage HTTP tests, minimum client
   version coordination and private-bucket rollout remain open; no live flags changed.
   Rollout details: supabase/security/PRIVATE_MEDIA_ROLLOUT.md.
+
+- Native media validation passed: 264 iOS simulator tests and strict Swift gates
+  on eee5b7f. Android required checks and all 513 tests pass. Local full Auth/Storage
+  HTTP testing passed 65 assertions across four private buckets, including real
+  upload/upsert, signing/authenticated download, cross-account/anonymous/public
+  denial, shared-wishlist revocation and token expiry. Found and fixed the missing
+  chat-media UPDATE policy so owned uploads can be replaced. SQL read/write tests
+  and local security advisors still pass; HTTP smoke testing is now wired into CI.
+  Native signed-release UI flows and production rollout remain open.

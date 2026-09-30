@@ -19,7 +19,13 @@ Local rollback-only tests cover anonymous, unregistered and unrelated users,
 family and conversation membership, explicit shares, forged foreign references,
 unsafe paths and immediate share/member revocation. Write tests run both before
 and after read guards. Local security advisors report no issues; this does not
-represent a new production audit. Database tests do not prove Storage HTTP behavior.
+represent a new production audit. A separate full local Auth/Storage test passes 65 HTTP assertions across all four
+buckets. It checks upsert, authenticated/signed downloads, cross-account/anonymous/
+public denial, explicit share/revocation and expiry. Backend CI runs
+`python3 supabase/tests/private_media_http.py --workdir <disposable-project>`;
+only `family-media-db` and `family-db-validation` localhost stacks are permitted.
+This test switches only local buckets private and leaves fictional fixtures in
+the disposable database. It does not verify native UI flows or production hosting.
 
 Before changing bucket visibility:
 

@@ -33,8 +33,8 @@ are machine-local and are not included in Git.
 - Family clients now resolve stored media locators to five-minute signed URLs for
   images, voice notes, PDF images and gallery saves. Protected image caches are
   bypassed; sign-out/account changes reject signing/fetch results. All 513 Android
-  tests, Spotless, detekt, lint and debug assembly pass. iOS changes and 13 new
-  tests await macOS CI. Live bucket settings/policies have not changed.
+  tests, Spotless, detekt, lint and debug assembly pass. All 264 iOS simulator tests and strict Swift
+  lint/format checks pass on eee5b7f. Live bucket settings/policies have not changed.
 
 
 - Staged restrictive private-read policies alongside legacy permissive policies.
@@ -45,6 +45,16 @@ are machine-local and are not included in Git.
   CI now repeats both read and write checks. Full Storage HTTP tests, minimum client
   version coordination and private-bucket rollout remain open; no live flags changed.
   Rollout details: supabase/security/PRIVATE_MEDIA_ROLLOUT.md.
+
+
+- Native media validation passed: 264 iOS simulator tests and strict Swift gates
+  on eee5b7f. Android required checks and all 513 tests pass. Local full Auth/Storage
+  HTTP testing passed 65 assertions across four private buckets, including real
+  upload/upsert, signing/authenticated download, cross-account/anonymous/public
+  denial, shared-wishlist revocation and token expiry. Found and fixed the missing
+  chat-media UPDATE policy so owned uploads can be replaced. SQL read/write tests
+  and local security advisors still pass; HTTP smoke testing is now wired into CI.
+  Native signed-release UI flows and production rollout remain open.
 
 ## Remaining work
 

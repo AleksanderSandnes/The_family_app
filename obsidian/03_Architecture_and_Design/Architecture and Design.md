@@ -155,3 +155,9 @@ The private helper resolves ownership/membership explicitly, including cross-fam
 conversation avatars and exact images from shared wishlists; it does not trust
 editable wish user IDs or JWT metadata. See `PRIVATE_MEDIA_ROLLOUT.md` for client
 compatibility, URL constraints and the separate visibility rollout.
+
+Real local Auth/Storage HTTP tests verify uploads/upserts, signed/authorized
+downloads, anonymous/cross-family/public denial, shares/revocation and link expiry.
+`chat_media_owner_update` supplies the missing permissive UPDATE authorization
+for upsert while restrictive guards still protect both old and destination paths.
+The HTTP smoke script refuses non-local or non-validation projects.

@@ -35,7 +35,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/family-db-validation"
           supabase init --workdir "$RUNNER_TEMP/family-db-validation"
           supabase start --workdir "$RUNNER_TEMP/family-db-validation" \
-            --exclude gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+            --exclude realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - name: Restore captured schema and verify function restrictions
         run: |
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/baseline/20260930_public.sql
@@ -59,6 +59,8 @@ jobs:
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/security/storage_reads.sql
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/storage_reads.sql
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/storage_writes.sql
+      - name: Verify private media through real local Auth and Storage APIs
+        run: python3 supabase/tests/private_media_http.py --workdir "$RUNNER_TEMP/family-db-validation"
       - name: Stop isolated database
         if: always()
         run: supabase stop --workdir "$RUNNER_TEMP/family-db-validation"
