@@ -1,5 +1,21 @@
 # The Family App
 
+## Verified native CI and deployment inspection — 30 September 2026
+
+Password-policy commit `f6003cb` passed Android CI and macOS CI: 527 Android unit
+tests and 293 iOS tests, with no failures. These results do not satisfy the open
+coverage targets. The pre-existing Claude Code Review provider failure remains.
+
+Vercel CLI 62.0.0 is authenticated as `aleksandersandnes` and can access the
+`thefamilyapp-web` and `hmi` projects. Live Family settings already use root
+`web` and production branch `master`. Rebuilt the existing production source from deployment
+`dpl_EfvfE22hiLPHtBksubSbZv6WSoa3`. Preview validation returned HTTP 200, then a
+production rebuild restored https://thefamilyapp.app/ and /privacy to HTTP 200.
+Current production URL: https://thefamilyapp-27y6nx70p-aleksander-sandnes-projects.vercel.app.
+This repairs existing public pages; new support/terms/deletion pages still require
+release validation and publication. Production Git branches remain unchanged.
+
+
 Welcome to the project knowledge base for The Family App.
 
 ## Quick links

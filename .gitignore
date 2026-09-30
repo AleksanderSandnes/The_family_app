@@ -47,3 +47,4 @@ play-service-account.json
 # Python release-policy/test helpers
 __pycache__/
 *.pyc
+.vercel
