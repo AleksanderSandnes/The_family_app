@@ -47,3 +47,14 @@ leaked-password protection) are dashboard / Management API settings.
 | `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | secrets, `production` environment (to be added) | signed release bundle |
 | `PLAY_SERVICE_ACCOUNT_JSON` | secret, `production` environment (to be added) | Play internal-track upload |
 | `APP_STORE_CONNECT_API_KEY_*` | secrets (after Apple enrolment) | TestFlight upload |
+
+## Release automation configuration
+
+| Name | Kind | Purpose |
+| --- | --- | --- |
+| `RELEASE_PREPARE_ENABLED` | repository variable | `true` enables task release PR creation; otherwise patch preview only |
+| `RELEASE_DRAFT_ENABLED` | repository variable | `true` enables tags and draft GitHub Releases after production CI |
+| `RELEASE_BOT_TOKEN` | optional secret | scoped Contents/PR write token for release proposals with automatic CI; no bypass |
+
+Configure the `production` environment and owner approval before activation.
+No activation variables or credentials were added by preparing the workflows.

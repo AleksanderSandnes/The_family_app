@@ -27,3 +27,14 @@ export function applyVersion(read, write, version) {
   write(XCODEGEN, project);
   return { build };
 }
+
+export function releaseState(read) {
+  const gradle = read(GRADLE);
+  const project = read(XCODEGEN);
+  return {
+    version: currentVersion(read),
+    build: Number(/^\s*versionCode (\d+)/m.exec(gradle)?.[1]),
+    versions: { [XCODEGEN]: /MARKETING_VERSION: "([^"]+)"/.exec(project)?.[1] },
+    builds: { [XCODEGEN]: /CURRENT_PROJECT_VERSION: "([^"]+)"/.exec(project)?.[1] },
+  };
+}

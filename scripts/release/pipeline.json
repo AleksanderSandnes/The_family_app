@@ -1,0 +1,12 @@
+{
+  "production": "master",
+  "workflows": [
+    "Android Lint",
+    "iOS Build and Tests",
+    "Swift Lint",
+    "Backend Security Tests",
+    "Security",
+    "CodeQL",
+    "Promotion Source"
+  ]
+}
