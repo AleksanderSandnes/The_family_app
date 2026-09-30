@@ -27,16 +27,14 @@ class RootViewModel
     constructor(
         internal val repo: FamilyRepository,
     ) : ViewModel() {
+        private val authGatePolicy = AuthGatePolicy()
         val gate: StateFlow<AuthGate> =
             combine(
                 repo.currentUserId,
                 repo.permissionsRequested,
-            ) { userId, permsDone ->
-                when {
-                    userId == null -> AuthGate.SignedOut
-                    !permsDone -> AuthGate.NeedsPermissions
-                    else -> AuthGate.SignedIn
-                }
+                repo.sessionStatusFlow,
+            ) { userId, permsDone, sessionStatus ->
+                authGatePolicy.resolve(userId, permsDone, sessionStatus)
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AuthGate.Loading)
 
         init {

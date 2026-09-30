@@ -12,8 +12,10 @@ import javax.crypto.SecretKey
 
 internal class AndroidSecretStore(
     context: Context,
+    private val keyAlias: String = KEY_ALIAS,
+    preferencesName: String = "encrypted_auth_v1",
 ) : SecretStore {
-    private val preferences = context.applicationContext.getSharedPreferences("encrypted_auth_v1", Context.MODE_PRIVATE)
+    private val preferences = context.applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     private val cipher = AuthCipher(::encryptionKey)
 
     override suspend fun read(name: String): String? =
@@ -38,11 +40,11 @@ internal class AndroidSecretStore(
     @Synchronized
     private fun encryptionKey(): SecretKey {
         val store = KeyStore.getInstance(KEYSTORE).apply { load(null) }
-        (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        (store.getKey(keyAlias, null) as? SecretKey)?.let { return it }
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE)
         generator.init(
             KeyGenParameterSpec
-                .Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                .Builder(keyAlias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setKeySize(KEY_BITS)

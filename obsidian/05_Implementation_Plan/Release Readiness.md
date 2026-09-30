@@ -75,3 +75,14 @@ store assets, signed builds and approved submissions. No release is claimed read
   AES-GCM preferences. Migrate plaintext only after encrypted persistence, authenticate
   storage slot names and serialize refresh/logout. Added crypto and migration tests;
   physical/emulator Keystore and upgrade/restart verification remain open.
+- API 37 headless emulator is operational with WHPX acceleration. Real Keystore
+  ciphertext persistence/deletion and process-restart restoration passed using
+  dedicated fictional preferences/aliases. Signed release login/upgrade flows remain open.
+- Four real Keystore instrumentation tests pass, including legacy plaintext-settings
+  migration/cleanup. Added an emulator-only PowerShell script to repeat them and
+  verify persistence across separate instrumentation invocations and force-stop.
+- Android auth gate now observes real session status alongside cached app identity.
+  Require successful restoration before main navigation, clear offline eligibility
+  after sign-out/revocation, and retain access during transient refresh failures
+  only after a verified session. Profile completion retains the existing auth flow.
+  Added policy and ViewModel transition tests.

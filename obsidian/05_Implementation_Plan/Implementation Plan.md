@@ -5,7 +5,7 @@ This Obsidian vault is the canonical source for project plans, notes, and archit
 Update it here first and keep it current as implementation progresses.
 
 ## Active tracks
-- **⏳ [[Release Readiness]]** — security, coverage, CI and store preparation; keep `master` per user decision on 2026-09-29. Android baseline: 483 passing unit tests. iOS build/coverage validation in progress.
+- **⏳ [[Release Readiness]]** — security, coverage, CI and store preparation; keep `master` per user decision. Android: 502 unit tests plus real Keystore migration/restart checks pass. iOS: 251 tests pass; coverage targets remain unmet. Live security rollout and store preparation remain open.
 - **✅ Signup email verification (Android + iOS)** — delivered 2026-07-12, branch
   `feat/signup-email-verification`. `enable_confirmations = true` live in production;
   new signups enter a 6-digit code (branded confirmation email) on a shared

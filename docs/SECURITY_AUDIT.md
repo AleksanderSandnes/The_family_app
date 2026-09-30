@@ -53,11 +53,24 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
   uploads require membership and the caller's auth-ID folder. Tests exercise valid
   uploads, cross-user/family insert/update/delete and attempts to move an object
   into another user's path. Private reads/client URL resolution and rollout remain open.
-- Added CodeQL for Android/Swift/TypeScript/workflows and Dependabot for Gradle
-  and GitHub Actions; first results pending. Swift dependency manifest support remains open.
+- CodeQL for Android/Swift/TypeScript/workflows passed on dc3c76f. Added Dependabot
+  for Gradle and GitHub Actions. Swift dependency manifest support remains open.
 - Android now supplies explicit encrypted Supabase session and PKCE storage.
   AES-256-GCM uses an Android Keystore key, random IVs and authenticated slot names;
   preferences contain ciphertext only. Legacy settings are removed only after
   encrypted persistence succeeds. Corruption fails closed; serialized refresh/logout
   cannot restore a session after logout completes. Cryptography/migration unit tests
-  added; device Keystore, update migration and process-restart smoke tests remain pending.
+  added; signed release upgrade/login/logout and minimum API device checks remain pending.
+- API 37 emulator verified real Android Keystore encryption, ciphertext-only
+  preferences, object recreation, deletion and restoration after force-stop in
+  separate instrumentation invocations. Full signed release/auth-flow and minimum
+  API device validation remain pending; this does not claim complete device coverage.
+- Four Keystore instrumentation tests passed, including actual plaintext-settings
+  migration and cleanup. `android/scripts/test-encrypted-auth.ps1` reproduces the
+  tests and the separate process-restart check on an isolated emulator.
+- Android navigation now consults Supabase session status. Cached app-user
+  preferences cannot bypass initialization, missing/revoked sessions or failed
+  restoration. Temporary refresh failures retain offline access only for the
+  app identity previously observed with an authenticated session. Policy and
+  ViewModel tests cover these transitions and permission/profile completion.
+  Full signed release/login/logout smoke checks remain pending.
