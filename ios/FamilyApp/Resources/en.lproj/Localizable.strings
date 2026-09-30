@@ -412,3 +412,11 @@
 "edited" = "edited";
 "Editing message" = "Editing message";
 "Delete message?" = "Delete message?";
+"Account" = "Account";
+"Privacy policy" = "Privacy policy";
+"Terms of use" = "Terms of use";
+"Delete account" = "Delete account";
+"Delete your account?" = "Delete your account?";
+"This permanently deletes your profile, photos, wishlists, events and messages. Shared family lists and group chats stay with the rest of your family. This cannot be undone." = "This permanently deletes your profile, photos, wishlists, events and messages. Shared family lists and group chats stay with the rest of your family. This cannot be undone.";
+"Delete permanently" = "Delete permanently";
+"Couldn’t delete your account. Check your connection and try again." = "Couldn’t delete your account. Check your connection and try again.";

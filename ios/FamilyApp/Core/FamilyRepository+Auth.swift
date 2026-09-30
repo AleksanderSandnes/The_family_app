@@ -156,6 +156,22 @@ extension FamilyRepository {
         invalidateUserCache()
         session.signOut()
     }
+
+    /// Permanently deletes the signed-in account through the `delete-account` Edge Function
+    /// (media, profile, owned rows; shared family data passes to a remaining member), then
+    /// clears the local session so the root view returns to the signed-out flow.
+    func deleteAccount() async throws {
+        try await client.functions.invoke(
+            "delete-account",
+            options: FunctionInvokeOptions(body: ["confirm": "DELETE_MY_ACCOUNT"])
+        )
+        // The server has already removed the auth user and push tokens, so only local
+        // state is cleared here.
+        forgetPushToken()
+        try? await client.auth.signOut(scope: .local)
+        invalidateUserCache()
+        session.signOut()
+    }
 }
 
 extension AuthSessionEvent {

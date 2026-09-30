@@ -50,6 +50,7 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func confirmSignupEmail(email: String, code: String) async throws -> String
     func resendSignupCode(email: String) async throws
     func signOut() async
+    func deleteAccount() async throws
     func completeSignInAfterConfirmation() async throws -> String
     func authSignedInEvents() -> AsyncStream<Void>
     func consumePendingJoinCode() -> String?

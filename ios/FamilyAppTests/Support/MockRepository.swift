@@ -39,6 +39,8 @@ final class MockRepository: FamilyRepositoryProtocol {
     private(set) var notifyDaysBefore: [Int] = []
     private(set) var locationVisible: [Bool] = []
     private(set) var signOutCalled = false
+    private(set) var deleteAccountCalls = 0
+    var deleteAccountError: Error?
     private(set) var googleSignInCalled = false
     private(set) var leaveFamilyCalls: [String] = []
     private(set) var registeredUsers: [String] = []
@@ -255,6 +257,13 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func signOut() async {
         signOutCalled = true
+    }
+
+    func deleteAccount() async throws {
+        deleteAccountCalls += 1
+        if let deleteAccountError {
+            throw deleteAccountError
+        }
     }
 
     func sendPasswordResetEmail(email: String) async throws {
