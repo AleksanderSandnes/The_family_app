@@ -65,7 +65,19 @@ jobs:
       - name: Compile Swift simulator application
         if: matrix.language == 'swift'
         working-directory: ios
-        run: xcodebuild -project FamilyApp.xcodeproj -scheme FamilyApp -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+        run: |
+          set -o pipefail
+          xcodebuild -project FamilyApp.xcodeproj -scheme FamilyApp -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build \
+            | tee "$RUNNER_TEMP/codeql-swift-build.log"
+      - name: Upload Swift compilation evidence
+        if: always() && matrix.language == 'swift'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-swift-build
+          path: ${{ runner.temp }}/codeql-swift-build.log
+          retention-days: 7
       - uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}

@@ -86,3 +86,7 @@ store assets, signed builds and approved submissions. No release is claimed read
   after sign-out/revocation, and retain access during transient refresh failures
   only after a verified session. Profile completion retains the existing auth flow.
   Added policy and ViewModel transition tests.
+- Latest Swift CodeQL build exceeded its 40-minute limit while compiling both
+  simulator architectures. Compile the runner's native architecture for the
+  security scan and upload the build log on success/failure. The remaining language
+  scans and Android CI passed; the updated Swift scan must pass before test promotion.

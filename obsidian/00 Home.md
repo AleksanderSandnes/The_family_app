@@ -17,6 +17,7 @@ Welcome to the project knowledge base for The Family App.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
+- **Swift security-scan recovery (2026-09-30)** — a dual-architecture simulator build exceeded the 40-minute CodeQL limit. Use the runner's native simulator architecture and retain compilation evidence; verification of the new run is pending.
 - **Release readiness in progress (2026-09-30)** — 502 Android unit tests, 251 iOS tests and four Keystore emulator checks pass. Backend security fixes are staged; coverage, private media and production rollout remain open. Keep `master` by user decision. See [[05_Implementation_Plan/Release Readiness]].
 - **🎁 Wishlist v2 verified on emulator (2026-07-14)** — wish descriptions (new `description` column), member detail popup (image, description, NOK price, full tappable URL, reserve), Glass House-styled PDF export (ambient canvas, white cards, gradient accent, footer), NOK prices in rows. R8-minified build (23.9→5.8 MB) smoke-tested end-to-end on emulator incl. login, realtime data, images and PDF export; merged to master.
 - **🎁 Wishlist PDF v2 (2026-07-14)** — export now embeds wish image thumbnails, NOK-formatted prices and shortened links in a card layout with the indigo accent (both platforms). Shopping-item inline edit already existed (tap item text). R8 minification staged on `chore/enable-r8` pending on-device smoke test.
