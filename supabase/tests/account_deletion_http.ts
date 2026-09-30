@@ -131,8 +131,11 @@ await sql(`
     values('${conv}','${a.app}'),('${conv}','${b.app}');
   insert into public.wishlists(id,owner_user_id,family_id,name)
     values('${wl}','${a.app}','${fam}','Fictional wishlist');
+  -- The push webhook trigger would call the production function; it is out of scope here.
+  alter table public.messages disable trigger "push-on-message";
   insert into public.messages(conversation_id,user_from,text)
     values('${conv}','${a.app}','Fictional hello'),('${conv}','${b.app}','Fictional reply');
+  alter table public.messages enable trigger "push-on-message";
   insert into public.shopping_lists(id,owner_user_id,family_id,title)
     values('${list}','${a.app}','${fam}','Fictional groceries');
 `);
