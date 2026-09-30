@@ -58,3 +58,8 @@ store assets, signed builds and approved submissions. No release is claimed read
   schema restore, family-isolation/permission tests and Edge authorization tests pass.
   Production policies/media fixes, webhook rollout and key rotation remain pending.
 - Added backend-security CI for isolated SQL restoration and notification auth tests.
+- Backend-security CI passed for the restored schema, function isolation and
+  Vault-backed webhook installation. No production database changes applied.
+- Validate message webhook envelopes/identities/types, bound streamed requests
+  to 64 KiB and notification text to 200 Unicode characters. Eight Edge tests pass.
+  Updated push setup docs to use Vault and coordinate server-only authorization.

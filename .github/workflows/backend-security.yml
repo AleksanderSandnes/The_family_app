@@ -21,7 +21,7 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno check supabase/functions/push-on-message/index.ts supabase/functions/daily-reminders/index.ts
-      - run: deno test --allow-env supabase/functions/_shared/authorize_test.ts
+      - run: deno test --allow-env supabase/functions/_shared/*_test.ts
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 20

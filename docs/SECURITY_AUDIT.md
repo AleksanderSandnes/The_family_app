@@ -12,7 +12,7 @@ Live Supabase metadata inspected on 2026-09-30. Store signing and production hos
 | Static web security headers absent | Add CSP, HSTS, framing, content-type, referrer and permissions policies. | Added locally; deployment pending |
 | Production branch lacks protection | GitHub API confirms `master` unprotected. User requested keeping `master`. | Open |
 | Existing Android quality checks failing | Correct formatting, name cooldown timing constant and resolve translated share strings in composition. Full Spotless/detekt/lint/unit-test/debug-build checks pass locally. | Fixed locally |
-| Existing Swift CI failing | Retrieved annotations: file/type length, wishlist parameter count, tuple size and long lines. | Open |
+| Existing Swift CI failing | Fixed native compilation, strict lint/format findings and resend cooldown race. All 251 simulator tests pass in CI. | Fixed on task/test |
 
 The vault records an existing domain, Resend SMTP setup and fictional review family.
 Verify the live projects before replacing these. Current Vercel login `apsandnes`
@@ -43,4 +43,7 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
   and full storage/auth/Realtime/cron bootstrap are pending; no remote history edits.
 - Native iOS CI now passes all 251 tests plus strict SwiftLint/SwiftFormat.
   Coverage targets remain unmet/unverified. Android checks remain green.
-- Added isolated database and Edge Function security tests to CI; result pending.
+- Isolated database and Edge Function security CI passed on commit 84db54d.
+- Notification webhook requests now enforce JSON insert envelopes, UUIDs and
+  message types, a streamed 64 KiB body limit and bounded Unicode text previews.
+  Eight authorization/input tests pass locally; production deployment pending.

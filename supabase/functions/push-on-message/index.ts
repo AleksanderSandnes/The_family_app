@@ -6,17 +6,13 @@
 import { serviceClient } from "../_shared/client.ts";
 import { sendPushToTokens } from "../_shared/fcm.ts";
 import { authorizeJob } from "../_shared/authorize.ts";
+import { messagePreview, readMessageWebhook, WebhookInputError } from "../_shared/messageWebhook.ts";
 
 Deno.serve(async (req) => {
   const denied = authorizeJob(req);
   if (denied) return denied;
   try {
-    const body = await req.json();
-    // Supabase DB webhook payload: { type, table, schema, record, old_record }.
-    const msg = body.record ?? body;
-    if (!msg?.conversation_id) {
-      return new Response("ignored: no conversation_id", { status: 200 });
-    }
+    const msg = await readMessageWebhook(req);
 
     const supabase = serviceClient();
 
@@ -64,11 +60,7 @@ Deno.serve(async (req) => {
     }
     if (targets.length === 0) return new Response("no tokens", { status: 200 });
 
-    const preview = msg.message_type === "image"
-      ? "📷 Image"
-      : msg.message_type === "voice"
-      ? "🎤 Voice message"
-      : (msg.text ?? "");
+    const preview = messagePreview(msg);
 
     const senderName = sender?.name ?? "Family member";
 
@@ -91,7 +83,10 @@ Deno.serve(async (req) => {
     });
 
     return new Response("ok", { status: 200 });
-  } catch {
+  } catch (error) {
+    if (error instanceof WebhookInputError) {
+      return new Response("invalid request", { status: error.status });
+    }
     console.error("push-on-message failed");
     return new Response("error", { status: 500 });
   }
