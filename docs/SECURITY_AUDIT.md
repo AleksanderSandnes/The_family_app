@@ -47,3 +47,9 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
 - Notification webhook requests now enforce JSON insert envelopes, UUIDs and
   message types, a streamed 64 KiB body limit and bounded Unicode text previews.
   Eight authorization/input tests pass locally; production deployment pending.
+- Prepared restrictive storage write guards that remain effective alongside the
+  existing permissive policies. Preserve legacy app/auth-ID paths for wish images,
+  owner avatar paths, conversation-member images and family-photo paths; chat
+  uploads require membership and the caller's auth-ID folder. Tests exercise valid
+  uploads, cross-user/family insert/update/delete and attempts to move an object
+  into another user's path. Private reads/client URL resolution and rollout remain open.

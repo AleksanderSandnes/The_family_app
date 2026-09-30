@@ -63,3 +63,7 @@ store assets, signed builds and approved submissions. No release is claimed read
 - Validate message webhook envelopes/identities/types, bound streamed requests
   to 64 KiB and notification text to 200 Unicode characters. Eight Edge tests pass.
   Updated push setup docs to use Vault and coordinate server-only authorization.
+- Prepared and locally tested restrictive media write policies against the existing
+  permissive policies. Protect owner wish/avatar paths, conversation membership and
+  family photos, including UPDATE's destination path. Buckets are still public;
+  client authenticated media resolution and coordinated private-read rollout remain open.
