@@ -545,4 +545,12 @@
     <string name="edited">edited</string>
     <string name="editing_message">Editing message</string>
     <string name="message_deleted">Message deleted</string>
+    <string name="account">Account</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="terms_of_use">Terms of use</string>
+    <string name="delete_account">Delete account</string>
+    <string name="delete_account_q">Delete your account?</string>
+    <string name="delete_account_confirm">This permanently deletes your profile, photos, wishlists, events and messages. Shared family lists and group chats stay with the rest of your family. This cannot be undone.</string>
+    <string name="delete_account_permanently">Delete permanently</string>
+    <string name="delete_account_failed">Couldn’t delete your account. Check your connection and try again.</string>
 </resources>

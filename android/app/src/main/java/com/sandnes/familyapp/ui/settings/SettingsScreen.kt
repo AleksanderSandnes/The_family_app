@@ -26,12 +26,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -44,14 +48,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -60,6 +68,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sandnes.familyapp.BuildConfig
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ThemeMode
+import com.sandnes.familyapp.ui.components.ConfirmationDialog
 import com.sandnes.familyapp.ui.components.FeatureTopBar
 import com.sandnes.familyapp.ui.components.appSwitchColors
 import com.sandnes.familyapp.ui.theme.Radius
@@ -96,6 +105,9 @@ fun SettingsScreen(
     val notifyDaysBefore by vm.notifyDaysBefore.collectAsStateWithLifecycle()
     val locationVisible by vm.locationVisible.collectAsStateWithLifecycle()
     val appLanguage by vm.appLanguage.collectAsStateWithLifecycle()
+    val deleteAccountState by vm.deleteAccountState.collectAsStateWithLifecycle()
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
 
     val snackbarHostState = remember { SnackbarHostState() }
     val settingsSavedMessage = stringResource(R.string.settings_saved)
@@ -190,6 +202,36 @@ fun SettingsScreen(
                 LanguageSelector(selected = appLanguage, onSelect = vm::setAppLanguage)
             }
 
+            // ── ACCOUNT ──────────────────────────────────────────────────────
+            SettingsSectionHeader(stringResource(R.string.account))
+            SettingsCard {
+                LinkRow(
+                    icon = Icons.Filled.PrivacyTip,
+                    title = stringResource(R.string.privacy_policy),
+                    onClick = { uriHandler.openUri(PRIVACY_URL) },
+                )
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                LinkRow(
+                    icon = Icons.Filled.Description,
+                    title = stringResource(R.string.terms_of_use),
+                    onClick = { uriHandler.openUri(TERMS_URL) },
+                )
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                LinkRow(
+                    icon = Icons.Filled.DeleteForever,
+                    title = stringResource(R.string.delete_account),
+                    destructive = true,
+                    busy = deleteAccountState == DeleteAccountState.InProgress,
+                    onClick = { showDeleteConfirm = true },
+                )
+            }
+
             // ── ABOUT ────────────────────────────────────────────────────────
             SettingsSectionHeader(stringResource(R.string.about))
             SettingsCard {
@@ -198,6 +240,54 @@ fun SettingsScreen(
 
             Spacer(Modifier.size(16.dp))
         }
+    }
+
+    if (showDeleteConfirm) {
+        ConfirmationDialog(
+            title = stringResource(R.string.delete_account_q),
+            message = stringResource(R.string.delete_account_confirm),
+            confirmText = stringResource(R.string.delete_account_permanently),
+            onConfirm = {
+                showDeleteConfirm = false
+                vm.deleteAccount()
+            },
+            onDismiss = { showDeleteConfirm = false },
+        )
+    }
+
+    if (deleteAccountState == DeleteAccountState.Failed) {
+        val failedMessage = stringResource(R.string.delete_account_failed)
+        LaunchedEffect(Unit) {
+            snackbarHostState.showSnackbar(failedMessage)
+            vm.dismissDeleteAccountError()
+        }
+    }
+}
+
+private const val PRIVACY_URL = "https://thefamilyapp.app/privacy"
+private const val TERMS_URL = "https://thefamilyapp.app/terms"
+
+@Composable
+private fun LinkRow(
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit,
+    destructive: Boolean = false,
+    busy: Boolean = false,
+) {
+    val tint = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clickable(enabled = !busy, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.size(16.dp))
+        Text(title, style = MaterialTheme.typography.bodyLarge, color = tint, modifier = Modifier.weight(1f))
+        if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
     }
 }
 

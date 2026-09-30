@@ -14,9 +14,11 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -343,6 +345,25 @@ class FamilyRepository
             invalidateUserCache()
             session.signOut()
         }
+
+        /**
+         * Permanently deletes the signed-in account through the `delete-account` Edge Function
+         * (media, profile, owned rows; shared family data passes to a remaining member), then
+         * clears the local session so [RootViewModel] returns to the signed-out flow.
+         */
+        suspend fun deleteAccount(): Result<Unit> =
+            runCatching {
+                val response =
+                    SupabaseManager.client.functions.invoke(
+                        function = "delete-account",
+                        body = buildJsonObject { put("confirm", "DELETE_MY_ACCOUNT") },
+                    )
+                check(response.status.isSuccess()) { "Account deletion failed" }
+                lastPushToken = null
+                runCatching { SupabaseManager.client.auth.clearSession() }
+                invalidateUserCache()
+                session.signOut()
+            }
 
         suspend fun sendPasswordResetEmail(email: String): Result<Unit> =
             runCatching {

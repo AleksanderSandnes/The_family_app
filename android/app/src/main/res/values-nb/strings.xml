@@ -546,4 +546,12 @@
     <string name="edited">redigert</string>
     <string name="editing_message">Redigerer melding</string>
     <string name="message_deleted">Melding slettet</string>
+    <string name="account">Konto</string>
+    <string name="privacy_policy">Personvernerklæring</string>
+    <string name="terms_of_use">Vilkår for bruk</string>
+    <string name="delete_account">Slett konto</string>
+    <string name="delete_account_q">Slette kontoen din?</string>
+    <string name="delete_account_confirm">Dette sletter profilen, bildene, ønskelistene, hendelsene og meldingene dine permanent. Delte familielister og gruppechatter blir værende hos resten av familien. Dette kan ikke angres.</string>
+    <string name="delete_account_permanently">Slett permanent</string>
+    <string name="delete_account_failed">Kunne ikke slette kontoen. Sjekk tilkoblingen og prøv igjen.</string>
 </resources>
