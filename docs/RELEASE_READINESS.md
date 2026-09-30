@@ -1,5 +1,19 @@
 # Release readiness tracker
 
+## Coverage reporting — 30 September 2026
+
+Kover 0.9.11 runs with AGP 9.2.1 and all 527 Android unit tests. Full production
+source coverage is 1717/13012 lines (13.20%). Logic (production data/util sources
+and feature viewmodels) is 1569/3589 lines (43.72%). The Android workflow now
+produces XML/HTML/JSON coverage and JUnit artifacts, plus a bounded job summary.
+No production source was excluded to raise these numbers. The 80% overall and
+90% logic thresholds and drop detection remain open release requirements.
+
+Run from `android/`: `./gradlew :app:koverXmlReportDebug :app:koverHtmlReportDebug`.
+Then run `python ../scripts/coverage/android_summary.py app/build/reports/kover/reportDebug.xml`.
+The detailed HTML report is `android/app/build/reports/kover/htmlDebug/index.html`.
+
+
 ## Verified native CI and deployment inspection — 30 September 2026
 
 Password-policy commit `f6003cb` passed Android CI and macOS CI: 527 Android unit

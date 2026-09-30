@@ -1,5 +1,7 @@
 # The Family App
 
+Android coverage reporting verified: 13.20% overall / 43.72% logic; targets remain open.
+
 ## Verified native CI and deployment inspection — 30 September 2026
 
 Password-policy commit `f6003cb` passed Android CI and macOS CI: 527 Android unit

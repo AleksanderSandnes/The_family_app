@@ -61,4 +61,16 @@ jobs:
 
       # HARD gate — JVM unit tests.
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest --no-daemon
+        run: ./gradlew testDebugUnitTest :app:koverXmlReportDebug :app:koverHtmlReportDebug --no-daemon
+
+      - name: Report full Android coverage
+        run: python3 ../scripts/coverage/android_summary.py app/build/reports/kover/reportDebug.xml --output app/build/reports/kover/summary.json
+
+      - name: Upload coverage and unit-test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-coverage-and-tests
+          path: |
+            android/app/build/reports/kover/
+            android/app/build/test-results/testDebugUnitTest/
