@@ -35,7 +35,7 @@ enum SupabaseClientProvider {
                     // Emit the stored session immediately as the initial session (opt-in to
                     // supabase-swift's next-major behavior; silences the runtime warning). Safe
                     // here: the auth gate doesn't trust `.initialSession` — RootViewModel.bootstrap()
-                    // refreshes via `auth.session` and gates on the persisted app user id, and an
+                    // validates via `auth.session` and resolves its matching app profile, and an
                     // expired token is refreshed in the background by the library.
                     emitLocalSessionAsInitialSession: true
                 ),

@@ -56,6 +56,16 @@ are machine-local and are not included in Git.
   and local security advisors still pass; HTTP smoke testing is now wired into CI.
   Native signed-release UI flows and production rollout remain open.
 
+
+- Prepared iOS restored-session navigation hardening: cached app IDs cannot unlock
+  navigation; bootstrap restores Supabase credentials and resolves their matching
+  profile. Ignore non-nil local INITIAL_SESSION as authorization, close/clear on
+  sign-out, reject profile responses after token/account changes and cancel stale
+  work. Verified runtime refresh keeps the existing identity; switching account
+  resolves a fresh profile and resets push sync. Signed-in SwiftUI screens are
+  keyed by app user ID so their drafts/navigation/view models are recreated.
+  Added 17 tests; native CI verification is pending. Android required checks pass.
+
 ## Remaining work
 
 - Live security remediation/deployment. Supabase: HMI xdttfrknoazcqcelieck;

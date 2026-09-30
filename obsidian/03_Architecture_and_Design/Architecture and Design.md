@@ -161,3 +161,22 @@ downloads, anonymous/cross-family/public denial, shares/revocation and link expi
 `chat_media_owner_update` supplies the missing permissive UPDATE authorization
 for upsert while restrictive guards still protect both old and destination paths.
 The HTTP smoke script refuses non-local or non-validation projects.
+
+## iOS restored-session navigation
+
+`RootViewModel` uses the injected repository's SessionStore rather than a second
+global store. A persisted app ID is only a hint: bootstrap requires `auth.session`
+and a profile lookup bound to its auth UUID and credential snapshot. A changed
+credential/account or cancelled lookup cannot restore the old profile.
+
+The auth event adapter ignores non-nil INITIAL_SESSION (possibly expired), handles
+confirmed sign-in/refresh/recovery/user updates, and closes navigation on sign-out.
+The root consumes events without waiting on profile network work, cancels stale
+lookups and checks a generation plus current auth ID before writing app identity.
+A previously verified same-account refresh keeps offline eligibility without
+re-fetching the profile. Failed initial restoration never borrows cached eligibility.
+
+MainTabView is keyed by app-user ID to recreate hoisted feature state/navigation
+when accounts change. Push/preferences sync runs only for a verified signed-in
+profile and is reset for a new sign-in. Native tests and release auth-flow smoke
+are the verification routes; Linux cannot run the Swift build locally.

@@ -29,6 +29,10 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func uploadFamilyPhotoImage(familyId: String, data: Data) async throws -> String
 
     // App lifecycle (used by RootViewModel)
+    func restoreAuthSession() async throws -> String
+    func currentAuthUserID() -> String?
+    func resolveAuthenticatedAppUserID() async throws -> String
+    func authSessionEvents() -> AsyncStream<AuthSessionEvent>
     func touchLastActive() async
     func syncPushToken() async
     func syncNotificationPrefsToServer() async

@@ -75,6 +75,8 @@ The delivered Android milestones are grouped into linked notes rather than one l
 3. Branch workflow: `task → test → master` (never commit directly to `master` or `test`).
 
 ## Long-term goals
+- ⏳ iOS auth gate: restoration/profile binding and sign-out handling implemented,
+  with 17 new behavioral/race tests. Native validation and signed release smoke remain open.
 - ⏳ Private media: Android/iOS signed URL reads implemented; Android 513 tests and
   required checks pass. Read guards pass local isolation/write-compatibility tests; 264 iOS tests/strict
   Swift checks and 65 real Auth/Storage HTTP assertions pass. Signed-release UI
