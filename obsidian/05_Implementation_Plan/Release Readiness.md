@@ -140,3 +140,17 @@ store assets, signed builds and approved submissions. No release is claimed read
 
 - iOS auth-gate native run e3798e3 passed all 281 tests with no failures.
   SwiftLint passed; apply the authoritative SwiftFormat patch and rerun its gate.
+
+- In-app account deletion (Play/App Store requirement): `delete-account` Edge Function
+  re-validates the caller's JWT, requires an explicit confirmation body, removes the
+  user's storage media, transfers shared family ownership to a remaining member and
+  deletes the auth user (cascading owned rows) via service-role-only SQL helpers
+  (supabase/security/account_deletion.sql). 6 unit tests plus a local Auth/Storage/
+  Postgres HTTP integration test (wired into backend-security CI). Android and iOS
+  Settings gain an Account section: privacy policy, terms and Delete account with a
+  confirmation dialog; all 516 Android tests and checks pass; iOS tests added, native
+  CI verification pending. Live function deployment and SQL migration are not applied.
+- Static legal pages in web/: privacy (deletion section updated, push providers
+  added), terms, support and delete-account. The Vercel project thefamilyapp-web
+  built from the repo root, so thefamilyapp.app returned 404; Root Directory must be
+  `web` so the pages and web/vercel.json headers are served.
