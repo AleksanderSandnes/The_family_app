@@ -6,15 +6,8 @@ name: Android Lint
 on:
   push:
     branches: [test, master, "task/**"]
-    paths:
-      - "android/**"
-      - ".github/workflows/android-lint.yml"
   pull_request:
     branches: [test, main, master]
-    paths:
-      - "android/**"
-      - ".github/workflows/android-lint.yml"
-
 # Cancel superseded runs on the same ref.
 concurrency:
   group: android-lint-${{ github.ref }}

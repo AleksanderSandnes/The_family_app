@@ -33,6 +33,9 @@ jobs:
           - language: javascript-typescript
             mode: none
             os: ubuntu-latest
+          - language: python
+            mode: none
+            os: ubuntu-latest
           - language: actions
             mode: none
             os: ubuntu-latest

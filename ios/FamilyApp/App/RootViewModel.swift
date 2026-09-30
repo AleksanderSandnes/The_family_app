@@ -35,7 +35,9 @@ final class RootViewModel {
     }
 
     var gate: AuthGate {
-        if !bootstrapped { return .loading }
+        if !bootstrapped {
+            return .loading
+        }
         guard let verifiedAuthID, let verifiedAppID,
               repo.currentAuthUserID() == verifiedAuthID, store.currentUserId == verifiedAppID
         else { return .signedOut }
@@ -84,7 +86,7 @@ final class RootViewModel {
             let revision = generation
             profileTask = Task { [weak self] in
                 guard let self else { return }
-                await self.resolveProfile(authID: authID, revision: revision)
+                await resolveProfile(authID: authID, revision: revision)
             }
         }
     }

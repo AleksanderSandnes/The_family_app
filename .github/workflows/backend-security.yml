@@ -2,10 +2,8 @@ name: Backend Security Tests
 on:
   push:
     branches: [master, test, "task/**"]
-    paths: ["supabase/**", ".github/workflows/backend-security.yml"]
   pull_request:
     branches: [master, test]
-    paths: ["supabase/**", ".github/workflows/backend-security.yml"]
 permissions:
   contents: read
 concurrency:

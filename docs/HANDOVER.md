@@ -90,3 +90,11 @@ update Family's Obsidian vault alongside changes.
 
 Details: docs/RELEASE_READINESS.md, docs/SECURITY_AUDIT.md and Family's
 obsidian/05_Implementation_Plan/Release Readiness.md.
+
+## Branch protection update
+
+Live master/test require 12 GitHub Actions quality checks and up-to-date
+PRs, including administrators. Force pushes/deletion are blocked. New promotion
+policy tests pass; trusted source enforcement is staged but awaits an approved
+default-branch bootstrap. No bot bypass exists. Use verified task PRs to test;
+production still requires explicit approval. See docs/BRANCH_PROTECTION.md.

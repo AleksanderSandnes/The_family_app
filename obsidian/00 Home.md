@@ -17,7 +17,8 @@ Welcome to the project knowledge base for The Family App.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
-- **iOS session gate hardening prepared** — validate restoration and profile identity, reject stale responses, observe sign-out and reset the account’s view lifetime. Seventeen new tests await native CI.
+- **Release branches protected** — master/test now require 12 Actions checks and up-to-date PRs, including administrators. Trusted source enforcement and release-bot setup still need an approved production bootstrap.
+- **iOS session gate hardening prepared** — validate restoration and profile identity, reject stale responses, observe sign-out and reset the account’s view lifetime. All 281 native tests passed on e3798e3; strict SwiftLint passed, and the SwiftFormat repair is applied for final CI verification.
 - **Private media clients prepared (2026-09-30)** — Android checks and 513 tests pass. Android/iOS use fresh signed URLs and bypass protected-image caches; restrictive read policies pass local isolation tests. 264 iOS simulator tests and strict Swift checks also pass. Local Auth/Storage HTTP smoke passed 65 assertions; signed-release UI checks and private-bucket rollout remain open.
 - **Swift security scan recovered (2026-09-30)** — all four CodeQL languages passed in [run 36718982820](https://github.com/AleksanderSandnes/The_family_app/actions/runs/36718982820). The Swift scan builds the runner's native simulator architecture and retains compilation evidence. Verified changes advanced to `test`; the new test-branch run is pending.
 - **Release readiness in progress (2026-09-30)** — 502 Android unit tests, 251 iOS tests and four Keystore emulator checks pass. Backend security fixes are staged; coverage, private media and production rollout remain open. Keep `master` by user decision. See [[05_Implementation_Plan/Release Readiness]].

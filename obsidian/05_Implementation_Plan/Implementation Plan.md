@@ -75,8 +75,11 @@ The delivered Android milestones are grouped into linked notes rather than one l
 3. Branch workflow: `task → test → master` (never commit directly to `master` or `test`).
 
 ## Long-term goals
+- ⏳ Branch protection: live strict quality/PR protection enabled on master/test.
+  Trusted source activation and release-bot provisioning remain open.
 - ⏳ iOS auth gate: restoration/profile binding and sign-out handling implemented,
-  with 17 new behavioral/race tests. Native validation and signed release smoke remain open.
+  with 17 new behavioral/race tests. All 281 native tests passed on e3798e3; final formatter verification and signed
+  release smoke remain open.
 - ⏳ Private media: Android/iOS signed URL reads implemented; Android 513 tests and
   required checks pass. Read guards pass local isolation/write-compatibility tests; 264 iOS tests/strict
   Swift checks and 65 real Auth/Storage HTTP assertions pass. Signed-release UI

@@ -6,19 +6,8 @@ name: Swift Lint
 on:
   push:
     branches: [test, master, "task/**"]
-    paths:
-      - "ios/**"
-      - ".swiftlint.yml"
-      - ".swiftformat"
-      - ".github/workflows/swift-lint.yml"
   pull_request:
     branches: [test, main, master]
-    paths:
-      - "ios/**"
-      - ".swiftlint.yml"
-      - ".swiftformat"
-      - ".github/workflows/swift-lint.yml"
-
 # Cancel superseded runs on the same ref.
 concurrency:
   group: swift-lint-${{ github.ref }}

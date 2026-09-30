@@ -10,7 +10,7 @@ Live Supabase metadata inspected on 2026-09-30. Store signing and production hos
 | Android allows backup of app data | Disable backup; validate merged release manifest and device transfer behavior before release. | Partial |
 | Android transport policy implicit | Explicitly disable cleartext; trust system CAs only. | Fixed locally |
 | Static web security headers absent | Add CSP, HSTS, framing, content-type, referrer and permissions policies. | Added locally; deployment pending |
-| Production branch lacks protection | GitHub API confirms `master` unprotected. User requested keeping `master`. | Open |
+| Production/test quality protection | GitHub API confirms 12 required Actions checks, strict up-to-date PRs and administrator enforcement. Keep master by user decision. | Quality protection live; trusted source/bot activation pending |
 | Existing Android quality checks failing | Correct formatting, name cooldown timing constant and resolve translated share strings in composition. Full Spotless/detekt/lint/unit-test/debug-build checks pass locally. | Fixed locally |
 | Existing Swift CI failing | Fixed native compilation, strict lint/format findings and resend cooldown race. All 251 simulator tests pass in CI. | Fixed on task/test |
 
@@ -109,3 +109,9 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
   resolves a fresh profile and resets push sync. Signed-in SwiftUI screens are
   keyed by app user ID so their drafts/navigation/view models are recreated.
   Added 17 tests; native CI verification is pending. Android required checks pass.
+
+- Live GitHub quality protections enabled on master/test: 12 named
+  GitHub Actions checks, strict PR/update requirements, administrator enforcement
+  and blocked force pushes/deletion. Trusted promotion-source enforcement is
+  staged but awaits an approved default-branch bootstrap. No production commits
+  changed and no release-bot bypass exists. See docs/BRANCH_PROTECTION.md.

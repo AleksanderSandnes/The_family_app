@@ -180,3 +180,10 @@ MainTabView is keyed by app-user ID to recreate hoisted feature state/navigation
 when accounts change. Push/preferences sync runs only for a verified signed-in
 profile and is reset for a new sign-in. Native tests and release auth-flow smoke
 are the verification routes; Linux cannot run the Swift build locally.
+
+- GitHub master/test now have live strict quality protection: 12 named Actions
+  checks, required PRs/up-to-date branches, administrator enforcement and blocked
+  force pushes/deletion. Removed workflow path filters so required jobs always
+  report. Added four promotion-policy tests and Python CodeQL scanning. Trusted
+  source checking uses default-branch code and head-commit statuses; activation
+  awaits an approved production bootstrap. No release-bot bypass exists.

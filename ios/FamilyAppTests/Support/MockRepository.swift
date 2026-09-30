@@ -167,21 +167,31 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     /// App lifecycle (RootViewModel)
     func restoreAuthSession() async throws -> String {
-        if let restoreAuthError { throw restoreAuthError }
+        if let restoreAuthError {
+            throw restoreAuthError
+        }
         authUserID = restoredAuthUserID
         return restoredAuthUserID
     }
 
-    func currentAuthUserID() -> String? { authUserID }
+    func currentAuthUserID() -> String? {
+        authUserID
+    }
 
     func resolveAuthenticatedAppUserID() async throws -> String {
         profileCalls += 1
-        if let profileLookup { return try await profileLookup() }
-        if let profileError { throw profileError }
+        if let profileLookup {
+            return try await profileLookup()
+        }
+        if let profileError {
+            throw profileError
+        }
         return profileResult
     }
 
-    func authSessionEvents() -> AsyncStream<AuthSessionEvent> { authEvents }
+    func authSessionEvents() -> AsyncStream<AuthSessionEvent> {
+        authEvents
+    }
 
     func touchLastActive() async {
         touchLastActiveCalled = true

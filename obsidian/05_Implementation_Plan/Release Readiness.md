@@ -130,3 +130,13 @@ store assets, signed builds and approved submissions. No release is claimed read
   resolves a fresh profile and resets push sync. Signed-in SwiftUI screens are
   keyed by app user ID so their drafts/navigation/view models are recreated.
   Added 17 tests; native CI verification is pending. Android required checks pass.
+
+- GitHub master/test now have live strict quality protection: 12 named Actions
+  checks, required PRs/up-to-date branches, administrator enforcement and blocked
+  force pushes/deletion. Removed workflow path filters so required jobs always
+  report. Added four promotion-policy tests and Python CodeQL scanning. Trusted
+  source checking uses default-branch code and head-commit statuses; activation
+  awaits an approved production bootstrap. No release-bot bypass exists.
+
+- iOS auth-gate native run e3798e3 passed all 281 tests with no failures.
+  SwiftLint passed; apply the authoritative SwiftFormat patch and rerun its gate.
