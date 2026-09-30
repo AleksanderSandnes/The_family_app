@@ -39,12 +39,16 @@ class ShoppingViewModelBackendTest {
     private val milk = """{"id":"i1","list_id":"l1","item":"Milk","checked":true}"""
     private val eggs = """{"id":"i2","list_id":"l1","item":"Eggs","checked":false}"""
 
-    @Before
-    fun setUp() {
-        backend.install()
+    private fun resetCompanionCache() {
         val cacheField = ShoppingViewModel::class.java.getDeclaredField("cache")
         cacheField.isAccessible = true
         cacheField.set(null, emptyList<Any?>())
+    }
+
+    @Before
+    fun setUp() {
+        backend.install()
+        resetCompanionCache()
         repo = mockk(relaxed = true)
         userId = MutableStateFlow(null)
         familyChanged = MutableSharedFlow()
@@ -57,7 +61,11 @@ class ShoppingViewModelBackendTest {
     }
 
     @After
-    fun tearDown() = backend.uninstall()
+    fun tearDown() {
+        backend.uninstall()
+        // The companion cache is process-wide; don't leak loaded lists into other test classes.
+        resetCompanionCache()
+    }
 
     private fun settle(condition: () -> Boolean) = dispatcherRule.dispatcher.scheduler.eventually(condition = condition)
 
