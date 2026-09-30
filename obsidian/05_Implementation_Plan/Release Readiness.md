@@ -1,6 +1,6 @@
 # Release readiness — in progress
 
-Paused by user request on 2026-09-30. Resume task/releaseReadiness using
+Resumed by user request on 2026-09-30. Continue task/releaseReadiness using
 docs/HANDOVER.md and docs/RELEASE_READINESS_PLAN.txt. Latest code and notes are
 saved on GitHub; production master remains unchanged.
 
@@ -96,3 +96,10 @@ store assets, signed builds and approved submissions. No release is claimed read
   scans and Android CI passed. [The updated scan](https://github.com/AleksanderSandnes/The_family_app/actions/runs/36718982820)
   passed all four languages, and verified changes advanced to `test`. Its new
   branch run is pending; production `master` remains unchanged.
+
+- Prepared authenticated media reads on Android and iOS. Stable database URLs resolve
+  to fresh five-minute signed links; invalid object/origin/path links and missing
+  sessions fail closed. Protected image requests bypass legacy memory/disk caches
+  and reject account changes during signing/fetching. PDFs, gallery saves and voice
+  notes use the same resolver. All 513 Android tests and required checks pass;
+  13 new iOS tests await native CI. Private bucket/read-policy rollout remains open.

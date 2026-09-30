@@ -8,12 +8,16 @@ enum SupabaseClientProvider {
     static let deepLinkHost = "auth"
     static let authRedirectURL = URL(string: "familyapp://auth")!
 
+    static let projectURL: URL = {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
+              let url = URL(string: value), url.scheme == "https", url.host != nil,
+              !value.contains("your-project")
+        else { fatalError("Supabase URL missing — configure ios/Config/Secrets.xcconfig") }
+        return url
+    }()
+
     static let client: SupabaseClient = {
-        guard let urlString = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
-              let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String,
-              let url = URL(string: urlString),
-              urlString.hasPrefix("https://"),
-              !urlString.contains("your-project"),
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String,
               !key.isEmpty, !key.contains("your-anon-key")
         else {
             fatalError(
@@ -22,7 +26,7 @@ enum SupabaseClientProvider {
             )
         }
         return SupabaseClient(
-            supabaseURL: url,
+            supabaseURL: projectURL,
             supabaseKey: key,
             options: SupabaseClientOptions(
                 auth: SupabaseClientOptions.AuthOptions(

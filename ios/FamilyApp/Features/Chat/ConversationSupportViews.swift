@@ -189,7 +189,7 @@ struct ImageViewer: View {
                 return
             }
             do {
-                let (data, _) = try await URLSession.shared.data(from: imageURL)
+                let (data, _) = try await FamilyMedia.data(from: imageURL)
                 guard let image = UIImage(data: data) else { saveState = .failed
                     return
                 }

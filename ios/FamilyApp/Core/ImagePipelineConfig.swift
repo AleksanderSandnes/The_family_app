@@ -11,6 +11,11 @@ enum ImagePipelineConfig {
             sizeLimit: 256 * 1024 * 1024
         )
         configuration.isProgressiveDecodingEnabled = true
-        ImagePipeline.shared = ImagePipeline(configuration: configuration)
+        // Avoid coalescing a request started by a previous account into a new account's read.
+        configuration.isTaskCoalescingEnabled = false
+        ImagePipeline.shared = ImagePipeline(
+            configuration: configuration,
+            delegate: PrivateMediaPipelineDelegate(resolver: FamilyMedia.resolver)
+        )
     }
 }

@@ -132,3 +132,20 @@ Storage paths (avatars) **must** use the auth UUID — the RLS policy checks
 - [[Backend Options and API Strategy]]
 - [[../05_Implementation_Plan/Implementation Plan]]
 - [[../05_Implementation_Plan/Android Parity Track]]
+
+## Authenticated media reads (release work, 2026-09-30)
+
+Database media URLs remain stable object locators. Android `FamilyMedia`/Coil and
+iOS `FamilyMedia`/Nuke resolve the four project storage buckets to fresh five-minute
+signed URLs at read time. Never persist signed URLs or fall back to the public
+locator on authorization failure. Both resolvers validate the origin, bucket,
+object path, signed route and token, preserving numeric upload cache nonces.
+
+Protected image requests bypass memory and disk caches, including old public-URL
+entries. Identity checks discard signing/download results after account changes;
+iOS protected requests also bypass Nuke task coalescing and URLCache. External
+public assets retain ordinary image caching. Voice notes, wishlist PDFs and gallery
+saves share the resolver. Existing disk entries are bypassed, not erased.
+
+The production buckets remain public. Restrictive SELECT policies, coordinated
+private-bucket rollout and signed release-device validation are still required.

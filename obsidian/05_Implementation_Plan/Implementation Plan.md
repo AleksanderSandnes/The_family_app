@@ -75,7 +75,9 @@ The delivered Android milestones are grouped into linked notes rather than one l
 3. Branch workflow: `task → test → master` (never commit directly to `master` or `test`).
 
 ## Long-term goals
-- Release work paused by user request on 2026-09-30; portable handover and full
+- ⏳ Private media: Android/iOS signed URL reads implemented; Android 513 tests and
+  required checks pass. iOS CI and restrictive read policies/private buckets remain pending.
+- Release work resumed by user request on 2026-09-30; portable handover and full
   updated plan are saved in docs/HANDOVER.md and docs/RELEASE_READINESS_PLAN.txt.
 - Swift CodeQL recovered: [run 36718982820](https://github.com/AleksanderSandnes/The_family_app/actions/runs/36718982820) passed all four languages after switching to the runner's native simulator architecture. Build-log artifacts remain available. Verified changes advanced to `test`; its new run remains pending.
 - Deliver a premium-feeling family app on both Android and iOS.

@@ -74,3 +74,11 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
   app identity previously observed with an authenticated session. Policy and
   ViewModel tests cover these transitions and permission/profile completion.
   Full signed release/login/logout smoke checks remain pending.
+
+- Client private-media prerequisite prepared: per-read short signed URLs, strict
+  project/object validation, no public fallback and protected-image cache bypass.
+  Android real Coil pipeline tests reject cached private pixels after logout/account
+  switch and discard results when identity changes during fetching. All 513 unit
+  tests and required Android checks pass. iOS resolver/URLSession/cache tests await
+  macOS CI. Existing public buckets and permissive read policies still require
+  coordinated backend rollout; this change alone does not make stored media private.

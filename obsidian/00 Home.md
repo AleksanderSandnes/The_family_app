@@ -17,6 +17,7 @@ Welcome to the project knowledge base for The Family App.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
+- **Private media clients prepared (2026-09-30)** — Android checks and 513 tests pass. Android/iOS use fresh signed URLs and bypass protected-image caches; native iOS verification and backend private-read rollout remain open.
 - **Swift security scan recovered (2026-09-30)** — all four CodeQL languages passed in [run 36718982820](https://github.com/AleksanderSandnes/The_family_app/actions/runs/36718982820). The Swift scan builds the runner's native simulator architecture and retains compilation evidence. Verified changes advanced to `test`; the new test-branch run is pending.
 - **Release readiness in progress (2026-09-30)** — 502 Android unit tests, 251 iOS tests and four Keystore emulator checks pass. Backend security fixes are staged; coverage, private media and production rollout remain open. Keep `master` by user decision. See [[05_Implementation_Plan/Release Readiness]].
 - **🎁 Wishlist v2 verified on emulator (2026-07-14)** — wish descriptions (new `description` column), member detail popup (image, description, NOK price, full tappable URL, reserve), Glass House-styled PDF export (ambient canvas, white cards, gradient accent, footer), NOK prices in rows. R8-minified build (23.9→5.8 MB) smoke-tested end-to-end on emulator incl. login, realtime data, images and PDF export; merged to master.
@@ -82,6 +83,6 @@ Grouped into categorized notes under [[05_Implementation_Plan/Implementation Pla
 - Test users: testuser1-4@familyapp.test / TestPass123! — all in "Test Family" (join code: TESTFAM).
 
 ## Working agreement
-- Release work paused at the user's request on 2026-09-30. Resume the existing
+- Release work resumed at the user's request on 2026-09-30. Continue the existing
   task/releaseReadiness branch using docs/HANDOVER.md and docs/RELEASE_READINESS_PLAN.txt.
 - This Obsidian vault is the project source of truth for plans, documentation, and notes.
