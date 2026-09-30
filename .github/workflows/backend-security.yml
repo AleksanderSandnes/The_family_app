@@ -42,6 +42,11 @@ jobs:
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/baseline/20260930_public.sql
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/security/function_access.sql
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/function_access.sql
+      - name: Verify report and block moderation isolation
+        run: |
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/security/moderation.sql
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/moderation.sql
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/function_access.sql
       - name: Verify Vault-backed webhook installation
         run: |
           echo "select vault.create_secret('local-test-server-key', 'family_push_webhook_key');" | \

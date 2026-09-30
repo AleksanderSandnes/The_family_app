@@ -163,3 +163,12 @@ store assets, signed builds and approved submissions. No release is claimed read
   (proprietary), SECURITY.md, CONTRIBUTING.md, docs/RELEASE.md, docs/ENVIRONMENTS.md,
   PR/issue templates and CODEOWNERS. Backend CI fix: the account-deletion fixture
   disables the push webhook trigger while seeding messages.
+- UGC moderation (Play UGC policy / App Store 1.2), 2026-09-30: `supabase/security/moderation.sql`
+  adds `content_reports` (written only via the `report_message` RPC, which checks the
+  reporter is a conversation participant, rejects own messages and snapshots the message
+  server-side) and `user_blocks` (owner-only RLS). `push-on-message` skips recipients who
+  blocked the sender. Android + iOS: long-press another member's message → Report (reason
+  picker) / Block; 1:1 chat menu → Block/Unblock; blocked senders' messages are hidden.
+  Tests: 8 SQL isolation checks in backend-security CI, Android ChatModerationTest +
+  5 ChatViewModel tests, iOS ChatModerationTests (8). Terms/privacy pages describe
+  reporting, blocking and 24 h review. Live SQL not applied yet.

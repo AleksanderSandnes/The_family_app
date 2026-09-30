@@ -317,6 +317,42 @@ final class MockRepository: FamilyRepositoryProtocol {
         deletedMessages.append(messageId)
     }
 
+    var blockedIdsResult: Set<String> = []
+    var moderationError: Error?
+    var blockedUsers: [String] = []
+    var unblockedUsers: [String] = []
+    struct ReportCall {
+        let messageId: String
+        let reason: ReportReason
+        let details: String
+    }
+
+    var reports: [ReportCall] = []
+    func fetchBlockedUserIds() async throws -> Set<String> {
+        blockedIdsResult
+    }
+
+    func blockUser(userId: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        blockedUsers.append(userId)
+    }
+
+    func unblockUser(userId: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        unblockedUsers.append(userId)
+    }
+
+    func reportMessage(messageId: String, reason: ReportReason, details: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        reports.append(ReportCall(messageId: messageId, reason: reason, details: details))
+    }
+
     func addReaction(messageId: String, conversationId _: String, emoji: String) async throws {
         addedReactions.append((messageId, emoji))
     }

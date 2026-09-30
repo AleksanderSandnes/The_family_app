@@ -54,6 +54,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -62,6 +63,7 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -83,6 +85,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarDuration
@@ -118,6 +121,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -418,6 +422,9 @@ fun ConversationScreen(
     LaunchedEffect(Unit) {
         viewModel.errorEvent.collect { msg -> snackbarHostState.showSnackbar(msg) }
     }
+    LaunchedEffect(Unit) {
+        viewModel.noticeEvent.collect { msg -> snackbarHostState.showSnackbar(msg) }
+    }
     val undoMessage by viewModel.undoMessage.collectAsStateWithLifecycle()
     undoMessage?.let { deleted ->
         val message = stringResource(R.string.message_deleted)
@@ -433,7 +440,8 @@ fun ConversationScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
     val conversation by viewModel.conversation.collectAsStateWithLifecycle()
-    val messages by viewModel.messages.collectAsStateWithLifecycle()
+    val messages by viewModel.visibleMessages.collectAsStateWithLifecycle()
+    val blockedUserIds by viewModel.blockedUserIds.collectAsStateWithLifecycle()
     val myId by viewModel.currentUserId.collectAsStateWithLifecycle(null)
     val isAdmin by viewModel.isAdmin.collectAsStateWithLifecycle()
     val otherLastRead by viewModel.otherLastRead.collectAsStateWithLifecycle()
@@ -484,6 +492,8 @@ fun ConversationScreen(
     var showRemoveMember by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showMembers by remember { mutableStateOf(false) }
+    var reportTarget by remember { mutableStateOf<MessageModel?>(null) }
+    var blockTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     // Voice recording state
     var isRecording by remember { mutableStateOf(false) }
@@ -712,6 +722,23 @@ fun ConversationScreen(
                                     onClick = {
                                         showMenu = false
                                         showMembers = true
+                                    },
+                                )
+                            }
+                            val other = currentParticipants.firstOrNull { it.id != myId }
+                            if (!isGroup && other != null) {
+                                val blocked = other.id in blockedUserIds
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            stringResource(if (blocked) R.string.unblock_user_named else R.string.block_user_named, other.name),
+                                            color = if (blocked) Color.Unspecified else MaterialTheme.colorScheme.error,
+                                        )
+                                    },
+                                    leadingIcon = { Icon(Icons.Filled.Block, null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        showMenu = false
+                                        if (blocked) viewModel.unblockUser(other.id, other.name) else blockTarget = other.id to other.name
                                     },
                                 )
                             }
@@ -1095,6 +1122,13 @@ fun ConversationScreen(
                             accessibilityDescription = accessibilityDesc,
                             onEditRequest = if (mine) ({ viewModel.startEditing(msg) }) else null,
                             onDeleteRequest = if (mine) ({ viewModel.deleteMessage(msg) }) else null,
+                            onReportRequest = if (canModerate(msg, myId)) ({ reportTarget = msg }) else null,
+                            onBlockRequest =
+                                if (canModerate(msg, myId)) {
+                                    { blockTarget = msg.userFrom to senderName }
+                                } else {
+                                    null
+                                },
                         )
                     }
                     item {
@@ -1217,6 +1251,79 @@ fun ConversationScreen(
             onDismiss = { showMembers = false },
         )
     }
+
+    reportTarget?.let { target ->
+        ReportMessageDialog(
+            onDismiss = { reportTarget = null },
+            onSubmit = { reason, details ->
+                viewModel.reportMessage(target, reason, details)
+                reportTarget = null
+            },
+        )
+    }
+
+    blockTarget?.let { (userId, name) ->
+        AlertDialog(
+            onDismissRequest = { blockTarget = null },
+            title = { Text(stringResource(R.string.block_user_title, name)) },
+            text = { Text(stringResource(R.string.block_user_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    blockTarget = null
+                    viewModel.blockUser(userId, name)
+                }) {
+                    Text(stringResource(R.string.block), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { blockTarget = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ReportMessageDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (ReportReason, String) -> Unit,
+) {
+    var reason by remember { mutableStateOf<ReportReason?>(null) }
+    var details by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.report_message_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.report_message_body), style = MaterialTheme.typography.bodyMedium)
+                ReportReason.entries.forEach { option ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .selectable(selected = reason == option, role = Role.RadioButton) { reason = option },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = reason == option, onClick = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(option.label))
+                    }
+                }
+                OutlinedTextField(
+                    value = details,
+                    onValueChange = { details = it.take(500) },
+                    label = { Text(stringResource(R.string.report_details_label)) },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = reason != null, onClick = { reason?.let { onSubmit(it, details) } }) {
+                Text(stringResource(R.string.report_send), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 // ─── New conversation member picker ────────────────────────────────────────
@@ -1544,6 +1651,8 @@ private fun MessageRow(
     accessibilityDescription: String = "",
     onEditRequest: (() -> Unit)? = null,
     onDeleteRequest: (() -> Unit)? = null,
+    onReportRequest: (() -> Unit)? = null,
+    onBlockRequest: (() -> Unit)? = null,
 ) {
     if (msg.messageType == "system") {
         MessageContent(msg, mine = false, myId = myId, messages = messages)
@@ -1707,6 +1816,20 @@ private fun MessageRow(
                                             showReactionPicker = false
                                         },
                                         onDismiss = { showReactionPicker = false },
+                                        onReport =
+                                            onReportRequest?.let { report ->
+                                                {
+                                                    showReactionPicker = false
+                                                    report()
+                                                }
+                                            },
+                                        onBlock =
+                                            onBlockRequest?.let { block ->
+                                                {
+                                                    showReactionPicker = false
+                                                    block()
+                                                }
+                                            },
                                     )
                                 }
                             }

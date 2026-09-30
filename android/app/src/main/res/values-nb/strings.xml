@@ -554,4 +554,22 @@
     <string name="delete_account_confirm">Dette sletter profilen, bildene, ønskelistene, hendelsene og meldingene dine permanent. Delte familielister og gruppechatter blir værende hos resten av familien. Dette kan ikke angres.</string>
     <string name="delete_account_permanently">Slett permanent</string>
     <string name="delete_account_failed">Kunne ikke slette kontoen. Sjekk tilkoblingen og prøv igjen.</string>
+    <string name="report">Rapporter</string>
+    <string name="report_message_title">Rapporter melding</string>
+    <string name="report_message_body">Fortell oss hva som er galt. Meldingen og årsaken sendes til gjennomgang; avsenderen får ikke vite hvem som rapporterte.</string>
+    <string name="report_reason_spam">Søppelpost</string>
+    <string name="report_reason_harassment">Trakassering eller mobbing</string>
+    <string name="report_reason_inappropriate">Upassende innhold</string>
+    <string name="report_reason_other">Noe annet</string>
+    <string name="report_details_label">Detaljer (valgfritt)</string>
+    <string name="report_send">Send rapport</string>
+    <string name="report_sent">Rapporten er sendt. Takk.</string>
+    <string name="block_user">Blokker bruker</string>
+    <string name="block_user_named">Blokker %1$s</string>
+    <string name="unblock_user_named">Opphev blokkering av %1$s</string>
+    <string name="block_user_title">Blokkere %1$s?</string>
+    <string name="block_user_body">Du ser ikke lenger meldingene deres og får ikke varsler fra dem. Du kan oppheve blokkeringen fra menyen i denne chatten.</string>
+    <string name="block">Blokker</string>
+    <string name="user_blocked">%1$s er blokkert</string>
+    <string name="user_unblocked">Blokkeringen av %1$s er opphevet</string>
 </resources>

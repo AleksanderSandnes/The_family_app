@@ -62,6 +62,11 @@ protocol FamilyRepositoryProtocol: AnyObject {
     func sendMessage(conversationId: String, text: String) async throws
     func editMessage(messageId: String, newText: String) async throws
     func deleteMessage(messageId: String) async throws
+    // Chat — moderation (supabase/security/moderation.sql)
+    func fetchBlockedUserIds() async throws -> Set<String>
+    func blockUser(userId: String) async throws
+    func unblockUser(userId: String) async throws
+    func reportMessage(messageId: String, reason: ReportReason, details: String) async throws
     func addReaction(messageId: String, conversationId: String, emoji: String) async throws
     func removeReaction(messageId: String) async throws
     // Chat — reads/writes
