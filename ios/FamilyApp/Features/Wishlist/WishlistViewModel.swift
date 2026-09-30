@@ -323,7 +323,10 @@ final class WishlistViewModel {
                 return updated
             }
             await repo.updateWish(
-                id: wishId, text: draft.text, link: link, price: price, imageUrl: imageUrl, description: description
+                id: wishId,
+                update: WishUpdate(
+                    text: draft.text, link: link, price: price, imageUrl: imageUrl, description: description
+                )
             )
             if let wishlistId = existing?.wishlistId { await reloadDetail(wishlistId) }
         }

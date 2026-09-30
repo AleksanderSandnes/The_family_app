@@ -16,6 +16,10 @@ Started 2026-09-29 from the user-supplied release-readiness plan.
 - Added shared commit-message/Gitleaks hooks and reinforced secret-file ignores.
 - Added Android cleartext/backup restrictions and static web security headers.
 - Existing Swift CI has outstanding lint failures; security and CI work remains open.
+- Swift lint repair: extract birthday picker and reaction preference types, separate
+  typing broadcast extension, replace wishlist argument list and reset-test tuple
+  with named records. New macOS build/test workflow uses a placeholder backend and
+  exports XCTest coverage; compilation and required coverage gates remain pending.
 - Existing domain `thefamilyapp.app`, SMTP notes and fictional demo accounts were
   found in the vault. Verify live state before creating replacements.
 

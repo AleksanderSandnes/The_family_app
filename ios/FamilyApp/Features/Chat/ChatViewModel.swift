@@ -453,7 +453,9 @@ final class ChatViewModel {
             typingUsers.remove(userId)
         }
     }
+}
 
+extension ChatViewModel {
     /// Broadcasts the current user's typing state (throttled to once every 2 s).
     func setTyping(_ typing: Bool) {
         guard let channel = typingChannel, let myId = repo.session.currentUserId else { return }

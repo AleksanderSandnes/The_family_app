@@ -57,7 +57,13 @@ final class MockRepository: FamilyRepositoryProtocol {
     private(set) var loginCalls: [LoginRecord] = []
     private(set) var registerCalls: [RegisterRecord] = []
     private(set) var resetEmailCalls: [String] = []
-    private(set) var confirmResetCalls: [(email: String, code: String, newPassword: String)] = []
+    struct PasswordResetRecord {
+        let email: String
+        let code: String
+        let newPassword: String
+    }
+
+    private(set) var confirmResetCalls: [PasswordResetRecord] = []
     var sendResetError: Error?
     var confirmResetError: Error?
     var hasSession = false
@@ -210,7 +216,7 @@ final class MockRepository: FamilyRepositoryProtocol {
     }
 
     func confirmPasswordReset(email: String, code: String, newPassword: String) async throws -> String {
-        confirmResetCalls.append((email: email, code: code, newPassword: newPassword))
+        confirmResetCalls.append(PasswordResetRecord(email: email, code: code, newPassword: newPassword))
         if let confirmResetError { throw confirmResetError }
         return confirmResult
     }
@@ -738,9 +744,12 @@ final class MockRepository: FamilyRepositoryProtocol {
     }
 
     private(set) var updatedWishes: [WishUpdateRecord] = []
-    func updateWish(id: String, text: String, link: String?, price: String?, imageUrl: String?, description: String?) async {
+    func updateWish(id: String, update: WishUpdate) async {
         updatedWishes.append(
-            WishUpdateRecord(id: id, text: text, link: link, price: price, imageUrl: imageUrl, description: description)
+            WishUpdateRecord(
+                id: id, text: update.text, link: update.link, price: update.price,
+                imageUrl: update.imageUrl, description: update.description
+            )
         )
     }
 
