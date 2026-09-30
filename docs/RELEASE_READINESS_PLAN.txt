@@ -13,6 +13,15 @@ MCP at https://mcp.supabase.com/mcp is configured and OAuth-authenticated
 (codex mcp list confirms o_auth). The older app connector denied project access;
 CLI works and has performed verified live queries/deployments.
 
+Verified Family continuation:
+- Live Auth Site URL=https://thefamilyapp.app, minimum password=8, OTP expiry=600,
+  confirmation enabled; narrow API patch/read-back and saved config aligned.
+- Explicit empty-database recovery now includes private signup trigger, 14
+  Realtime tables and four newly private buckets. Local SQL and nine real
+  Auth/profile/private-bucket HTTP checks pass; existing-schema replay rejected.
+  CI recovery job added. Historical ordered migrations and Vault/cron delivery
+  provisioning remain open; production migration history is unchanged.
+
 HMI:
 - Verified registration task commit b1f6651. Task CI 36767240387 and PR CI 36767246382, Security, CodeQL,
   Promotion Source all passed. PR #46 targets test:

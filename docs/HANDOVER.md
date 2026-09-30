@@ -1,5 +1,21 @@
 # Release readiness handover — 30 September 2026
 
+## Auth configuration and empty-database recovery — 30 September 2026
+
+Family's live Auth Site URL is now `https://thefamilyapp.app`; read-back confirms
+password minimum eight, OTP lifetime 600 seconds, and signup confirmation enabled.
+`supabase/config.toml` mirrors these values. Applied only a narrow Site URL patch,
+without pushing unrelated Auth defaults or SMTP credentials.
+
+`supabase/baseline/restore.sql` now restores an empty isolated application database
+with the staged security patches, private signup trigger, 14 Realtime tables and
+four initially private media buckets. Local SQL checks and nine real Auth/profile/
+private-bucket HTTP checks pass; replay against an existing schema is rejected.
+CI verifies the same recovery path and platform reapplication. This is an explicit
+recovery entry point, not a rewrite of the historical migration journal. Push
+Vault/cron setup and ordered migration reconciliation remain open.
+
+
 ## Coverage reporting — 30 September 2026
 
 Kover 0.9.11 runs with AGP 9.2.1 and all 527 Android unit tests. Full production
