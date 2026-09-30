@@ -37,7 +37,9 @@ struct MealScreen: View {
                                 .swipeActions(edge: .trailing) {
                                     // Creator or admin only; legacy nil-creator plans are
                                     // admin-only (mirrors meal_plans_delete RLS).
-                                    if (plan.createdBy != nil && plan.createdBy == viewModel.currentUserId) || viewModel.isAdmin {
+                                    if (plan.createdBy != nil && plan.createdBy == viewModel.currentUserId)
+                                        || viewModel.isAdmin
+                                    {
                                         Button(role: .destructive) {
                                             viewModel.deletePlan(plan)
                                         } label: {

@@ -34,7 +34,9 @@ enum WishlistPDF {
     // Fixed Glass House light-mode inks — never dynamic colors like .label/.secondaryLabel:
     // in the app's dark mode those resolve near-white and vanish on the light page.
     private static let canvasColor = UIColor(red: 0xEF / 255.0, green: 0xF1 / 255.0, blue: 0xF8 / 255.0, alpha: 1)
-    private static let cardBorderColor = UIColor(red: 0x16 / 255.0, green: 0x19 / 255.0, blue: 0x2A / 255.0, alpha: 0.10)
+    private static let cardBorderColor = UIColor(
+        red: 0x16 / 255.0, green: 0x19 / 255.0, blue: 0x2A / 255.0, alpha: 0.10
+    )
     private static let inkColor = UIColor(red: 0x16 / 255.0, green: 0x19 / 255.0, blue: 0x2A / 255.0, alpha: 1)
     private static let secondaryColor = UIColor(red: 0x5F / 255.0, green: 0x67 / 255.0, blue: 0x80 / 255.0, alpha: 1)
     private static let accentInk = UIColor(red: 0x4F / 255.0, green: 0x55 / 255.0, blue: 0xE6 / 255.0, alpha: 1)
@@ -166,17 +168,23 @@ enum WishlistPDF {
     private static let bodyFont = UIFont.systemFont(ofSize: 12, weight: .regular)
     private static let priceFont = UIFont.systemFont(ofSize: 12, weight: .bold)
 
-    /// The wish's text lines: (string, font, color), in draw order.
-    private static func cardLines(for wish: WishModel) -> [(String, UIFont, UIColor)] {
-        var lines: [(String, UIFont, UIColor)] = [(wish.text, nameFont, inkColor)]
+    private struct CardLine {
+        let text: String
+        let font: UIFont
+        let color: UIColor
+    }
+
+    /// The wish's text lines, in draw order.
+    private static func cardLines(for wish: WishModel) -> [CardLine] {
+        var lines = [CardLine(text: wish.text, font: nameFont, color: inkColor)]
         if let description = wish.description?.trimmingCharacters(in: .whitespaces), !description.isEmpty {
-            lines.append((description, bodyFont, secondaryColor))
+            lines.append(CardLine(text: description, font: bodyFont, color: secondaryColor))
         }
         if let price = wish.price?.trimmingCharacters(in: .whitespaces), !price.isEmpty {
-            lines.append((formatWishPrice(price), priceFont, accentInk))
+            lines.append(CardLine(text: formatWishPrice(price), font: priceFont, color: accentInk))
         }
         if let link = wish.link?.trimmingCharacters(in: .whitespaces), !link.isEmpty {
-            lines.append((shortenedLink(link), bodyFont, accentInk))
+            lines.append(CardLine(text: shortenedLink(link), font: bodyFont, color: accentInk))
         }
         return lines
     }
@@ -187,7 +195,7 @@ enum WishlistPDF {
         var textHeight: CGFloat = 0
         for (index, line) in cardLines(for: wish).enumerated() {
             if index > 0 { textHeight += 4 }
-            textHeight += measure(line.0, width: textWidth, font: line.1)
+            textHeight += measure(line.text, width: textWidth, font: line.font)
         }
         let inner = max(textHeight, image != nil ? imageSize : 0)
         return inner + cardPadding * 2
@@ -216,7 +224,13 @@ enum WishlistPDF {
         var cursorY = innerTop
         for (index, line) in cardLines(for: wish).enumerated() {
             if index > 0 { cursorY += 4 }
-            cursorY += draw(line.0, at: CGPoint(x: textX, y: cursorY), width: textWidth, font: line.1, color: line.2)
+            cursorY += draw(
+                line.text,
+                at: CGPoint(x: textX, y: cursorY),
+                width: textWidth,
+                font: line.font,
+                color: line.color
+            )
         }
     }
 

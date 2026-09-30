@@ -48,5 +48,18 @@ jobs:
         run: swiftlint lint --strict --reporter github-actions-logging
 
       # SwiftFormat — HARD gate. --lint never writes; a non-empty diff fails the job.
-      - name: SwiftFormat (check only — never writes)
-        run: swiftformat --lint ios/FamilyApp ios/FamilyAppTests --config .swiftformat
+      - name: SwiftFormat (strict check and repair artifact)
+        if: always()
+        run: |
+          swiftformat --lint ios/FamilyApp ios/FamilyAppTests --config .swiftformat || {
+            swiftformat ios/FamilyApp ios/FamilyAppTests --config .swiftformat
+            git diff --binary -- ios > "$RUNNER_TEMP/swiftformat.patch"
+            exit 1
+          }
+      - name: Upload formatting repair patch
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftformat-repair
+          path: ${{ runner.temp }}/swiftformat.patch
+          retention-days: 7

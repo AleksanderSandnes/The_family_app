@@ -201,6 +201,8 @@ final class ShoppingViewModel {
         }
     }
 
+    var currentUserId: String? { repo.session.currentUserId }
+
     // MARK: - Item mutations
 
     func addItem(listId: String, item: String) {

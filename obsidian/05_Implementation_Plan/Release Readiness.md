@@ -26,3 +26,10 @@ Started 2026-09-29 from the user-supplied release-readiness plan.
 Remaining: live security audit, branch protection, dependency remediation,
 coverage and release workflows, legal/account-deletion pages and app flows,
 store assets, signed builds and approved submissions. No release is claimed ready.
+
+- 2026-09-30: Supabase CLI authentication succeeded; both projects are healthy.
+  Live Family advisors report three mutable function search paths, privileged
+  function exposure and disabled leaked-password protection; definition audit pending.
+- Native iOS build exposed a font-helper name collision and missing shopping user-ID
+  property. Fixed both, remaining Swift lint findings, and export formatter repairs
+  from CI for review. Native build/test verification remains pending.
