@@ -43,3 +43,11 @@ store assets, signed builds and approved submissions. No release is claimed read
 - Native iOS application now compiles on CI; XCTest compilation exposed four
   async calls inside XCTUnwrap autoclosures. Await results before unwrapping.
   Full simulator execution and coverage still pending.
+
+- Native simulator ran 251 tests: one failure exposed a real resend cooldown race.
+  Set reset/verification cooldown state synchronously before launching the timer,
+  preventing an immediate resend from slipping through before the timer task starts.
+- Captured a redacted live public schema and recovered 34 remote migration files.
+  These are evidence, not yet a verified fresh-install sequence; bootstrap gaps remain.
+  Live schema contains a service-role webhook credential, removed from repo snapshot.
+  Prepare Vault-backed webhook wiring before requesting production key rotation.

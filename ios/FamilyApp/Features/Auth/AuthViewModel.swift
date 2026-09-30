@@ -208,8 +208,8 @@ final class AuthViewModel {
 
     private func startResendCooldown() {
         cooldownTask?.cancel()
+        resetCooldown = resendCooldownSeconds
         cooldownTask = Task {
-            resetCooldown = resendCooldownSeconds
             while resetCooldown > 0 {
                 try? await Task.sleep(for: .seconds(1))
                 if Task.isCancelled {
@@ -288,8 +288,8 @@ final class AuthViewModel {
 
     private func startVerifyCooldown() {
         verifyCooldownTask?.cancel()
+        verifyCooldown = resendCooldownSeconds
         verifyCooldownTask = Task {
-            verifyCooldown = resendCooldownSeconds
             while verifyCooldown > 0 {
                 try? await Task.sleep(for: .seconds(1))
                 if Task.isCancelled {
