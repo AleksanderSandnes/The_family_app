@@ -67,3 +67,7 @@ store assets, signed builds and approved submissions. No release is claimed read
   permissive policies. Protect owner wish/avatar paths, conversation membership and
   family photos, including UPDATE's destination path. Buckets are still public;
   client authenticated media resolution and coordinated private-read rollout remain open.
+- Added CodeQL scans for Android, Swift, notification TypeScript and workflows,
+  plus Gradle/GitHub Actions Dependabot entries. First scan verification pending.
+  Swift dependency updates need a supported tracked manifest; current dependency
+  declarations live in XcodeGen project.yml and are not monitored by Dependabot.

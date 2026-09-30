@@ -53,3 +53,5 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
   uploads require membership and the caller's auth-ID folder. Tests exercise valid
   uploads, cross-user/family insert/update/delete and attempts to move an object
   into another user's path. Private reads/client URL resolution and rollout remain open.
+- Added CodeQL for Android/Swift/TypeScript/workflows and Dependabot for Gradle
+  and GitHub Actions; first results pending. Swift dependency manifest support remains open.

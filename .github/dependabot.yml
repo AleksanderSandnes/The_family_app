@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /android
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: build
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+# Swift dependencies are currently declared in XcodeGen project.yml rather than
+# a tracked Package.swift/Package.resolved. Add Swift updates after adopting a
+# supported source-of-truth manifest; an empty Swift entry would not monitor them.
