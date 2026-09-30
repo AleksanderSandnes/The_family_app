@@ -1,5 +1,9 @@
 # Release readiness — in progress
 
+Paused by user request on 2026-09-30. Resume task/releaseReadiness using
+docs/HANDOVER.md and docs/RELEASE_READINESS_PLAN.txt. Latest code and notes are
+saved on GitHub; production master remains unchanged.
+
 Started 2026-09-29 from the user-supplied release-readiness plan.
 
 - Keep `master` as production branch (explicit user decision); work through

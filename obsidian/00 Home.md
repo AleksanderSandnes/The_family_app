@@ -82,4 +82,6 @@ Grouped into categorized notes under [[05_Implementation_Plan/Implementation Pla
 - Test users: testuser1-4@familyapp.test / TestPass123! — all in "Test Family" (join code: TESTFAM).
 
 ## Working agreement
+- Release work paused at the user's request on 2026-09-30. Resume the existing
+  task/releaseReadiness branch using docs/HANDOVER.md and docs/RELEASE_READINESS_PLAN.txt.
 - This Obsidian vault is the project source of truth for plans, documentation, and notes.
