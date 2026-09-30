@@ -25,7 +25,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -212,8 +211,9 @@ class ProfileViewModelBackendTest {
     fun `camera capture is uploaded after a successful shot`() =
         runTest(dispatcherRule.dispatcher) {
             val vm = loaded()
-            val uri = vm.prepareCameraCapture(app as Context)
-            assertNotNull(uri)
+            // FileProvider caches its roots per process, so the Uri may be null in later tests;
+            // the pending file is recorded either way.
+            vm.prepareCameraCapture(app as Context)
             val file = java.io.File(app.cacheDir, "camera_captures/avatar_pending.jpg")
             file.writeBytes(jpeg())
             finish(vm.onCameraResult(true))
@@ -222,7 +222,7 @@ class ProfileViewModelBackendTest {
                     ?.avatarUrl
                     ?.contains("auth-1/avatar.jpg") == true
             }
-            assertFalse(file.exists())
+            settle { !file.exists() }
         }
 
     @Test

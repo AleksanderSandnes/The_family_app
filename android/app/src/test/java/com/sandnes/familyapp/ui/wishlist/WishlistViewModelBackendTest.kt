@@ -15,9 +15,11 @@ import io.ktor.http.HttpStatusCode
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -79,6 +81,9 @@ class WishlistViewModelBackendTest {
     private fun settle(condition: () -> Boolean) = dispatcherRule.dispatcher.scheduler.eventually(condition = condition)
 
     private fun finish(job: Job) = settle { job.isCompleted }
+
+    /** Runs a suspend network call on a real dispatcher so virtual time cannot trip Ktor's timeout. */
+    private suspend fun <T> onRealClock(block: suspend () -> T): T = withContext(Dispatchers.Default) { block() }
 
     private fun loaded(): WishlistViewModel {
         val vm = WishlistViewModel(repo)
@@ -183,9 +188,9 @@ class WishlistViewModelBackendTest {
         runTest(dispatcherRule.dispatcher) {
             val vm = loaded()
             backend.onJson(HttpMethod.Post, "/rest/v1/rpc/ensure_wishlist_share_token", "\"tok123\"")
-            assertEquals("familyapp://wishlist?token=tok123", vm.shareLink("w1"))
+            assertEquals("familyapp://wishlist?token=tok123", onRealClock { vm.shareLink("w1") })
             backend.onJson(HttpMethod.Post, "/rest/v1/rpc/ensure_wishlist_share_token", "{}", HttpStatusCode.Forbidden)
-            assertNull(vm.shareLink("w1"))
+            assertNull(onRealClock { vm.shareLink("w1") })
         }
 
     @Test

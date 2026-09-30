@@ -4,11 +4,13 @@ import com.sandnes.familyapp.data.remote.SupabaseManager
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.MemoryCodeVerifierCache
+import io.github.jan.supabase.auth.MemorySessionManager
 import io.github.jan.supabase.auth.SessionManager
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.resumable.MemoryResumableCache
@@ -67,7 +69,9 @@ data class FakeResponse(
  *
  * Register answers with [on]; the most recently registered matching rule wins and unmatched requests answer `[]`.
  */
-class FakeSupabase {
+class FakeSupabase(
+    private var withAuth: Boolean = false,
+) {
     private data class Rule(
         val method: HttpMethod?,
         val pathContains: String,
@@ -138,15 +142,18 @@ class FakeSupabase {
                     )
                 }
             install(Postgrest)
+            install(Functions)
             install(Storage) {
                 // The default resumable-upload cache needs an Android Settings backend.
                 resumable { cache = MemoryResumableCache() }
             }
-            // Auth is only present when a session was seeded before first use: without a stored
-            // session its start-up never completes, which would stall every Postgrest request.
-            if (sessionManager.session != null) {
+            // The Auth plugin touches Android's main Looper, so it is opt-in and needs Robolectric.
+            if (withAuth) {
                 install(Auth) {
-                    sessionManager = this@FakeSupabase.sessionManager
+                    // Without a seeded session use the library's own in-memory manager, which the
+                    // plugin knows how to start up with; ours throws when empty and would stall it.
+                    sessionManager =
+                        if (this@FakeSupabase.sessionManager.session != null) this@FakeSupabase.sessionManager else MemorySessionManager()
                     codeVerifierCache = MemoryCodeVerifierCache()
                     alwaysAutoRefresh = false
                 }
@@ -177,6 +184,7 @@ class FakeSupabase {
                         appMetadata = JsonObject(mapOf("provider" to JsonPrimitive(provider))),
                     ),
             )
+        withAuth = true
         sessionManager.session = session
         if (built) runBlocking { client.auth.importSession(session, autoRefresh = false) }
         return this
