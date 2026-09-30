@@ -51,3 +51,10 @@ store assets, signed builds and approved submissions. No release is claimed read
   These are evidence, not yet a verified fresh-install sequence; bootstrap gaps remain.
   Live schema contains a service-role webhook credential, removed from repo snapshot.
   Prepare Vault-backed webhook wiring before requesting production key rotation.
+
+- iOS build/test CI is green: 251 tests. Verified work advanced to test, not master.
+- Docker Desktop updated to 4.93.0 and WSL to 3.0.1; engine and hello-world pass.
+- Prepared private-schema function wrappers and Vault-backed push webhook; local
+  schema restore, family-isolation/permission tests and Edge authorization tests pass.
+  Production policies/media fixes, webhook rollout and key rotation remain pending.
+- Added backend-security CI for isolated SQL restoration and notification auth tests.

@@ -5,8 +5,11 @@
 // See supabase/functions/README.md for the webhook wiring.
 import { serviceClient } from "../_shared/client.ts";
 import { sendPushToTokens } from "../_shared/fcm.ts";
+import { authorizeJob } from "../_shared/authorize.ts";
 
 Deno.serve(async (req) => {
+  const denied = authorizeJob(req);
+  if (denied) return denied;
   try {
     const body = await req.json();
     // Supabase DB webhook payload: { type, table, schema, record, old_record }.
@@ -88,8 +91,8 @@ Deno.serve(async (req) => {
     });
 
     return new Response("ok", { status: 200 });
-  } catch (e) {
-    console.error("push-on-message error", e);
+  } catch {
+    console.error("push-on-message failed");
     return new Response("error", { status: 500 });
   }
 });

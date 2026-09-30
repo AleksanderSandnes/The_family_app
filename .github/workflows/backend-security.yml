@@ -1,0 +1,52 @@
+name: Backend Security Tests
+on:
+  push:
+    branches: [master, test, "task/**"]
+    paths: ["supabase/**", ".github/workflows/backend-security.yml"]
+  pull_request:
+    branches: [master, test]
+    paths: ["supabase/**", ".github/workflows/backend-security.yml"]
+permissions:
+  contents: read
+concurrency:
+  group: backend-security-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  edge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check supabase/functions/push-on-message/index.ts supabase/functions/daily-reminders/index.ts
+      - run: deno test --allow-env supabase/functions/_shared/authorize_test.ts
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - name: Start isolated validation database
+        run: |
+          mkdir -p "$RUNNER_TEMP/family-db-validation"
+          supabase init --workdir "$RUNNER_TEMP/family-db-validation"
+          supabase start --workdir "$RUNNER_TEMP/family-db-validation" \
+            --exclude gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Restore captured schema and verify function restrictions
+        run: |
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/baseline/20260930_public.sql
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/security/function_access.sql
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/function_access.sql
+      - name: Verify Vault-backed webhook installation
+        run: |
+          echo "select vault.create_secret('local-test-server-key', 'family_push_webhook_key');" | \
+            docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/post_deploy/push_webhook.sql
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/function_access.sql
+      - name: Stop isolated database
+        if: always()
+        run: supabase stop --workdir "$RUNNER_TEMP/family-db-validation"

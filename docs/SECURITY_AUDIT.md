@@ -1,7 +1,7 @@
 # Security audit — in progress
 
 Date: 2026-09-29. Scope: tracked source, all local Git refs and local Android checks.
-Live Supabase, store signing and production hosting remain unverified.
+Live Supabase metadata inspected on 2026-09-30. Store signing and production hosting remain unverified.
 
 | Finding | Remediation / evidence | Status |
 | --- | --- | --- |
@@ -16,8 +16,31 @@ Live Supabase, store signing and production hosting remain unverified.
 
 The vault records an existing domain, Resend SMTP setup and fictional review family.
 Verify the live projects before replacing these. Current Vercel login `apsandnes`
-has no projects in its available team. Supabase CLI login remains incomplete.
+has no projects in its available team. Supabase CLI authentication and project linking are complete.
 
 Remaining audit: live RLS/storage/auth/functions, reproducible database baseline,
 encrypted token storage, deep-link validation, account deletion and moderation,
 permissions/privacy manifests, signing and dependency vulnerability checks.
+
+## Live findings and locally verified remediation (2026-09-30)
+
+- All 19 public tables have RLS enabled; no public-schema views found.
+- All four media buckets are public. Group/wish image policies permit any signed-in
+  user to overwrite/delete other users' files. Private media and path rules are open.
+- Three functions had mutable search paths. Ten privileged functions were reachable
+  anonymously. Prepared private-schema implementations and public invoker wrappers;
+  tests verify family isolation, blocked anonymous RPCs and valid authenticated joins.
+- Database webhook trigger embeds a service-role JWT. Removed the credential from
+  the captured schema. Prepared Vault-backed wiring and server-only notification
+  authorization. Local installation, Deno type checks and authorization tests pass.
+  Live deployment and any production credential rotation require reviewed rollout.
+- Email confirmation enabled, anonymous sign-ins disabled. Site URL is localhost;
+  redirect allow-list contains familyapp://auth only. Domain returns HTTPS 404.
+- Leaked-password protection is off and requires the paid Pro plan. Password
+  requirements/OTP/rate-limit review and billing decision remain open.
+- Recovered 34 migration-journal files, captured a redacted public baseline and
+  restored it locally. Original history lacks initial table creation. Reconciliation
+  and full storage/auth/Realtime/cron bootstrap are pending; no remote history edits.
+- Native iOS CI now passes all 251 tests plus strict SwiftLint/SwiftFormat.
+  Coverage targets remain unmet/unverified. Android checks remain green.
+- Added isolated database and Edge Function security tests to CI; result pending.
