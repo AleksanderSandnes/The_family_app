@@ -18,6 +18,18 @@ immutable version tag and a **draft** GitHub Release. Repeated runs reuse the
 same release and reject a tag that points to another commit. Publish the draft
 only after the owner reviews the release. This workflow does not upload to stores.
 
+`android-release.yml` is a manual (`workflow_dispatch`) signed-bundle workflow. It is
+inactive until `RELEASE_ANDROID_ENABLED=true` and only runs on `master`. The `verify` job
+requires the production tip to pass every workflow in `pipeline.json` and the version,
+build and changelog checks. The `bundle` job runs in the `production` environment
+(owner approval), validates the public Supabase configuration
+(`scripts/release/client-config.mjs` accepts publishable or legacy anon keys and rejects
+secret/service-role keys, placeholders and other-project URLs), builds a signed
+`bundleRelease`, verifies the signature and version, uploads the AAB with a SHA-256 file
+and deletes signing material. The optional `play-internal` job needs the `submit_to_play`
+input, `RELEASE_PLAY_ENABLED=true` and its own `play-internal` environment approval; it
+uploads a **draft** to the internal track only. It has not been run: no secrets exist yet.
+
 Both activation variables are currently unset. Production branches, environment
 protections, credentials and activation must be reviewed before enabling them.
 Coverage targets, signed native build/store jobs and the first approved production

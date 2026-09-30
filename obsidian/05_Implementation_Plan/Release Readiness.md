@@ -329,3 +329,10 @@ uploads, screenshots, coverage gates and complete bootstrap still require work.
   characters, with English/Norwegian messages. Existing six/seven-character login
   credentials remain accepted. Added registration rejection and legacy-login
   regressions; Android required checks and native macOS CI must verify the change.
+
+- Signed Android workflow (`android-release.yml`) added, manual and inactive until
+  `RELEASE_ANDROID_ENABLED=true`: verifies the production tip, validates the public
+  Supabase client config (`scripts/release/client-config.mjs`, publishable or anon
+  keys only), builds and verifies a signed AAB in the `production` environment, and
+  optionally uploads a Play internal **draft** behind a separate approval. Not yet run:
+  CI secrets and Play account steps are owner actions. Names are in `docs/ENVIRONMENTS.md`.
