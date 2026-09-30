@@ -80,16 +80,7 @@ struct ConversationScreen: View {
         .featureTopBar(title)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                VStack(spacing: 0) {
-                    Text(title)
-                        .font(.titleMedium)
-                        .foregroundStyle(Color.appOnSurface)
-                    if let presence {
-                        Text(presence)
-                            .font(.labelMedium)
-                            .foregroundStyle(Color.appOnSurfaceVariant)
-                    }
-                }
+                ConversationTitle(title: title, presence: presence)
             }
             ToolbarItem(placement: .topBarTrailing) { optionsMenu }
         }

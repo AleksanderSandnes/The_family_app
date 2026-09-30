@@ -36,3 +36,6 @@ store assets, signed builds and approved submissions. No release is claimed read
 
 - Applied the authoritative SwiftFormat repair artifact from macOS CI (40 files).
   SwiftLint passed before formatting; rerun both gates and native tests after this change.
+
+- Extracted the chat title view to keep ConversationScreen within the existing
+  strict file-size gate after applying SwiftFormat. No lint thresholds changed.
