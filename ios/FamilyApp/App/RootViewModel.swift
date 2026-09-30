@@ -23,9 +23,15 @@ final class RootViewModel {
     }
 
     var gate: AuthGate {
-        if !bootstrapped { return .loading }
-        if store.currentUserId == nil { return .signedOut }
-        if !store.permissionsRequested { return .needsPermissions }
+        if !bootstrapped {
+            return .loading
+        }
+        if store.currentUserId == nil {
+            return .signedOut
+        }
+        if !store.permissionsRequested {
+            return .needsPermissions
+        }
         return .signedIn
     }
 

@@ -45,7 +45,9 @@ final class BirthdayViewModel {
             birthdays = []
             return
         }
-        if birthdays.isEmpty { isLoading = true }
+        if birthdays.isEmpty {
+            isLoading = true
+        }
         defer { isLoading = false }
         guard let user = await repo.getUser(userId) else { return }
 

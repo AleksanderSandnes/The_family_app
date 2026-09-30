@@ -69,7 +69,9 @@ final class VoiceRecorder {
         recorder?.stop()
         recorder = nil
         defer {
-            if let fileURL { try? FileManager.default.removeItem(at: fileURL) }
+            if let fileURL {
+                try? FileManager.default.removeItem(at: fileURL)
+            }
             fileURL = nil
         }
         guard send, let fileURL, let data = try? Data(contentsOf: fileURL) else { return nil }

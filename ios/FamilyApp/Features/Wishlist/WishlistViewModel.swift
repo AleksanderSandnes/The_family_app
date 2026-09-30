@@ -94,7 +94,9 @@ final class WishlistViewModel {
             wishlists = []
             return
         }
-        if wishlists.isEmpty { isLoading = true }
+        if wishlists.isEmpty {
+            isLoading = true
+        }
         defer { isLoading = false }
         let user = await repo.getUser(userId)
         let familyId = user?.familyId
@@ -132,7 +134,9 @@ final class WishlistViewModel {
     private func reloadDetail(_ wishlistId: String) async {
         async let listFetch = (try? repo.fetchWishlist(id: wishlistId)) ?? []
         async let wishesFetch = (try? repo.fetchWishes(wishlistId: wishlistId)) ?? []
-        if let list = await listFetch.first { selectedWishlist = list }
+        if let list = await listFetch.first {
+            selectedWishlist = list
+        }
         // Enrich owner name (for the "reservations hidden from …" member-view subtitle).
         if let ownerId = selectedWishlist?.ownerUserId {
             if ownerNameCache[ownerId] == nil {
@@ -215,7 +219,9 @@ final class WishlistViewModel {
         Task {
             wishlists = wishlists.map { list in
                 var list = list
-                if list.id == wishlistId { list.color = color }
+                if list.id == wishlistId {
+                    list.color = color
+                }
                 return list
             }
             selectedWishlist?.color = color
@@ -236,7 +242,9 @@ final class WishlistViewModel {
         Task {
             wishlists = wishlists.map { list in
                 var list = list
-                if list.id == wishlistId { list.name = newName }
+                if list.id == wishlistId {
+                    list.name = newName
+                }
                 return list
             }
             selectedWishlist?.name = newName
@@ -249,7 +257,9 @@ final class WishlistViewModel {
         Task {
             wishlists = wishlists.map { list in
                 var list = list
-                if list.id == wishlistId { list.icon = newIcon }
+                if list.id == wishlistId {
+                    list.icon = newIcon
+                }
                 return list
             }
             selectedWishlist?.icon = newIcon
@@ -328,7 +338,9 @@ final class WishlistViewModel {
                     text: draft.text, link: link, price: price, imageUrl: imageUrl, description: description
                 )
             )
-            if let wishlistId = existing?.wishlistId { await reloadDetail(wishlistId) }
+            if let wishlistId = existing?.wishlistId {
+                await reloadDetail(wishlistId)
+            }
         }
     }
 
@@ -336,7 +348,9 @@ final class WishlistViewModel {
         Task {
             wishes = wishes.map { existing in
                 var existing = existing
-                if existing.id == wish.id { existing.checked = !wish.checked }
+                if existing.id == wish.id {
+                    existing.checked = !wish.checked
+                }
                 return existing
             }
             await repo.setWishChecked(id: wish.id, checked: !wish.checked)

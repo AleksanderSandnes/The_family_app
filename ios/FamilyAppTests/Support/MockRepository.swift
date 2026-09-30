@@ -176,21 +176,29 @@ final class MockRepository: FamilyRepositoryProtocol {
     /// Auth
     func login(email: String, password: String) async throws -> String {
         loginCalls.append(LoginRecord(email: email, password: password))
-        if let loginError { throw loginError }
+        if let loginError {
+            throw loginError
+        }
         return loginResult
     }
 
-    func hasAuthSession() -> Bool { hasSession }
+    func hasAuthSession() -> Bool {
+        hasSession
+    }
 
     func confirmSignupEmail(email: String, code: String) async throws -> String {
         confirmSignupCalls.append((email: email, code: code))
-        if let confirmSignupError { throw confirmSignupError }
+        if let confirmSignupError {
+            throw confirmSignupError
+        }
         return confirmResult
     }
 
     func resendSignupCode(email: String) async throws {
         resendSignupCalls.append(email)
-        if let resendSignupError { throw resendSignupError }
+        if let resendSignupError {
+            throw resendSignupError
+        }
     }
 
     func register(
@@ -212,12 +220,16 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func sendPasswordResetEmail(email: String) async throws {
         resetEmailCalls.append(email)
-        if let sendResetError { throw sendResetError }
+        if let sendResetError {
+            throw sendResetError
+        }
     }
 
     func confirmPasswordReset(email: String, code: String, newPassword: String) async throws -> String {
         confirmResetCalls.append(PasswordResetRecord(email: email, code: code, newPassword: newPassword))
-        if let confirmResetError { throw confirmResetError }
+        if let confirmResetError {
+            throw confirmResetError
+        }
         return confirmResult
     }
 

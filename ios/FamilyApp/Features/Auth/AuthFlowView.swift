@@ -117,7 +117,10 @@ struct ResetPasswordScreen: View {
             title: L("Reset password"),
             subtitle: viewModel.resetStep == 1
                 ? L("We'll email you a 6-digit code to reset your password.")
-                : L("If an account exists for \(viewModel.resetEmail), we've emailed a 6-digit code. Enter it below with your new password."),
+                :
+                L(
+                    "If an account exists for \(viewModel.resetEmail), we've emailed a 6-digit code. Enter it below with your new password."
+                ),
             showIcon: false
         ) {
             StepIndicator(currentStep: viewModel.resetStep, totalSteps: 2)
@@ -196,7 +199,9 @@ struct VerifyEmailScreen: View {
     var body: some View {
         AuthScaffold(
             title: L("Verify your email"),
-            subtitle: L("Enter the 6-digit code we emailed to \(viewModel.needsVerificationEmail ?? viewModel.verifyEmail)."),
+            subtitle: L(
+                "Enter the 6-digit code we emailed to \(viewModel.needsVerificationEmail ?? viewModel.verifyEmail)."
+            ),
             showIcon: false
         ) {
             ErrorBanner(message: viewModel.error)

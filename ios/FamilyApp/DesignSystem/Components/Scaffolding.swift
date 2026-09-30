@@ -24,7 +24,9 @@ private struct ResumeEffectModifier: ViewModifier {
         content
             .onAppear(perform: action)
             .onChange(of: scenePhase) { _, newPhase in
-                if newPhase == .active { action() }
+                if newPhase == .active {
+                    action()
+                }
             }
     }
 }

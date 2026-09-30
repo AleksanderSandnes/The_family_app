@@ -23,6 +23,7 @@ final class MealViewModel {
     var currentUserId: String? {
         repo.session.currentUserId
     }
+
     private(set) var selectedPlan: MealPlanModel?
     private(set) var days: [MealPlanDayModel] = []
 
@@ -79,7 +80,9 @@ final class MealViewModel {
 
     /// Fetches meal plans without touching the realtime channel.
     private func loadPlansOnly(familyId: String) async {
-        if plans.isEmpty { isLoading = true }
+        if plans.isEmpty {
+            isLoading = true
+        }
         if let result = try? await repo.fetchMealPlans(familyId: familyId) {
             Self.cache = result
             plans = result
@@ -124,7 +127,9 @@ final class MealViewModel {
     private func reloadPlanDetail(_ planId: String) async {
         async let planFetch = (try? repo.fetchMealPlans(planId: planId)) ?? []
         async let daysFetch = (try? repo.fetchMealPlanDays(mealPlanId: planId)) ?? []
-        if let plan = await planFetch.first { selectedPlan = plan }
+        if let plan = await planFetch.first {
+            selectedPlan = plan
+        }
         days = await daysFetch.sorted { $0.date < $1.date }
     }
 
@@ -217,7 +222,9 @@ final class MealViewModel {
         Task {
             days = days.map { existing in
                 var existing = existing
-                if existing.id == day.id { existing.food = food }
+                if existing.id == day.id {
+                    existing.food = food
+                }
                 return existing
             }
             await repo.setMealDayFood(id: day.id, food: food)

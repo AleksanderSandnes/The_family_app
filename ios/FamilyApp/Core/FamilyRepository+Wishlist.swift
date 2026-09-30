@@ -74,7 +74,9 @@ extension FamilyRepository {
             "icon": .string(list.icon),
             "color": list.color.map { AnyJSON.integer($0) } ?? .null,
         ]
-        if let familyId = list.familyId { payload["family_id"] = .string(familyId) }
+        if let familyId = list.familyId {
+            payload["family_id"] = .string(familyId)
+        }
         _ = try? await client.from("wishlists").insert(payload).execute()
     }
 
@@ -111,9 +113,15 @@ extension FamilyRepository {
             "user_id": .string(wish.userId),
             "text": .string(wish.text),
         ]
-        if let link = wish.link, !link.isEmpty { payload["link"] = .string(link) }
-        if let price = wish.price, !price.isEmpty { payload["price"] = .string(price) }
-        if let imageUrl = wish.imageUrl { payload["image_url"] = .string(imageUrl) }
+        if let link = wish.link, !link.isEmpty {
+            payload["link"] = .string(link)
+        }
+        if let price = wish.price, !price.isEmpty {
+            payload["price"] = .string(price)
+        }
+        if let imageUrl = wish.imageUrl {
+            payload["image_url"] = .string(imageUrl)
+        }
         _ = try? await client.from("wishes").insert(payload).execute()
     }
 

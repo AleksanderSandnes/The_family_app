@@ -331,7 +331,11 @@ private struct WishDetailSheet: View {
             ) {
                 dismiss()
             } onConfirm: {
-                if state == .reservedByMe { onUnreserve() } else { onReserve() }
+                if state == .reservedByMe {
+                    onUnreserve()
+                } else {
+                    onReserve()
+                }
                 dismiss()
             }
             .padding(.bottom, Spacing.xs)
@@ -358,7 +362,9 @@ private struct WishDetailSheet: View {
             }
             if let link = wish.link?.trimmingCharacters(in: .whitespaces), !link.isEmpty {
                 Button {
-                    if let url = URL(string: link) { openURL(url) }
+                    if let url = URL(string: link) {
+                        openURL(url)
+                    }
                 } label: {
                     Text(link)
                         .font(.system(size: 13))

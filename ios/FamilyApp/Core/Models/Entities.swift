@@ -97,7 +97,7 @@ struct MealPlanModel: Codable, Identifiable, Hashable {
     var name = ""
     var icon = "restaurant"
     var color: Int?
-    // Creator (add_destructive_action_gating.sql). Nil on legacy rows → admin-only delete.
+    /// Creator (add_destructive_action_gating.sql). Nil on legacy rows → admin-only delete.
     var createdBy: String?
 
     enum CodingKeys: String, CodingKey {
@@ -280,7 +280,7 @@ struct MessageModel: Codable, Identifiable, Hashable {
     var replyToId: String?
     var messageType = "text"
     var mediaUrl: String?
-    // Set when the sender edits the message (add_message_edit_delete.sql).
+    /// Set when the sender edits the message (add_message_edit_delete.sql).
     var editedAt: String?
 
     enum CodingKeys: String, CodingKey {

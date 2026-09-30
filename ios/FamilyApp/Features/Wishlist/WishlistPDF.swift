@@ -21,8 +21,12 @@ func shortenedLink(_ url: String, maxLength: Int = 60) -> String {
     for prefix in ["https://", "http://"] where stripped.hasPrefix(prefix) {
         stripped.removeFirst(prefix.count)
     }
-    if stripped.hasPrefix("www.") { stripped.removeFirst(4) }
-    if stripped.hasSuffix("/") { stripped.removeLast() }
+    if stripped.hasPrefix("www.") {
+        stripped.removeFirst(4)
+    }
+    if stripped.hasSuffix("/") {
+        stripped.removeLast()
+    }
     guard stripped.count > maxLength else { return stripped }
     return String(stripped.prefix(maxLength - 1)) + "…"
 }
@@ -194,7 +198,9 @@ enum WishlistPDF {
         let textWidth = contentWidth - cardPadding * 2 - (image != nil ? imageSize + imageTextGap : 0)
         var textHeight: CGFloat = 0
         for (index, line) in cardLines(for: wish).enumerated() {
-            if index > 0 { textHeight += 4 }
+            if index > 0 {
+                textHeight += 4
+            }
             textHeight += measure(line.text, width: textWidth, font: line.font)
         }
         let inner = max(textHeight, image != nil ? imageSize : 0)
@@ -223,7 +229,9 @@ enum WishlistPDF {
 
         var cursorY = innerTop
         for (index, line) in cardLines(for: wish).enumerated() {
-            if index > 0 { cursorY += 4 }
+            if index > 0 {
+                cursorY += 4
+            }
             cursorY += draw(
                 line.text,
                 at: CGPoint(x: textX, y: cursorY),

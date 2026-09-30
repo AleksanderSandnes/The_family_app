@@ -86,11 +86,17 @@ struct FamilyScreen: View {
             "Remove member?",
             isPresented: Binding(
                 get: { memberToRemove != nil },
-                set: { if !$0 { memberToRemove = nil } }
+                set: {
+                    if !$0 {
+                        memberToRemove = nil
+                    }
+                }
             )
         ) {
             Button("Remove", role: .destructive) {
-                if let member = memberToRemove { viewModel.removeMember(member.id) }
+                if let member = memberToRemove {
+                    viewModel.removeMember(member.id)
+                }
                 memberToRemove = nil
             }
             Button("Cancel", role: .cancel) { memberToRemove = nil }

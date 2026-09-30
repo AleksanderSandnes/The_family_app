@@ -12,7 +12,7 @@ final class WishlistPDFTests: XCTestCase {
     }
 
     func testMakeProducesValidPDFFile() async throws {
-        let url = try XCTUnwrap(await WishlistPDF.make(
+        let url = try await XCTUnwrap(WishlistPDF.make(
             name: "Birthday",
             subtitle: "By Test Nine",
             wishes: [wish("AirPods", price: "1990 kr", link: "apple.com/airpods"), wish("Cookbook")]
@@ -27,7 +27,7 @@ final class WishlistPDFTests: XCTestCase {
     }
 
     func testFileNameUsesWishlistNameAndSanitizes() async throws {
-        let url = try XCTUnwrap(await WishlistPDF.make(name: "Mom's / Dad's list", subtitle: "", wishes: []))
+        let url = try await XCTUnwrap(WishlistPDF.make(name: "Mom's / Dad's list", subtitle: "", wishes: []))
         addTeardownBlock { try? FileManager.default.removeItem(at: url) }
         XCTAssertEqual(url.pathExtension, "pdf")
         // Path separators must not leak into the file name.
@@ -36,7 +36,7 @@ final class WishlistPDFTests: XCTestCase {
     }
 
     func testEmptyWishesStillProducesPDF() async throws {
-        let url = try XCTUnwrap(await WishlistPDF.make(name: "Empty", subtitle: "By Owner", wishes: []))
+        let url = try await XCTUnwrap(WishlistPDF.make(name: "Empty", subtitle: "By Owner", wishes: []))
         addTeardownBlock { try? FileManager.default.removeItem(at: url) }
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
     }
@@ -73,7 +73,7 @@ final class WishlistPDFTests: XCTestCase {
     func testMakeWithUnreachableImageStillProducesPDF() async throws {
         var lego = wish("Lego", price: "499")
         lego.imageUrl = "https://127.0.0.1:1/nope.jpg"
-        let url = try XCTUnwrap(await WishlistPDF.make(name: "Gifts", subtitle: "", wishes: [lego]))
+        let url = try await XCTUnwrap(WishlistPDF.make(name: "Gifts", subtitle: "", wishes: [lego]))
         addTeardownBlock { try? FileManager.default.removeItem(at: url) }
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
     }

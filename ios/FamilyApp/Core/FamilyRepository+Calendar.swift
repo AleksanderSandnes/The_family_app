@@ -38,7 +38,9 @@ extension FamilyRepository {
             "color": event.color.map { AnyJSON.double(Double($0)) } ?? .null,
             "attendee_ids": .array(event.attendeeIds.map { AnyJSON.string($0) }),
         ]
-        if let familyId = event.familyId { payload["family_id"] = .string(familyId) }
+        if let familyId = event.familyId {
+            payload["family_id"] = .string(familyId)
+        }
         _ = try? await client.from("calendar_events").insert(payload).execute()
     }
 

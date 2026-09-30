@@ -190,7 +190,9 @@ extension FamilyRepository {
             "user_from": .string(userFrom),
             "name": .string(name),
         ]
-        if let familyId { payload["family_id"] = .string(familyId) }
+        if let familyId {
+            payload["family_id"] = .string(familyId)
+        }
         return try await client.from("conversations")
             .insert(payload)
             .select()
@@ -262,7 +264,9 @@ extension FamilyRepository {
             "user_from": .string(userFrom),
             "text": .string(text),
         ]
-        if let replyToId { payload["reply_to_id"] = .string(replyToId) }
+        if let replyToId {
+            payload["reply_to_id"] = .string(replyToId)
+        }
         try await client.from("messages").insert(payload).execute()
     }
 

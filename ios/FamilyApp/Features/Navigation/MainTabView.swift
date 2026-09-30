@@ -108,10 +108,14 @@ struct MainTabView: View {
         }
         .onChange(of: FamilyRepository.shared.pendingJoinCode) { _, code in
             // Invite deep link routes the user to Family, which opens the join flow.
-            if code != nil { openFamily() }
+            if code != nil {
+                openFamily()
+            }
         }
         .onChange(of: deepLinks.pendingWishlistShareToken) { _, token in
-            if token != nil { Task { await redeemPendingWishlistShare() } }
+            if token != nil {
+                Task { await redeemPendingWishlistShare() }
+            }
         }
     }
 
@@ -129,7 +133,9 @@ struct MainTabView: View {
     /// Family lives on the Home dashboard — surface it by pushing onto the home stack.
     private func openFamily() {
         selectedTab = .home
-        if homePath.last != .family { homePath.append(.family) }
+        if homePath.last != .family {
+            homePath.append(.family)
+        }
     }
 
     /// One-time prompt for Google sign-ups (email registration already collects these).

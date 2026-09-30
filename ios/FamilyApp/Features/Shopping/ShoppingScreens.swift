@@ -350,7 +350,9 @@ private struct ShoppingItemRow: View {
                     .focused($editFocused)
                     .onSubmit(commitEdit)
                     .onChange(of: editFocused) { _, focused in
-                        if !focused { commitEdit() }
+                        if !focused {
+                            commitEdit()
+                        }
                     }
             } else {
                 Text(item.item)

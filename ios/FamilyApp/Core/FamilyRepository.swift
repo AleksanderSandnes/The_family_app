@@ -135,7 +135,9 @@ final class FamilyRepository {
     }
 
     func getUser(_ userId: String) async -> UserModel? {
-        if userId == cachedUserId, let cachedUser { return cachedUser }
+        if userId == cachedUserId, let cachedUser {
+            return cachedUser
+        }
         let rows: [UserModel] = await (try? client.from("users")
             .select()
             .eq("id", value: userId)

@@ -138,10 +138,14 @@ func conversationDisplayName(
     let isOneOnOne = participants.count == 2 || conversation.userTo != nil
     let other = participants.first { $0.id != currentUserId }
     if isOneOnOne {
-        if let name = other?.name, !name.isEmpty { return name }
+        if let name = other?.name, !name.isEmpty {
+            return name
+        }
         return conversation.name.isEmpty ? L("Chat", locale: locale) : conversation.name
     }
-    if !conversation.name.isEmpty { return conversation.name }
+    if !conversation.name.isEmpty {
+        return conversation.name
+    }
     let names = participants
         .filter { $0.id != currentUserId }
         .prefix(3)

@@ -24,7 +24,9 @@ private final class LocalizedBundleCache: @unchecked Sendable {
     func bundle(forLanguage lang: String) -> Bundle {
         lock.lock()
         defer { lock.unlock() }
-        if let cached = cache[lang] { return cached }
+        if let cached = cache[lang] {
+            return cached
+        }
         let resolved: Bundle = if let path = Bundle.main.path(forResource: lang, ofType: "lproj"),
                                   let bundle = Bundle(path: path) {
             bundle

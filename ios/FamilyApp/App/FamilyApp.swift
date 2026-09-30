@@ -110,7 +110,9 @@ private final class KeyboardDismissCoordinator: NSObject, UIGestureRecognizerDel
         // don't dismiss when the user is just moving between fields.
         var view = touch.view
         while let current = view {
-            if current is UIControl || current is UITextView { return false }
+            if current is UIControl || current is UITextView {
+                return false
+            }
             view = current.superview
         }
         return true

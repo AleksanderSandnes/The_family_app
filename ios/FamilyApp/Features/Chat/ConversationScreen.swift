@@ -60,7 +60,9 @@ struct ConversationScreen: View {
     }
 
     private func senderName(for userId: String) -> String {
-        if userId == myId { return L("You") }
+        if userId == myId {
+            return L("You")
+        }
         return viewModel.userProfiles[userId]?.name
             ?? viewModel.currentParticipants.first { $0.id == userId }?.name
             ?? L("Unknown")
@@ -127,7 +129,11 @@ struct ConversationScreen: View {
         }
         .alert(L("Delete message?"), isPresented: Binding(
             get: { messageToDelete != nil },
-            set: { if !$0 { messageToDelete = nil } }
+            set: {
+                if !$0 {
+                    messageToDelete = nil
+                }
+            }
         )) {
             Button(L("Delete"), role: .destructive) {
                 messageToDelete.map { viewModel.deleteMessage($0) }

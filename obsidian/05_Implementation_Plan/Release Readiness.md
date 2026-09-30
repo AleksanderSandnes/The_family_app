@@ -33,3 +33,6 @@ store assets, signed builds and approved submissions. No release is claimed read
 - Native iOS build exposed a font-helper name collision and missing shopping user-ID
   property. Fixed both, remaining Swift lint findings, and export formatter repairs
   from CI for review. Native build/test verification remains pending.
+
+- Applied the authoritative SwiftFormat repair artifact from macOS CI (40 files).
+  SwiftLint passed before formatting; rerun both gates and native tests after this change.

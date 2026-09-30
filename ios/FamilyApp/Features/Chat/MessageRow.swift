@@ -30,7 +30,9 @@ struct MessageRow: View {
                 .padding(.vertical, 4)
         } else {
             HStack(alignment: .bottom, spacing: Spacing.sm) {
-                if isMine { Spacer(minLength: 48) }
+                if isMine {
+                    Spacer(minLength: 48)
+                }
                 if !isMine, isGroup {
                     InitialAvatar(
                         name: sender?.name ?? "?",
@@ -74,7 +76,9 @@ struct MessageRow: View {
                             .padding(.top, 1)
                     }
                 }
-                if !isMine { Spacer(minLength: 48) }
+                if !isMine {
+                    Spacer(minLength: 48)
+                }
             }
             .offset(x: dragOffset)
             .gesture(

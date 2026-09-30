@@ -31,7 +31,9 @@ extension FamilyRepository {
             "icon": .string(birthday.icon),
             "color": birthday.color.map { AnyJSON.double(Double($0)) } ?? .null,
         ]
-        if let familyId = birthday.familyId { payload["family_id"] = .string(familyId) }
+        if let familyId = birthday.familyId {
+            payload["family_id"] = .string(familyId)
+        }
         _ = try? await client.from("birthdays").insert(payload).execute()
     }
 

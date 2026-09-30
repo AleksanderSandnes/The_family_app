@@ -224,7 +224,9 @@ private struct MonthCalendarSection: View {
                             isToday: date == today,
                             eventDotColors: date.flatMap { dotColorsByDate[$0] } ?? []
                         ) {
-                            if let date { onDaySelected(date) }
+                            if let date {
+                                onDaySelected(date)
+                            }
                         }
                     }
                 }
@@ -325,14 +327,22 @@ private struct DayCell: View {
     }
 
     private var backgroundColor: Color {
-        if isToday { return .appPrimary }
-        if isSelected { return .appPrimaryContainer }
+        if isToday {
+            return .appPrimary
+        }
+        if isSelected {
+            return .appPrimaryContainer
+        }
         return .clear
     }
 
     private var textColor: Color {
-        if isToday { return .appOnPrimary }
-        if isSelected { return .appOnPrimaryContainer }
+        if isToday {
+            return .appOnPrimary
+        }
+        if isSelected {
+            return .appOnPrimaryContainer
+        }
         return .appOnSurface
     }
 
@@ -499,7 +509,9 @@ private let calendarDotFallback: [Color] = [
 
 /// An event's display colour — the user-picked colour, else an icon-derived accent.
 func calendarEventColor(_ event: CalendarEventModel) -> Color {
-    if let hex = event.color { return Color(hex: UInt32(truncatingIfNeeded: hex)) }
+    if let hex = event.color {
+        return Color(hex: UInt32(truncatingIfNeeded: hex))
+    }
     return calendarDotFallback[calendarIconColorIndex(event.icon) % calendarDotFallback.count]
 }
 
@@ -514,7 +526,9 @@ func dateEventColors(for events: [CalendarEventModel]) -> [LocalDate: [Color]] {
         while !(to < day) {
             map[day, default: []].append(color)
             day = day.addingDays(1)
-            if from.daysUntil(day) > 60 { break }
+            if from.daysUntil(day) > 60 {
+                break
+            }
         }
     }
     return map

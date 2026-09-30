@@ -212,7 +212,9 @@ final class AuthViewModel {
             resetCooldown = resendCooldownSeconds
             while resetCooldown > 0 {
                 try? await Task.sleep(for: .seconds(1))
-                if Task.isCancelled { return }
+                if Task.isCancelled {
+                    return
+                }
                 resetCooldown -= 1
             }
         }
@@ -290,7 +292,9 @@ final class AuthViewModel {
             verifyCooldown = resendCooldownSeconds
             while verifyCooldown > 0 {
                 try? await Task.sleep(for: .seconds(1))
-                if Task.isCancelled { return }
+                if Task.isCancelled {
+                    return
+                }
                 verifyCooldown -= 1
             }
         }
@@ -318,13 +322,19 @@ func isValidEmail(_ email: String) -> Bool {
 
 /// Password strength score 0–3 based on length and character variety.
 func passwordStrength(_ password: String) -> Int {
-    if password.count < minPasswordLength { return 0 }
+    if password.count < minPasswordLength {
+        return 0
+    }
     var score = 1
-    if password.count >= strongPasswordLength { score += 1 }
+    if password.count >= strongPasswordLength {
+        score += 1
+    }
     if password.contains(where: \.isUppercase), password.contains(where: \.isLowercase) {
         score += 1
     }
-    if password.contains(where: { !$0.isLetter && !$0.isNumber }) { score += 1 }
+    if password.contains(where: { !$0.isLetter && !$0.isNumber }) {
+        score += 1
+    }
     return min(score, 3)
 }
 
@@ -341,7 +351,9 @@ let authErrorMessages: [(keywords: [String], message: String)] = [
 
 func friendlyAuthError(_ error: Error, isLogin: Bool) -> String {
     let raw = error.localizedDescription.lowercased()
-    if raw.isEmpty { return "Something went wrong. Please try again." }
+    if raw.isEmpty {
+        return "Something went wrong. Please try again."
+    }
     // OAuth redirect-allowlist misconfiguration: hide the developer detail behind a generic message.
     if raw.contains("redirect"), raw.contains("not allowed") {
         return "Something went wrong. Please try again."

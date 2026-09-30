@@ -56,6 +56,7 @@ final class ChatViewModel {
         messages = messages.filter { $0.id != msg.id }
         Task { try? await repo.deleteMessage(messageId: msg.id) }
     }
+
     private(set) var familyMembers: [UserModel] = []
     private(set) var userProfiles: [String: UserModel] = [:]
 
@@ -460,8 +461,12 @@ extension ChatViewModel {
     func setTyping(_ typing: Bool) {
         guard let channel = typingChannel, let myId = repo.session.currentUserId else { return }
         let now = Date()
-        if typing, now.timeIntervalSince(lastTypingSent) < typingThrottleSeconds { return }
-        if typing { lastTypingSent = now }
+        if typing, now.timeIntervalSince(lastTypingSent) < typingThrottleSeconds {
+            return
+        }
+        if typing {
+            lastTypingSent = now
+        }
         Task {
             try? await channel.broadcast(
                 event: "typing",

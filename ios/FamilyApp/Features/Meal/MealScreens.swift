@@ -38,8 +38,7 @@ struct MealScreen: View {
                                     // Creator or admin only; legacy nil-creator plans are
                                     // admin-only (mirrors meal_plans_delete RLS).
                                     if (plan.createdBy != nil && plan.createdBy == viewModel.currentUserId)
-                                        || viewModel.isAdmin
-                                    {
+                                        || viewModel.isAdmin {
                                         Button(role: .destructive) {
                                             viewModel.deletePlan(plan)
                                         } label: {
@@ -184,10 +183,14 @@ private struct CreatePlanSheet: View {
             EventColorPicker(selection: $color)
             HStack(spacing: Spacing.sm) {
                 PlanDatePicker(label: L("Starts"), selection: $fromDate) { picked in
-                    if let to = toDate, to < picked { toDate = picked }
+                    if let to = toDate, to < picked {
+                        toDate = picked
+                    }
                 }
                 PlanDatePicker(label: L("Ends"), selection: $toDate) { picked in
-                    if let from = fromDate, picked < from { toDate = from }
+                    if let from = fromDate, picked < from {
+                        toDate = from
+                    }
                 }
             }
         }
@@ -382,7 +385,9 @@ private struct MealDayRow: View {
     }
 
     private var dayNumber: String {
-        if let localDate = LocalDate(iso: day.date) { return "\(localDate.day)" }
+        if let localDate = LocalDate(iso: day.date) {
+            return "\(localDate.day)"
+        }
         return String(day.date.split(separator: "-").last ?? "")
     }
 
