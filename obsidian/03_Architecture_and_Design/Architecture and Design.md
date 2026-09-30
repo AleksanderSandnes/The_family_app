@@ -149,3 +149,9 @@ saves share the resolver. Existing disk entries are bypassed, not erased.
 
 The production buckets remain public. Restrictive SELECT policies, coordinated
 private-bucket rollout and signed release-device validation are still required.
+
+Staged `storage_reads.sql` adds restrictive anonymous/authenticated SELECT guards.
+The private helper resolves ownership/membership explicitly, including cross-family
+conversation avatars and exact images from shared wishlists; it does not trust
+editable wish user IDs or JWT metadata. See `PRIVATE_MEDIA_ROLLOUT.md` for client
+compatibility, URL constraints and the separate visibility rollout.

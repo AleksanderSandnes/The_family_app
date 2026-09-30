@@ -82,3 +82,12 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
   tests and required Android checks pass. iOS resolver/URLSession/cache tests await
   macOS CI. Existing public buckets and permissive read policies still require
   coordinated backend rollout; this change alone does not make stored media private.
+
+- Staged restrictive private-read policies alongside legacy permissive policies.
+  Local rollback tests verify anonymous/unregistered/cross-family denial, valid
+  conversation/family/shared-wishlist reads, forged locator/user-ID denial and
+  immediate share/member revocation. Existing write tests still pass. Removing
+  either guard makes the tests fail; local security advisors report no issues.
+  CI now repeats both read and write checks. Full Storage HTTP tests, minimum client
+  version coordination and private-bucket rollout remain open; no live flags changed.
+  Rollout details: supabase/security/PRIVATE_MEDIA_ROLLOUT.md.

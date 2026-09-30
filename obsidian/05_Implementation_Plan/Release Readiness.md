@@ -103,3 +103,12 @@ store assets, signed builds and approved submissions. No release is claimed read
   and reject account changes during signing/fetching. PDFs, gallery saves and voice
   notes use the same resolver. All 513 Android tests and required checks pass;
   13 new iOS tests await native CI. Private bucket/read-policy rollout remains open.
+
+- Staged restrictive private-read policies alongside legacy permissive policies.
+  Local rollback tests verify anonymous/unregistered/cross-family denial, valid
+  conversation/family/shared-wishlist reads, forged locator/user-ID denial and
+  immediate share/member revocation. Existing write tests still pass. Removing
+  either guard makes the tests fail; local security advisors report no issues.
+  CI now repeats both read and write checks. Full Storage HTTP tests, minimum client
+  version coordination and private-bucket rollout remain open; no live flags changed.
+  Rollout details: supabase/security/PRIVATE_MEDIA_ROLLOUT.md.

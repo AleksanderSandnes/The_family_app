@@ -36,13 +36,23 @@ are machine-local and are not included in Git.
   tests, Spotless, detekt, lint and debug assembly pass. iOS changes and 13 new
   tests await macOS CI. Live bucket settings/policies have not changed.
 
+
+- Staged restrictive private-read policies alongside legacy permissive policies.
+  Local rollback tests verify anonymous/unregistered/cross-family denial, valid
+  conversation/family/shared-wishlist reads, forged locator/user-ID denial and
+  immediate share/member revocation. Existing write tests still pass. Removing
+  either guard makes the tests fail; local security advisors report no issues.
+  CI now repeats both read and write checks. Full Storage HTTP tests, minimum client
+  version coordination and private-bucket rollout remain open; no live flags changed.
+  Rollout details: supabase/security/PRIVATE_MEDIA_ROLLOUT.md.
+
 ## Remaining work
 
 - Live security remediation/deployment. Supabase: HMI xdttfrknoazcqcelieck;
   Family bntcznvsbyshetndbxfa. Last live audits had 9/24 security warnings.
 - Family live SQL trigger contains a service-role credential. Coordinate Vault
   rollout and approved rotation; never put the value in Git. Add authenticated
-  media rollout after client validation and restrictive read policies. Fresh migration reproducibility
+  media rollout after client validation and deployment of staged read policies. Fresh migration reproducibility
   remains unproven.
 - Coverage targets, end-to-end/release tests, branch protection, version/release
   automation and signed builds. Last full-source web/mobile lines: 20.88%/29.8%.

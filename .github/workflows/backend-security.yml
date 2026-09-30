@@ -54,6 +54,11 @@ jobs:
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/add_chat_media_bucket.sql
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/security/storage_writes.sql
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/storage_writes.sql
+      - name: Verify private-read isolation and write compatibility
+        run: |
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/security/storage_reads.sql
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/storage_reads.sql
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/storage_writes.sql
       - name: Stop isolated database
         if: always()
         run: supabase stop --workdir "$RUNNER_TEMP/family-db-validation"
