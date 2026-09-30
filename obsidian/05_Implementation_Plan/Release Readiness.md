@@ -172,3 +172,10 @@ store assets, signed builds and approved submissions. No release is claimed read
   Tests: 8 SQL isolation checks in backend-security CI, Android ChatModerationTest +
   5 ChatViewModel tests, iOS ChatModerationTests (8). Terms/privacy pages describe
   reporting, blocking and 24 h review. Live SQL not applied yet.
+
+- Resume verification (2026-09-30): moderation/account-deletion sources compiled
+  on macOS run 36756809107 (commit 0f03682); all 292 XCTest cases passed. Android
+  Spotless/detekt/lint/unit tests/debug assembly passed locally. Fixed Node 22
+  release-test discovery to use explicit *.test.mjs files (7 pass) and shortened
+  the iOS job summary while retaining full coverage in the artifact. Coverage
+  thresholds and production rollout are still open.

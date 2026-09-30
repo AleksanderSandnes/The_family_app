@@ -30,7 +30,7 @@ git config core.hooksPath .githooks   # needs gitleaks on PATH
 
 ```sh
 cd android && ./gradlew spotlessCheck detekt lint testDebugUnitTest assembleDebug
-node --test scripts/release/          # release tooling
+node --test scripts/release/*.test.mjs          # release tooling
 ```
 
 Update the Obsidian vault (`obsidian/`) alongside the code it documents. See
