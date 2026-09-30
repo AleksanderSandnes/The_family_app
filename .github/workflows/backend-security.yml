@@ -18,7 +18,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno check supabase/functions/push-on-message/index.ts supabase/functions/daily-reminders/index.ts
+      - run: deno check supabase/functions/push-on-message/index.ts supabase/functions/daily-reminders/index.ts supabase/functions/delete-account/index.ts supabase/tests/account_deletion_http.ts
       - run: deno test --allow-env supabase/functions/_shared/*_test.ts
   database:
     runs-on: ubuntu-latest
@@ -28,6 +28,9 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.118.0
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
       - name: Start isolated validation database
         run: |
           mkdir -p "$RUNNER_TEMP/family-db-validation"
@@ -59,6 +62,10 @@ jobs:
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/storage_writes.sql
       - name: Verify private media through real local Auth and Storage APIs
         run: python3 supabase/tests/private_media_http.py --workdir "$RUNNER_TEMP/family-db-validation"
+      - name: Verify account deletion through real local Auth and Storage APIs
+        run: |
+          docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/security/account_deletion.sql
+          deno run --allow-env --allow-net --allow-run --allow-read supabase/tests/account_deletion_http.ts "$RUNNER_TEMP/family-db-validation"
       - name: Stop isolated database
         if: always()
         run: supabase stop --workdir "$RUNNER_TEMP/family-db-validation"
