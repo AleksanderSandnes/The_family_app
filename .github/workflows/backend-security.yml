@@ -53,6 +53,12 @@ jobs:
             docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/post_deploy/push_webhook.sql
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/function_access.sql
+      - name: Verify legacy webhook credential transfer without exposing it
+        run: |
+          cat supabase/tests/vault_push_webhook_fixture.sql \
+            supabase/migrations/20260930184128_vault_push_webhook.sql \
+            supabase/tests/vault_push_webhook_assertions.sql | \
+            docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1
       - name: Verify storage write isolation against legacy policies
         run: |
           docker exec -i supabase_db_family-db-validation psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/add_storage_buckets.sql

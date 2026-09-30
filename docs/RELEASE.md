@@ -23,9 +23,12 @@
    days on closed testing before production.
 6. **iOS** (after Apple Developer enrolment): archive on a macOS runner, upload
    to TestFlight, then submit for review.
-7. **Backend**: apply reviewed SQL (`supabase/security/*`, then
-   `supabase/post_deploy/*`), deploy changed Edge Functions and re-run the
-   security advisors.
+7. **Backend**: run `supabase db push --linked --dry-run`, review the ordered
+   migrations, then `supabase db push --linked --skip-vault`. Deploy changed Edge
+   Functions and re-run security advisors. Existing `security/*` scripts are
+   validation sources; do not re-apply non-idempotent function moves after the
+   corresponding migration is recorded. Bucket visibility is a separate
+   coordinated client rollout (see `supabase/security/PRIVATE_MEDIA_ROLLOUT.md`).
 
 `versionCode` must exceed what Play already has (currently 3).
 

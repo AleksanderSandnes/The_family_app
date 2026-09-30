@@ -17,6 +17,7 @@ Welcome to the project knowledge base for The Family App.
 - [[06_Notes_and_References/Play Store Release Guide]] — production deployment runbook
 
 ## Current status
+- **Live security rollout 2026-09-30** — private RPC wrappers, storage guards, moderation, deletion helpers and Vault webhook deployed. One Pro-only leaked-password warning remains per project. Family clients pass 292 iOS tests and Android checks; coverage/store/signing/private-bucket rollout remain open. See [[05_Implementation_Plan/Release Readiness]].
 - **Release branches protected** — master/test now require 12 Actions checks and up-to-date PRs, including administrators. Trusted source enforcement and release-bot setup still need an approved production bootstrap.
 - **iOS session gate hardening prepared** — validate restoration and profile identity, reject stale responses, observe sign-out and reset the account’s view lifetime. All 281 native tests passed on e3798e3; strict SwiftLint passed, and the SwiftFormat repair is applied for final CI verification.
 - **Private media clients prepared (2026-09-30)** — Android checks and 513 tests pass. Android/iOS use fresh signed URLs and bypass protected-image caches; restrictive read policies pass local isolation tests. 264 iOS simulator tests and strict Swift checks also pass. Local Auth/Storage HTTP smoke passed 65 assertions; signed-release UI checks and private-bucket rollout remain open.
