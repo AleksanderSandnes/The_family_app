@@ -94,7 +94,7 @@ final class PrivateMediaDataLoaderTests: XCTestCase {
     }
 }
 
-private final class MediaURLProtocol: URLProtocol, @unchecked Sendable {
+private class MediaURLProtocol: URLProtocol, @unchecked Sendable {
     static var handler: ((URLRequest) throws -> (Int, Data))?
 
     override class func canInit(with request: URLRequest) -> Bool {
