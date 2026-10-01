@@ -90,7 +90,7 @@ jobs:
           script: |
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             mkdir -p "$RUNNER_TEMP/screenshots/phone/en"
-            maestro test maestro/store/screenshots.yaml -e DEMO_EMAIL="$DEMO_EMAIL" -e DEMO_PASSWORD="$DEMO_PASSWORD" -e OUTPUT="$RUNNER_TEMP/screenshots/phone/en"
+            maestro test maestro/store/screenshots.yaml -e DEMO_EMAIL="$DEMO_EMAIL" -e DEMO_PASSWORD="$DEMO_PASSWORD" --test-output-dir "$RUNNER_TEMP/screenshots/phone/en"
 
       - name: Upload screenshots
         if: always()

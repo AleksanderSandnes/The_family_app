@@ -31,7 +31,7 @@ tags:
     visible: "Quick access"
     timeout: 30000
 - waitForAnimationToEnd
-- takeScreenshot: ${OUTPUT}/01-home
+- takeScreenshot: 01-home
 
 - tapOn: "Chat"
 - extendedWaitUntil:
@@ -43,7 +43,7 @@ tags:
     timeout: 20000
 - hideKeyboard
 - waitForAnimationToEnd
-- takeScreenshot: ${OUTPUT}/02-chat
+- takeScreenshot: 02-chat
 - back
 
 - tapOn: "Shopping"
@@ -55,7 +55,7 @@ tags:
     visible: "Taco shells"
     timeout: 20000
 - waitForAnimationToEnd
-- takeScreenshot: ${OUTPUT}/03-shopping
+- takeScreenshot: 03-shopping
 - back
 
 - tapOn: "Calendar"
@@ -63,7 +63,7 @@ tags:
     visible: "Football practice"
     timeout: 20000
 - waitForAnimationToEnd
-- takeScreenshot: ${OUTPUT}/04-calendar
+- takeScreenshot: 04-calendar
 
 - tapOn: "Home"
 - scrollUntilVisible:
@@ -75,4 +75,4 @@ tags:
     timeout: 20000
 - tapOn: "This week"
 - waitForAnimationToEnd
-- takeScreenshot: ${OUTPUT}/05-meals
+- takeScreenshot: 05-meals
