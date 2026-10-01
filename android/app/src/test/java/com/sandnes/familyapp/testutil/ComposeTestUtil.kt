@@ -4,6 +4,15 @@ import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.filter
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText as hasTextMatcher
+import androidx.compose.ui.test.onChildren
+import androidx.compose.ui.test.onParent
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
@@ -78,5 +87,54 @@ fun SemanticsNodeInteraction.click() {
         performSemanticsAction(SemanticsActions.OnClick)
     } else {
         performClick()
+    }
+}
+
+/** Clicks the icon-only button that sits next to the node showing [text] (checkboxes, toggles, menu buttons). */
+fun ComposeContentTestRule.clickButtonBeside(
+    text: String,
+    index: Int = 0,
+) {
+    onAllNodesWithText(text)[index]
+        .onParent()
+        .onChildren()
+        .filter(hasClickAction() and SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))[0]
+        .click()
+    waitForIdle()
+}
+
+/** Runs the [nth] custom accessibility action found on screen (the swipe-to-delete rows), on the UI thread. */
+fun ComposeContentTestRule.runSwipeDelete(nth: Int = 0) {
+    val node = onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions))[nth].fetchSemanticsNode()
+    runOnUiThread { node.config[SemanticsActions.CustomActions].first().action() }
+    waitForIdle()
+}
+
+/** Sends the keyboard "done" action to the [index]th editable field. */
+fun ComposeContentTestRule.imeDone(index: Int = 0) {
+    onAllNodes(hasSetTextAction())[index].performImeAction()
+    waitForIdle()
+}
+
+fun ComposeContentTestRule.replaceText(
+    text: String,
+    index: Int = 0,
+) {
+    onAllNodes(hasSetTextAction())[index].performTextReplacement(text)
+    waitForIdle()
+}
+
+/** Replaces the text of the editable field currently showing [current] and optionally sends the keyboard "done". */
+fun ComposeContentTestRule.editField(
+    current: String,
+    replacement: String,
+    done: Boolean = true,
+) {
+    val field = onAllNodes(hasSetTextAction() and hasTextMatcher(current))[0]
+    field.performTextReplacement(replacement)
+    waitForIdle()
+    if (done) {
+        field.performImeAction()
+        waitForIdle()
     }
 }
