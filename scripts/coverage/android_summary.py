@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -42,6 +43,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("report", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--enforce", action="store_true", help="exit non-zero when a release target is not met")
     args = parser.parse_args()
     summary = summarize(args.report)
     if args.output:
@@ -52,12 +54,22 @@ def main():
         item = summary[name]
         percent = "unmeasured" if item["percent"] is None else f'{item["percent"]:.2f}%'
         rows.append(f'| {name} | {item["covered"]}/{item["total"]} | {percent} | {summary["targets"][name]}% |')
-    rows += ["", "Targets remain release gates; reporting alone does not satisfy them.", ""]
+    failures = [
+        f'{name} coverage {summary[name]["percent"]}% is below the {summary["targets"][name]}% gate'
+        for name in ("overall", "logic")
+        if summary[name]["percent"] is None or summary[name]["percent"] < summary["targets"][name]
+    ]
+    if args.enforce:
+        rows += ["", "FAILED: " + "; ".join(failures) if failures else "Coverage gates met.", ""]
+    else:
+        rows += ["", "Targets remain release gates; reporting alone does not satisfy them.", ""]
     text = "\n".join(rows)
     print(text)
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as output:
             output.write(text)
+    if args.enforce and failures:
+        sys.exit("; ".join(failures))
 
 
 if __name__ == "__main__":
