@@ -5,7 +5,7 @@ This Obsidian vault is the canonical source for project plans, notes, and archit
 Update it here first and keep it current as implementation progresses.
 
 ## Active tracks
-- **⏳ [[Release Readiness]]** — security, coverage, CI and store preparation; keep `master` per user decision. Android: 502 unit tests plus real Keystore migration/restart checks pass. iOS: 251 tests pass; coverage targets remain unmet. Live security rollout and store preparation remain open.
+- **⏳ [[Release Readiness]]** — security, coverage, CI and store preparation; keep `master` per user decision. Android coverage gates are merged (86.7% overall / 90.2% logic); iOS coverage gates merged in #15 (83.90% / 90.87%). Final store-assets PRs and owner-gated production rollout remain open.
 - **✅ Signup email verification (Android + iOS)** — delivered 2026-07-12, branch
   `feat/signup-email-verification`. `enable_confirmations = true` live in production;
   new signups enter a 6-digit code (branded confirmation email) on a shared
@@ -75,6 +75,18 @@ The delivered Android milestones are grouped into linked notes rather than one l
 3. Branch workflow: `task → test → master` (never commit directly to `master` or `test`).
 
 ## Long-term goals
+
+- Dashboard session isolation: discard refresh/family-reload results after the
+  active user changes. Delayed success and failure regressions reproduced the
+  sign-out/account-switch race found in final store-assets CI (2026-10-01).
+
+- ✅ iPad support and store captures: native iPad target and orientations enabled;
+  six reviewed 2064x2752 images captured on iPad Pro 13-inch (M5), run 36861490097,
+  and imported on 2026-10-01. Production promotion and store submission remain pending.
+
+- ✅ Reviewed English iOS store screenshots: six fictional-data images at
+  1320x2868 imported on 2026-10-01. Native signing, store submission and the
+  approved production promotion remain pending; see `docs/HANDOVER.md`.
 - ⏳ Branch protection: live strict quality/PR protection enabled on master/test.
   Trusted source activation and release-bot provisioning remain open.
 - ⏳ iOS auth gate: restoration/profile binding and sign-out handling implemented,

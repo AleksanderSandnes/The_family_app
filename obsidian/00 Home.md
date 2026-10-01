@@ -1,5 +1,19 @@
 # The Family App
 
+## Current release status — 1 October 2026
+
+Reviewed English iOS store screenshots are in `store/ios/screenshots/iphone-6.9/en/`.
+Android coverage gates and iOS coverage PR #15 are merged into `test`.
+Store assets PR #14 is also merged after all required checks passed. Promotion PR #16 awaits
+owner review. See `docs/HANDOVER.md`; production activation remains owner-gated.
+
+The owner requested iPad support on 1 October. The native target now supports
+iPad and its orientations; CI captures six screens on a 13-inch iPad simulator.
+Six native iPad screenshots passed CI, were reviewed and imported into
+`store/ios/screenshots/ipad-13/en/` (run 36861490097). Domain/SMTP choices are
+deferred until the owner is ready.
+
+
 ## First release-proposal workflow verification — 30 September 2026
 
 HMI PR #46 merged into `test` after all task/PR checks passed. The first

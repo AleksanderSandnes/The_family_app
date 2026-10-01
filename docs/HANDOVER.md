@@ -1,5 +1,38 @@
 # Release readiness handover — 30 September 2026
 
+## Release readiness — 1 October 2026
+
+Android coverage gates merged in #13 (86.7% overall / 90.2% logic).
+iOS #15 merged into `test` after every required check passed, with enforced
+coverage gates (83.90% overall / 90.87% logic). #14 (demo seed, Android
+screenshots and Play graphics) also merged after its required checks passed,
+including a successful retry of a Kotlin compiler download timeout.
+HMI #54 has merged into `test`.
+
+Six reviewed English iOS screenshots (1320x2868) are now stored in
+`store/ios/screenshots/iphone-6.9/en/`, from run 36855681829.
+The Android capture workflow passed in run 36865963347; all five 1080x2400
+images were reviewed and refreshed in `store/android/screenshots/phone/en/`.
+The camera-menu Robolectric UI test now supplies a fixed provider URI so
+Android's device path separator assumptions do not fail the test on Windows.
+Final CI exposed a dashboard race: an old refresh could restore user data or
+an error after sign-out/account switching. Home loads now check the active
+user before publishing results; deterministic delayed success/failure tests
+reproduced the bug and pass with the fix.
+Promotion PR #16 (`test` to `master`) remains open for owner review.
+Production promotion, domain/DNS/SMTP work, signing identities, credential
+rotation, private media activation, reviewer accounts, store submission and
+legal review remain owner-gated. Never run the demo seed on production.
+
+Owner requested iPad support on 1 October: the native target now declares
+iPhone/iPad and iPad portrait/landscape orientations. A dedicated `ipad` job
+captures the six fictional screens at 2064x2752 on a 13-inch iPad simulator.
+Six images from the successful `ipad` job in run 36861490097 were reviewed and
+imported into `store/ios/screenshots/ipad-13/en/`. The native capture used the
+iPad Pro 13-inch (M5) simulator. Domain and SMTP choices are deferred at the
+owner's request; revisit them when the owner is ready.
+
+
 ## First release-proposal workflow verification — 30 September 2026
 
 HMI PR #46 merged into `test` after all task/PR checks passed. The first

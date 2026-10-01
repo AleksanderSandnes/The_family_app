@@ -87,27 +87,26 @@ class HomeViewModel
 
         private suspend fun load(userId: String) {
             _state.value = _state.value.copy(isLoading = true, loadError = false)
-            runCatching {
-                val user = repo.getUser(userId)
-                if (user == null) {
-                    _state.value = HomeUiState(isLoading = false, loadError = true)
-                    return
-                }
-                val family = user.familyId?.let { repo.getFamily(it) }
-                val familyId = user.familyId
-                var members: List<UserModel> = emptyList()
-                var summary = HomeSummary()
-                // Only touch the network when the user is actually in a family.
-                if (familyId != null) {
-                    members = repo.getFamilyMembers(familyId)
-                    // Summary is best-effort — a failure here must not blank the whole screen.
-                    summary =
-                        runCatching {
-                            loadSummary(SupabaseManager.client.postgrest, familyId)
-                        }.getOrDefault(HomeSummary())
-                }
+            val result =
+                runCatching {
+                    val user = repo.getUser(userId)
+                    if (user == null) {
+                        return@runCatching HomeUiState(isLoading = false, loadError = true)
+                    }
+                    val family = user.familyId?.let { repo.getFamily(it) }
+                    val familyId = user.familyId
+                    var members: List<UserModel> = emptyList()
+                    var summary = HomeSummary()
+                    // Only touch the network when the user is actually in a family.
+                    if (familyId != null) {
+                        members = repo.getFamilyMembers(familyId)
+                        // Summary is best-effort — a failure here must not blank the whole screen.
+                        summary =
+                            runCatching {
+                                loadSummary(SupabaseManager.client.postgrest, familyId)
+                            }.getOrDefault(HomeSummary())
+                    }
 
-                _state.value =
                     HomeUiState(
                         user = user,
                         family = family,
@@ -120,9 +119,16 @@ class HomeViewModel
                         nextBirthdayDate = summary.nextBirthdayDate,
                         shoppingRemaining = summary.shoppingRemaining,
                     )
-            }.onFailure {
-                _state.value = _state.value.copy(isLoading = false, loadError = true)
-            }
+                }
+            // A refresh or family reload can finish after sign-out or an account switch.
+            // Discard its result before it can restore data or errors from the old user.
+            if (repo.currentUserId.first() != userId) return
+            result
+                .onSuccess {
+                    _state.value = it
+                }.onFailure {
+                    _state.value = _state.value.copy(isLoading = false, loadError = true)
+                }
         }
 
         private suspend fun loadSummary(

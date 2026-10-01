@@ -113,7 +113,7 @@ final class ShoppingViewModelTests: XCTestCase {
         await waitUntil { vm.selectedList?.id == "l1" }
 
         vm.renameList(listId: "l1", newTitle: "New")
-        await waitUntil { !mock.renamedShoppingLists.isEmpty }
+        await waitUntil { !mock.renamedShoppingLists.isEmpty && vm.selectedList?.title == "New" }
         XCTAssertEqual(mock.renamedShoppingLists.first?.id, "l1")
         XCTAssertEqual(mock.renamedShoppingLists.first?.title, "New")
         XCTAssertEqual(vm.selectedList?.title, "New")
