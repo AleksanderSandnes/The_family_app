@@ -473,7 +473,7 @@ struct IconPickerSheet: View {
 }
 
 /// New-list sheet with name + icon picker.
-private struct NewListSheet: View {
+struct NewListSheet: View {
     let onCreate: (String, String, Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
