@@ -30,7 +30,7 @@ struct RecordedRequest {
 }
 
 /// URLProtocol that serves canned responses keyed by method + path and records requests.
-final class StubTransport: URLProtocol, @unchecked Sendable {
+class StubTransport: URLProtocol, @unchecked Sendable {
     private struct Route {
         let method: String?
         let path: String

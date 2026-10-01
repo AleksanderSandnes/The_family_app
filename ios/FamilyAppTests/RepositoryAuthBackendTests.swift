@@ -174,7 +174,7 @@ final class RepositoryAuthBackendTests: XCTestCase {
         let event = await value(of: authenticated)
         let sawSignedIn = await value(of: signedIn)
         XCTAssertEqual(event, .authenticated(authID))
-        XCTAssertEqual(sawSignedIn, true)
+        XCTAssertTrue(sawSignedIn)
     }
 
     func testAuthSessionEventMapping() {
@@ -217,16 +217,16 @@ final class RepositoryAuthBackendTests: XCTestCase {
     /// Awaits a task but gives up after a few seconds so a missing event fails instead of hanging.
     private func value<T: Sendable>(of task: Task<T?, Never>) async -> T? {
         let timeout = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            try? await Task.sleep(nanoseconds: 5000000000)
             task.cancel()
         }
         defer { timeout.cancel() }
         return await task.value
     }
 
-    private func value(of task: Task<Bool, Never>) async -> Bool? {
+    private func value(of task: Task<Bool, Never>) async -> Bool {
         let timeout = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            try? await Task.sleep(nanoseconds: 5000000000)
             task.cancel()
         }
         defer { timeout.cancel() }

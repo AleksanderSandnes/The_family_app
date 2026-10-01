@@ -282,7 +282,7 @@ enum ScreenRenderer {
             for _ in 0..<6 {
                 host.view.setNeedsLayout()
                 host.view.layoutIfNeeded()
-                try? await Task.sleep(nanoseconds: 30_000_000)
+                try? await Task.sleep(nanoseconds: 30000000)
             }
             XCTAssertNotNil(host.view.window)
             window.isHidden = true
@@ -291,6 +291,6 @@ enum ScreenRenderer {
 
     /// Lets a view model's init-time load finish against the mock.
     static func settle() async {
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        try? await Task.sleep(nanoseconds: 200000000)
     }
 }

@@ -126,7 +126,7 @@ final class RepositoryListsBackendTests: XCTestCase {
         XCTAssertTrue(StubTransport.requests(to: "/rest/v1/wishlists").isEmpty)
     }
 
-    func testWishlistAndWishWrites() async throws {
+    func testWishlistAndWishWrites() async {
         await repo.insertWishlist(WishlistModel(ownerUserId: "nora", familyId: "fam-1", name: "Birthday"))
         await repo.insertWishlist(WishlistModel(ownerUserId: "nora", name: "Private", color: 0xFFEC4899))
         await repo.setWishlistColor(id: "w1", color: 0xFFEC4899)
@@ -348,7 +348,7 @@ final class RepositoryListsBackendTests: XCTestCase {
 
     // MARK: - Settings mirrors
 
-    func testNotificationPrefsMirrorToTheServerWhenSignedIn() async throws {
+    func testNotificationPrefsMirrorToTheServerWhenSignedIn() async {
         let session = SessionStore.shared
         let originalTheme = session.themeMode
         let originalEnabled = session.notificationsEnabled
