@@ -76,6 +76,10 @@ The delivered Android milestones are grouped into linked notes rather than one l
 
 ## Long-term goals
 
+- Dashboard session isolation: discard refresh/family-reload results after the
+  active user changes. Delayed success and failure regressions reproduced the
+  sign-out/account-switch race found in final store-assets CI (2026-10-01).
+
 - ✅ iPad support and store captures: native iPad target and orientations enabled;
   six reviewed 2064x2752 images captured on iPad Pro 13-inch (M5), run 36861490097,
   and imported on 2026-10-01. Production promotion and store submission remain pending.

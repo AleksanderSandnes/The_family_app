@@ -15,6 +15,10 @@ The Android capture workflow passed in run 36865963347; all five 1080x2400
 images were reviewed and refreshed in `store/android/screenshots/phone/en/`.
 The camera-menu Robolectric UI test now supplies a fixed provider URI so
 Android's device path separator assumptions do not fail the test on Windows.
+Final CI exposed a dashboard race: an old refresh could restore user data or
+an error after sign-out/account switching. Home loads now check the active
+user before publishing results; deterministic delayed success/failure tests
+reproduced the bug and pass with the fix.
 Promotion PR #16 (`test` to `master`) remains open for owner review.
 Production promotion, domain/DNS/SMTP work, signing identities, credential
 rotation, private media activation, reviewer accounts, store submission and
