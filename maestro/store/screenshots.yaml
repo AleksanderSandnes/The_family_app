@@ -18,17 +18,15 @@ tags:
 - hideKeyboard
 - tapOn: "Sign in"
 
-# First-run permission onboarding: decline everything; the screenshots need no grants.
+# First-run permission onboarding: skip it; the screenshots need no grants.
+- extendedWaitUntil:
+    visible: "Skip for now|Quick access"
+    timeout: 30000
 - runFlow:
     when:
-      visible: "Not now"
+      visible: "Skip for now"
     commands:
-      - tapOn: "Not now"
-- runFlow:
-    when:
-      visible: "Not now"
-    commands:
-      - tapOn: "Not now"
+      - tapOn: "Skip for now"
 - extendedWaitUntil:
     visible: "Quick access"
     timeout: 30000
