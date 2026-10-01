@@ -3,8 +3,8 @@
 ## Current release status — 1 October 2026
 
 Reviewed English iOS store screenshots are in `store/ios/screenshots/iphone-6.9/en/`.
-Android coverage gates are delivered; iOS coverage PR #15 and store assets PR #14
-must pass required checks before merging into `test`. Promotion PR #16 awaits
+Android coverage gates and iOS coverage PR #15 are merged into `test`.
+Store assets PR #14 must pass required checks before merging. Promotion PR #16 awaits
 owner review. See `docs/HANDOVER.md`; production activation remains owner-gated.
 
 The owner requested iPad support on 1 October. The native target now supports

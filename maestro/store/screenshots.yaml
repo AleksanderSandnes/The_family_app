@@ -1,0 +1,83 @@
+appId: com.sandnes.familyapp
+tags:
+  - store
+---
+# Store screenshots from the fictional demo family (supabase/seed_demo.sql).
+# Only for a debug build pointed at a disposable local stack — see
+# .github/workflows/store-screenshots.yml. Never run against production.
+- launchApp:
+    appId: com.sandnes.familyapp
+    clearState: true
+# CI emulators sometimes show a system "isn't responding" dialog over the app.
+- runFlow:
+    when:
+      visible: "Wait"
+    commands:
+      - tapOn: "Wait"
+- extendedWaitUntil:
+    visible: "Sign in"
+    timeout: 60000
+- tapOn: "Email"
+- inputText: ${DEMO_EMAIL}
+- tapOn: "Password"
+- inputText: ${DEMO_PASSWORD}
+- hideKeyboard
+- tapOn: "Sign in"
+
+# First-run permission onboarding: skip it; the screenshots need no grants.
+- extendedWaitUntil:
+    visible: "Skip for now|Quick access"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: "Skip for now"
+    commands:
+      - tapOn: "Skip for now"
+- extendedWaitUntil:
+    visible: "Quick access"
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: 01-home
+
+- tapOn: "Chat"
+- extendedWaitUntil:
+    visible: "Family Nordmann"
+    timeout: 20000
+- tapOn: "Family Nordmann"
+- extendedWaitUntil:
+    visible: "Oat milk and tomatoes, please!"
+    timeout: 20000
+- waitForAnimationToEnd
+- takeScreenshot: 02-chat
+- back
+
+- tapOn: "Shopping"
+- extendedWaitUntil:
+    visible: "Groceries"
+    timeout: 20000
+- tapOn: "Groceries"
+- extendedWaitUntil:
+    visible: "Taco shells"
+    timeout: 20000
+- waitForAnimationToEnd
+- takeScreenshot: 03-shopping
+- back
+
+- tapOn: "Calendar"
+- extendedWaitUntil:
+    visible: "School pickup"
+    timeout: 20000
+- waitForAnimationToEnd
+- takeScreenshot: 04-calendar
+
+- tapOn: "Home"
+- scrollUntilVisible:
+    element: "Meals"
+    direction: DOWN
+- tapOn: "Meals"
+- extendedWaitUntil:
+    visible: "This week"
+    timeout: 20000
+- tapOn: "This week"
+- waitForAnimationToEnd
+- takeScreenshot: 05-meals

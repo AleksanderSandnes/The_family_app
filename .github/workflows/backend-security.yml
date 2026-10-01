@@ -106,6 +106,9 @@ jobs:
           psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/baseline/restore.sql
           psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/baseline/platform.sql
           psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/tests/platform.sql
+          # The fictional store demo family must keep applying cleanly to the recovered schema.
+          psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/seed_demo.sql
+          test "$(psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -tAc "select count(*) from public.users where email like '%@example.com'")" -ge 4
           if psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f supabase/baseline/restore.sql > "$RUNNER_TEMP/recovery-replay.log" 2>&1; then
             echo "Recovery incorrectly accepted an existing application schema"
             exit 1

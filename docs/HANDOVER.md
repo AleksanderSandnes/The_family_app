@@ -3,13 +3,16 @@
 ## Release readiness — 1 October 2026
 
 Android coverage gates merged in #13 (86.7% overall / 90.2% logic).
-iOS #15 adds enforced coverage gates (83.90% overall / 90.87% logic);
-its branch was updated and required checks must pass before merging into `test`.
-After #15, update #14 (demo seed, Android screenshots and Play graphics),
-then merge only when required checks are green. HMI #54 has merged into `test`.
+iOS #15 merged into `test` after every required check passed, with enforced
+coverage gates (83.90% overall / 90.87% logic). #14 (demo seed, Android
+screenshots and Play graphics) has been updated against that merge; its
+release-notes conflict was resolved by retaining both sections. Required
+checks must pass before it merges. HMI #54 has merged into `test`.
 
 Six reviewed English iOS screenshots (1320x2868) are now stored in
 `store/ios/screenshots/iphone-6.9/en/`, from run 36855681829.
+The Android capture workflow passed in run 36865963347; all five 1080x2400
+images were reviewed and refreshed in `store/android/screenshots/phone/en/`.
 The camera-menu Robolectric UI test now supplies a fixed provider URI so
 Android's device path separator assumptions do not fail the test on Windows.
 Promotion PR #16 (`test` to `master`) remains open for owner review.
