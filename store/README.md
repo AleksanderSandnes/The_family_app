@@ -39,7 +39,8 @@ The `ipad` job in `ios.yml` runs the six fictional screen captures on an availab
 13-inch iPad Pro/Air simulator and uploads `ipad-store-screenshots`.
 Portrait images are 2064x2752 pixels, an accepted 13-inch size in Apple's
 [screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
-Import reviewed results into `store/ios/screenshots/ipad-13/en/`.
+Six reviewed results are in `store/ios/screenshots/ipad-13/en/`, from run
+36861490097 on the iPad Pro 13-inch (M5) simulator, artifact `ipad-store-screenshots`.
 
 ## Remaining assets
 

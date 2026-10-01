@@ -76,6 +76,10 @@ The delivered Android milestones are grouped into linked notes rather than one l
 
 ## Long-term goals
 
+- ✅ iPad support and store captures: native iPad target and orientations enabled;
+  six reviewed 2064x2752 images captured on iPad Pro 13-inch (M5), run 36861490097,
+  and imported on 2026-10-01. Production promotion and store submission remain pending.
+
 - ✅ Reviewed English iOS store screenshots: six fictional-data images at
   1320x2868 imported on 2026-10-01. Native signing, store submission and the
   approved production promotion remain pending; see `docs/HANDOVER.md`.

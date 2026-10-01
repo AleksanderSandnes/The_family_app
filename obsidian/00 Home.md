@@ -9,7 +9,9 @@ owner review. See `docs/HANDOVER.md`; production activation remains owner-gated.
 
 The owner requested iPad support on 1 October. The native target now supports
 iPad and its orientations; CI captures six screens on a 13-inch iPad simulator.
-The iPad screenshots must be reviewed and imported before store submission.
+Six native iPad screenshots passed CI, were reviewed and imported into
+`store/ios/screenshots/ipad-13/en/` (run 36861490097). Domain/SMTP choices are
+deferred until the owner is ready.
 
 
 ## First release-proposal workflow verification — 30 September 2026

@@ -20,8 +20,10 @@ legal review remain owner-gated. Never run the demo seed on production.
 Owner requested iPad support on 1 October: the native target now declares
 iPhone/iPad and iPad portrait/landscape orientations. A dedicated `ipad` job
 captures the six fictional screens at 2064x2752 on a 13-inch iPad simulator.
-Import its reviewed `ipad-store-screenshots` artifact into
-`store/ios/screenshots/ipad-13/en/` after CI passes.
+Six images from the successful `ipad` job in run 36861490097 were reviewed and
+imported into `store/ios/screenshots/ipad-13/en/`. The native capture used the
+iPad Pro 13-inch (M5) simulator. Domain and SMTP choices are deferred at the
+owner's request; revisit them when the owner is ready.
 
 
 ## First release-proposal workflow verification — 30 September 2026
