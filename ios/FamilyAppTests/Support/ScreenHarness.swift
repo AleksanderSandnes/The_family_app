@@ -118,7 +118,10 @@ enum DemoFamily {
                 editedAt: isoNow()
             ),
         ]
-        mock.messagesByConversation = ["chat-1": messages, "chat-2": [messages[0]]]
+        // The image bubble lives in the direct chat so store screenshots of the group chat
+        // show no unloaded placeholder; render tests still draw it through chat-2.
+        let groupMessages = messages.filter { $0.messageType != "image" }
+        mock.messagesByConversation = ["chat-1": groupMessages, "chat-2": [messages[0], messages[2]]]
         mock.lastMessageByConversation = ["chat-1": messages[1], "chat-2": messages[0]]
         let participants = [emma, lars, nora].map {
             ConversationParticipantModel(
@@ -218,7 +221,7 @@ enum DemoFamily {
                 timeFrom: "17:30",
                 timeTo: "19:00",
                 activity: "Football practice",
-                attendeeIds: [nora.id, lars.id]
+                attendeeIds: [lars.id]
             ),
             CalendarEventModel(
                 id: "e2",
@@ -256,7 +259,7 @@ enum DemoFamily {
             BirthdayModel(
                 id: "b2",
                 name: "Grandma Ingrid",
-                date: today.description,
+                date: "1952" + today.description.dropFirst(4),
                 familyId: familyId,
                 madeByUserId: emma.id,
                 icon: "celebration",

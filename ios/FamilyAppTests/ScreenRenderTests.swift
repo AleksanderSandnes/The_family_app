@@ -198,7 +198,7 @@ final class ScreenRenderTests: XCTestCase {
 
     func testChatComponents() async {
         let mock = DemoFamily.mock()
-        let messages = mock.messagesByConversation["chat-1"] ?? []
+        let messages = (mock.messagesByConversation["chat-1"] ?? []) + (mock.messagesByConversation["chat-2"] ?? [])
         for (index, message) in messages.enumerated() {
             await ScreenRenderer.render(
                 MessageRow(
