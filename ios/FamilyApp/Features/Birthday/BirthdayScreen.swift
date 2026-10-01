@@ -192,7 +192,6 @@ func birthdayAccent(_ birthday: BirthdayModel) -> Color {
     return FeatureAccent.birthdays.stroke
 }
 
-// Internal (not private) so ScreenStateRenderTests can render it directly.
 struct BirthdaySheet: View {
     let title: String
     let confirmLabel: String

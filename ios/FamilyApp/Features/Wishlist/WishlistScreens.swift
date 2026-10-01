@@ -313,7 +313,6 @@ struct WishlistDetailScreen: View {
 
 /// Everything about one wish, for members viewing someone else's list: full-size image,
 /// name, description, price, the FULL link (tappable), and the reserve control.
-// Internal (not private) so ScreenStateRenderTests can render it directly.
 struct WishDetailSheet: View {
     let wish: WishModel
     let state: WishReservationState

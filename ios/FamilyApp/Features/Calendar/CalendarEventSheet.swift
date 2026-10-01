@@ -200,7 +200,6 @@ struct EventSheet: View {
 
 /// Full attendee multi-select, presented as its own sheet from the compact "Going with" row
 /// so the event form itself stays short.
-// Internal (not private) so ScreenStateRenderTests can render it directly.
 struct AttendeePickerSheet: View {
     let members: [UserModel]
     @Binding var selection: Set<String>

@@ -62,8 +62,9 @@ jobs:
               summary.write('## iOS coverage\n\n```text\n' + '\n'.join(targets) + '\n```\n')
               summary.write('Full file and function coverage is in the ios-test-results artifact.\n')
           PYREPORT
-      - name: Report app-only coverage
-        run: python3 scripts/coverage/ios_summary.py ios/build/coverage.txt --output ios/build/coverage-summary.json
+      - name: Report and enforce app-only coverage
+        # HARD gate: app-only overall >= 80% and logic (Core, view models, router) >= 90%.
+        run: python3 scripts/coverage/ios_summary.py ios/build/coverage.txt --output ios/build/coverage-summary.json --enforce
       - name: Export store screenshots
         if: always()
         run: |

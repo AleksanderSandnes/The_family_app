@@ -55,7 +55,7 @@ final class ViewModelGapTests: XCTestCase {
         let vm = ProfileViewModel(repo: mock)
         await waitUntil { vm.user != nil }
 
-        vm.saveAvatar(image: try XCTUnwrap(UIImage(data: jpeg())))
+        try vm.saveAvatar(image: XCTUnwrap(UIImage(data: jpeg())))
         await waitUntil { !mock.updatedProfiles.isEmpty }
 
         XCTAssertNotNil(mock.updatedProfiles.last?.update.avatarUrl)
@@ -275,11 +275,11 @@ final class ViewModelGapTests: XCTestCase {
         let mock = MockRepository()
         let router = DeepLinkRouter(repo: mock)
 
-        router.handle(try XCTUnwrap(URL(string: "familyapp://chat/chat-1")))
-        router.handle(try XCTUnwrap(URL(string: "familyapp://join?code=DEMO42")))
-        router.handle(try XCTUnwrap(URL(string: "familyapp://wishlist?token=tok-1")))
-        router.handle(try XCTUnwrap(URL(string: "familyapp://auth?code=fictional-code")))
-        router.handle(try XCTUnwrap(URL(string: "familyapp://unknown")))
+        try router.handle(XCTUnwrap(URL(string: "familyapp://chat/chat-1")))
+        try router.handle(XCTUnwrap(URL(string: "familyapp://join?code=DEMO42")))
+        try router.handle(XCTUnwrap(URL(string: "familyapp://wishlist?token=tok-1")))
+        try router.handle(XCTUnwrap(URL(string: "familyapp://auth?code=fictional-code")))
+        try router.handle(XCTUnwrap(URL(string: "familyapp://unknown")))
 
         XCTAssertEqual(router.pendingConversationId, "chat-1")
         XCTAssertEqual(mock.consumePendingJoinCode(), "DEMO42")

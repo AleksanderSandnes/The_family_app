@@ -473,7 +473,6 @@ struct IconPickerSheet: View {
 }
 
 /// New-list sheet with name + icon picker.
-// Internal (not private) so ScreenStateRenderTests can render it directly.
 struct NewListSheet: View {
     let onCreate: (String, String, Int?) -> Void
 
