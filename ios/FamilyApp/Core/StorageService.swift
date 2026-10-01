@@ -36,7 +36,7 @@ enum StorageService {
         try await upload(bucket: "group-images", path: "\(authUid())/\(filename)", data: data)
     }
 
-    /// wish-images allows any authenticated write; the path is the APP user id
+    /// The wish-images path is the APP user id
     /// (public.users.id) + timestamp, matching Android for cross-platform parity.
     @discardableResult
     static func uploadWishImage(data: Data, appUserId: String, filename: String) async throws -> String {
@@ -56,7 +56,8 @@ enum StorageService {
         )
     }
 
-    /// Uploads (upsert) and returns the public URL.
+    /// Uploads (upsert) and returns a stable locator. FamilyMedia authorizes reads;
+    /// never persist an expiring signed URL in database rows.
     private static func upload(bucket: String, path: String, data: Data) async throws -> String {
         let storage = client.storage.from(bucket)
         try await storage.upload(path, data: data, options: FileOptions(upsert: true))

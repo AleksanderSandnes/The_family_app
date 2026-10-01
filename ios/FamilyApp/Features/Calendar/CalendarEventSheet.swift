@@ -117,12 +117,16 @@ struct EventSheet: View {
                     .padding(.vertical, 14)
                 Divider()
                 dateTimeRow(label: L("Starts"), date: $dateFrom, time: $timeFrom) { picked in
-                    if dateTo < picked { dateTo = picked }
+                    if dateTo < picked {
+                        dateTo = picked
+                    }
                 }
                 .padding(.vertical, 14)
                 Divider()
                 dateTimeRow(label: L("Ends"), date: $dateTo, time: $timeTo) { picked in
-                    if picked < dateFrom { dateTo = dateFrom }
+                    if picked < dateFrom {
+                        dateTo = dateFrom
+                    }
                 }
                 .padding(.vertical, 14)
                 if !members.isEmpty {
@@ -196,7 +200,7 @@ struct EventSheet: View {
 
 /// Full attendee multi-select, presented as its own sheet from the compact "Going with" row
 /// so the event form itself stays short.
-private struct AttendeePickerSheet: View {
+struct AttendeePickerSheet: View {
     let members: [UserModel]
     @Binding var selection: Set<String>
     @Environment(\.dismiss) private var dismiss

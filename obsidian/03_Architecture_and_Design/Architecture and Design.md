@@ -132,3 +132,58 @@ Storage paths (avatars) **must** use the auth UUID — the RLS policy checks
 - [[Backend Options and API Strategy]]
 - [[../05_Implementation_Plan/Implementation Plan]]
 - [[../05_Implementation_Plan/Android Parity Track]]
+
+## Authenticated media reads (release work, 2026-09-30)
+
+Database media URLs remain stable object locators. Android `FamilyMedia`/Coil and
+iOS `FamilyMedia`/Nuke resolve the four project storage buckets to fresh five-minute
+signed URLs at read time. Never persist signed URLs or fall back to the public
+locator on authorization failure. Both resolvers validate the origin, bucket,
+object path, signed route and token, preserving numeric upload cache nonces.
+
+Protected image requests bypass memory and disk caches, including old public-URL
+entries. Identity checks discard signing/download results after account changes;
+iOS protected requests also bypass Nuke task coalescing and URLCache. External
+public assets retain ordinary image caching. Voice notes, wishlist PDFs and gallery
+saves share the resolver. Existing disk entries are bypassed, not erased.
+
+The production buckets remain public. Restrictive SELECT policies, coordinated
+private-bucket rollout and signed release-device validation are still required.
+
+Staged `storage_reads.sql` adds restrictive anonymous/authenticated SELECT guards.
+The private helper resolves ownership/membership explicitly, including cross-family
+conversation avatars and exact images from shared wishlists; it does not trust
+editable wish user IDs or JWT metadata. See `PRIVATE_MEDIA_ROLLOUT.md` for client
+compatibility, URL constraints and the separate visibility rollout.
+
+Real local Auth/Storage HTTP tests verify uploads/upserts, signed/authorized
+downloads, anonymous/cross-family/public denial, shares/revocation and link expiry.
+`chat_media_owner_update` supplies the missing permissive UPDATE authorization
+for upsert while restrictive guards still protect both old and destination paths.
+The HTTP smoke script refuses non-local or non-validation projects.
+
+## iOS restored-session navigation
+
+`RootViewModel` uses the injected repository's SessionStore rather than a second
+global store. A persisted app ID is only a hint: bootstrap requires `auth.session`
+and a profile lookup bound to its auth UUID and credential snapshot. A changed
+credential/account or cancelled lookup cannot restore the old profile.
+
+The auth event adapter ignores non-nil INITIAL_SESSION (possibly expired), handles
+confirmed sign-in/refresh/recovery/user updates, and closes navigation on sign-out.
+The root consumes events without waiting on profile network work, cancels stale
+lookups and checks a generation plus current auth ID before writing app identity.
+A previously verified same-account refresh keeps offline eligibility without
+re-fetching the profile. Failed initial restoration never borrows cached eligibility.
+
+MainTabView is keyed by app-user ID to recreate hoisted feature state/navigation
+when accounts change. Push/preferences sync runs only for a verified signed-in
+profile and is reset for a new sign-in. Native tests and release auth-flow smoke
+are the verification routes; Linux cannot run the Swift build locally.
+
+- GitHub master/test now have live strict quality protection: 12 named Actions
+  checks, required PRs/up-to-date branches, administrator enforcement and blocked
+  force pushes/deletion. Removed workflow path filters so required jobs always
+  report. Added four promotion-policy tests and Python CodeQL scanning. Trusted
+  source checking uses default-branch code and head-commit statuses; activation
+  awaits an approved production bootstrap. No release-bot bypass exists.

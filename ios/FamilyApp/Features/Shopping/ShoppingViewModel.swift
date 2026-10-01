@@ -64,7 +64,9 @@ final class ShoppingViewModel {
             listProgress = [:]
             return
         }
-        if lists.isEmpty { isLoading = true }
+        if lists.isEmpty {
+            isLoading = true
+        }
         await reloadLists()
         isLoading = false
     }
@@ -81,7 +83,9 @@ final class ShoppingViewModel {
         lists = result
         await loadListProgress(listIds: result.map(\.id))
 
-        if let familyId { subscribeToListsOnce(familyId: familyId) }
+        if let familyId {
+            subscribeToListsOnce(familyId: familyId)
+        }
     }
 
     /// Loads bought/total progress per list in one query.
@@ -122,7 +126,9 @@ final class ShoppingViewModel {
     private func reloadItems(listId: String) async {
         async let listFetch = (try? repo.fetchShoppingList(id: listId)) ?? []
         async let itemsFetch = (try? repo.fetchShoppingItems(listId: listId)) ?? []
-        if let list = await listFetch.first { selectedList = list }
+        if let list = await listFetch.first {
+            selectedList = list
+        }
         items = await itemsFetch
     }
 
@@ -163,7 +169,9 @@ final class ShoppingViewModel {
         Task {
             lists = lists.map { list in
                 var list = list
-                if list.id == listId { list.color = color }
+                if list.id == listId {
+                    list.color = color
+                }
                 return list
             }
             selectedList?.color = color
@@ -176,7 +184,9 @@ final class ShoppingViewModel {
         Task {
             lists = lists.map { list in
                 var list = list
-                if list.id == listId { list.icon = icon }
+                if list.id == listId {
+                    list.icon = icon
+                }
                 return list
             }
             selectedList?.icon = icon
@@ -201,6 +211,10 @@ final class ShoppingViewModel {
         }
     }
 
+    var currentUserId: String? {
+        repo.session.currentUserId
+    }
+
     // MARK: - Item mutations
 
     func addItem(listId: String, item: String) {
@@ -219,7 +233,9 @@ final class ShoppingViewModel {
         Task {
             items = items.map { existing in
                 var existing = existing
-                if existing.id == item.id { existing.checked = !item.checked }
+                if existing.id == item.id {
+                    existing.checked = !item.checked
+                }
                 return existing
             }
             await repo.setShoppingItemChecked(id: item.id, checked: !item.checked)
@@ -231,7 +247,9 @@ final class ShoppingViewModel {
         Task {
             items = items.map { existing in
                 var existing = existing
-                if existing.id == item.id { existing.item = newName }
+                if existing.id == item.id {
+                    existing.item = newName
+                }
                 return existing
             }
             await repo.renameShoppingItem(id: item.id, item: newName)
@@ -264,6 +282,8 @@ func shoppingProgressLabel(
     locale: Locale = Locale(identifier: "en_US_POSIX")
 ) -> String {
     guard let progress, progress.total > 0 else { return L("No items yet", locale: locale) }
-    if progress.bought == progress.total { return L("All bought", locale: locale) }
+    if progress.bought == progress.total {
+        return L("All bought", locale: locale)
+    }
     return L("\(progress.bought) of \(progress.total) bought", locale: locale)
 }

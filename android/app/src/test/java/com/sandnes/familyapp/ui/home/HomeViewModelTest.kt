@@ -8,9 +8,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,8 +28,8 @@ import org.junit.runners.JUnit4
  * Unit tests for [HomeViewModel].
  *
  * HomeViewModel observes [FamilyRepository.currentUserId] and reloads user data when the ID
- * changes. It does NOT currently observe [FamilyRepository.familyChanged]; the [refresh] function
- * is the mechanism for forcing a reload.
+ * changes or [FamilyRepository.familyChanged] emits. The [refresh] function also forces a reload;
+ * results from a previous user must not restore data or errors after the active user changes.
  *
  * Note: tests deliberately use users with null familyId to avoid triggering
  * the direct SupabaseManager.client call for member count, which cannot be
@@ -56,6 +58,53 @@ class HomeViewModelTest {
     // -------------------------------------------------------------------------
     // 1. Initial state
     // -------------------------------------------------------------------------
+
+    @Test
+    fun `a refresh completing after sign out cannot restore the old dashboard`() =
+        runTest(dispatcherRule.dispatcher) {
+            val ada = UserModel(id = "u1", name = "Ada", familyId = null)
+            coEvery { repo.getUser("u1") } returns ada
+            userId.value = "u1"
+            advanceUntilIdle()
+            val pending = CompletableDeferred<UserModel?>()
+            coEvery { repo.getUser("u1") } coAnswers { pending.await() }
+            vm.refresh()
+            runCurrent()
+
+            userId.value = null
+            runCurrent()
+            assertNull(vm.state.value.user)
+            pending.complete(ada)
+            advanceUntilIdle()
+
+            assertNull(vm.state.value.user)
+            assertFalse(vm.state.value.isLoading)
+            assertFalse(vm.state.value.loadError)
+        }
+
+    @Test
+    fun `a family reload failing after an account change cannot alter the new dashboard`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.getUser("u1") } returns UserModel(id = "u1", name = "Ada", familyId = null)
+            val bob = UserModel(id = "u2", name = "Bob", familyId = null)
+            coEvery { repo.getUser("u2") } returns bob
+            userId.value = "u1"
+            advanceUntilIdle()
+            val pending = CompletableDeferred<UserModel?>()
+            coEvery { repo.getUser("u1") } coAnswers { pending.await() }
+            familyChanged.emit(Unit)
+            runCurrent()
+
+            userId.value = "u2"
+            advanceUntilIdle()
+            assertEquals(bob, vm.state.value.user)
+            pending.completeExceptionally(IllegalStateException("old reload failed"))
+            advanceUntilIdle()
+
+            assertEquals(bob, vm.state.value.user)
+            assertFalse(vm.state.value.isLoading)
+            assertFalse(vm.state.value.loadError)
+        }
 
     @Test
     fun `initial state has isLoading true before any coroutine runs`() {

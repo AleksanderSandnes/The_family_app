@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +47,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.sandnes.familyapp.R
+import com.sandnes.familyapp.data.remote.FamilyMedia
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 @Composable
 fun ImageViewerDialog(
@@ -55,6 +59,7 @@ fun ImageViewerDialog(
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val animatedScale by animateFloatAsState(
         targetValue = scale,
@@ -144,7 +149,7 @@ fun ImageViewerDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(
-                    onClick = { downloadImage(context, url) },
+                    onClick = { scope.launch { downloadImage(context, url) } },
                     modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
@@ -168,15 +173,16 @@ fun ImageViewerDialog(
     }
 }
 
-private fun downloadImage(
+private suspend fun downloadImage(
     context: Context,
     url: String,
 ) {
-    runCatching {
+    try {
+        val readableUrl = FamilyMedia.resolve(url)
         val filename = "family_${System.currentTimeMillis()}.jpg"
         val request =
             DownloadManager
-                .Request(Uri.parse(url))
+                .Request(Uri.parse(readableUrl))
                 .setTitle(context.getString(R.string.saving_image))
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_PICTURES, filename)
@@ -184,7 +190,9 @@ private fun downloadImage(
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         dm.enqueue(request)
         Toast.makeText(context, context.getString(R.string.saving_to_gallery), Toast.LENGTH_SHORT).show()
-    }.onFailure {
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
         Toast.makeText(context, context.getString(R.string.download_failed), Toast.LENGTH_SHORT).show()
     }
 }

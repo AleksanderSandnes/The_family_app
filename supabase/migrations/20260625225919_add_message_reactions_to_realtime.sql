@@ -1,0 +1,5 @@
+
+-- Enable Realtime for message_reactions with FULL replica identity
+ALTER TABLE public.message_reactions REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.message_reactions;
+;

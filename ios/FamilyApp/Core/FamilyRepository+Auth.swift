@@ -49,17 +49,55 @@ extension FamilyRepository {
     /// from the auth session's auth_id and persists it. Returns the app user id.
     @discardableResult
     func completeSignInAfterConfirmation() async throws -> String {
-        guard let authId = client.auth.currentSession?.user.id.uuidString.lowercased() else {
-            throw RepositoryError.notAuthenticated
+        let userID = try await resolveAuthenticatedAppUserID()
+        session.signIn(userId: userID)
+        return userID
+    }
+
+    func restoreAuthSession() async throws -> String {
+        let current = try await client.auth.session
+        return current.user.id.uuidString.lowercased()
+    }
+
+    func currentAuthUserID() -> String? {
+        client.auth.currentSession?.user.id.uuidString.lowercased()
+    }
+
+    func resolveAuthenticatedAppUserID() async throws -> String {
+        let resolver = AuthProfileResolver(
+            currentIdentity: {
+                guard let current = self.client.auth.currentSession else { return nil }
+                return AuthIdentitySnapshot(
+                    authUserID: current.user.id.uuidString.lowercased(), accessToken: current.accessToken
+                )
+            },
+            loadAppUserID: { authID in
+                let users: [UserModel] = try await self.client.from("users")
+                    .select().eq("auth_id", value: authID).execute().value
+                guard let user = users.first else { throw RepositoryError.profileNotFound }
+                return user.id
+            }
+        )
+        return try await resolver.resolve()
+    }
+
+    /// Initial local sessions may be expired; bootstrap must validate them first.
+    /// Confirmed sign-in/refresh events and sign-out keep navigation in sync later.
+    func authSessionEvents() -> AsyncStream<AuthSessionEvent> {
+        let changes = client.auth.authStateChanges
+        return AsyncStream { continuation in
+            let task = Task {
+                for await (event, current) in changes {
+                    if let update = AuthSessionEvent.from(
+                        event, authUserID: current?.user.id.uuidString.lowercased()
+                    ) {
+                        continuation.yield(update)
+                    }
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
         }
-        let users: [UserModel] = try await client.from("users")
-            .select()
-            .eq("auth_id", value: authId)
-            .execute()
-            .value
-        guard let user = users.first else { throw RepositoryError.profileNotFound }
-        session.signIn(userId: user.id)
-        return user.id
     }
 
     /// Starts the browser-based Google OAuth flow (ASWebAuthenticationSession).
@@ -117,5 +155,33 @@ extension FamilyRepository {
         try? await client.auth.signOut()
         invalidateUserCache()
         session.signOut()
+    }
+
+    /// Permanently deletes the signed-in account through the `delete-account` Edge Function
+    /// (media, profile, owned rows; shared family data passes to a remaining member), then
+    /// clears the local session so the root view returns to the signed-out flow.
+    func deleteAccount() async throws {
+        try await client.functions.invoke(
+            "delete-account",
+            options: FunctionInvokeOptions(body: ["confirm": "DELETE_MY_ACCOUNT"])
+        )
+        // The server has already removed the auth user and push tokens, so only local
+        // state is cleared here.
+        forgetPushToken()
+        try? await client.auth.signOut(scope: .local)
+        invalidateUserCache()
+        session.signOut()
+    }
+}
+
+extension AuthSessionEvent {
+    static func from(_ event: AuthChangeEvent, authUserID: String?) -> AuthSessionEvent? {
+        if event == .signedOut || (event == .initialSession && authUserID == nil) {
+            return .signedOut
+        }
+        if [.signedIn, .tokenRefreshed, .passwordRecovery, .userUpdated].contains(event), let authUserID {
+            return .authenticated(authUserID)
+        }
+        return nil
     }
 }

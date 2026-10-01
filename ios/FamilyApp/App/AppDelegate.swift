@@ -94,11 +94,17 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let messageId = payload["messageId"] as? String
         let suppress = await MainActor.run { () -> Bool in
             // Never notify about my own message (same-device dual-login / stale token row).
-            if let senderId, senderId == SessionStore.shared.currentUserId { return true }
+            if let senderId, senderId == SessionStore.shared.currentUserId {
+                return true
+            }
             // Suppress the conversation currently on screen.
-            if let conversationId, ActiveChat.conversationId == conversationId { return true }
+            if let conversationId, ActiveChat.conversationId == conversationId {
+                return true
+            }
             // Suppress duplicate deliveries of the same message.
-            if let messageId, !PresentedMessages.firstSeen(messageId) { return true }
+            if let messageId, !PresentedMessages.firstSeen(messageId) {
+                return true
+            }
             return false
         }
         return suppress ? [] : [.banner, .sound, .badge]
@@ -161,9 +167,13 @@ enum PresentedMessages {
 
     static func firstSeen(_ id: String) -> Bool {
         guard !id.isEmpty else { return true }
-        if ids.contains(id) { return false }
+        if ids.contains(id) {
+            return false
+        }
         ids.append(id)
-        if ids.count > cap { ids.removeFirst(ids.count - cap) }
+        if ids.count > cap {
+            ids.removeFirst(ids.count - cap)
+        }
         return true
     }
 }

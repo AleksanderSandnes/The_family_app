@@ -128,7 +128,9 @@ final class CalendarViewModel {
             events = []
             return
         }
-        if events.isEmpty { isLoading = true }
+        if events.isEmpty {
+            isLoading = true
+        }
         defer { isLoading = false }
         isAdmin = await repo.isFamilyAdmin(userId: userId)
         guard let user = await repo.getUser(userId) else { return }
@@ -236,7 +238,9 @@ func eventTimeLabel(
     _ event: CalendarEventModel,
     locale: Locale = Locale(identifier: "en_US_POSIX")
 ) -> String {
-    if event.allDay { return L("All day", locale: locale) }
+    if event.allDay {
+        return L("All day", locale: locale)
+    }
     return [event.timeFrom, event.timeTo]
         .filter { !$0.isEmpty }
         .joined(separator: " – ")

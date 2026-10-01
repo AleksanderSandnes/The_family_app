@@ -8,6 +8,7 @@
 // See supabase/functions/README.md for the cron wiring.
 import { serviceClient } from "../_shared/client.ts";
 import { PushTarget, sendPushToTokens } from "../_shared/fcm.ts";
+import { authorizeJob } from "../_shared/authorize.ts";
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
@@ -62,7 +63,9 @@ function shouldNotify(daysUntil: number, lead: number): boolean {
   return daysUntil === 0 || (lead > 0 && daysUntil === lead);
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  const denied = authorizeJob(req);
+  if (denied) return denied;
   try {
     const supabase = serviceClient();
     const today = new Date();
@@ -127,8 +130,8 @@ Deno.serve(async (_req) => {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (e) {
-    console.error("daily-reminders error", e);
+  } catch {
+    console.error("daily-reminders failed");
     return new Response("error", { status: 500 });
   }
 });

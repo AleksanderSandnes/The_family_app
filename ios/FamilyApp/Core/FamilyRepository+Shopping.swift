@@ -65,7 +65,9 @@ extension FamilyRepository {
             "owner_user_id": .string(list.ownerUserId),
             "color": list.color.map { AnyJSON.integer($0) } ?? .null,
         ]
-        if let familyId = list.familyId { payload["family_id"] = .string(familyId) }
+        if let familyId = list.familyId {
+            payload["family_id"] = .string(familyId)
+        }
         _ = try? await client.from("shopping_lists").insert(payload).execute()
     }
 

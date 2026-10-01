@@ -1,0 +1,86 @@
+name: CodeQL
+on:
+  push:
+    branches: [master, test, "task/**"]
+  pull_request:
+    branches: [master, test]
+  schedule:
+    - cron: "43 5 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            mode: manual
+            os: ubuntu-latest
+          - language: swift
+            mode: manual
+            os: macos-latest
+          - language: javascript-typescript
+            mode: none
+            os: ubuntu-latest
+          - language: python
+            mode: none
+            os: ubuntu-latest
+          - language: actions
+            mode: none
+            os: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        if: matrix.language == 'java-kotlin'
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        if: matrix.language == 'java-kotlin'
+      - name: Configure isolated Swift build
+        if: matrix.language == 'swift'
+        run: |
+          brew install xcodegen
+          cat > ios/Config/Secrets.xcconfig <<'EOF'
+          SUPABASE_URL = https:/$()/example.supabase.co
+          SUPABASE_ANON_KEY = ci-placeholder-not-a-secret
+          EOF
+          cd ios && xcodegen generate
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.mode }}
+      - name: Compile Android without build caches
+        if: matrix.language == 'java-kotlin'
+        working-directory: android
+        run: ./gradlew clean assembleDebug --no-daemon --no-build-cache --rerun-tasks
+      - name: Compile Swift simulator application
+        if: matrix.language == 'swift'
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild -project FamilyApp.xcodeproj -scheme FamilyApp -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build \
+            | tee "$RUNNER_TEMP/codeql-swift-build.log"
+      - name: Upload Swift compilation evidence
+        if: always() && matrix.language == 'swift'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-swift-build
+          path: ${{ runner.temp }}/codeql-swift-build.log
+          retention-days: 7
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}

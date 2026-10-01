@@ -56,6 +56,14 @@ final class ChatViewModel {
         messages = messages.filter { $0.id != msg.id }
         Task { try? await repo.deleteMessage(messageId: msg.id) }
     }
+
+    // MARK: Moderation
+
+    /// App user ids the current user has blocked. Plain `var` for the `+Moderation` extension.
+    var blockedUserIds: Set<String> = []
+    /// Confirmation for the last moderation action (report sent, user blocked/unblocked).
+    var noticeMessage: String?
+
     private(set) var familyMembers: [UserModel] = []
     private(set) var userProfiles: [String: UserModel] = [:]
 
@@ -339,6 +347,7 @@ final class ChatViewModel {
             let rows = await (try? repo.fetchConversation(id: conversationId)) ?? []
             conversation = rows.first
             await loadMessages(conversationId)
+            await loadBlocks()
 
             let participantRows = await (try? repo.fetchParticipants(
                 conversationId: conversationId
@@ -453,13 +462,19 @@ final class ChatViewModel {
             typingUsers.remove(userId)
         }
     }
+}
 
+extension ChatViewModel {
     /// Broadcasts the current user's typing state (throttled to once every 2 s).
     func setTyping(_ typing: Bool) {
         guard let channel = typingChannel, let myId = repo.session.currentUserId else { return }
         let now = Date()
-        if typing, now.timeIntervalSince(lastTypingSent) < typingThrottleSeconds { return }
-        if typing { lastTypingSent = now }
+        if typing, now.timeIntervalSince(lastTypingSent) < typingThrottleSeconds {
+            return
+        }
+        if typing {
+            lastTypingSent = now
+        }
         Task {
             try? await channel.broadcast(
                 event: "typing",

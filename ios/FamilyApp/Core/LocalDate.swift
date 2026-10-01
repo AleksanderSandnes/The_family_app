@@ -49,7 +49,9 @@ struct LocalDate: Comparable, Hashable, CustomStringConvertible {
     /// Days since 1970-01-01 (Howard Hinnant's days_from_civil).
     var epochDay: Int {
         var y = year
-        if month <= 2 { y -= 1 }
+        if month <= 2 {
+            y -= 1
+        }
         let era = (y >= 0 ? y : y - 399) / 400
         let yoe = y - era * 400
         let doy = (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1

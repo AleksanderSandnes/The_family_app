@@ -74,7 +74,9 @@ extension FamilyRepository {
             "icon": .string(list.icon),
             "color": list.color.map { AnyJSON.integer($0) } ?? .null,
         ]
-        if let familyId = list.familyId { payload["family_id"] = .string(familyId) }
+        if let familyId = list.familyId {
+            payload["family_id"] = .string(familyId)
+        }
         _ = try? await client.from("wishlists").insert(payload).execute()
     }
 
@@ -111,9 +113,15 @@ extension FamilyRepository {
             "user_id": .string(wish.userId),
             "text": .string(wish.text),
         ]
-        if let link = wish.link, !link.isEmpty { payload["link"] = .string(link) }
-        if let price = wish.price, !price.isEmpty { payload["price"] = .string(price) }
-        if let imageUrl = wish.imageUrl { payload["image_url"] = .string(imageUrl) }
+        if let link = wish.link, !link.isEmpty {
+            payload["link"] = .string(link)
+        }
+        if let price = wish.price, !price.isEmpty {
+            payload["price"] = .string(price)
+        }
+        if let imageUrl = wish.imageUrl {
+            payload["image_url"] = .string(imageUrl)
+        }
         _ = try? await client.from("wishes").insert(payload).execute()
     }
 
@@ -124,14 +132,14 @@ extension FamilyRepository {
             .execute()
     }
 
-    func updateWish(id: String, text: String, link: String?, price: String?, imageUrl: String?, description: String?) async {
+    func updateWish(id: String, update: WishUpdate) async {
         _ = try? await client.from("wishes")
             .update([
-                "text": AnyJSON.string(text),
-                "link": link.map { AnyJSON.string($0) } ?? .null,
-                "price": price.map { AnyJSON.string($0) } ?? .null,
-                "image_url": imageUrl.map { AnyJSON.string($0) } ?? .null,
-                "description": description.map { AnyJSON.string($0) } ?? .null,
+                "text": AnyJSON.string(update.text),
+                "link": update.link.map { AnyJSON.string($0) } ?? .null,
+                "price": update.price.map { AnyJSON.string($0) } ?? .null,
+                "image_url": update.imageUrl.map { AnyJSON.string($0) } ?? .null,
+                "description": update.description.map { AnyJSON.string($0) } ?? .null,
             ])
             .eq("id", value: id)
             .execute()

@@ -202,8 +202,12 @@ func minutesSinceMidnight(_ hhmm: String) -> Int? {
 func eventHasEnded(_ event: CalendarEventModel, today: LocalDate, nowMinutes: Int) -> Bool {
     let endIso = event.dateTo.isEmpty ? event.dateFrom : event.dateTo
     guard let endDate = LocalDate(iso: endIso) else { return false }
-    if endDate < today { return true }
-    if endDate > today { return false }
+    if endDate < today {
+        return true
+    }
+    if endDate > today {
+        return false
+    }
     guard !event.allDay, let endMinutes = minutesSinceMidnight(event.timeTo) else { return false }
     return endMinutes <= nowMinutes
 }

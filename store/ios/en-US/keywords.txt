@@ -1,0 +1,1 @@
+family,shopping list,meal planner,calendar,chat,birthday,wishlist,household,shared,organizer

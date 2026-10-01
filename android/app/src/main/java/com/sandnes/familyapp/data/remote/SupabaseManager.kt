@@ -1,9 +1,11 @@
 package com.sandnes.familyapp.data.remote
 
+import android.content.Context
 import com.sandnes.familyapp.BuildConfig
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
@@ -13,12 +15,24 @@ const val DEEP_LINK_SCHEME = "familyapp"
 const val DEEP_LINK_HOST = "auth"
 
 object SupabaseManager {
+    private var applicationContext: Context? = null
+
+    fun initialize(context: Context) {
+        applicationContext = context.applicationContext
+    }
+
+    private val secureAuth by lazy {
+        EncryptedAuthStorage(AndroidSecretStore(checkNotNull(applicationContext) { "Supabase storage is not initialized" }))
+    }
+
     val client by lazy {
         createSupabaseClient(
             supabaseUrl = BuildConfig.SUPABASE_URL,
             supabaseKey = BuildConfig.SUPABASE_ANON_KEY,
         ) {
             install(Auth) {
+                sessionManager = secureAuth
+                codeVerifierCache = secureAuth
                 scheme = DEEP_LINK_SCHEME
                 host = DEEP_LINK_HOST
                 flowType = FlowType.PKCE
@@ -33,6 +47,7 @@ object SupabaseManager {
                 reconnectDelay = 3.seconds
             }
             install(Storage)
+            install(Functions)
         }
     }
 }

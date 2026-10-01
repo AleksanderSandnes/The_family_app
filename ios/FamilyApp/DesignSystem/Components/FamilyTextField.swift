@@ -83,8 +83,12 @@ struct FamilyTextField: View {
     }
 
     private var borderColor: Color {
-        if isError { return .appError }
-        if focused { return Color.appPrimary.opacity(0.5) }
+        if isError {
+            return .appError
+        }
+        if focused {
+            return Color.appPrimary.opacity(0.5)
+        }
         return .clear
     }
 }

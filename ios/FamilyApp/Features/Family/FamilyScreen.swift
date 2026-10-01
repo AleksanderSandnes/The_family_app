@@ -86,11 +86,17 @@ struct FamilyScreen: View {
             "Remove member?",
             isPresented: Binding(
                 get: { memberToRemove != nil },
-                set: { if !$0 { memberToRemove = nil } }
+                set: {
+                    if !$0 {
+                        memberToRemove = nil
+                    }
+                }
             )
         ) {
             Button("Remove", role: .destructive) {
-                if let member = memberToRemove { viewModel.removeMember(member.id) }
+                if let member = memberToRemove {
+                    viewModel.removeMember(member.id)
+                }
                 memberToRemove = nil
             }
             Button("Cancel", role: .cancel) { memberToRemove = nil }
@@ -440,7 +446,7 @@ let familyRelationOptions = [
     "Aunt", "Uncle", "Cousin", "Friend", "Other",
 ]
 
-private struct CreateFamilySheet: View {
+struct CreateFamilySheet: View {
     let onCreate: (String, String) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -493,7 +499,7 @@ private struct CreateFamilySheet: View {
     }
 }
 
-private struct QrSheet: View {
+struct QrSheet: View {
     let family: FamilyModel
 
     var body: some View {

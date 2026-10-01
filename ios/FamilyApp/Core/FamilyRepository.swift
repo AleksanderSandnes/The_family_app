@@ -124,6 +124,11 @@ final class FamilyRepository {
         lastPushToken = nil
     }
 
+    /// Drops the cached token without a network call (the server already deleted it).
+    func forgetPushToken() {
+        lastPushToken = nil
+    }
+
     // MARK: - User cache
 
     private var cachedUser: UserModel?
@@ -135,7 +140,9 @@ final class FamilyRepository {
     }
 
     func getUser(_ userId: String) async -> UserModel? {
-        if userId == cachedUserId, let cachedUser { return cachedUser }
+        if userId == cachedUserId, let cachedUser {
+            return cachedUser
+        }
         let rows: [UserModel] = await (try? client.from("users")
             .select()
             .eq("id", value: userId)

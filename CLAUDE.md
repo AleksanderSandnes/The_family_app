@@ -81,11 +81,14 @@ All Gradle commands run from `android/`. `local.properties`, `google-services.js
 Always run `cd android && ./gradlew assembleDebug`, `./gradlew build`, or any build/test commands to verify that there is no errors.
 
 **Branch workflow — no exceptions:**
-1. Branch from `master` with a descriptive name: `feat/`, `fix/`, `chore/` prefix (e.g. `feat/calendar-recurring-events`).
-2. Merge the task branch into `test`.
-3. Merge `test` into `master`.
-4. Never commit directly to `master` or `test`.
-5. Push all branches
+1. Pull `master` and branch as `task/<descriptiveShortName>` (camelCase).
+2. Run `cd android && ./gradlew spotlessCheck detekt lint testDebugUnitTest assembleDebug` before every commit. Never commit failed checks.
+3. Use Conventional Commits and never add Claude attribution trailers.
+4. Push the task branch and merge verified work into `test`.
+5. Merge `test` into `master` only after explicit user approval. Never commit directly to either branch.
+6. Keep `master`: the user declined renaming it on 2026-09-29.
+7. Install hooks using `git config core.hooksPath .githooks`; install Gitleaks on PATH.
+8. Ask before branch renames/deletions, DNS changes, paid services, store submissions, or production secret rotation.
 
 **After plan-related implementation:** Update the Obsidian vault at `obsidian/` (in-repo — the #1 source of truth). Change milestone status from ⏳ to ✅ in `obsidian/05_Implementation_Plan/Implementation Plan.md`, update `obsidian/00 Home.md` current status, and update any relevant architecture notes. Commit vault changes alongside the code they document.
 

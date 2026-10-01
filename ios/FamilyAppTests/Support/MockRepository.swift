@@ -39,6 +39,8 @@ final class MockRepository: FamilyRepositoryProtocol {
     private(set) var notifyDaysBefore: [Int] = []
     private(set) var locationVisible: [Bool] = []
     private(set) var signOutCalled = false
+    private(set) var deleteAccountCalls = 0
+    var deleteAccountError: Error?
     private(set) var googleSignInCalled = false
     private(set) var leaveFamilyCalls: [String] = []
     private(set) var registeredUsers: [String] = []
@@ -57,7 +59,13 @@ final class MockRepository: FamilyRepositoryProtocol {
     private(set) var loginCalls: [LoginRecord] = []
     private(set) var registerCalls: [RegisterRecord] = []
     private(set) var resetEmailCalls: [String] = []
-    private(set) var confirmResetCalls: [(email: String, code: String, newPassword: String)] = []
+    struct PasswordResetRecord {
+        let email: String
+        let code: String
+        let newPassword: String
+    }
+
+    private(set) var confirmResetCalls: [PasswordResetRecord] = []
     var sendResetError: Error?
     var confirmResetError: Error?
     var hasSession = false
@@ -68,6 +76,16 @@ final class MockRepository: FamilyRepositoryProtocol {
     var loginError: Error?
 
     // App lifecycle (RootViewModel)
+    var authUserID: String?
+    var restoredAuthUserID = "auth-restored"
+    var restoreAuthError: Error?
+    var profileResult = "app-restored"
+    var profileError: Error?
+    var profileLookup: (() async throws -> String)?
+    var authEvents = AsyncStream<AuthSessionEvent> { $0.finish() }
+    private(set) var profileCalls = 0
+    private(set) var pushSyncCalls = 0
+    private(set) var preferenceSyncCalls = 0
     private(set) var touchLastActiveCalled = false
     private(set) var syncPushTokenCalled = false
     private(set) var syncNotificationPrefsCalled = false
@@ -115,13 +133,21 @@ final class MockRepository: FamilyRepositoryProtocol {
     }
 
     /// Family lifecycle
+    var createFamilyError: Error?
     func createFamily(name: String, code _: String, userId _: String) async throws -> String {
+        if let createFamilyError {
+            throw createFamilyError
+        }
         renamedFamilies.append((createResult, name))
         return createResult
     }
 
+    var joinFamilyError: Error?
     func joinFamily(code _: String, userId _: String) async throws -> String {
-        joinResult
+        if let joinFamilyError {
+            throw joinFamilyError
+        }
+        return joinResult
     }
 
     func leaveFamily(userId: String) async {
@@ -150,16 +176,45 @@ final class MockRepository: FamilyRepositoryProtocol {
     }
 
     /// App lifecycle (RootViewModel)
+    func restoreAuthSession() async throws -> String {
+        if let restoreAuthError {
+            throw restoreAuthError
+        }
+        authUserID = restoredAuthUserID
+        return restoredAuthUserID
+    }
+
+    func currentAuthUserID() -> String? {
+        authUserID
+    }
+
+    func resolveAuthenticatedAppUserID() async throws -> String {
+        profileCalls += 1
+        if let profileLookup {
+            return try await profileLookup()
+        }
+        if let profileError {
+            throw profileError
+        }
+        return profileResult
+    }
+
+    func authSessionEvents() -> AsyncStream<AuthSessionEvent> {
+        authEvents
+    }
+
     func touchLastActive() async {
         touchLastActiveCalled = true
     }
 
     func syncPushToken() async {
         syncPushTokenCalled = true
+        pushSyncCalls += 1
     }
 
     func syncNotificationPrefsToServer() async {
         syncNotificationPrefsCalled = true
+        preferenceSyncCalls += 1
     }
 
     /// Profile
@@ -170,21 +225,29 @@ final class MockRepository: FamilyRepositoryProtocol {
     /// Auth
     func login(email: String, password: String) async throws -> String {
         loginCalls.append(LoginRecord(email: email, password: password))
-        if let loginError { throw loginError }
+        if let loginError {
+            throw loginError
+        }
         return loginResult
     }
 
-    func hasAuthSession() -> Bool { hasSession }
+    func hasAuthSession() -> Bool {
+        hasSession
+    }
 
     func confirmSignupEmail(email: String, code: String) async throws -> String {
         confirmSignupCalls.append((email: email, code: code))
-        if let confirmSignupError { throw confirmSignupError }
+        if let confirmSignupError {
+            throw confirmSignupError
+        }
         return confirmResult
     }
 
     func resendSignupCode(email: String) async throws {
         resendSignupCalls.append(email)
-        if let resendSignupError { throw resendSignupError }
+        if let resendSignupError {
+            throw resendSignupError
+        }
     }
 
     func register(
@@ -204,14 +267,25 @@ final class MockRepository: FamilyRepositoryProtocol {
         signOutCalled = true
     }
 
+    func deleteAccount() async throws {
+        deleteAccountCalls += 1
+        if let deleteAccountError {
+            throw deleteAccountError
+        }
+    }
+
     func sendPasswordResetEmail(email: String) async throws {
         resetEmailCalls.append(email)
-        if let sendResetError { throw sendResetError }
+        if let sendResetError {
+            throw sendResetError
+        }
     }
 
     func confirmPasswordReset(email: String, code: String, newPassword: String) async throws -> String {
-        confirmResetCalls.append((email: email, code: code, newPassword: newPassword))
-        if let confirmResetError { throw confirmResetError }
+        confirmResetCalls.append(PasswordResetRecord(email: email, code: code, newPassword: newPassword))
+        if let confirmResetError {
+            throw confirmResetError
+        }
         return confirmResult
     }
 
@@ -249,6 +323,42 @@ final class MockRepository: FamilyRepositoryProtocol {
     var deletedMessages: [String] = []
     func deleteMessage(messageId: String) async throws {
         deletedMessages.append(messageId)
+    }
+
+    var blockedIdsResult: Set<String> = []
+    var moderationError: Error?
+    var blockedUsers: [String] = []
+    var unblockedUsers: [String] = []
+    struct ReportCall {
+        let messageId: String
+        let reason: ReportReason
+        let details: String
+    }
+
+    var reports: [ReportCall] = []
+    func fetchBlockedUserIds() async throws -> Set<String> {
+        blockedIdsResult
+    }
+
+    func blockUser(userId: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        blockedUsers.append(userId)
+    }
+
+    func unblockUser(userId: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        unblockedUsers.append(userId)
+    }
+
+    func reportMessage(messageId: String, reason: ReportReason, details: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        reports.append(ReportCall(messageId: messageId, reason: reason, details: details))
     }
 
     func addReaction(messageId: String, conversationId _: String, emoji: String) async throws {
@@ -384,9 +494,13 @@ final class MockRepository: FamilyRepositoryProtocol {
         deletedConversationIds.append(id)
     }
 
+    var insertTextMessageError: Error?
     func insertTextMessage(
         conversationId: String, userFrom: String, text: String, replyToId: String?
     ) async throws {
+        if let insertTextMessageError {
+            throw insertTextMessageError
+        }
         insertedTextMessages.append(
             TextMessageInsert(
                 conversationId: conversationId, userFrom: userFrom, text: text, replyToId: replyToId
@@ -632,6 +746,10 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func renameShoppingList(id: String, title: String) async {
         renamedShoppingLists.append((id, title))
+        // Match persistence so the view model's post-write reload sees the saved title.
+        for index in shoppingListDetailResult.indices where shoppingListDetailResult[index].id == id {
+            shoppingListDetailResult[index].title = title
+        }
     }
 
     func deleteShoppingList(id: String) async {
@@ -738,9 +856,12 @@ final class MockRepository: FamilyRepositoryProtocol {
     }
 
     private(set) var updatedWishes: [WishUpdateRecord] = []
-    func updateWish(id: String, text: String, link: String?, price: String?, imageUrl: String?, description: String?) async {
+    func updateWish(id: String, update: WishUpdate) async {
         updatedWishes.append(
-            WishUpdateRecord(id: id, text: text, link: link, price: price, imageUrl: imageUrl, description: description)
+            WishUpdateRecord(
+                id: id, text: update.text, link: update.link, price: update.price,
+                imageUrl: update.imageUrl, description: update.description
+            )
         )
     }
 

@@ -27,6 +27,7 @@ struct ConversationScreen: View {
     @State private var showGroupPhotoPicker = false
     @State private var reactionTargetId: String?
     @State private var messageToDelete: MessageModel?
+    @State private var moderation = ModerationState()
 
     private var myId: String? {
         viewModel.currentUserId
@@ -60,7 +61,9 @@ struct ConversationScreen: View {
     }
 
     private func senderName(for userId: String) -> String {
-        if userId == myId { return L("You") }
+        if userId == myId {
+            return L("You")
+        }
         return viewModel.userProfiles[userId]?.name
             ?? viewModel.currentParticipants.first { $0.id == userId }?.name
             ?? L("Unknown")
@@ -78,16 +81,7 @@ struct ConversationScreen: View {
         .featureTopBar(title)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                VStack(spacing: 0) {
-                    Text(title)
-                        .font(.titleMedium)
-                        .foregroundStyle(Color.appOnSurface)
-                    if let presence {
-                        Text(presence)
-                            .font(.labelMedium)
-                            .foregroundStyle(Color.appOnSurfaceVariant)
-                    }
-                }
+                ConversationTitle(title: title, presence: presence)
             }
             ToolbarItem(placement: .topBarTrailing) { optionsMenu }
         }
@@ -127,7 +121,11 @@ struct ConversationScreen: View {
         }
         .alert(L("Delete message?"), isPresented: Binding(
             get: { messageToDelete != nil },
-            set: { if !$0 { messageToDelete = nil } }
+            set: {
+                if !$0 {
+                    messageToDelete = nil
+                }
+            }
         )) {
             Button(L("Delete"), role: .destructive) {
                 messageToDelete.map { viewModel.deleteMessage($0) }
@@ -135,6 +133,7 @@ struct ConversationScreen: View {
             }
             Button(L("Cancel"), role: .cancel) { messageToDelete = nil }
         }
+        .moderationDialogs(viewModel: viewModel, state: $moderation)
         .alert("Delete conversation?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) { viewModel.deleteConversation(conversationId) }
             Button("Cancel", role: .cancel) {}
@@ -227,6 +226,7 @@ struct ConversationScreen: View {
                     Label(L("Remove member"), systemImage: "person.badge.minus")
                 }
             }
+            BlockMenuButton(model: viewModel, state: $moderation)
             // Creator or family admin only (mirrors conversations_delete RLS).
             if viewModel.conversation?.userFrom == myId || viewModel.isAdmin {
                 Button(role: .destructive) { showDeleteConfirm = true } label: {
@@ -249,8 +249,9 @@ extension ConversationScreen {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
-                        let previous = index > 0 ? viewModel.messages[index - 1] : nil
+                    let shown = viewModel.visibleMessages
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, message in
+                        let previous = index > 0 ? shown[index - 1] : nil
                         let showTimeLabel = previous.map {
                             gapExceedsTenMinutes(earlierIso: $0.sentAt, laterIso: message.sentAt)
                         } ?? true
@@ -358,6 +359,7 @@ extension ConversationScreen {
                             .padding(.vertical, Spacing.sm)
                             .glassChrome(cornerRadius: Radius.menu)
                         }
+                        ModerationBar(message: target, model: viewModel, picker: $reactionTargetId, state: $moderation)
                     }
                     .fixedSize()
                     .position(x: min(max(rect.midX, 180), geo.size.width - 180), y: barY)
@@ -526,17 +528,5 @@ extension ConversationScreen {
         }
         draft = ""
         viewModel.setTyping(false)
-    }
-}
-
-// MARK: - Reaction anchor
-
-/// Reports the bounds of the bubble currently targeted for a reaction, so the
-/// screen-level overlay can position the reaction bar above it. Internal (not private)
-/// so MessageRow can set the preference.
-struct BubbleBoundsKey: PreferenceKey {
-    static let defaultValue: [String: Anchor<CGRect>] = [:]
-    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
-        value.merge(nextValue()) { _, new in new }
     }
 }

@@ -5,16 +5,9 @@ name: Android Lint
 # (Per project rule: pushes only ever land on test / main / master.)
 on:
   push:
-    branches: [test, main, master]
-    paths:
-      - "android/**"
-      - ".github/workflows/android-lint.yml"
+    branches: [test, master, "task/**"]
   pull_request:
     branches: [test, main, master]
-    paths:
-      - "android/**"
-      - ".github/workflows/android-lint.yml"
-
 # Cancel superseded runs on the same ref.
 concurrency:
   group: android-lint-${{ github.ref }}
@@ -68,4 +61,17 @@ jobs:
 
       # HARD gate — JVM unit tests.
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest --no-daemon
+        run: ./gradlew testDebugUnitTest :app:koverXmlReportDebug :app:koverHtmlReportDebug --no-daemon
+
+      # HARD gate — overall >= 80% and logic (data/util/ViewModels) >= 90% line coverage.
+      - name: Report and enforce Android coverage
+        run: python3 ../scripts/coverage/android_summary.py app/build/reports/kover/reportDebug.xml --output app/build/reports/kover/summary.json --enforce
+
+      - name: Upload coverage and unit-test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-coverage-and-tests
+          path: |
+            android/app/build/reports/kover/
+            android/app/build/test-results/testDebugUnitTest/

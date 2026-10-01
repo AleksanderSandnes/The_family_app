@@ -37,7 +37,8 @@ struct MealScreen: View {
                                 .swipeActions(edge: .trailing) {
                                     // Creator or admin only; legacy nil-creator plans are
                                     // admin-only (mirrors meal_plans_delete RLS).
-                                    if (plan.createdBy != nil && plan.createdBy == viewModel.currentUserId) || viewModel.isAdmin {
+                                    if (plan.createdBy != nil && plan.createdBy == viewModel.currentUserId)
+                                        || viewModel.isAdmin {
                                         Button(role: .destructive) {
                                             viewModel.deletePlan(plan)
                                         } label: {
@@ -130,7 +131,7 @@ private struct MealPlanRow: View {
 
 // MARK: - Create plan
 
-private struct CreatePlanSheet: View {
+struct CreatePlanSheet: View {
     let onCreate: (_ name: String, _ fromIso: String, _ toIso: String, _ icon: String, _ color: Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -182,10 +183,14 @@ private struct CreatePlanSheet: View {
             EventColorPicker(selection: $color)
             HStack(spacing: Spacing.sm) {
                 PlanDatePicker(label: L("Starts"), selection: $fromDate) { picked in
-                    if let to = toDate, to < picked { toDate = picked }
+                    if let to = toDate, to < picked {
+                        toDate = picked
+                    }
                 }
                 PlanDatePicker(label: L("Ends"), selection: $toDate) { picked in
-                    if let from = fromDate, picked < from { toDate = from }
+                    if let from = fromDate, picked < from {
+                        toDate = from
+                    }
                 }
             }
         }
@@ -197,7 +202,7 @@ private struct CreatePlanSheet: View {
 }
 
 /// Compact date button that opens a graphical picker sheet.
-private struct PlanDatePicker: View {
+struct PlanDatePicker: View {
     let label: String
     @Binding var selection: Date?
     var onPicked: (Date) -> Void = { _ in }
@@ -352,7 +357,7 @@ struct MealDetailScreen: View {
     }
 }
 
-private struct MealDayRow: View {
+struct MealDayRow: View {
     let day: MealPlanDayModel
     let isEditing: Bool
     @Binding var draft: String
@@ -380,7 +385,9 @@ private struct MealDayRow: View {
     }
 
     private var dayNumber: String {
-        if let localDate = LocalDate(iso: day.date) { return "\(localDate.day)" }
+        if let localDate = LocalDate(iso: day.date) {
+            return "\(localDate.day)"
+        }
         return String(day.date.split(separator: "-").last ?? "")
     }
 

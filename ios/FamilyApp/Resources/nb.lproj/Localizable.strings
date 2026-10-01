@@ -411,3 +411,30 @@
 "edited" = "redigert";
 "Editing message" = "Redigerer melding";
 "Delete message?" = "Slette meldingen?";
+"Account" = "Konto";
+"Privacy policy" = "Personvernerklæring";
+"Terms of use" = "Vilkår for bruk";
+"Delete account" = "Slett konto";
+"Delete your account?" = "Slette kontoen din?";
+"This permanently deletes your profile, photos, wishlists, events and messages. Shared family lists and group chats stay with the rest of your family. This cannot be undone." = "Dette sletter profilen, bildene, ønskelistene, hendelsene og meldingene dine permanent. Delte familielister og gruppechatter blir værende hos resten av familien. Dette kan ikke angres.";
+"Delete permanently" = "Slett permanent";
+"Couldn’t delete your account. Check your connection and try again." = "Kunne ikke slette kontoen. Sjekk tilkoblingen og prøv igjen.";
+
+/* Chat moderation */
+"Report" = "Rapporter";
+"Report message" = "Rapporter melding";
+"Tell us what is wrong. The message and your reason are sent for review; the sender is not told who reported it." = "Fortell oss hva som er galt. Meldingen og årsaken sendes til gjennomgang; avsenderen får ikke vite hvem som rapporterte.";
+"Spam" = "Søppelpost";
+"Harassment or bullying" = "Trakassering eller mobbing";
+"Inappropriate content" = "Upassende innhold";
+"Something else" = "Noe annet";
+"Report sent. Thank you." = "Rapporten er sendt. Takk.";
+"Block" = "Blokker";
+"Block %@" = "Blokker %@";
+"Unblock %@" = "Opphev blokkering av %@";
+"Block %@?" = "Blokkere %@?";
+"You will no longer see their messages or get notifications from them. You can unblock them from this chat’s menu." = "Du ser ikke lenger meldingene deres og får ikke varsler fra dem. Du kan oppheve blokkeringen fra menyen i denne chatten.";
+"%@ is blocked" = "%@ er blokkert";
+"%@ is unblocked" = "Blokkeringen av %@ er opphevet";
+
+"Password must be at least 8 characters." = "Passordet må være minst 8 tegn.";

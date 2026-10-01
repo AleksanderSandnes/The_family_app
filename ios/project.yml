@@ -72,7 +72,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.sandnes.familyapp
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.10"
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         # DEVELOPMENT_TEAM is set locally in Xcode (Signing & Capabilities) — not committed.
@@ -99,6 +99,11 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         CFBundleURLTypes:
           - CFBundleURLName: com.sandnes.familyapp
             CFBundleURLSchemes:

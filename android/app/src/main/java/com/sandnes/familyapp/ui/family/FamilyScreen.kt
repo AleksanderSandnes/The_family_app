@@ -240,6 +240,14 @@ fun FamilyScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.cardGap),
             ) {
                 item {
+                    val inviteMessage =
+                        stringResource(
+                            R.string.join_family_invite_message,
+                            family!!.name,
+                            Routes.inviteLink(family!!.joinCode),
+                            family!!.joinCode,
+                        )
+                    val shareTitle = stringResource(R.string.share_invite)
                     FamilyHeaderCard(
                         familyName = family!!.name,
                         joinCode = family!!.joinCode,
@@ -252,19 +260,12 @@ fun FamilyScreen(
                             )
                         },
                         onShare = {
-                            val message =
-                                context.getString(
-                                    R.string.join_family_invite_message,
-                                    family!!.name,
-                                    Routes.inviteLink(family!!.joinCode),
-                                    family!!.joinCode,
-                                )
                             val send =
                                 Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, message)
+                                    putExtra(Intent.EXTRA_TEXT, inviteMessage)
                                 }
-                            context.startActivity(Intent.createChooser(send, context.getString(R.string.share_invite)))
+                            context.startActivity(Intent.createChooser(send, shareTitle))
                         },
                         onShowQr = { showQr = true },
                     )

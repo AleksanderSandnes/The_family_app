@@ -27,7 +27,9 @@ struct BirthdayScreen: View {
                         ForEach(sorted) { birthday in
                             BirthdayCard(birthday: birthday, today: today) {
                                 // Only the creator may edit (auto-birthdays belong to the person).
-                                if birthday.madeByUserId == viewModel.currentUserId { editing = birthday }
+                                if birthday.madeByUserId == viewModel.currentUserId {
+                                    editing = birthday
+                                }
                             }
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -184,11 +186,13 @@ private struct BirthdayCard: View {
 
 /// A birthday's badge colour — the user-picked colour, else the birthdays accent.
 func birthdayAccent(_ birthday: BirthdayModel) -> Color {
-    if let hex = birthday.color { return Color(hex: UInt32(truncatingIfNeeded: hex)) }
+    if let hex = birthday.color {
+        return Color(hex: UInt32(truncatingIfNeeded: hex))
+    }
     return FeatureAccent.birthdays.stroke
 }
 
-private struct BirthdaySheet: View {
+struct BirthdaySheet: View {
     let title: String
     let confirmLabel: String
     var initialName = ""

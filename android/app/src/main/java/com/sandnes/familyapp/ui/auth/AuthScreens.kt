@@ -150,8 +150,7 @@ fun LoginScreen(
                     .clickable {
                         viewModel.clearError()
                         onNavigateToReset()
-                    }
-                    .padding(Spacing.xs),
+                    }.padding(Spacing.xs),
         )
         PrimaryButton(
             text = stringResource(R.string.sign_in),
@@ -243,7 +242,7 @@ fun RegisterScreen(
                         when {
                             name.isBlank() -> viewModel.setError(R.string.please_enter_your_name)
                             !email.contains('@') || !email.contains('.') -> viewModel.setError(R.string.please_enter_a_valid_email_address)
-                            password.length < 6 -> viewModel.setError(R.string.password_must_be_at_least_6_characters)
+                            password.length < MIN_NEW_PASSWORD_LENGTH -> viewModel.setError(R.string.password_must_be_at_least_8_characters)
                             password != confirm -> viewModel.setError(R.string.passwords_do_not_match)
                             else -> {
                                 viewModel.clearError()
@@ -374,8 +373,7 @@ fun ResetPasswordScreen(
                         .clip(RoundedCornerShape(Radius.extraSmall))
                         .clickable(enabled = reset.resendCooldownSeconds == 0 && !reset.loading) {
                             viewModel.resendResetCode()
-                        }
-                        .padding(Spacing.xs),
+                        }.padding(Spacing.xs),
             )
         }
         AuthFooter(
@@ -446,8 +444,7 @@ fun VerifyEmailScreen(
                     .clip(RoundedCornerShape(Radius.extraSmall))
                     .clickable(enabled = verify.resendCooldownSeconds == 0 && !verify.loading) {
                         viewModel.resendSignupCode()
-                    }
-                    .padding(Spacing.xs),
+                    }.padding(Spacing.xs),
         )
         AuthFooter(
             prompt = stringResource(R.string.already_have_an_account),

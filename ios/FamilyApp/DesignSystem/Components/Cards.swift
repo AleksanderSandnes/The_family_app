@@ -7,13 +7,11 @@ struct ListCard<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        Group {
-            if let onTap {
-                Button(action: onTap) { inner }
-                    .buttonStyle(.plain)
-            } else {
-                inner
-            }
+        if let onTap {
+            Button(action: onTap) { inner }
+                .buttonStyle(.plain)
+        } else {
+            inner
         }
     }
 

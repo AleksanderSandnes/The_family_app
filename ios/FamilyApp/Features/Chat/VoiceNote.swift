@@ -69,7 +69,9 @@ final class VoiceRecorder {
         recorder?.stop()
         recorder = nil
         defer {
-            if let fileURL { try? FileManager.default.removeItem(at: fileURL) }
+            if let fileURL {
+                try? FileManager.default.removeItem(at: fileURL)
+            }
             fileURL = nil
         }
         guard send, let fileURL, let data = try? Data(contentsOf: fileURL) else { return nil }
@@ -175,7 +177,7 @@ final class VoicePlayer: NSObject, AVAudioPlayerDelegate {
         loadTask?.cancel()
         loadTask = Task {
             guard let url = URL(string: urlString),
-                  let (data, _) = try? await URLSession.shared.data(from: url),
+                  let (data, _) = try? await FamilyMedia.data(from: url),
                   let player = try? AVAudioPlayer(data: data)
             else { return }
             try? AVAudioSession.sharedInstance().setCategory(.playback)
