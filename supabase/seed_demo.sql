@@ -116,6 +116,8 @@ begin
   insert into public.calendar_events
     (user_id, family_id, date_from, date_to, time_from, time_to, activity, all_day, icon, attendee_ids)
   values
+    (jonas, family, current_date::text, current_date::text, '15:00', '15:30',
+     'School pickup', false, 'school', array[jonas::text, emma::text]),
     (nora, family, (current_date + 1)::text, (current_date + 1)::text, '17:30', '19:00',
      'Football practice', false, 'fitness_center', array[nora::text, lars::text]),
     (emma, family, (current_date + 2)::text, (current_date + 2)::text, '18:00', '19:00',
