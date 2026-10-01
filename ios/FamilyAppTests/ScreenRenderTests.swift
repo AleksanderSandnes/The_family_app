@@ -109,11 +109,15 @@ final class ScreenRenderTests: XCTestCase {
     // MARK: - Auth
 
     func testAuthScreens() async {
+        let auth = AuthViewModel(repo: DemoFamily.mock())
         await ScreenRenderer.render(AuthFlowView())
-        await ScreenRenderer.render(NavigationStack { LoginScreen(onNavigateToRegister: {}, onNavigateToReset: {}) })
-        await ScreenRenderer.render(NavigationStack { RegisterScreen() })
-        await ScreenRenderer.render(NavigationStack { ResetPasswordScreen() })
-        await ScreenRenderer.render(NavigationStack { VerifyEmailScreen(sendCode: false) })
+        await ScreenRenderer.render(
+            NavigationStack { LoginScreen(viewModel: auth, onNavigateToRegister: {}, onNavigateToReset: {}) }
+        )
+        await ScreenRenderer.render(NavigationStack { RegisterScreen(viewModel: auth) })
+        await ScreenRenderer.render(NavigationStack { ResetPasswordScreen(viewModel: auth) })
+        await ScreenRenderer.render(NavigationStack { VerifyEmailScreen(viewModel: auth, sendCode: false) })
+        await ScreenRenderer.render(NavigationStack { VerifyEmailScreen(viewModel: auth, sendCode: true) })
         for step in 0..<3 {
             await ScreenRenderer.render(StepIndicator(currentStep: step))
         }

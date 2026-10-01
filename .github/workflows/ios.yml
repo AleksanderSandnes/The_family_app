@@ -62,6 +62,22 @@ jobs:
               summary.write('## iOS coverage\n\n```text\n' + '\n'.join(targets) + '\n```\n')
               summary.write('Full file and function coverage is in the ios-test-results artifact.\n')
           PYREPORT
+      - name: Report app-only coverage
+        run: python3 scripts/coverage/ios_summary.py ios/build/coverage.txt --output ios/build/coverage-summary.json
+      - name: Export store screenshots
+        if: always()
+        run: |
+          mkdir -p ios/build/store-screenshots
+          # StoreScreenshotTests attaches fictional-data screenshots named store-*;
+          # manifest.json maps the exported files back to those names.
+          xcrun xcresulttool export attachments --path ios/build/TestResults.xcresult --output-path ios/build/store-screenshots || echo "No attachments exported"
+      - name: Upload store screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-store-screenshots
+          path: ios/build/store-screenshots
+          retention-days: 14
       - name: Upload build and test evidence
         if: always()
         uses: actions/upload-artifact@v4
