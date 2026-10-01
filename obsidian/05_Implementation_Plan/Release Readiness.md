@@ -337,6 +337,18 @@ uploads, screenshots, coverage gates and complete bootstrap still require work.
   optionally uploads a Play internal **draft** behind a separate approval. Not yet run:
   CI secrets and Play account steps are owner actions. Names are in `docs/ENVIRONMENTS.md`.
 
+- Store screenshots (2026-10-01): `supabase/seed_demo.sql` seeds a fictional
+  "Family Nordmann" (`@example.com` accounts, invented chat/meals/wishes/events, map pins
+  on public Oslo landmarks) and refuses any database that already has real accounts.
+  `.github/workflows/store-screenshots.yml` (manual, plus PRs touching the flow/seed)
+  restores the baseline schema into a disposable CI stack, seeds it, builds a debug APK
+  pointed at `10.0.2.2:54321` and runs `maestro/store/screenshots.yaml` on an API 34
+  emulator; images arrive as the `android-store-screenshots` artifact for review before
+  they are copied into `store/`. Debug builds alone allow cleartext to the emulator host
+  (`src/debug/res/xml/network_security_config.xml`); release keeps cleartext disabled.
+  The backend recovery CI job now also applies the seed, so schema drift breaks it loudly.
+- Android coverage hard gate (overall >= 80%, logic >= 90%) proposed in PR #13 after the
+  test branch measured 86.70% / 90.19%.
 - iOS coverage (2026-10-01): `SupabaseClientProvider.testOverride` is a test-only seam;
   `FamilyAppTests/Support/StubSupabase.swift` serves fictional model fixtures through an
   in-process `URLProtocol` and records requests, so the real `FamilyRepository`,

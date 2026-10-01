@@ -1,0 +1,107 @@
+name: Store screenshots
+
+# Regenerates Android store screenshots from the fictional demo family only:
+# a disposable local Supabase stack restored from supabase/baseline, seeded with
+# supabase/seed_demo.sql, and a debug build pointed at it from an emulator. No
+# production data, credentials or services are involved. Review every image in the
+# artifact before copying it into store/android/screenshots/.
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [test]
+    paths:
+      - maestro/store/**
+      - supabase/seed_demo.sql
+      - .github/workflows/store-screenshots.yml
+
+concurrency:
+  group: store-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DEMO_EMAIL: demo@example.com
+      DEMO_PASSWORD: store-demo-local-only
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+
+      - name: Start disposable Supabase stack
+        run: |
+          mkdir -p "$RUNNER_TEMP/family-demo"
+          supabase init --workdir "$RUNNER_TEMP/family-demo"
+          supabase start --workdir "$RUNNER_TEMP/family-demo" \
+            --exclude imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Restore schema and seed the fictional demo family
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for file in supabase/baseline/restore.sql supabase/baseline/platform.sql supabase/seed_demo.sql; do
+            psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f "$file"
+          done
+
+      - name: Point the debug build at the local stack
+        run: |
+          anon_key=$(supabase status --workdir "$RUNNER_TEMP/family-demo" -o env | sed -n 's/^ANON_KEY="\(.*\)"$/\1/p')
+          test -n "$anon_key"
+          {
+            echo "SUPABASE_URL=http://10.0.2.2:54321"
+            echo "SUPABASE_ANON_KEY=$anon_key"
+            echo "MAPS_API_KEY=placeholder"
+          } > android/local.properties
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Capture phone screenshots
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            mkdir -p "$RUNNER_TEMP/screenshots/phone/en"
+            maestro test maestro/store/screenshots.yaml -e DEMO_EMAIL="$DEMO_EMAIL" -e DEMO_PASSWORD="$DEMO_PASSWORD" --test-output-dir "$RUNNER_TEMP/screenshots/phone/en"
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-store-screenshots
+          path: |
+            ${{ runner.temp }}/screenshots
+            ~/.maestro/tests
+          retention-days: 14
+
+      - name: Stop Supabase stack
+        if: always()
+        run: supabase stop --workdir "$RUNNER_TEMP/family-demo"
