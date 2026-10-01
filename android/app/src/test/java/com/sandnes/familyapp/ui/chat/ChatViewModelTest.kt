@@ -87,6 +87,7 @@ class ChatViewModelTest {
         // Error events resolve localized strings through the Application context.
         every { app.getString(R.string.failed_to_send_message) } returns "Failed to send message"
         every { app.getString(R.string.failed_to_delete_conversation) } returns "Failed to delete conversation"
+        every { app.getString(R.string.couldnt_save) } returns "Couldn't save"
         vm = ChatViewModel(app, repo)
     }
 
@@ -547,5 +548,87 @@ class ChatViewModelTest {
             advanceUntilIdle()
 
             coVerify(atLeast = 2) { repo.getUser("user-1") }
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Moderation — report / block
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private fun injectMessages(messages: List<MessageModel>) {
+        val field = ChatViewModel::class.java.getDeclaredField("_messages")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        (field.get(vm) as MutableStateFlow<List<MessageModel>>).value = messages
+    }
+
+    @Test
+    fun `visibleMessages hides blocked senders and restores them on unblock`() =
+        runTest(dispatcherRule.dispatcher) {
+            val field = ChatViewModel::class.java.getDeclaredField("_blockedUserIds")
+            field.isAccessible = true
+            @Suppress("UNCHECKED_CAST")
+            val blocked = field.get(vm) as MutableStateFlow<Set<String>>
+            injectMessages(
+                listOf(
+                    MessageModel(id = "m1", conversationId = "c", userFrom = "emma"),
+                    MessageModel(id = "m2", conversationId = "c", userFrom = "lars"),
+                ),
+            )
+            advanceUntilIdle()
+            blocked.value = setOf("lars")
+            advanceUntilIdle()
+            assertEquals(listOf("m1"), vm.visibleMessages.value.map { it.id })
+            blocked.value = emptySet()
+            advanceUntilIdle()
+            assertEquals(listOf("m1", "m2"), vm.visibleMessages.value.map { it.id })
+        }
+
+    @Test
+    fun `blockUser without a signed-in user does nothing`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.blockUser("lars", "Lars")
+            advanceUntilIdle()
+            assertTrue(vm.blockedUserIds.value.isEmpty())
+        }
+
+    @Test
+    fun `blockUser rolls back and reports an error when the insert fails`() =
+        runTest(dispatcherRule.dispatcher) {
+            userId.value = "emma"
+            advanceUntilIdle()
+            vm.errorEvent.test {
+                vm.blockUser("lars", "Lars")
+                advanceUntilIdle()
+                assertEquals("Couldn't save", awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertFalse("lars" in vm.blockedUserIds.value)
+        }
+
+    @Test
+    fun `unblockUser restores the block when the delete fails`() =
+        runTest(dispatcherRule.dispatcher) {
+            val field = ChatViewModel::class.java.getDeclaredField("_blockedUserIds")
+            field.isAccessible = true
+            @Suppress("UNCHECKED_CAST")
+            (field.get(vm) as MutableStateFlow<Set<String>>).value = setOf("lars")
+            vm.errorEvent.test {
+                vm.unblockUser("lars", "Lars")
+                advanceUntilIdle()
+                assertEquals("Couldn't save", awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertTrue("lars" in vm.blockedUserIds.value)
+        }
+
+    @Test
+    fun `reportMessage emits an error when the report cannot be sent`() =
+        runTest(dispatcherRule.dispatcher) {
+            vm.errorEvent.test {
+                vm.reportMessage(MessageModel(id = "m2", userFrom = "lars"), ReportReason.SPAM, " details ")
+                advanceUntilIdle()
+                assertEquals("Couldn't save", awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 }

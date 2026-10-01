@@ -9,7 +9,8 @@ project_id = "The_family_app"
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
+site_url = "https://thefamilyapp.app"
+minimum_password_length = 8
 # familyapp://auth is REQUIRED: Google OAuth redirect + auth email links.
 additional_redirect_urls = ["familyapp://auth"]
 
@@ -24,6 +25,7 @@ double_confirm_changes = true
 # 6-digit code on VerifyEmailScreen. Old app versions error at signup until
 # updated — accepted trade-off.
 enable_confirmations = true
+otp_expiry = 600
 
 [auth.email.template.recovery]
 subject = "Your Family App reset code"

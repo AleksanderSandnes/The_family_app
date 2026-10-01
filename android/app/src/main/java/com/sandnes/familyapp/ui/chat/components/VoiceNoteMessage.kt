@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,8 +34,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sandnes.familyapp.R
+import com.sandnes.familyapp.data.remote.FamilyMedia
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -47,9 +52,12 @@ fun VoiceNoteMessage(
     var durationMs by remember { mutableIntStateOf(0) }
     var positionMs by remember { mutableIntStateOf(0) }
     val player = remember { mutableStateOf<MediaPlayer?>(null) }
+    val scope = rememberCoroutineScope()
+    var loadJob by remember { mutableStateOf<Job?>(null) }
 
     DisposableEffect(url) {
         onDispose {
+            loadJob?.cancel()
             player.value?.release()
             player.value = null
         }
@@ -61,14 +69,19 @@ fun VoiceNoteMessage(
             withContext(Dispatchers.IO) {
                 try {
                     val retriever = android.media.MediaMetadataRetriever()
-                    retriever.setDataSource(url, emptyMap())
-                    val ms =
-                        retriever
-                            .extractMetadata(
-                                android.media.MediaMetadataRetriever.METADATA_KEY_DURATION,
-                            )?.toIntOrNull() ?: 0
-                    retriever.release()
-                    durationMs = ms
+                    try {
+                        retriever.setDataSource(FamilyMedia.resolve(url), emptyMap())
+                        val ms =
+                            retriever
+                                .extractMetadata(
+                                    android.media.MediaMetadataRetriever.METADATA_KEY_DURATION,
+                                )?.toIntOrNull() ?: 0
+                        durationMs = ms
+                    } finally {
+                        retriever.release()
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
                 } catch (_: Exception) {
                 }
             }
@@ -100,21 +113,38 @@ fun VoiceNoteMessage(
             player.value?.pause()
             isPlaying = false
         } else {
-            if (player.value == null) {
-                val mp = MediaPlayer()
-                mp.setDataSource(url)
-                mp.prepareAsync()
-                mp.setOnPreparedListener { prepared ->
-                    durationMs = prepared.duration
-                    prepared.start()
-                    isPlaying = true
-                }
-                mp.setOnCompletionListener {
-                    isPlaying = false
-                    positionMs = 0
-                    progress = 0f
-                }
-                player.value = mp
+            if (player.value == null && loadJob?.isActive != true) {
+                loadJob =
+                    scope.launch {
+                        try {
+                            val readableUrl = FamilyMedia.resolve(url)
+                            val mp = MediaPlayer()
+                            player.value = mp
+                            mp.setDataSource(readableUrl)
+                            mp.setOnPreparedListener { prepared ->
+                                durationMs = prepared.duration
+                                prepared.start()
+                                isPlaying = true
+                            }
+                            mp.setOnCompletionListener {
+                                isPlaying = false
+                                positionMs = 0
+                                progress = 0f
+                            }
+                            mp.setOnErrorListener { _, _, _ ->
+                                mp.release()
+                                player.value = null
+                                isPlaying = false
+                                true
+                            }
+                            mp.prepareAsync()
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            player.value?.release()
+                            player.value = null
+                        }
+                    }
             } else {
                 player.value?.start()
                 isPlaying = true

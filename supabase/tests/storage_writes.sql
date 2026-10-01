@@ -60,6 +60,11 @@ begin
   end loop;
 
   update storage.objects set metadata='{"changed":true}'::jsonb
+    where bucket_id='chat-media' and name='30000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000001/image.jpg';
+  get diagnostics affected = row_count;
+  if affected <> 1 then raise exception 'Own chat media replacement denied'; end if;
+
+  update storage.objects set metadata='{"changed":true}'::jsonb
     where name in ('10000000-0000-0000-0000-000000000002/bob.jpg',
       'family-photos/20000000-0000-0000-0000-000000000002/photo.jpg',
       '30000000-0000-0000-0000-000000000002/image.jpg');

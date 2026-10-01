@@ -124,6 +124,11 @@ final class FamilyRepository {
         lastPushToken = nil
     }
 
+    /// Drops the cached token without a network call (the server already deleted it).
+    func forgetPushToken() {
+        lastPushToken = nil
+    }
+
     // MARK: - User cache
 
     private var cachedUser: UserModel?

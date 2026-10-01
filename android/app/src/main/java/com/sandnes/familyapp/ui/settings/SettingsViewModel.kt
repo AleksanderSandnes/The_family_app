@@ -7,11 +7,15 @@ import com.sandnes.familyapp.data.SessionManager
 import com.sandnes.familyapp.data.ThemeMode
 import com.sandnes.familyapp.util.LocaleManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+enum class DeleteAccountState { Idle, InProgress, Failed }
 
 @HiltViewModel
 class SettingsViewModel
@@ -33,6 +37,24 @@ class SettingsViewModel
 
         val locationVisible: StateFlow<Boolean> =
             repo.locationVisible.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+        private val _deleteAccountState = MutableStateFlow(DeleteAccountState.Idle)
+        val deleteAccountState: StateFlow<DeleteAccountState> = _deleteAccountState.asStateFlow()
+
+        // On success the local session is cleared and RootViewModel switches to the signed-out
+        // flow, so there is no success state to render here.
+        fun deleteAccount() {
+            if (_deleteAccountState.value == DeleteAccountState.InProgress) return
+            _deleteAccountState.value = DeleteAccountState.InProgress
+            viewModelScope.launch {
+                _deleteAccountState.value =
+                    if (repo.deleteAccount().isSuccess) DeleteAccountState.Idle else DeleteAccountState.Failed
+            }
+        }
+
+        fun dismissDeleteAccountError() {
+            _deleteAccountState.value = DeleteAccountState.Idle
+        }
 
         fun setThemeMode(mode: ThemeMode) =
             viewModelScope.launch {

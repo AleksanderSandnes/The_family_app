@@ -39,6 +39,8 @@ final class MockRepository: FamilyRepositoryProtocol {
     private(set) var notifyDaysBefore: [Int] = []
     private(set) var locationVisible: [Bool] = []
     private(set) var signOutCalled = false
+    private(set) var deleteAccountCalls = 0
+    var deleteAccountError: Error?
     private(set) var googleSignInCalled = false
     private(set) var leaveFamilyCalls: [String] = []
     private(set) var registeredUsers: [String] = []
@@ -74,6 +76,16 @@ final class MockRepository: FamilyRepositoryProtocol {
     var loginError: Error?
 
     // App lifecycle (RootViewModel)
+    var authUserID: String?
+    var restoredAuthUserID = "auth-restored"
+    var restoreAuthError: Error?
+    var profileResult = "app-restored"
+    var profileError: Error?
+    var profileLookup: (() async throws -> String)?
+    var authEvents = AsyncStream<AuthSessionEvent> { $0.finish() }
+    private(set) var profileCalls = 0
+    private(set) var pushSyncCalls = 0
+    private(set) var preferenceSyncCalls = 0
     private(set) var touchLastActiveCalled = false
     private(set) var syncPushTokenCalled = false
     private(set) var syncNotificationPrefsCalled = false
@@ -156,16 +168,45 @@ final class MockRepository: FamilyRepositoryProtocol {
     }
 
     /// App lifecycle (RootViewModel)
+    func restoreAuthSession() async throws -> String {
+        if let restoreAuthError {
+            throw restoreAuthError
+        }
+        authUserID = restoredAuthUserID
+        return restoredAuthUserID
+    }
+
+    func currentAuthUserID() -> String? {
+        authUserID
+    }
+
+    func resolveAuthenticatedAppUserID() async throws -> String {
+        profileCalls += 1
+        if let profileLookup {
+            return try await profileLookup()
+        }
+        if let profileError {
+            throw profileError
+        }
+        return profileResult
+    }
+
+    func authSessionEvents() -> AsyncStream<AuthSessionEvent> {
+        authEvents
+    }
+
     func touchLastActive() async {
         touchLastActiveCalled = true
     }
 
     func syncPushToken() async {
         syncPushTokenCalled = true
+        pushSyncCalls += 1
     }
 
     func syncNotificationPrefsToServer() async {
         syncNotificationPrefsCalled = true
+        preferenceSyncCalls += 1
     }
 
     /// Profile
@@ -218,6 +259,13 @@ final class MockRepository: FamilyRepositoryProtocol {
         signOutCalled = true
     }
 
+    func deleteAccount() async throws {
+        deleteAccountCalls += 1
+        if let deleteAccountError {
+            throw deleteAccountError
+        }
+    }
+
     func sendPasswordResetEmail(email: String) async throws {
         resetEmailCalls.append(email)
         if let sendResetError {
@@ -267,6 +315,42 @@ final class MockRepository: FamilyRepositoryProtocol {
     var deletedMessages: [String] = []
     func deleteMessage(messageId: String) async throws {
         deletedMessages.append(messageId)
+    }
+
+    var blockedIdsResult: Set<String> = []
+    var moderationError: Error?
+    var blockedUsers: [String] = []
+    var unblockedUsers: [String] = []
+    struct ReportCall {
+        let messageId: String
+        let reason: ReportReason
+        let details: String
+    }
+
+    var reports: [ReportCall] = []
+    func fetchBlockedUserIds() async throws -> Set<String> {
+        blockedIdsResult
+    }
+
+    func blockUser(userId: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        blockedUsers.append(userId)
+    }
+
+    func unblockUser(userId: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        unblockedUsers.append(userId)
+    }
+
+    func reportMessage(messageId: String, reason: ReportReason, details: String) async throws {
+        if let moderationError {
+            throw moderationError
+        }
+        reports.append(ReportCall(messageId: messageId, reason: reason, details: details))
     }
 
     func addReaction(messageId: String, conversationId _: String, emoji: String) async throws {

@@ -18,6 +18,7 @@ import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.data.remote.SupabaseManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.PostgresAction
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -66,11 +68,13 @@ data class TypingSignal(
 private const val TYPING_AUTOCLEAR_MS = 5000L
 private const val TYPING_THROTTLE_MS = 2000L
 private const val USER_ID_PREVIEW_LENGTH = 8
+private const val REPORT_DETAILS_MAX = 500
 
 // Intentionally one class shared by the chat list and chat detail screens (see CLAUDE.md),
 // so detail-screen deletes reflect in the list on pop-back. Splitting it into separate
-// ViewModels would break that documented contract, so LargeClass is suppressed by design.
-@Suppress("LargeClass")
+// ViewModels would break that documented contract, so LargeClass/TooManyFunctions are
+// suppressed by design (moderation actions live here because they filter the same messages).
+@Suppress("LargeClass", "TooManyFunctions")
 @HiltViewModel
 class ChatViewModel
     @Inject
@@ -163,6 +167,19 @@ class ChatViewModel
 
         private val _errorEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
         val errorEvent: SharedFlow<String> = _errorEvent.asSharedFlow()
+
+        /** Confirmations for moderation actions (report sent, user blocked/unblocked). */
+        private val _noticeEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
+        val noticeEvent: SharedFlow<String> = _noticeEvent.asSharedFlow()
+
+        /** App user ids the current user has blocked (user_blocks, own rows only via RLS). */
+        private val _blockedUserIds = MutableStateFlow<Set<String>>(emptySet())
+        val blockedUserIds: StateFlow<Set<String>> = _blockedUserIds.asStateFlow()
+
+        /** [messages] without those from blocked users — what the conversation screen shows. */
+        val visibleMessages: StateFlow<List<MessageModel>> =
+            combine(_messages, _blockedUserIds, ::visibleMessages)
+                .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
         // Reactions: messageId -> (emoji -> list of userId)
         private val _reactions = MutableStateFlow<Map<String, Map<String, List<String>>>>(emptyMap())
@@ -363,6 +380,7 @@ class ChatViewModel
                             .decodeList<ConversationModel>()
                             .firstOrNull()
                     loadMessages(conversationId)
+                    loadBlocks()
 
                     val participantRows =
                         db
@@ -862,6 +880,72 @@ class ChatViewModel
                     .onSuccess { _undoMessage.value = msg }
                     .onFailure { _errorEvent.emit(app.getString(R.string.couldnt_delete)) }
             }
+
+        /** Loads the current user's blocks; failures leave the previous set in place. */
+        private suspend fun loadBlocks() {
+            runCatching {
+                _blockedUserIds.value =
+                    db
+                        .from("user_blocks")
+                        .select(Columns.list("blocked_id"))
+                        .decodeList<UserBlockRow>()
+                        .map { it.blockedId }
+                        .toSet()
+            }
+        }
+
+        /** Reports another member's message for review; the server snapshots its content. */
+        fun reportMessage(
+            msg: MessageModel,
+            reason: ReportReason,
+            details: String,
+        ) = viewModelScope.launch {
+            runCatching {
+                db.rpc(
+                    "report_message",
+                    buildJsonObject {
+                        put("p_message_id", msg.id)
+                        put("p_reason", reason.dbValue)
+                        put("p_details", details.trim().take(REPORT_DETAILS_MAX))
+                    },
+                )
+            }.onSuccess { _noticeEvent.emit(app.getString(R.string.report_sent)) }
+                .onFailure { _errorEvent.emit(app.getString(R.string.couldnt_save)) }
+        }
+
+        /** Blocks a user: hides their messages immediately and stops their pushes server-side. */
+        fun blockUser(
+            userId: String,
+            name: String,
+        ) = viewModelScope.launch {
+            val me = repo.currentUserId.first() ?: return@launch
+            _blockedUserIds.update { it + userId }
+            runCatching {
+                db.from("user_blocks").insert(
+                    buildJsonObject {
+                        put("blocker_id", me)
+                        put("blocked_id", userId)
+                    },
+                )
+            }.onSuccess { _noticeEvent.emit(app.getString(R.string.user_blocked, name)) }
+                .onFailure {
+                    _blockedUserIds.update { it - userId }
+                    _errorEvent.emit(app.getString(R.string.couldnt_save))
+                }
+        }
+
+        fun unblockUser(
+            userId: String,
+            name: String,
+        ) = viewModelScope.launch {
+            _blockedUserIds.update { it - userId }
+            runCatching { db.from("user_blocks").delete { filter { eq("blocked_id", userId) } } }
+                .onSuccess { _noticeEvent.emit(app.getString(R.string.user_unblocked, name)) }
+                .onFailure {
+                    _blockedUserIds.update { it + userId }
+                    _errorEvent.emit(app.getString(R.string.couldnt_save))
+                }
+        }
 
         /** Re-inserts a deleted message with its original sent_at so it returns to place. */
         fun restoreMessage(msg: MessageModel) =

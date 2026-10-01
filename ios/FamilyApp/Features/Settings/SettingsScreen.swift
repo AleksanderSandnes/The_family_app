@@ -1,6 +1,7 @@
 // Settings: theme selector, notifications toggle + reminder lead-time chips,
-// map-visibility toggle, about card. The lead time syncs to users.notify_days_before so
-// the server-side daily-reminders function honours it.
+// map-visibility toggle, language, and account links (privacy, terms, delete account).
+// The lead time syncs to users.notify_days_before so the server-side daily-reminders
+// function honours it.
 import SwiftUI
 import UserNotifications
 
@@ -19,6 +20,9 @@ struct SettingsScreen: View {
     }
 
     @State private var showSaved = false
+    @State private var showDeleteConfirm = false
+    @State private var deleteAccount = DeleteAccountViewModel()
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView {
@@ -86,12 +90,47 @@ struct SettingsScreen: View {
                         flashSaved()
                     }
                 }
+
+                SectionHeader(text: L("Account"))
+                settingsCard {
+                    LinkRow(systemImage: "hand.raised.fill", title: L("Privacy policy")) {
+                        privacyURL.map { openURL($0) }
+                    }
+                    Divider().padding(.horizontal, Spacing.lg)
+                    LinkRow(systemImage: "doc.text.fill", title: L("Terms of use")) {
+                        termsURL.map { openURL($0) }
+                    }
+                    Divider().padding(.horizontal, Spacing.lg)
+                    LinkRow(
+                        systemImage: "trash.fill",
+                        title: L("Delete account"),
+                        destructive: true,
+                        busy: deleteAccount.isDeleting
+                    ) {
+                        showDeleteConfirm = true
+                    }
+                }
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.sm)
         }
         .ambientBackground()
         .featureTopBar(L("Settings"))
+        .alert(L("Delete your account?"), isPresented: $showDeleteConfirm) {
+            Button(L("Delete permanently"), role: .destructive) { deleteAccount.deleteAccount() }
+            Button(L("Cancel"), role: .cancel) {}
+        } message: {
+            Text(L(
+                // swiftlint:disable:next line_length
+                "This permanently deletes your profile, photos, wishlists, events and messages. Shared family lists and group chats stay with the rest of your family. This cannot be undone."
+            ))
+        }
+        .alert(
+            L("Couldn’t delete your account. Check your connection and try again."),
+            isPresented: $deleteAccount.failed
+        ) {
+            Button("OK", role: .cancel) {}
+        }
         .overlay(alignment: .bottom) {
             if showSaved {
                 Text("Settings saved")
@@ -247,6 +286,44 @@ private struct ThemeSelector: View {
         case .light: "sun.max.fill"
         case .dark: "moon.fill"
         }
+    }
+}
+
+private let privacyURL = URL(string: "https://thefamilyapp.app/privacy")
+private let termsURL = URL(string: "https://thefamilyapp.app/terms")
+
+private struct LinkRow: View {
+    let systemImage: String
+    let title: String
+    var destructive = false
+    var busy = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(destructive ? Color.appError : Color.appPrimary)
+                    .frame(width: 24)
+                Text(title)
+                    .font(.titleMedium)
+                    .foregroundStyle(destructive ? Color.appError : Color.appOnSurface)
+                Spacer()
+                if busy {
+                    ProgressView()
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.appCaption)
+                }
+            }
+            .frame(minHeight: 44)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.sm)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(busy)
     }
 }
 

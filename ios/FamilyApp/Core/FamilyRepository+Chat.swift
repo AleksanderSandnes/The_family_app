@@ -55,6 +55,48 @@ extension FamilyRepository {
             .execute()
     }
 
+    private struct BlockRow: Decodable {
+        let blockedId: String
+
+        enum CodingKeys: String, CodingKey {
+            case blockedId = "blocked_id"
+        }
+    }
+
+    /// The current user's blocks (RLS returns only rows they created).
+    func fetchBlockedUserIds() async throws -> Set<String> {
+        let rows: [BlockRow] = try await client.from("user_blocks")
+            .select("blocked_id")
+            .execute()
+            .value
+        return Set(rows.map(\.blockedId))
+    }
+
+    func blockUser(userId: String) async throws {
+        guard let myId = session.currentUserId else { throw RepositoryError.notAuthenticated }
+        try await client.from("user_blocks")
+            .insert(["blocker_id": AnyJSON.string(myId), "blocked_id": .string(userId)])
+            .execute()
+    }
+
+    func unblockUser(userId: String) async throws {
+        try await client.from("user_blocks")
+            .delete()
+            .eq("blocked_id", value: userId)
+            .execute()
+    }
+
+    /// Reports another member's message; the server snapshots its content for review.
+    func reportMessage(messageId: String, reason: ReportReason, details: String) async throws {
+        try await client
+            .rpc("report_message", params: [
+                "p_message_id": messageId,
+                "p_reason": reason.rawValue,
+                "p_details": String(details.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500)),
+            ])
+            .execute()
+    }
+
     func addReaction(messageId: String, conversationId: String, emoji: String) async throws {
         guard let userId = session.currentUserId else { throw RepositoryError.notAuthenticated }
         try await client.from("message_reactions")

@@ -1,5 +1,43 @@
 # Security audit — in progress
 
+> Owner decision (2026-09-30): accept the remaining Pro-only leaked-password
+> protection warning in both projects. No upgrade is required; this warning
+> does not block release readiness. Other security requirements still apply.
+
+## Verified continuation — 30 September 2026, 20:46 Oslo
+
+This section supersedes older rollout status below. The full plan is still open.
+Supabase CLI is authenticated and both projects are linked; the direct Codex
+Supabase MCP server is configured with OAuth authentication. Production Git branches
+have not been merged. Leaked-password protection was requested through the
+Management API and rejected with HTTP 402 for both projects (Pro required).
+No billing upgrade occurred. Email/password, SMTP, domains, signed builds, store
+uploads, screenshots, coverage gates and complete bootstrap still require work.
+
+- Family task commit `8e149f0`: release-tooling (seven tests), Android,
+  iOS, SwiftLint, backend-security and promotion checks passed. Latest native
+  sources passed 292 XCTest cases. Full coverage artifact measures only 20.43%
+  app lines (5001/24482); the original 80%/90% goals are not achieved. The job
+  summary now prints target totals without exceeding GitHub's 1 MiB limit.
+- Five ordered security migrations applied live: private function wrappers,
+  storage write guards, storage read guards, account-deletion helpers, moderation.
+  `delete-account`, `push-on-message` and `daily-reminders` deployed with JWT
+  verification enabled; unauthenticated deletion/push POSTs return 401.
+- Fresh replay of the live public schema passed function isolation, moderation,
+  storage read/write tests, 65 private-media HTTP checks and 30 deletion checks.
+  Tests used only a disposable localhost stack with fictional fixtures. Bucket
+  visibility remains public pending released signed-URL clients/minimum version.
+- Vault webhook migration transferred the existing server credential entirely
+  inside Postgres and replaced the legacy credential-bearing trigger with
+  `private.notify_chat_message()`. Local rollback tests verify exact transfer,
+  trigger replacement, no embedded credential and denial of client execution.
+  Production secret rotation remains open; moving a credential does not revoke it.
+- Fresh security advisors: one warning (Pro-only leaked-password protection),
+  down from 24. Auth confirmation is enabled; minimum password length is eight (verified through Management API read-back),
+  Site URL is still localhost, SMTP is smtp.resend.com. Domain/sender operation,
+  OTP/rate limits and production redirects need verification.
+
+
 Date: 2026-09-29. Scope: tracked source, all local Git refs and local Android checks.
 Live Supabase metadata inspected on 2026-09-30. Store signing and production hosting remain unverified.
 
@@ -10,7 +48,7 @@ Live Supabase metadata inspected on 2026-09-30. Store signing and production hos
 | Android allows backup of app data | Disable backup; validate merged release manifest and device transfer behavior before release. | Partial |
 | Android transport policy implicit | Explicitly disable cleartext; trust system CAs only. | Fixed locally |
 | Static web security headers absent | Add CSP, HSTS, framing, content-type, referrer and permissions policies. | Added locally; deployment pending |
-| Production branch lacks protection | GitHub API confirms `master` unprotected. User requested keeping `master`. | Open |
+| Production/test quality protection | GitHub API confirms 12 required Actions checks, strict up-to-date PRs and administrator enforcement. Keep master by user decision. | Quality protection live; trusted source/bot activation pending |
 | Existing Android quality checks failing | Correct formatting, name cooldown timing constant and resolve translated share strings in composition. Full Spotless/detekt/lint/unit-test/debug-build checks pass locally. | Fixed locally |
 | Existing Swift CI failing | Fixed native compilation, strict lint/format findings and resend cooldown race. All 251 simulator tests pass in CI. | Fixed on task/test |
 
@@ -74,3 +112,44 @@ permissions/privacy manifests, signing and dependency vulnerability checks.
   app identity previously observed with an authenticated session. Policy and
   ViewModel tests cover these transitions and permission/profile completion.
   Full signed release/login/logout smoke checks remain pending.
+
+- Client private-media prerequisite prepared: per-read short signed URLs, strict
+  project/object validation, no public fallback and protected-image cache bypass.
+  Android real Coil pipeline tests reject cached private pixels after logout/account
+  switch and discard results when identity changes during fetching. All 513 unit
+  tests and required Android checks pass. iOS resolver/URLSession/cache tests await
+  macOS CI. Existing public buckets and permissive read policies still require
+  coordinated backend rollout; this change alone does not make stored media private.
+
+- Staged restrictive private-read policies alongside legacy permissive policies.
+  Local rollback tests verify anonymous/unregistered/cross-family denial, valid
+  conversation/family/shared-wishlist reads, forged locator/user-ID denial and
+  immediate share/member revocation. Existing write tests still pass. Removing
+  either guard makes the tests fail; local security advisors report no issues.
+  CI now repeats both read and write checks. Full Storage HTTP tests, minimum client
+  version coordination and private-bucket rollout remain open; no live flags changed.
+  Rollout details: supabase/security/PRIVATE_MEDIA_ROLLOUT.md.
+
+- Native media validation passed: 264 iOS simulator tests and strict Swift gates
+  on eee5b7f. Android required checks and all 513 tests pass. Local full Auth/Storage
+  HTTP testing passed 65 assertions across four private buckets, including real
+  upload/upsert, signing/authenticated download, cross-account/anonymous/public
+  denial, shared-wishlist revocation and token expiry. Found and fixed the missing
+  chat-media UPDATE policy so owned uploads can be replaced. SQL read/write tests
+  and local security advisors still pass; HTTP smoke testing is now wired into CI.
+  Native signed-release UI flows and production rollout remain open.
+
+- Prepared iOS restored-session navigation hardening: cached app IDs cannot unlock
+  navigation; bootstrap restores Supabase credentials and resolves their matching
+  profile. Ignore non-nil local INITIAL_SESSION as authorization, close/clear on
+  sign-out, reject profile responses after token/account changes and cancel stale
+  work. Verified runtime refresh keeps the existing identity; switching account
+  resolves a fresh profile and resets push sync. Signed-in SwiftUI screens are
+  keyed by app user ID so their drafts/navigation/view models are recreated.
+  Added 17 tests; native CI verification is pending. Android required checks pass.
+
+- Live GitHub quality protections enabled on master/test: 12 named
+  GitHub Actions checks, strict PR/update requirements, administrator enforcement
+  and blocked force pushes/deletion. Trusted promotion-source enforcement is
+  staged but awaits an approved default-branch bootstrap. No production commits
+  changed and no release-bot bypass exists. See docs/BRANCH_PROTECTION.md.

@@ -368,8 +368,8 @@ struct RegisterScreen: View {
             viewModel.setError("Please enter your name.")
         } else if !form.email.contains("@") || !form.email.contains(".") {
             viewModel.setError("Please enter a valid email address.")
-        } else if form.password.count < minPasswordLength {
-            viewModel.setError("Password must be at least 6 characters.")
+        } else if form.password.count < minNewPasswordLength {
+            viewModel.setError("Password must be at least 8 characters.")
         } else if form.password != form.confirm {
             viewModel.setError("Passwords do not match.")
         } else {

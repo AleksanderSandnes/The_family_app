@@ -36,6 +36,14 @@ $$;
 revoke all on function private.can_manage_media(text, text) from public, anon;
 grant execute on function private.can_manage_media(text, text) to authenticated, service_role;
 
+-- Chat uploads use upsert on iOS. The legacy bucket has INSERT/SELECT/DELETE
+-- but no permissive UPDATE policy, so replacing an owned object fails even when
+-- all restrictive guards pass. Authorize only the member's own upload namespace.
+drop policy if exists chat_media_owner_update on storage.objects;
+create policy chat_media_owner_update on storage.objects for update to authenticated
+  using (bucket_id = 'chat-media' and private.can_manage_media(bucket_id, name))
+  with check (bucket_id = 'chat-media' and private.can_manage_media(bucket_id, name));
+
 -- Restrictive guards AND with every existing permissive write policy, preventing
 -- an old broad policy from re-opening another family's files. Preserve other buckets.
 drop policy if exists media_write_scope_insert on storage.objects;

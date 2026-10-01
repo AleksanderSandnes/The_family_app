@@ -242,7 +242,7 @@ fun RegisterScreen(
                         when {
                             name.isBlank() -> viewModel.setError(R.string.please_enter_your_name)
                             !email.contains('@') || !email.contains('.') -> viewModel.setError(R.string.please_enter_a_valid_email_address)
-                            password.length < 6 -> viewModel.setError(R.string.password_must_be_at_least_6_characters)
+                            password.length < MIN_NEW_PASSWORD_LENGTH -> viewModel.setError(R.string.password_must_be_at_least_8_characters)
                             password != confirm -> viewModel.setError(R.string.passwords_do_not_match)
                             else -> {
                                 viewModel.clearError()

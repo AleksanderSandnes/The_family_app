@@ -41,6 +41,8 @@ fun ReactionPickerPopup(
     onDismiss: () -> Unit,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
+    onReport: (() -> Unit)? = null,
+    onBlock: (() -> Unit)? = null,
 ) {
     Popup(
         alignment = Alignment.TopCenter,
@@ -75,36 +77,29 @@ fun ReactionPickerPopup(
                             }
                         }
                     }
-                    // Own-message actions (edit only applies to text messages).
-                    if (onEdit != null || onDelete != null) {
+                    // Own-message actions (edit only applies to text messages); report/block for others'.
+                    val actions =
+                        listOfNotNull(
+                            onEdit?.let { Triple(R.string.edit, false, it) },
+                            onDelete?.let { Triple(R.string.delete, true, it) },
+                            onReport?.let { Triple(R.string.report, true, it) },
+                            onBlock?.let { Triple(R.string.block, true, it) },
+                        )
+                    if (actions.isNotEmpty()) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            if (onEdit != null) {
+                            actions.forEach { (label, destructive, onClick) ->
                                 Text(
-                                    stringResource(R.string.edit),
+                                    stringResource(label),
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                                     modifier =
                                         Modifier
                                             .clip(RoundedCornerShape(16.dp))
-                                            .clickable(onClick = onEdit)
-                                            .heightIn(min = 48.dp)
-                                            .wrapContentHeight()
-                                            .padding(horizontal = 16.dp),
-                                )
-                            }
-                            if (onDelete != null) {
-                                Text(
-                                    stringResource(R.string.delete),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier =
-                                        Modifier
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .clickable(onClick = onDelete)
+                                            .clickable(onClick = onClick)
                                             .heightIn(min = 48.dp)
                                             .wrapContentHeight()
                                             .padding(horizontal = 16.dp),

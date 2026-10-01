@@ -5,6 +5,7 @@ import Foundation
 import Observation
 
 let minPasswordLength = 6
+let minNewPasswordLength = 8
 private let strongPasswordLength = 8
 let resetCodeLength = 6
 private let resendCooldownSeconds = 60
@@ -93,7 +94,7 @@ final class AuthViewModel {
         if form.name.trimmingCharacters(in: .whitespaces).isEmpty {
             return setError("Please enter your name.")
         }
-        guard validate(email: form.email, password: form.password) else { return }
+        guard validate(email: form.email, password: form.password, newPassword: true) else { return }
         if form.password != form.confirm {
             return setError("Passwords do not match.")
         }
@@ -180,8 +181,8 @@ final class AuthViewModel {
         guard trimmed.count == resetCodeLength else {
             return setError("Please enter the 6-digit code from the email.")
         }
-        guard newPassword.count >= minPasswordLength else {
-            return setError("Password must be at least 6 characters.")
+        guard newPassword.count >= minNewPasswordLength else {
+            return setError("Password must be at least 8 characters.")
         }
         loading = true
         error = nil
@@ -300,13 +301,15 @@ final class AuthViewModel {
         }
     }
 
-    private func validate(email: String, password: String) -> Bool {
+    private func validate(email: String, password: String, newPassword: Bool = false) -> Bool {
         if !isValidEmail(email.trimmingCharacters(in: .whitespaces)) {
             setError("Please enter a valid email address.")
             return false
         }
-        if password.count < minPasswordLength {
-            setError("Password must be at least 6 characters.")
+        let minimum = newPassword ? minNewPasswordLength : minPasswordLength
+        if password.count < minimum {
+            setError(newPassword ? "Password must be at least 8 characters." :
+                "Password must be at least 6 characters.")
             return false
         }
         return true
@@ -343,7 +346,7 @@ let authErrorMessages: [(keywords: [String], message: String)] = [
     (["invalid login credentials", "invalid_credentials"], "Incorrect email or password."),
     (["user already registered", "already been registered"], "An account with this email already exists."),
     (["email address is invalid"], "Please enter a valid email address."),
-    (["password should be at least", "weak_password"], "Password must be at least 6 characters."),
+    (["password should be at least", "weak_password"], "Password must be at least 8 characters."),
     (["otp_expired", "token has expired", "invalid token"], "That code is wrong or has expired. Request a new one."),
     (["rate limit", "too many requests"], "Too many attempts. Please wait a moment and try again."),
     (["network", "unable to resolve", "connect", "offline"], "Network error. Please check your connection."),

@@ -75,7 +75,18 @@ The delivered Android milestones are grouped into linked notes rather than one l
 3. Branch workflow: `task → test → master` (never commit directly to `master` or `test`).
 
 ## Long-term goals
-- Swift CodeQL scan recovery is in progress: the generic simulator build compiled both ARM and Intel slices and timed out. Native-architecture scanning and build-log artifacts are staged; a successful full scan is required before advancing the latest task into `test`.
+- ⏳ Branch protection: live strict quality/PR protection enabled on master/test.
+  Trusted source activation and release-bot provisioning remain open.
+- ⏳ iOS auth gate: restoration/profile binding and sign-out handling implemented,
+  with 17 new behavioral/race tests. All 281 native tests passed on e3798e3; final formatter verification and signed
+  release smoke remain open.
+- ⏳ Private media: Android/iOS signed URL reads implemented; Android 513 tests and
+  required checks pass. Read guards pass local isolation/write-compatibility tests; 264 iOS tests/strict
+  Swift checks and 65 real Auth/Storage HTTP assertions pass. Signed-release UI
+  validation, minimum client coordination and private buckets remain pending.
+- Release work resumed by user request on 2026-09-30; portable handover and full
+  updated plan are saved in docs/HANDOVER.md and docs/RELEASE_READINESS_PLAN.txt.
+- Swift CodeQL recovered: [run 36718982820](https://github.com/AleksanderSandnes/The_family_app/actions/runs/36718982820) passed all four languages after switching to the runner's native simulator architecture. Build-log artifacts remain available. Verified changes advanced to `test`; its new run remains pending.
 - Deliver a premium-feeling family app on both Android and iOS.
 - Preserve the original product concepts while modernizing the implementation.
 - Keep the codebase maintainable and easy to extend.

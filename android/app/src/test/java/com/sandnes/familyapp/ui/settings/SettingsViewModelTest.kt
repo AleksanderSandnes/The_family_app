@@ -4,10 +4,12 @@ import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.SessionManager
 import com.sandnes.familyapp.data.ThemeMode
 import com.sandnes.familyapp.util.MainDispatcherRule
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -252,5 +254,44 @@ class SettingsViewModelTest {
             vm.setNotificationsEnabled(false)
             advanceUntilIdle()
             coVerify { repo.setNotificationsEnabled(false) }
+        }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 7. deleteAccount — one request at a time, failure is surfaced then dismissible
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `deleteAccount success returns to Idle after calling repo once`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.deleteAccount() } returns Result.success(Unit)
+            vm.deleteAccount()
+            advanceUntilIdle()
+            assertEquals(DeleteAccountState.Idle, vm.deleteAccountState.value)
+            coVerify(exactly = 1) { repo.deleteAccount() }
+        }
+
+    @Test
+    fun `deleteAccount ignores repeated taps while in progress`() =
+        runTest(dispatcherRule.dispatcher) {
+            val pending = CompletableDeferred<Result<Unit>>()
+            coEvery { repo.deleteAccount() } coAnswers { pending.await() }
+            vm.deleteAccount()
+            advanceUntilIdle()
+            assertEquals(DeleteAccountState.InProgress, vm.deleteAccountState.value)
+            vm.deleteAccount()
+            pending.complete(Result.success(Unit))
+            advanceUntilIdle()
+            coVerify(exactly = 1) { repo.deleteAccount() }
+        }
+
+    @Test
+    fun `deleteAccount failure is reported and can be dismissed`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.deleteAccount() } returns Result.failure(IllegalStateException("offline"))
+            vm.deleteAccount()
+            advanceUntilIdle()
+            assertEquals(DeleteAccountState.Failed, vm.deleteAccountState.value)
+            vm.dismissDeleteAccountError()
+            assertEquals(DeleteAccountState.Idle, vm.deleteAccountState.value)
         }
 }

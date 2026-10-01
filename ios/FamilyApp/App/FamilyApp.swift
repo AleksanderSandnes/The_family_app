@@ -29,6 +29,7 @@ struct FamilyApp: App {
                     }
                 case .signedIn:
                     MainTabView()
+                        .id(SessionStore.shared.currentUserId)
                         .task { await root.onSignedIn() }
                 }
             }

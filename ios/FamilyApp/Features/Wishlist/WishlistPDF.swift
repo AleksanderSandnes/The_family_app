@@ -72,8 +72,7 @@ enum WishlistPDF {
             guard let raw = wish.imageUrl?.trimmingCharacters(in: .whitespaces), !raw.isEmpty,
                   let url = URL(string: raw)
             else { continue }
-            let request = URLRequest(url: url, timeoutInterval: imageFetchTimeout)
-            if let (data, _) = try? await URLSession.shared.data(for: request),
+            if let (data, _) = try? await FamilyMedia.data(from: url, timeout: imageFetchTimeout),
                let image = UIImage(data: data) {
                 result[wish.id] = image
             }

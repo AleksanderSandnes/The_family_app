@@ -27,6 +27,7 @@ struct ConversationScreen: View {
     @State private var showGroupPhotoPicker = false
     @State private var reactionTargetId: String?
     @State private var messageToDelete: MessageModel?
+    @State private var moderation = ModerationState()
 
     private var myId: String? {
         viewModel.currentUserId
@@ -132,6 +133,7 @@ struct ConversationScreen: View {
             }
             Button(L("Cancel"), role: .cancel) { messageToDelete = nil }
         }
+        .moderationDialogs(viewModel: viewModel, state: $moderation)
         .alert("Delete conversation?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) { viewModel.deleteConversation(conversationId) }
             Button("Cancel", role: .cancel) {}
@@ -224,6 +226,7 @@ struct ConversationScreen: View {
                     Label(L("Remove member"), systemImage: "person.badge.minus")
                 }
             }
+            BlockMenuButton(model: viewModel, state: $moderation)
             // Creator or family admin only (mirrors conversations_delete RLS).
             if viewModel.conversation?.userFrom == myId || viewModel.isAdmin {
                 Button(role: .destructive) { showDeleteConfirm = true } label: {
@@ -246,8 +249,9 @@ extension ConversationScreen {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
-                        let previous = index > 0 ? viewModel.messages[index - 1] : nil
+                    let shown = viewModel.visibleMessages
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, message in
+                        let previous = index > 0 ? shown[index - 1] : nil
                         let showTimeLabel = previous.map {
                             gapExceedsTenMinutes(earlierIso: $0.sentAt, laterIso: message.sentAt)
                         } ?? true
@@ -355,6 +359,7 @@ extension ConversationScreen {
                             .padding(.vertical, Spacing.sm)
                             .glassChrome(cornerRadius: Radius.menu)
                         }
+                        ModerationBar(message: target, model: viewModel, picker: $reactionTargetId, state: $moderation)
                     }
                     .fixedSize()
                     .position(x: min(max(rect.midX, 180), geo.size.width - 180), y: barY)

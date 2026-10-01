@@ -57,6 +57,13 @@ final class ChatViewModel {
         Task { try? await repo.deleteMessage(messageId: msg.id) }
     }
 
+    // MARK: Moderation
+
+    /// App user ids the current user has blocked. Plain `var` for the `+Moderation` extension.
+    var blockedUserIds: Set<String> = []
+    /// Confirmation for the last moderation action (report sent, user blocked/unblocked).
+    var noticeMessage: String?
+
     private(set) var familyMembers: [UserModel] = []
     private(set) var userProfiles: [String: UserModel] = [:]
 
@@ -340,6 +347,7 @@ final class ChatViewModel {
             let rows = await (try? repo.fetchConversation(id: conversationId)) ?? []
             conversation = rows.first
             await loadMessages(conversationId)
+            await loadBlocks()
 
             let participantRows = await (try? repo.fetchParticipants(
                 conversationId: conversationId

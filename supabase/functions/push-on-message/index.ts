@@ -26,9 +26,15 @@ Deno.serve(async (req) => {
         supabase.from("device_push_tokens").select("token").eq("user_id", msg.user_from),
       ]);
 
+    // Recipients who blocked the sender get no push (user_blocks, supabase/security/moderation.sql).
+    const { data: blocks } = await supabase
+      .from("user_blocks")
+      .select("blocker_id")
+      .eq("blocked_id", msg.user_from);
+    const blockedBy = new Set((blocks ?? []).map((b) => b.blocker_id));
     const recipientIds = (participants ?? [])
       .map((p) => p.user_id)
-      .filter((id) => id !== msg.user_from);
+      .filter((id) => id !== msg.user_from && !blockedBy.has(id));
     if (recipientIds.length === 0) return new Response("no recipients", { status: 200 });
 
     // Respect each recipient's notification preference (mirrored from the client).
