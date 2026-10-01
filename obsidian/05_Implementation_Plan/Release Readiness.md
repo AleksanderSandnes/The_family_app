@@ -336,3 +336,15 @@ uploads, screenshots, coverage gates and complete bootstrap still require work.
   keys only), builds and verifies a signed AAB in the `production` environment, and
   optionally uploads a Play internal **draft** behind a separate approval. Not yet run:
   CI secrets and Play account steps are owner actions. Names are in `docs/ENVIRONMENTS.md`.
+
+- iOS coverage (2026-10-01): `SupabaseClientProvider.testOverride` is a test-only seam;
+  `FamilyAppTests/Support/StubSupabase.swift` serves fictional model fixtures through an
+  in-process `URLProtocol` and records requests, so the real `FamilyRepository`,
+  auth round-trips and `StorageService` path rules run in unit tests. Screen render tests
+  host every screen/sheet with the fictional Nordmann family (light + dark), and
+  `StoreScreenshotTests` attaches 1320x2868 App Store screenshots exported by CI as
+  `ios-store-screenshots`. `scripts/coverage/ios_summary.py` reports app-only coverage
+  (third-party packages excluded): 20.44% -> 76.02% overall, 58.96% -> 83.97% logic after
+  the first pass, then 83.90% overall / 90.87% logic (388 tests) after view-model gap and
+  state-render tests. ios.yml now enforces both gates (`--enforce`). Several interaction-only sheets became `internal` so they
+  can be rendered directly.

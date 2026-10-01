@@ -133,13 +133,21 @@ final class MockRepository: FamilyRepositoryProtocol {
     }
 
     /// Family lifecycle
+    var createFamilyError: Error?
     func createFamily(name: String, code _: String, userId _: String) async throws -> String {
+        if let createFamilyError {
+            throw createFamilyError
+        }
         renamedFamilies.append((createResult, name))
         return createResult
     }
 
+    var joinFamilyError: Error?
     func joinFamily(code _: String, userId _: String) async throws -> String {
-        joinResult
+        if let joinFamilyError {
+            throw joinFamilyError
+        }
+        return joinResult
     }
 
     func leaveFamily(userId: String) async {
@@ -486,9 +494,13 @@ final class MockRepository: FamilyRepositoryProtocol {
         deletedConversationIds.append(id)
     }
 
+    var insertTextMessageError: Error?
     func insertTextMessage(
         conversationId: String, userFrom: String, text: String, replyToId: String?
     ) async throws {
+        if let insertTextMessageError {
+            throw insertTextMessageError
+        }
         insertedTextMessages.append(
             TextMessageInsert(
                 conversationId: conversationId, userFrom: userFrom, text: text, replyToId: replyToId

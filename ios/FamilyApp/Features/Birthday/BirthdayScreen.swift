@@ -192,7 +192,7 @@ func birthdayAccent(_ birthday: BirthdayModel) -> Color {
     return FeatureAccent.birthdays.stroke
 }
 
-private struct BirthdaySheet: View {
+struct BirthdaySheet: View {
     let title: String
     let confirmLabel: String
     var initialName = ""

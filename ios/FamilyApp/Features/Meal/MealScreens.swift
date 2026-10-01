@@ -131,7 +131,7 @@ private struct MealPlanRow: View {
 
 // MARK: - Create plan
 
-private struct CreatePlanSheet: View {
+struct CreatePlanSheet: View {
     let onCreate: (_ name: String, _ fromIso: String, _ toIso: String, _ icon: String, _ color: Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -202,7 +202,7 @@ private struct CreatePlanSheet: View {
 }
 
 /// Compact date button that opens a graphical picker sheet.
-private struct PlanDatePicker: View {
+struct PlanDatePicker: View {
     let label: String
     @Binding var selection: Date?
     var onPicked: (Date) -> Void = { _ in }
@@ -357,7 +357,7 @@ struct MealDetailScreen: View {
     }
 }
 
-private struct MealDayRow: View {
+struct MealDayRow: View {
     let day: MealPlanDayModel
     let isEditing: Bool
     @Binding var draft: String
