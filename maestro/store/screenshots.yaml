@@ -8,9 +8,15 @@ tags:
 - launchApp:
     appId: com.sandnes.familyapp
     clearState: true
+# CI emulators sometimes show a system "isn't responding" dialog over the app.
+- runFlow:
+    when:
+      visible: "Wait"
+    commands:
+      - tapOn: "Wait"
 - extendedWaitUntil:
     visible: "Sign in"
-    timeout: 30000
+    timeout: 60000
 - tapOn: "Email"
 - inputText: ${DEMO_EMAIL}
 - tapOn: "Password"
