@@ -122,7 +122,7 @@ begin
      'Parent-teacher meeting', false, 'school', array[emma::text]),
     (jonas, family, (current_date + 4)::text, (current_date + 4)::text, '10:00', '12:00',
      'Swimming lesson', false, 'star', array[jonas::text, emma::text]),
-    (lars, family, (current_date + 9)::text, (current_date + 11)::text, null, null,
+    (lars, family, (current_date + 9)::text, (current_date + 11)::text, '', '',
      'Cabin weekend', true, 'home', array[emma::text, lars::text, nora::text, jonas::text]);
 
   -- Birthdays (members + a fictional grandparent).
