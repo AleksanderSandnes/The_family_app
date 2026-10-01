@@ -446,7 +446,8 @@ let familyRelationOptions = [
     "Aunt", "Uncle", "Cousin", "Friend", "Other",
 ]
 
-private struct CreateFamilySheet: View {
+// Internal (not private) so ScreenStateRenderTests can render it directly.
+struct CreateFamilySheet: View {
     let onCreate: (String, String) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -499,7 +500,8 @@ private struct CreateFamilySheet: View {
     }
 }
 
-private struct QrSheet: View {
+// Internal (not private) so ScreenStateRenderTests can render it directly.
+struct QrSheet: View {
     let family: FamilyModel
 
     var body: some View {

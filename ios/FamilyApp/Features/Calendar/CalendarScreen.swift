@@ -252,7 +252,8 @@ private struct WeekdayHeader: View {
     }
 }
 
-private struct WeekStrip: View {
+// Internal (not private) so ScreenStateRenderTests can render it directly.
+struct WeekStrip: View {
     let selectedDate: LocalDate
     let dotColorsByDate: [LocalDate: [Color]]
     let onDaySelected: (LocalDate) -> Void
@@ -355,7 +356,8 @@ private struct DayCell: View {
 
 // MARK: - Agenda
 
-private struct AgendaList: View {
+// Internal (not private) so ScreenStateRenderTests can render it directly.
+struct AgendaList: View {
     let events: [CalendarEventModel]
     let onEdit: (CalendarEventModel) -> Void
     let onDelete: (CalendarEventModel) -> Void
