@@ -138,3 +138,9 @@ fun ComposeContentTestRule.editField(
         waitForIdle()
     }
 }
+
+/** Flips the [index]th switch/checkbox currently on screen. */
+fun ComposeContentTestRule.clickToggle(index: Int = 0) {
+    onAllNodes(androidx.compose.ui.test.isToggleable())[index].click()
+    waitForIdle()
+}
