@@ -252,7 +252,7 @@ private struct WeekdayHeader: View {
     }
 }
 
-private struct WeekStrip: View {
+struct WeekStrip: View {
     let selectedDate: LocalDate
     let dotColorsByDate: [LocalDate: [Color]]
     let onDaySelected: (LocalDate) -> Void
@@ -355,7 +355,7 @@ private struct DayCell: View {
 
 // MARK: - Agenda
 
-private struct AgendaList: View {
+struct AgendaList: View {
     let events: [CalendarEventModel]
     let onEdit: (CalendarEventModel) -> Void
     let onDelete: (CalendarEventModel) -> Void

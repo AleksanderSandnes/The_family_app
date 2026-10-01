@@ -200,7 +200,7 @@ struct EventSheet: View {
 
 /// Full attendee multi-select, presented as its own sheet from the compact "Going with" row
 /// so the event form itself stays short.
-private struct AttendeePickerSheet: View {
+struct AttendeePickerSheet: View {
     let members: [UserModel]
     @Binding var selection: Set<String>
     @Environment(\.dismiss) private var dismiss

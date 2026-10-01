@@ -16,7 +16,15 @@ enum SupabaseClientProvider {
         return url
     }()
 
-    static let client: SupabaseClient = {
+    /// Test seam: unit tests install a client backed by a stubbed transport so repository and
+    /// service code runs against fictional responses. The app never sets it.
+    static var testOverride: SupabaseClient?
+
+    static var client: SupabaseClient {
+        testOverride ?? liveClient
+    }
+
+    private static let liveClient: SupabaseClient = {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String,
               !key.isEmpty, !key.contains("your-anon-key")
         else {
