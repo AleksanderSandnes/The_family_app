@@ -21,11 +21,22 @@ store/
 
 `scripts/check-store-listing.mjs` enforces these limits and is run by the repository checks.
 
-## Still to produce (needs the running app or design tools)
+## Screenshots and graphics (fictional data only)
 
-- Screenshots captured from a demo account with fictional data only (phone, 7" and 10" tablet,
-  iPhone 6.9"/6.7", iPad 13"). Review every image before committing.
-- Play feature graphic (1024x500) and hi-res icon (512x512).
+- `store/android/screenshots/phone/en/` — real app screenshots (1080x2400) of the fictional
+  "Family Nordmann" from `supabase/seed_demo.sql`, captured by
+  `.github/workflows/store-screenshots.yml` (disposable CI Supabase stack, debug APK, API 34
+  emulator, `maestro/store/screenshots.yaml`). Re-run the workflow and review the
+  `android-store-screenshots` artifact before replacing them.
+- iPhone 6.9" (1320x2868) screenshots come from `StoreScreenshotTests` (mock data, same
+  fictional family) as the `ios-store-screenshots` artifact of `ios.yml`.
+- `store/android/graphics/feature-graphic.png` (1024x500) and `icon-512.png` (512x512):
+  `PLAYWRIGHT_MODULE=<path to playwright/index.mjs> node scripts/render-store-graphics.mjs`.
+
+## Still to produce
+
+- 7" / 10" tablet captures if tablet support is declared in Play.
 - Review notes with demo reviewer credentials (supplied to the store console, never committed).
+  Never run `seed_demo.sql` against production; create the reviewer account there by hand.
 
 Legal-sensitive text (privacy claims, data-safety answers) must be reviewed by the owner before submission.
