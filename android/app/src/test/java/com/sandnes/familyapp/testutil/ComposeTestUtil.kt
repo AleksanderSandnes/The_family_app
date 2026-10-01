@@ -134,7 +134,7 @@ fun ComposeContentTestRule.editField(
     field.performTextReplacement(replacement)
     waitForIdle()
     if (done) {
-        field.performImeAction()
+        onAllNodes(hasSetTextAction() and hasTextMatcher(replacement))[0].performImeAction()
         waitForIdle()
     }
 }
