@@ -1,5 +1,23 @@
 # Release readiness handover — 30 September 2026
 
+## Release readiness — 1 October 2026
+
+Android coverage gates merged in #13 (86.7% overall / 90.2% logic).
+iOS #15 adds enforced coverage gates (83.90% overall / 90.87% logic);
+its branch was updated and required checks must pass before merging into `test`.
+After #15, update #14 (demo seed, Android screenshots and Play graphics),
+then merge only when required checks are green. HMI #54 has merged into `test`.
+
+Six reviewed English iOS screenshots (1320x2868) are now stored in
+`store/ios/screenshots/iphone-6.9/en/`, from run 36855681829.
+The camera-menu Robolectric UI test now supplies a fixed provider URI so
+Android's device path separator assumptions do not fail the test on Windows.
+Promotion PR #16 (`test` to `master`) remains open for owner review.
+Production promotion, domain/DNS/SMTP work, signing identities, credential
+rotation, private media activation, reviewer accounts, store submission and
+legal review remain owner-gated. Never run the demo seed on production.
+
+
 ## First release-proposal workflow verification — 30 September 2026
 
 HMI PR #46 merged into `test` after all task/PR checks passed. The first

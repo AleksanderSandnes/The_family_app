@@ -1,5 +1,13 @@
 # The Family App
 
+## Current release status — 1 October 2026
+
+Reviewed English iOS store screenshots are in `store/ios/screenshots/iphone-6.9/en/`.
+Android coverage gates are delivered; iOS coverage PR #15 and store assets PR #14
+must pass required checks before merging into `test`. Promotion PR #16 awaits
+owner review. See `docs/HANDOVER.md`; production activation remains owner-gated.
+
+
 ## First release-proposal workflow verification — 30 September 2026
 
 HMI PR #46 merged into `test` after all task/PR checks passed. The first

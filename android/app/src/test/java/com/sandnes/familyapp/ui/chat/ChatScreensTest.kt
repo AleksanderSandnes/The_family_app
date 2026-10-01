@@ -464,7 +464,18 @@ class ChatScreensTest : ComposeScreenTest() {
         compose.clickDescription(str(R.string.photo_library))
         compose.clickText(str(R.string.photo_library))
         compose.clickDescription(str(R.string.photo_library))
-        compose.clickText(str(R.string.camera))
+        // Android's FileProvider expects device path separators; Robolectric runs
+        // on Windows too. This UI test exercises the picker, not provider paths.
+        io.mockk.mockkStatic(androidx.core.content.FileProvider::class)
+        try {
+            every {
+                androidx.core.content.FileProvider
+                    .getUriForFile(any(), any(), any())
+            } returns android.net.Uri.parse("content://com.sandnes.familyapp.fileprovider/camera_captures/test.jpg")
+            compose.clickText(str(R.string.camera))
+        } finally {
+            io.mockk.unmockkStatic(androidx.core.content.FileProvider::class)
+        }
         compose.onAllNodesWithText("x").fetchSemanticsNodes()
     }
 

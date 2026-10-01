@@ -75,6 +75,10 @@ The delivered Android milestones are grouped into linked notes rather than one l
 3. Branch workflow: `task → test → master` (never commit directly to `master` or `test`).
 
 ## Long-term goals
+
+- ✅ Reviewed English iOS store screenshots: six fictional-data images at
+  1320x2868 imported on 2026-10-01. Native signing, store submission and the
+  approved production promotion remain pending; see `docs/HANDOVER.md`.
 - ⏳ Branch protection: live strict quality/PR protection enabled on master/test.
   Trusted source activation and release-bot provisioning remain open.
 - ⏳ iOS auth gate: restoration/profile binding and sign-out handling implemented,

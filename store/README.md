@@ -23,6 +23,17 @@ store/
 
 ## Still to produce (needs the running app or design tools)
 
+## Reviewed iOS screenshots — 1 October 2026
+
+`store/ios/screenshots/iphone-6.9/en/` contains six 1320x2868 PNGs: home,
+chat, shopping, calendar, meals and wishlist. Source: iOS Build and Tests run
+36855681829, artifact `ios-store-screenshots`. The capture harness renders
+440x956 points at 3x on the iPhone 17 Pro simulator using the fictional
+Nordmann family. All six images were visually reviewed before importing.
+These screen captures do not replace a signed release smoke test.
+
+## Remaining assets
+
 - Screenshots captured from a demo account with fictional data only (phone, 7" and 10" tablet,
   iPhone 6.9"/6.7", iPad 13"). Review every image before committing.
 - Play feature graphic (1024x500) and hi-res icon (512x512).
