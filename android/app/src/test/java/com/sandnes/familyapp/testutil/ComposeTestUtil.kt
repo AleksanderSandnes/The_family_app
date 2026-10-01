@@ -144,3 +144,11 @@ fun ComposeContentTestRule.clickToggle(index: Int = 0) {
     onAllNodes(androidx.compose.ui.test.isToggleable())[index].click()
     waitForIdle()
 }
+
+fun SemanticsNodeInteraction.performImeActionForTest() {
+    performImeAction()
+}
+
+fun SemanticsNodeInteraction.performTextReplacementForTest(text: String) {
+    performTextReplacement(text)
+}
