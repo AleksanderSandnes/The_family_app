@@ -21,11 +21,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertTrue
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.robolectric.Shadows.shadowOf
@@ -41,10 +39,8 @@ class FamilyMapScreenTest : ComposeScreenTest() {
         every { CameraUpdateFactory.newLatLngBounds(any(), any()) } returns mockk<CameraUpdate>(relaxed = true)
     }
 
-    @After
-    fun unstubMapsSdk() {
-        unmockkStatic(BitmapDescriptorFactory::class, CameraUpdateFactory::class)
-    }
+    // The static stubs are deliberately left in place: marker bitmaps are built on a background
+    // dispatcher that can still be running when a test ends, and must never reach the real SDK.
 
     private val myLocation = MutableStateFlow<LatLng?>(null)
     private val locations = MutableStateFlow<List<UserLocationModel>>(emptyList())

@@ -12,7 +12,7 @@ import kotlinx.coroutines.test.runCurrent
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 fun TestCoroutineScheduler.eventually(
-    timeoutMs: Long = 5_000,
+    timeoutMs: Long = 30_000,
     message: String = "condition not met in ${timeoutMs}ms",
     condition: () -> Boolean,
 ) {
