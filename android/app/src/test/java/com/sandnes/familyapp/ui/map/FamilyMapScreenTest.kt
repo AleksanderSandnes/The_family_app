@@ -2,6 +2,10 @@ package com.sandnes.familyapp.ui.map
 
 import android.Manifest
 import android.app.Application
+import com.google.android.gms.maps.CameraUpdate
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.UserLocationModel
@@ -11,19 +15,13 @@ import com.sandnes.familyapp.testutil.appContext
 import com.sandnes.familyapp.testutil.clickDescription
 import com.sandnes.familyapp.testutil.clickText
 import com.sandnes.familyapp.testutil.clickToggle
-import com.sandnes.familyapp.testutil.hasText
 import com.sandnes.familyapp.testutil.str
 import com.sandnes.familyapp.testutil.waitForText
-import com.google.android.gms.maps.CameraUpdate
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.BitmapDescriptor
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.robolectric.Shadows.shadowOf

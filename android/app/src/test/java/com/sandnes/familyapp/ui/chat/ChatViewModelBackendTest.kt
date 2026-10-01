@@ -766,4 +766,15 @@ class ChatViewModelBackendTest {
             val preview: ConversationWithPreview = vm.conversations.value.first()
             assertEquals(ConversationModel::class, preview.conversation::class)
         }
+
+    @Test
+    fun `clearing the view model releases its realtime channels`() =
+        runTest(dispatcherRule.dispatcher) {
+            val vm = loaded()
+            finish(vm.loadConversation("c1"))
+            val onCleared = ChatViewModel::class.java.getDeclaredMethod("onCleared")
+            onCleared.isAccessible = true
+            onCleared.invoke(vm)
+            settle { true }
+        }
 }

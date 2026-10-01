@@ -143,7 +143,13 @@ class FamilyScreenTest : ComposeScreenTest() {
         compose.clickText(str(R.string.set_relation))
         compose.clickText(str(R.string.relation_cousin))
         compose.waitUntil(20_000) { backend.requestsTo("family_relations", HttpMethod.Post).isNotEmpty() }
-        assertTrue(backend.requestsTo("family_relations", HttpMethod.Post).first().body.contains("Cousin"))
+        assertTrue(
+            backend
+                .requestsTo("family_relations", HttpMethod.Post)
+                .first()
+                .body
+                .contains("Cousin"),
+        )
     }
 
     @Test
@@ -201,7 +207,9 @@ class FamilyScreenTest : ComposeScreenTest() {
         compose.setContent { FamilyScreen(viewModel = vm) }
         compose.waitForText(str(R.string.bring_your_family_together))
         // After joining, the repository now reports the family.
-        coEvery { repo.getUser("u1") } returns com.sandnes.familyapp.data.UserModel(id = "u1", name = "Ada", familyId = "f1")
+        coEvery { repo.getUser("u1") } returns
+            com.sandnes.familyapp.data
+                .UserModel(id = "u1", name = "Ada", familyId = "f1")
         compose.clickText(str(R.string.join_with_invite_code))
         compose.typeInto("GOOD")
         compose.clickText(str(R.string.join))

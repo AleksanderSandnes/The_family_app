@@ -569,4 +569,62 @@ class AuthViewModelTest {
             assertEquals(R.string.network_error_check_connection, vm.state.value.error)
             assertFalse(vm.state.value.loading)
         }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // resend flows once the cooldown has elapsed
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `resendSignupCode success clears loading and restarts the cooldown`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.resendSignupCode(any()) } returns Result.success(Unit)
+
+            vm.resendSignupCode()
+            runCurrent()
+
+            assertFalse(vm.verifyState.value.loading)
+            assertTrue(vm.verifyState.value.resendCooldownSeconds > 0)
+            // A second tap during the cooldown is ignored.
+            vm.resendSignupCode()
+            runCurrent()
+            coVerify(exactly = 1) { repo.resendSignupCode(any()) }
+            vm.clearVerifyFlow()
+        }
+
+    @Test
+    fun `resendSignupCode failure surfaces an error`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.resendSignupCode(any()) } returns Result.failure(RuntimeException("network down"))
+
+            vm.resendSignupCode()
+            advanceUntilIdle()
+
+            assertFalse(vm.verifyState.value.loading)
+            assertEquals(R.string.network_error_check_connection, vm.verifyState.value.error)
+        }
+
+    @Test
+    fun `resendResetCode success clears loading and restarts the cooldown`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.sendPasswordResetEmail(any()) } returns Result.success(Unit)
+
+            vm.resendResetCode()
+            runCurrent()
+
+            assertFalse(vm.resetState.value.loading)
+            assertTrue(vm.resetState.value.resendCooldownSeconds > 0)
+            vm.clearResetFlow()
+        }
+
+    @Test
+    fun `resendResetCode failure surfaces an error`() =
+        runTest(dispatcherRule.dispatcher) {
+            coEvery { repo.sendPasswordResetEmail(any()) } returns Result.failure(RuntimeException("network down"))
+
+            vm.resendResetCode()
+            advanceUntilIdle()
+
+            assertFalse(vm.resetState.value.loading)
+            assertEquals(R.string.network_error_check_connection, vm.resetState.value.error)
+        }
 }

@@ -6,22 +6,22 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasText as hasTextMatcher
-import androidx.compose.ui.test.onChildren
-import androidx.compose.ui.test.onParent
-import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onChildren
+import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ApplicationProvider
+import androidx.compose.ui.test.hasText as hasTextMatcher
 
 /** Helpers shared by the Robolectric Compose screen tests. */
 val appContext: Context get() = ApplicationProvider.getApplicationContext()
@@ -141,7 +141,10 @@ fun ComposeContentTestRule.editField(
 
 /** Flips the [index]th switch/checkbox currently on screen. */
 fun ComposeContentTestRule.clickToggle(index: Int = 0) {
-    onAllNodes(androidx.compose.ui.test.isToggleable())[index].click()
+    onAllNodes(
+        androidx.compose.ui.test
+            .isToggleable(),
+    )[index].click()
     waitForIdle()
 }
 

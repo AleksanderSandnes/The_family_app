@@ -1,10 +1,9 @@
 package com.sandnes.familyapp.ui.birthday
 
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import com.sandnes.familyapp.R
@@ -85,7 +84,13 @@ class BirthdayScreenTest {
         compose.clickText(str(R.string.ok))
         compose.clickText(str(R.string.add))
         compose.waitUntil(20_000) { backend.requestsTo("/rest/v1/birthdays", HttpMethod.Post).isNotEmpty() }
-        assertTrue(backend.requestsTo("/rest/v1/birthdays", HttpMethod.Post).single().body.contains("Zed"))
+        assertTrue(
+            backend
+                .requestsTo("/rest/v1/birthdays", HttpMethod.Post)
+                .single()
+                .body
+                .contains("Zed"),
+        )
     }
 
     @Test
@@ -121,7 +126,13 @@ class BirthdayScreenTest {
         compose.typeInto("Tod2")
         compose.clickText(str(R.string.save))
         compose.waitUntil(20_000) { backend.requestsTo("/rest/v1/birthdays", HttpMethod.Patch).isNotEmpty() }
-        assertTrue(backend.requestsTo("/rest/v1/birthdays", HttpMethod.Patch).single().body.contains("Tod2"))
+        assertTrue(
+            backend
+                .requestsTo("/rest/v1/birthdays", HttpMethod.Patch)
+                .single()
+                .body
+                .contains("Tod2"),
+        )
     }
 
     @Test
@@ -131,13 +142,23 @@ class BirthdayScreenTest {
         compose.waitForText("Todd")
         val row = SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions)
         compose.runOnUiThread {
-            compose.onAllNodes(row)[0].fetchSemanticsNode().config[SemanticsActions.CustomActions].first().action()
+            compose
+                .onAllNodes(row)[0]
+                .fetchSemanticsNode()
+                .config[SemanticsActions.CustomActions]
+                .first()
+                .action()
         }
         compose.waitForText(str(R.string.delete_birthday_q))
         compose.clickText(str(R.string.cancel))
         assertTrue(backend.requestsTo("/rest/v1/birthdays", HttpMethod.Delete).isEmpty())
         compose.runOnUiThread {
-            compose.onAllNodes(row)[0].fetchSemanticsNode().config[SemanticsActions.CustomActions].first().action()
+            compose
+                .onAllNodes(row)[0]
+                .fetchSemanticsNode()
+                .config[SemanticsActions.CustomActions]
+                .first()
+                .action()
         }
         compose.waitForText(str(R.string.delete_birthday_q))
         compose.clickText(str(R.string.delete))

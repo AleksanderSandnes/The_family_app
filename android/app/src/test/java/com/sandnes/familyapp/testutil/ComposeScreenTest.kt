@@ -1,11 +1,11 @@
 package com.sandnes.familyapp.testutil
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.window.DialogProperties
 import com.sandnes.familyapp.data.FamilyRepository
 import com.sandnes.familyapp.data.UserModel
 import io.mockk.coEvery
 import io.mockk.every
-import androidx.compose.ui.window.DialogProperties
 import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.unmockkConstructor

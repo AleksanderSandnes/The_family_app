@@ -55,7 +55,12 @@ class AuthScreensTest : ComposeScreenTest() {
         compose.waitForText(str(R.string.welcome_back))
         compose.typeInto("ada@example.com", 0)
         compose.typeInto("secret", 1)
-        compose.onAllNodes(androidx.compose.ui.test.hasSetTextAction())[1].performImeActionForTest()
+        compose
+            .onAllNodes(
+                androidx.compose.ui.test
+                    .hasSetTextAction(),
+            )[1]
+            .performImeActionForTest()
         verify { vm.login("ada@example.com", "secret") }
         compose.clickDescription(str(R.string.continue_with_google_button))
         verify { vm.signInWithGoogle() }
@@ -189,7 +194,12 @@ class AuthScreensTest : ComposeScreenTest() {
         assertTrue(compose.hasText(str(R.string.resend_code_in_seconds, 30)))
         compose.typeInto("123456", 0)
         for ((password, label) in listOf("abc" to R.string.too_short, "abcdefgh" to R.string.weak, "Abcdefgh1" to R.string.medium, "Abcdefgh1!xyz" to R.string.strong)) {
-            compose.onAllNodes(androidx.compose.ui.test.hasSetTextAction())[1].performTextReplacementForTest(password)
+            compose
+                .onAllNodes(
+                    androidx.compose.ui.test
+                        .hasSetTextAction(),
+                )[1]
+                .performTextReplacementForTest(password)
             compose.waitForIdle()
             assertTrue("$password -> ${str(label)}", compose.hasText(str(label)) || compose.hasText(str(R.string.medium)) || compose.hasText(str(R.string.strong)))
         }

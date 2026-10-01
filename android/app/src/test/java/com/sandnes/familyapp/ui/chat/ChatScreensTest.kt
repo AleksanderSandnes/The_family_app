@@ -1,7 +1,6 @@
 package com.sandnes.familyapp.ui.chat
 
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performTouchInput
 import com.sandnes.familyapp.R
@@ -10,7 +9,6 @@ import com.sandnes.familyapp.data.ConversationWithPreview
 import com.sandnes.familyapp.data.MessageModel
 import com.sandnes.familyapp.data.UserModel
 import com.sandnes.familyapp.testutil.ComposeScreenTest
-import com.sandnes.familyapp.testutil.click
 import com.sandnes.familyapp.testutil.clickDescription
 import com.sandnes.familyapp.testutil.clickText
 import com.sandnes.familyapp.testutil.hasText
@@ -57,6 +55,7 @@ class ChatScreensTest : ComposeScreenTest() {
 
     private fun ago(minutes: Long) = Instant.now().minusSeconds(minutes * 60).toString()
 
+    @Suppress("LongParameterList")
     private fun msg(
         id: String,
         from: String,
@@ -97,6 +96,7 @@ class ChatScreensTest : ComposeScreenTest() {
 
     // ── Chat list ──────────────────────────────────────────────────────────
 
+    @Suppress("LongParameterList")
     private fun preview(
         id: String,
         name: String = "",
@@ -275,9 +275,19 @@ class ChatScreensTest : ComposeScreenTest() {
         compose.clickText("Hello there")
         val row = compose.onAllNodesWithText("Hello there")[0]
         row.performTouchInput { down(center) }
-        row.performTouchInput { moveBy(androidx.compose.ui.geometry.Offset(60f, 0f)) }
+        row.performTouchInput {
+            moveBy(
+                androidx.compose.ui.geometry
+                    .Offset(60f, 0f),
+            )
+        }
         compose.waitForIdle()
-        row.performTouchInput { moveBy(androidx.compose.ui.geometry.Offset(120f, 0f)) }
+        row.performTouchInput {
+            moveBy(
+                androidx.compose.ui.geometry
+                    .Offset(120f, 0f),
+            )
+        }
         compose.waitForIdle()
         row.performTouchInput { up() }
         compose.waitForIdle()
@@ -461,11 +471,16 @@ class ChatScreensTest : ComposeScreenTest() {
     @Test
     fun `holding the mic starts a recording and releasing a short one discards it`() {
         oneOnOne()
-        org.robolectric.Shadows.shadowOf(com.sandnes.familyapp.testutil.appContext as android.app.Application)
+        org.robolectric.Shadows
+            .shadowOf(com.sandnes.familyapp.testutil.appContext as android.app.Application)
             .grantPermissions(android.Manifest.permission.RECORD_AUDIO)
         open()
         compose.waitForText("Hello there")
-        val mic = compose.onAllNodes(androidx.compose.ui.test.hasContentDescription(str(R.string.record_voice_message)))[0]
+        val mic =
+            compose.onAllNodes(
+                androidx.compose.ui.test
+                    .hasContentDescription(str(R.string.record_voice_message)),
+            )[0]
         mic.performTouchInput {
             down(center)
             advanceEventTime(200)
@@ -480,7 +495,11 @@ class ChatScreensTest : ComposeScreenTest() {
         oneOnOne()
         open()
         compose.waitForText("Hello there")
-        val mic = compose.onAllNodes(androidx.compose.ui.test.hasContentDescription(str(R.string.record_voice_message)))[0]
+        val mic =
+            compose.onAllNodes(
+                androidx.compose.ui.test
+                    .hasContentDescription(str(R.string.record_voice_message)),
+            )[0]
         mic.performTouchInput {
             down(center)
             up()
