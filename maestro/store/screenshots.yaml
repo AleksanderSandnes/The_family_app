@@ -1,0 +1,80 @@
+appId: com.sandnes.familyapp
+tags:
+  - store
+---
+# Store screenshots from the fictional demo family (supabase/seed_demo.sql).
+# Only for a debug build pointed at a disposable local stack — see
+# .github/workflows/store-screenshots.yml. Never run against production.
+- launchApp:
+    appId: com.sandnes.familyapp
+    clearState: true
+- extendedWaitUntil:
+    visible: "Sign in"
+    timeout: 30000
+- tapOn: "Email"
+- inputText: ${DEMO_EMAIL}
+- tapOn: "Password"
+- inputText: ${DEMO_PASSWORD}
+- hideKeyboard
+- tapOn: "Sign in"
+
+# First-run permission onboarding: decline everything; the screenshots need no grants.
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"
+- extendedWaitUntil:
+    visible: "Quick access"
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: ${OUTPUT}/01-home
+
+- tapOn: "Chat"
+- extendedWaitUntil:
+    visible: "Family Nordmann"
+    timeout: 20000
+- tapOn: "Family Nordmann"
+- extendedWaitUntil:
+    visible: "Tacos it is.*"
+    timeout: 20000
+- hideKeyboard
+- waitForAnimationToEnd
+- takeScreenshot: ${OUTPUT}/02-chat
+- back
+
+- tapOn: "Shopping"
+- extendedWaitUntil:
+    visible: "Groceries"
+    timeout: 20000
+- tapOn: "Groceries"
+- extendedWaitUntil:
+    visible: "Taco shells"
+    timeout: 20000
+- waitForAnimationToEnd
+- takeScreenshot: ${OUTPUT}/03-shopping
+- back
+
+- tapOn: "Calendar"
+- extendedWaitUntil:
+    visible: "Football practice"
+    timeout: 20000
+- waitForAnimationToEnd
+- takeScreenshot: ${OUTPUT}/04-calendar
+
+- tapOn: "Home"
+- scrollUntilVisible:
+    element: "Meals"
+    direction: DOWN
+- tapOn: "Meals"
+- extendedWaitUntil:
+    visible: "This week"
+    timeout: 20000
+- tapOn: "This week"
+- waitForAnimationToEnd
+- takeScreenshot: ${OUTPUT}/05-meals
