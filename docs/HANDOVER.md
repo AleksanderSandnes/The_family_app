@@ -5,9 +5,9 @@
 Android coverage gates merged in #13 (86.7% overall / 90.2% logic).
 iOS #15 merged into `test` after every required check passed, with enforced
 coverage gates (83.90% overall / 90.87% logic). #14 (demo seed, Android
-screenshots and Play graphics) has been updated against that merge; its
-release-notes conflict was resolved by retaining both sections. Required
-checks must pass before it merges. HMI #54 has merged into `test`.
+screenshots and Play graphics) also merged after its required checks passed,
+including a successful retry of a Kotlin compiler download timeout.
+HMI #54 has merged into `test`.
 
 Six reviewed English iOS screenshots (1320x2868) are now stored in
 `store/ios/screenshots/iphone-6.9/en/`, from run 36855681829.
