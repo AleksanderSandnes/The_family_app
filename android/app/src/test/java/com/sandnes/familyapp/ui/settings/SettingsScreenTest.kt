@@ -1,9 +1,9 @@
 package com.sandnes.familyapp.ui.settings
 
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.data.ThemeMode
 import com.sandnes.familyapp.testutil.ComposeScreenTest
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import com.sandnes.familyapp.testutil.click
 import com.sandnes.familyapp.testutil.clickDescription
 import com.sandnes.familyapp.testutil.clickText

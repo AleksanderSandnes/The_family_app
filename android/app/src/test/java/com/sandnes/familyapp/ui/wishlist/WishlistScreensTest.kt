@@ -2,7 +2,6 @@ package com.sandnes.familyapp.ui.wishlist
 
 import com.sandnes.familyapp.R
 import com.sandnes.familyapp.testutil.ComposeScreenTest
-import com.sandnes.familyapp.testutil.clickButtonBeside
 import com.sandnes.familyapp.testutil.clickDescription
 import com.sandnes.familyapp.testutil.clickText
 import com.sandnes.familyapp.testutil.hasText
@@ -44,12 +43,13 @@ class WishlistScreensTest : ComposeScreenTest() {
         backend.onJson(HttpMethod.Post, "/rest/v1/rpc/ensure_wishlist_share_token", "\"tok\"")
         val repo =
             fakeRepo {
-                coEvery { getUser("u2") } returns com.sandnes.familyapp.data.UserModel(id = "u2", name = "Bob", familyId = "f1")
+                coEvery { getUser("u2") } returns
+                    com.sandnes.familyapp.data
+                        .UserModel(id = "u2", name = "Bob", familyId = "f1")
                 every { pendingWishlistShareToken } returns kotlinx.coroutines.flow.MutableStateFlow(null)
             }
         return WishlistViewModel(repo)
     }
-
 
     @Test
     fun `lists my wishlists and the ones shared with me`() {

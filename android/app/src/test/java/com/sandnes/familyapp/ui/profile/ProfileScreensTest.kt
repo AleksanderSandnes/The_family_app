@@ -6,8 +6,8 @@ import com.sandnes.familyapp.testutil.ComposeScreenTest
 import com.sandnes.familyapp.testutil.click
 import com.sandnes.familyapp.testutil.clickText
 import com.sandnes.familyapp.testutil.hasText
-import com.sandnes.familyapp.testutil.str
 import com.sandnes.familyapp.testutil.replaceText
+import com.sandnes.familyapp.testutil.str
 import com.sandnes.familyapp.testutil.typeInto
 import com.sandnes.familyapp.testutil.waitForText
 import io.mockk.every
@@ -59,9 +59,20 @@ class ProfileScreensTest : ComposeScreenTest() {
 
     private fun openAvatarPicker() {
         // The avatar circle is the first clickable thing in the profile card.
-        val count = compose.onAllNodes(androidx.compose.ui.test.hasClickAction()).fetchSemanticsNodes().size
+        val count =
+            compose
+                .onAllNodes(
+                    androidx.compose.ui.test
+                        .hasClickAction(),
+                ).fetchSemanticsNodes()
+                .size
         for (i in 0 until count) {
-            compose.onAllNodes(androidx.compose.ui.test.hasClickAction())[i].click()
+            compose
+                .onAllNodes(
+                    androidx.compose.ui.test
+                        .hasClickAction(),
+                )[i]
+                .click()
             compose.waitForIdle()
             if (compose.hasText(str(R.string.profile_photo))) return
         }

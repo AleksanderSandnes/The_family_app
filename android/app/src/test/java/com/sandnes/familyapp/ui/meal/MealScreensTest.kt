@@ -84,7 +84,13 @@ class MealScreensTest : ComposeScreenTest() {
         compose.clickText(str(R.string.cancel), index = 1)
         compose.clickText(str(R.string.create))
         compose.waitUntil(20_000) { backend.requestsTo("/rest/v1/meal_plans", HttpMethod.Post).isNotEmpty() }
-        assertTrue(backend.requestsTo("/rest/v1/meal_plans", HttpMethod.Post).first().body.contains("Holiday"))
+        assertTrue(
+            backend
+                .requestsTo("/rest/v1/meal_plans", HttpMethod.Post)
+                .first()
+                .body
+                .contains("Holiday"),
+        )
     }
 
     @Test

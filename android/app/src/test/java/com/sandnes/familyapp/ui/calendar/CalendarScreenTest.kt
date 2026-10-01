@@ -25,6 +25,7 @@ class CalendarScreenTest : ComposeScreenTest() {
     private val today: LocalDate = LocalDate.now()
     private val dayFmt = DateTimeFormatter.ofPattern("EEE d MMM", Locale.getDefault())
 
+    @Suppress("LongParameterList")
     private fun event(
         id: String,
         owner: String,
@@ -119,7 +120,13 @@ class CalendarScreenTest : ComposeScreenTest() {
         compose.clickText("Cy")
         compose.clickText(str(R.string.save))
         compose.waitUntil(20_000) { backend.requestsTo("/rest/v1/calendar_events", HttpMethod.Post).isNotEmpty() }
-        assertTrue(backend.requestsTo("/rest/v1/calendar_events", HttpMethod.Post).first().body.contains("Picnic"))
+        assertTrue(
+            backend
+                .requestsTo("/rest/v1/calendar_events", HttpMethod.Post)
+                .first()
+                .body
+                .contains("Picnic"),
+        )
     }
 
     @Test

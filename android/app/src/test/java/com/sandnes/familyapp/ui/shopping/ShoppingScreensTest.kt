@@ -8,7 +8,6 @@ import com.sandnes.familyapp.testutil.clickText
 import com.sandnes.familyapp.testutil.editField
 import com.sandnes.familyapp.testutil.hasText
 import com.sandnes.familyapp.testutil.imeDone
-import com.sandnes.familyapp.testutil.replaceText
 import com.sandnes.familyapp.testutil.runSwipeDelete
 import com.sandnes.familyapp.testutil.str
 import com.sandnes.familyapp.testutil.typeInto
@@ -68,7 +67,13 @@ class ShoppingScreensTest : ComposeScreenTest() {
         compose.typeInto("Camping")
         compose.clickText(str(R.string.create))
         compose.waitUntil(20_000) { backend.requestsTo("/rest/v1/shopping_lists", HttpMethod.Post).isNotEmpty() }
-        assertTrue(backend.requestsTo("/rest/v1/shopping_lists", HttpMethod.Post).single().body.contains("Camping"))
+        assertTrue(
+            backend
+                .requestsTo("/rest/v1/shopping_lists", HttpMethod.Post)
+                .single()
+                .body
+                .contains("Camping"),
+        )
     }
 
     @Test
