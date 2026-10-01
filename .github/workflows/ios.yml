@@ -92,6 +92,8 @@ jobs:
           retention-days: 7
 
   ipad:
+    # One capture per commit is enough; avoid duplicate macOS capture jobs on PR events.
+    if: github.event_name != 'pull_request'
     runs-on: macos-latest
     timeout-minutes: 40
     steps:
