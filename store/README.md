@@ -32,6 +32,15 @@ chat, shopping, calendar, meals and wishlist. Source: iOS Build and Tests run
 Nordmann family. All six images were visually reviewed before importing.
 These screen captures do not replace a signed release smoke test.
 
+## iPad support and capture
+
+Family now declares iPhone and iPad support, with all four orientations on iPad.
+The `ipad` job in `ios.yml` runs the six fictional screen captures on an available
+13-inch iPad Pro/Air simulator and uploads `ipad-store-screenshots`.
+Portrait images are 2064x2752 pixels, an accepted 13-inch size in Apple's
+[screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
+Import reviewed results into `store/ios/screenshots/ipad-13/en/`.
+
 ## Remaining assets
 
 - Screenshots captured from a demo account with fictional data only (phone, 7" and 10" tablet,

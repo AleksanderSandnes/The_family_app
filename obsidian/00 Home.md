@@ -7,6 +7,10 @@ Android coverage gates are delivered; iOS coverage PR #15 and store assets PR #1
 must pass required checks before merging into `test`. Promotion PR #16 awaits
 owner review. See `docs/HANDOVER.md`; production activation remains owner-gated.
 
+The owner requested iPad support on 1 October. The native target now supports
+iPad and its orientations; CI captures six screens on a 13-inch iPad simulator.
+The iPad screenshots must be reviewed and imported before store submission.
+
 
 ## First release-proposal workflow verification — 30 September 2026
 

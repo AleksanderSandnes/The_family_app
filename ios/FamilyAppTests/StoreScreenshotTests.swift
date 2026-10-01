@@ -3,14 +3,16 @@
 // App Store screenshots of key screens from the fictional Nordmann family (MockRepository
 // fixtures — no backend, no real data). Each image is attached to the test result as
 // "store-<name>"; .github/workflows/ios.yml exports them into the ios-store-screenshots
-// artifact. Size: iPhone 6.9" (440 x 956 points at 3x = 1320 x 2868 pixels).
+// artifact. iPhone: 1320 x 2868 pixels. iPad 13": 2064 x 2752 pixels.
 import SwiftUI
 import UIKit
 import XCTest
 
 @MainActor
 final class StoreScreenshotTests: XCTestCase {
-    private let size = CGSize(width: 440, height: 956)
+    private var size = CGSize(width: 440, height: 956)
+    private var scale: CGFloat = 3
+    private var prefix = "store"
 
     override func setUp() async throws {
         try await super.setUp()
@@ -23,6 +25,18 @@ final class StoreScreenshotTests: XCTestCase {
     }
 
     func testCaptureStoreScreenshots() async throws {
+        try await captureScreens()
+    }
+
+    func testCaptureIPadStoreScreenshots() async throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "Requires an iPad simulator")
+        size = CGSize(width: 1032, height: 1376)
+        scale = 2
+        prefix = "store-ipad13"
+        try await captureScreens()
+    }
+
+    private func captureScreens() async throws {
         let mock = DemoFamily.mock()
         let home = HomeViewModel(repo: mock)
         let chat = ChatViewModel(repo: mock, realtime: { NoopRealtimeObserver() })
@@ -65,15 +79,16 @@ final class StoreScreenshotTests: XCTestCase {
             try await Task.sleep(nanoseconds: 50000000)
         }
         let format = UIGraphicsImageRendererFormat()
-        format.scale = 3
+        format.scale = scale
         let image = UIGraphicsImageRenderer(size: size, format: format).image { _ in
             _ = host.view.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: true)
         }
         window.isHidden = true
         let png = try XCTUnwrap(image.pngData())
-        XCTAssertEqual(image.size.width * image.scale, 1320)
+        XCTAssertEqual(image.size.width * image.scale, size.width * scale)
+        XCTAssertEqual(image.size.height * image.scale, size.height * scale)
         let attachment = XCTAttachment(data: png, uniformTypeIdentifier: "public.png")
-        attachment.name = "store-\(name)"
+        attachment.name = "\(prefix)-\(name)"
         attachment.lifetime = .keepAlways
         add(attachment)
     }

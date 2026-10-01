@@ -17,6 +17,12 @@ Production promotion, domain/DNS/SMTP work, signing identities, credential
 rotation, private media activation, reviewer accounts, store submission and
 legal review remain owner-gated. Never run the demo seed on production.
 
+Owner requested iPad support on 1 October: the native target now declares
+iPhone/iPad and iPad portrait/landscape orientations. A dedicated `ipad` job
+captures the six fictional screens at 2064x2752 on a 13-inch iPad simulator.
+Import its reviewed `ipad-store-screenshots` artifact into
+`store/ios/screenshots/ipad-13/en/` after CI passes.
+
 
 ## First release-proposal workflow verification — 30 September 2026
 

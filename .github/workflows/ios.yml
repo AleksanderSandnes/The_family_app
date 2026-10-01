@@ -46,6 +46,7 @@ jobs:
           set -o pipefail
           xcodebuild test -project ios/FamilyApp.xcodeproj -scheme FamilyApp \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -skip-testing:FamilyAppTests/StoreScreenshotTests/testCaptureIPadStoreScreenshots \
             -derivedDataPath ios/build -resultBundlePath ios/build/TestResults.xcresult \
             -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO | tee "$RUNNER_TEMP/xcodebuild.log"
       - name: Coverage report
@@ -88,4 +89,64 @@ jobs:
             ios/build/TestResults.xcresult
             ios/build/coverage.txt
             ${{ runner.temp }}/xcodebuild.log
+          retention-days: 7
+
+  ipad:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Configure isolated test backend
+        run: |
+          cat > ios/Config/Secrets.xcconfig <<'EOF'
+          SUPABASE_URL = https:/$()/example.supabase.co
+          SUPABASE_ANON_KEY = ci-placeholder-not-a-secret
+          EOF
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+      - name: Select available 13-inch iPad simulator
+        run: |
+          xcrun simctl list devices available -j > "$RUNNER_TEMP/simulators.json"
+          python3 - <<'PY'
+          import json, os
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'simulators.json')) as source:
+              devices = json.load(source)['devices']
+          tablets = [device for runtime, entries in devices.items() if 'iOS' in runtime
+                     for device in entries if device['isAvailable']
+                     and ('iPad Pro 13-inch' in device['name'] or 'iPad Air 13-inch' in device['name'])]
+          if not tablets:
+              raise SystemExit('No available 13-inch iPad simulator on this runner')
+          with open(os.environ['GITHUB_ENV'], 'a') as target:
+              target.write('SIMULATOR_ID=' + tablets[0]['udid'] + '\n')
+          PY
+      - name: Capture fictional store screens on iPad
+        run: |
+          set -o pipefail
+          xcodebuild test -project ios/FamilyApp.xcodeproj -scheme FamilyApp \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -only-testing:FamilyAppTests/StoreScreenshotTests/testCaptureIPadStoreScreenshots \
+            -derivedDataPath ios/build -resultBundlePath ios/build/IPadResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO | tee "$RUNNER_TEMP/ipad-xcodebuild.log"
+      - name: Export iPad screenshots
+        run: |
+          mkdir -p ios/build/ipad-store-screenshots
+          xcrun xcresulttool export attachments --path ios/build/IPadResults.xcresult \
+            --output-path ios/build/ipad-store-screenshots
+      - name: Upload iPad screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipad-store-screenshots
+          path: ios/build/ipad-store-screenshots
+          retention-days: 14
+      - name: Upload iPad build and test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipad-test-results
+          path: |
+            ios/build/IPadResults.xcresult
+            ${{ runner.temp }}/ipad-xcodebuild.log
           retention-days: 7
