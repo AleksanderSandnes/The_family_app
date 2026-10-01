@@ -41,7 +41,6 @@ tags:
 - extendedWaitUntil:
     visible: "Oat milk and tomatoes, please!"
     timeout: 20000
-- hideKeyboard
 - waitForAnimationToEnd
 - takeScreenshot: 02-chat
 - back

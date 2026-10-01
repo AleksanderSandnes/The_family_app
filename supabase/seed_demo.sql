@@ -117,15 +117,15 @@ begin
     (user_id, family_id, date_from, date_to, time_from, time_to, activity, all_day, icon, attendee_ids)
   values
     (jonas, family, current_date::text, current_date::text, '15:00', '15:30',
-     'School pickup', false, 'school', array[jonas::text, emma::text]),
+     'School pickup', false, 'school', array[emma::text]),
     (nora, family, (current_date + 1)::text, (current_date + 1)::text, '17:30', '19:00',
-     'Football practice', false, 'fitness_center', array[nora::text, lars::text]),
+     'Football practice', false, 'fitness_center', array[lars::text]),
     (emma, family, (current_date + 2)::text, (current_date + 2)::text, '18:00', '19:00',
-     'Parent-teacher meeting', false, 'school', array[emma::text]),
+     'Parent-teacher meeting', false, 'school', array[lars::text]),
     (jonas, family, (current_date + 4)::text, (current_date + 4)::text, '10:00', '12:00',
-     'Swimming lesson', false, 'star', array[jonas::text, emma::text]),
+     'Swimming lesson', false, 'star', array[emma::text]),
     (lars, family, (current_date + 9)::text, (current_date + 11)::text, '', '',
-     'Cabin weekend', true, 'home', array[emma::text, lars::text, nora::text, jonas::text]);
+     'Cabin weekend', true, 'home', array[emma::text, nora::text, jonas::text]);
 
   -- Birthdays (members + a fictional grandparent).
   insert into public.birthdays (name, date, family_id, user_id, made_by_user_id, icon) values
