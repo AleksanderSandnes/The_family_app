@@ -746,6 +746,10 @@ final class MockRepository: FamilyRepositoryProtocol {
 
     func renameShoppingList(id: String, title: String) async {
         renamedShoppingLists.append((id, title))
+        // Match persistence so the view model's post-write reload sees the saved title.
+        for index in shoppingListDetailResult.indices where shoppingListDetailResult[index].id == id {
+            shoppingListDetailResult[index].title = title
+        }
     }
 
     func deleteShoppingList(id: String) async {
